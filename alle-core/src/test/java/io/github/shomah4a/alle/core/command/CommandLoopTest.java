@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
@@ -15,6 +16,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.MutableList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -147,6 +149,92 @@ class CommandLoopTest {
             loop.run();
 
             assertEquals("", frame.getActiveWindow().getBuffer().getText());
+        }
+    }
+
+    @Nested
+    class コマンド履歴 {
+
+        /**
+         * 実行時のCommandContextをキャプチャするコマンド。
+         */
+        private static class CapturingCommand implements Command {
+
+            private final String commandName;
+            final MutableList<CommandContext> capturedContexts = Lists.mutable.empty();
+
+            CapturingCommand(String commandName) {
+                this.commandName = commandName;
+            }
+
+            @Override
+            public String name() {
+                return commandName;
+            }
+
+            @Override
+            public void execute(CommandContext context) {
+                capturedContexts.add(context);
+            }
+        }
+
+        @Test
+        void 最初のコマンド実行時はlastCommandがemptyである() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+            var cmd = new CapturingCommand("test-cmd");
+            var keymap = new Keymap("global");
+            keymap.bind(KeyStroke.ctrl('a'), cmd);
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.ctrl('a'));
+
+            assertEquals(1, cmd.capturedContexts.size());
+            assertTrue(cmd.capturedContexts.get(0).lastCommand().isEmpty());
+            assertEquals("test-cmd", cmd.capturedContexts.get(0).thisCommand().orElseThrow());
+        }
+
+        @Test
+        void 連続実行時にlastCommandが前回のコマンド名になる() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+            var cmd1 = new CapturingCommand("first-cmd");
+            var cmd2 = new CapturingCommand("second-cmd");
+            var keymap = new Keymap("global");
+            keymap.bind(KeyStroke.ctrl('a'), cmd1);
+            keymap.bind(KeyStroke.ctrl('b'), cmd2);
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.ctrl('a'));
+            loop.processKey(KeyStroke.ctrl('b'));
+
+            assertEquals(1, cmd2.capturedContexts.size());
+            assertEquals("first-cmd", cmd2.capturedContexts.get(0).lastCommand().orElseThrow());
+            assertEquals(
+                    "second-cmd", cmd2.capturedContexts.get(0).thisCommand().orElseThrow());
+        }
+
+        @Test
+        void 同一コマンドの連続実行でlastCommandが自身の名前になる() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+            var cmd = new CapturingCommand("repeat-cmd");
+            var keymap = new Keymap("global");
+            keymap.bind(KeyStroke.ctrl('a'), cmd);
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.ctrl('a'));
+            loop.processKey(KeyStroke.ctrl('a'));
+
+            assertEquals(2, cmd.capturedContexts.size());
+            assertTrue(cmd.capturedContexts.get(0).lastCommand().isEmpty());
+            assertEquals("repeat-cmd", cmd.capturedContexts.get(1).lastCommand().orElseThrow());
         }
     }
 
