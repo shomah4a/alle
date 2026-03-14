@@ -30,11 +30,11 @@
 
 ### Null安全性: NullAway + JSpecify
 
-- `@NullMarked` アノテーションが付与されたコードに対してのみNullチェックを適用(`onlyNullMarked = true`)
+- ~~`@NullMarked` アノテーションが付与されたコードに対してのみNullチェックを適用(`onlyNullMarked = true`)~~ → ADR-0015で変更
 - NullAwayの指摘はエラーとして扱う
 
 ## 帰結
 
 - コードスタイルが自動的に統一される
 - コンパイル時にバグの可能性を検出できる
-- Null安全性を段階的に導入できる（`@NullMarked` を付与したパッケージから順次）
+- ~~Null安全性を段階的に導入できる（`@NullMarked` を付与したパッケージから順次）~~ → ADR-0015で全ファイル適用に変更

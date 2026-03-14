@@ -10,7 +10,7 @@ NullAwayの設定で `onlyNullMarked = true` が指定されていたが、`@Nul
 
 ## 検討した選択肢
 
-### 1. `onlyNullMarked = false` に変更
+### 1. `annotatedPackages` にプロジェクトのパッケージプレフィックスを指定
 
 - build.gradle.kts の1行変更で全ファイルがチェック対象になる
 - `package-info.java` や `module-info.java` の追加が不要
@@ -28,7 +28,7 @@ NullAwayの設定で `onlyNullMarked = true` が指定されていたが、`@Nul
 
 ## 決定
 
-選択肢1を採用する。`onlyNullMarked = false` に変更し、全Javaファイルをチェック対象とする。
+選択肢1を採用する。`annotatedPackages` に `io.github.shomah4a.alle` を指定し、全Javaファイルをチェック対象とする。
 
 リポジトリ内のコードはデフォルトnon-nullとし、nullableな箇所には `@Nullable` アノテーションを付与する。
 
