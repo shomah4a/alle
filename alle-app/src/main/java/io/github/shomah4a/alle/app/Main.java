@@ -2,8 +2,8 @@ package io.github.shomah4a.alle.app;
 
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.command.BackwardCharCommand;
@@ -26,6 +26,7 @@ import io.github.shomah4a.alle.tui.QuitCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Alleエディタのエントリポイント。
@@ -35,15 +36,13 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
-        try (Terminal terminal =
-                new DefaultTerminalFactory().setForceTextTerminal(true).createTerminal()) {
-            Screen screen = new TerminalScreen(terminal);
-            try {
-                screen.startScreen();
-                run(screen);
-            } finally {
-                screen.stopScreen();
-            }
+        Terminal terminal = new UnixTerminal(System.in, System.out, StandardCharsets.UTF_8);
+        Screen screen = new TerminalScreen(terminal);
+        try {
+            screen.startScreen();
+            run(screen);
+        } finally {
+            screen.stopScreen();
         }
     }
 
