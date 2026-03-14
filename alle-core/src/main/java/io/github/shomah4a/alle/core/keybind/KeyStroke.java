@@ -11,7 +11,7 @@ import java.util.Set;
 public record KeyStroke(Set<Modifier> modifiers, int keyCode) {
 
     public KeyStroke {
-        modifiers = EnumSet.copyOf(modifiers);
+        modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
     }
 
     /**
