@@ -2,6 +2,7 @@
 
 plugins {
     application
+    alias(libs.plugins.shadow)
 }
 
 dependencies {

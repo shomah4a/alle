@@ -8,6 +8,7 @@ lanterna = "3.1.2"
 spotless = "7.0.2"
 errorprone-gradle = "4.2.0"
 nullaway-gradle = "2.3.0"
+shadow = "9.3.2"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -23,3 +24,4 @@ lanterna = { module = "com.googlecode.lanterna:lanterna", version.ref = "lantern
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 errorprone = { id = "net.ltgt.errorprone", version.ref = "errorprone-gradle" }
 nullaway = { id = "net.ltgt.nullaway", version.ref = "nullaway-gradle" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
