@@ -35,14 +35,14 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
-        Terminal terminal = new DefaultTerminalFactory().createTerminal();
-        Screen screen = new TerminalScreen(terminal);
-
-        try {
-            screen.startScreen();
-            run(screen);
-        } finally {
-            screen.stopScreen();
+        try (Terminal terminal = new DefaultTerminalFactory().createTerminal()) {
+            Screen screen = new TerminalScreen(terminal);
+            try {
+                screen.startScreen();
+                run(screen);
+            } finally {
+                screen.stopScreen();
+            }
         }
     }
 

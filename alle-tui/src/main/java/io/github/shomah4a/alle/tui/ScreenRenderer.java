@@ -126,7 +126,6 @@ public class ScreenRenderer {
             Character.UnicodeBlock.HIRAGANA,
             Character.UnicodeBlock.KATAKANA,
             Character.UnicodeBlock.HANGUL_SYLLABLES,
-            Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS,
             Character.UnicodeBlock.EMOTICONS,
             Character.UnicodeBlock.MISCELLANEOUS_SYMBOLS_AND_PICTOGRAPHS);
 
@@ -135,6 +134,13 @@ public class ScreenRenderer {
         if (block == null) {
             return false;
         }
-        return FULL_WIDTH_BLOCKS.contains(block);
+        if (FULL_WIDTH_BLOCKS.contains(block)) {
+            return true;
+        }
+        // HALFWIDTH_AND_FULLWIDTH_FORMSは半角文字も含むため、全角範囲のみ判定
+        if (block.equals(Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS)) {
+            return (codePoint >= 0xFF01 && codePoint <= 0xFF60) || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6);
+        }
+        return false;
     }
 }

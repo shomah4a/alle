@@ -4,6 +4,7 @@ import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 
 /**
@@ -39,7 +40,7 @@ public class TerminalInputSource implements InputSource {
             }
             return KeyStrokeConverter.convert(lanternaKeyStroke);
         } catch (IOException e) {
-            return Optional.empty();
+            throw new UncheckedIOException("キー入力の読み取りに失敗しました", e);
         }
     }
 }

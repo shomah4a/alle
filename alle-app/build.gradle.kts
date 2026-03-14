@@ -13,3 +13,7 @@ dependencies {
 application {
     mainClass.set("io.github.shomah4a.alle.app.Main")
 }
+
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+}
