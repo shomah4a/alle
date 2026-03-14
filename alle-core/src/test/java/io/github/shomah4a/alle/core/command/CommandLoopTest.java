@@ -36,11 +36,11 @@ class CommandLoopTest {
     class 印字可能文字の入力 {
 
         @Test
-        void キーマップにバインドされた印字可能文字がself_insertされる() {
+        void デフォルトコマンドにより印字可能文字がself_insertされる() {
             var frame = createFrame();
             var bufferManager = new BufferManager();
             var keymap = new Keymap("global");
-            keymap.bindPrintableAscii(new SelfInsertCommand());
+            keymap.setDefaultCommand(new SelfInsertCommand());
             var resolver = new KeyResolver();
             resolver.addKeymap(keymap);
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('H'), KeyStroke.of('i')));
@@ -49,6 +49,22 @@ class CommandLoopTest {
             loop.run();
 
             assertEquals("Hi", frame.getActiveWindow().getBuffer().getText());
+        }
+
+        @Test
+        void デフォルトコマンドにより日本語文字がself_insertされる() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+            var keymap = new Keymap("global");
+            keymap.setDefaultCommand(new SelfInsertCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+            var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('\u3042'), KeyStroke.of('\u3044')));
+
+            var loop = new CommandLoop(input, resolver, frame, bufferManager);
+            loop.run();
+
+            assertEquals("\u3042\u3044", frame.getActiveWindow().getBuffer().getText());
         }
 
         @Test
@@ -142,7 +158,7 @@ class CommandLoopTest {
             var frame = createFrame();
             var bufferManager = new BufferManager();
             var keymap = new Keymap("global");
-            keymap.bindPrintableAscii(new SelfInsertCommand());
+            keymap.setDefaultCommand(new SelfInsertCommand());
             var resolver = new KeyResolver();
             resolver.addKeymap(keymap);
 

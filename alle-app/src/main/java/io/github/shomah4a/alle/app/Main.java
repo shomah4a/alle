@@ -78,7 +78,7 @@ public final class Main {
     private static Keymap createKeymap(TerminalInputSource inputSource) {
         var keymap = new Keymap("global");
 
-        keymap.bindPrintableAscii(new SelfInsertCommand());
+        keymap.setDefaultCommand(new SelfInsertCommand());
 
         keymap.bind(KeyStroke.ctrl('f'), new ForwardCharCommand());
         keymap.bind(KeyStroke.ctrl('b'), new BackwardCharCommand());

@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.command.Command;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
+import org.jspecify.annotations.Nullable;
 
 /**
  * キーストロークからKeymapEntryへの対応付け。
@@ -13,6 +14,7 @@ public class Keymap {
 
     private final String name;
     private final MutableMap<KeyStroke, KeymapEntry> bindings;
+    private @Nullable Command defaultCommand;
 
     public Keymap(String name) {
         this.name = name;
@@ -47,9 +49,34 @@ public class Keymap {
     }
 
     /**
+     * 明示的にバインドされていない印字可能文字に適用するデフォルトコマンドを設定する。
+     * 修飾キーなしかつ印字可能なコードポイントの場合にのみ適用される。
+     */
+    public void setDefaultCommand(Command command) {
+        this.defaultCommand = command;
+    }
+
+    /**
      * キーストロークに対応するエントリを返す。
+     * 明示的バインドがなく、デフォルトコマンドが設定されている場合、
+     * 修飾キーなしの印字可能文字にはデフォルトコマンドを返す。
      */
     public Optional<KeymapEntry> lookup(KeyStroke keyStroke) {
-        return Optional.ofNullable(bindings.get(keyStroke));
+        KeymapEntry entry = bindings.get(keyStroke);
+        if (entry != null) {
+            return Optional.of(entry);
+        }
+        if (defaultCommand != null && isPrintable(keyStroke)) {
+            return Optional.of(new KeymapEntry.CommandBinding(defaultCommand));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isPrintable(KeyStroke keyStroke) {
+        if (!keyStroke.modifiers().isEmpty()) {
+            return false;
+        }
+        int codePoint = keyStroke.keyCode();
+        return Character.isValidCodePoint(codePoint) && Character.getType(codePoint) != Character.CONTROL;
     }
 }

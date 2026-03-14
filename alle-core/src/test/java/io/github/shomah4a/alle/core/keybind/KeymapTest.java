@@ -96,6 +96,63 @@ class KeymapTest {
     }
 
     @Nested
+    class デフォルトコマンド {
+
+        @Test
+        void 未バインドの印字可能文字にデフォルトコマンドが適用される() {
+            var keymap = new Keymap("global");
+            var cmd = dummyCommand("self-insert-command");
+            keymap.setDefaultCommand(cmd);
+
+            var entry = keymap.lookup(KeyStroke.of('a'));
+            assertTrue(entry.isPresent());
+            var binding = assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
+            assertEquals("self-insert-command", binding.command().name());
+        }
+
+        @Test
+        void 日本語文字にデフォルトコマンドが適用される() {
+            var keymap = new Keymap("global");
+            var cmd = dummyCommand("self-insert-command");
+            keymap.setDefaultCommand(cmd);
+
+            assertTrue(keymap.lookup(KeyStroke.of('\u3042')).isPresent());
+        }
+
+        @Test
+        void 修飾キー付きにはデフォルトコマンドは適用されない() {
+            var keymap = new Keymap("global");
+            var cmd = dummyCommand("self-insert-command");
+            keymap.setDefaultCommand(cmd);
+
+            assertTrue(keymap.lookup(KeyStroke.ctrl('a')).isEmpty());
+        }
+
+        @Test
+        void 制御文字にはデフォルトコマンドは適用されない() {
+            var keymap = new Keymap("global");
+            var cmd = dummyCommand("self-insert-command");
+            keymap.setDefaultCommand(cmd);
+
+            assertTrue(keymap.lookup(KeyStroke.of(0x01)).isEmpty());
+        }
+
+        @Test
+        void 明示的バインドがデフォルトコマンドより優先される() {
+            var keymap = new Keymap("global");
+            var defaultCmd = dummyCommand("self-insert-command");
+            var specificCmd = dummyCommand("specific-command");
+            keymap.setDefaultCommand(defaultCmd);
+            keymap.bind(KeyStroke.of('a'), specificCmd);
+
+            var entry = keymap.lookup(KeyStroke.of('a'));
+            assertTrue(entry.isPresent());
+            var binding = assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
+            assertEquals("specific-command", binding.command().name());
+        }
+    }
+
+    @Nested
     class 名前 {
 
         @Test
