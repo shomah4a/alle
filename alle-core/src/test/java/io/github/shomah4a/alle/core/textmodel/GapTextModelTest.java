@@ -197,6 +197,69 @@ class GapTextModelTest {
     }
 
     @Nested
+    class オフセットから行インデックスへの変換 {
+
+        @Test
+        void 単一行のオフセットは行0を返す() {
+            var model = create();
+            model.insert(0, "Hello");
+            assertEquals(0, model.lineIndexForOffset(0));
+            assertEquals(0, model.lineIndexForOffset(3));
+            assertEquals(0, model.lineIndexForOffset(5));
+        }
+
+        @Test
+        void 複数行で各行のオフセットが対応する行インデックスを返す() {
+            var model = create();
+            model.insert(0, "Hello\nWorld\nFoo");
+            // 行0: Hello (0-4), 改行(5)
+            assertEquals(0, model.lineIndexForOffset(0));
+            assertEquals(0, model.lineIndexForOffset(4));
+            // 改行文字上はその行の末尾として扱う
+            assertEquals(0, model.lineIndexForOffset(5));
+            // 行1: World (6-10), 改行(11)
+            assertEquals(1, model.lineIndexForOffset(6));
+            assertEquals(1, model.lineIndexForOffset(10));
+            assertEquals(1, model.lineIndexForOffset(11));
+            // 行2: Foo (12-14)
+            assertEquals(2, model.lineIndexForOffset(12));
+            assertEquals(2, model.lineIndexForOffset(15));
+        }
+
+        @Test
+        void 空テキストのオフセット0は行0を返す() {
+            var model = create();
+            assertEquals(0, model.lineIndexForOffset(0));
+        }
+
+        @Test
+        void 末尾が改行の場合のバッファ末尾は最終行を返す() {
+            var model = create();
+            model.insert(0, "Hello\n");
+            // 行0: Hello\n, 行1: ""
+            assertEquals(1, model.lineIndexForOffset(6));
+        }
+
+        @Test
+        void 絵文字を含む行でオフセットがコードポイント単位で解釈される() {
+            var model = create();
+            model.insert(0, "A😀B\nCD");
+            // 行0: A😀B (0-2), 改行(3), 行1: CD (4-5)
+            assertEquals(0, model.lineIndexForOffset(2));
+            assertEquals(0, model.lineIndexForOffset(3));
+            assertEquals(1, model.lineIndexForOffset(4));
+        }
+
+        @Test
+        void 範囲外のオフセットで例外が発生する() {
+            var model = create();
+            model.insert(0, "Hello");
+            assertThrows(IndexOutOfBoundsException.class, () -> model.lineIndexForOffset(-1));
+            assertThrows(IndexOutOfBoundsException.class, () -> model.lineIndexForOffset(6));
+        }
+    }
+
+    @Nested
     class CJK拡張漢字のサロゲートペア対応 {
 
         // 𩸽(ほっけ) U+29E3D はサロゲートペアが必要

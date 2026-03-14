@@ -118,6 +118,15 @@ public class Buffer {
     }
 
     /**
+     * 指定オフセットが属する行のインデックスを返す。
+     *
+     * @throws IndexOutOfBoundsException offsetが範囲外の場合
+     */
+    public int lineIndexForOffset(int offset) {
+        return textModel.lineIndexForOffset(offset);
+    }
+
+    /**
      * 指定行の先頭オフセットをコードポイント単位で返す。
      *
      * @throws IndexOutOfBoundsException lineIndexが範囲外の場合

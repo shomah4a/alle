@@ -70,6 +70,25 @@ public class GapTextModel implements TextModel {
     }
 
     @Override
+    public int lineIndexForOffset(int offset) {
+        int cpLen = length();
+        if (offset < 0 || offset > cpLen) {
+            throw new IndexOutOfBoundsException("offset: " + offset + ", length: " + cpLen);
+        }
+        if (offset == cpLen) {
+            return lineCount() - 1;
+        }
+        int charOffset = toCharOffset(offset);
+        int line = 0;
+        for (int i = 0; i < charOffset; i++) {
+            if (gapModel.charAt(i) == '\n') {
+                line++;
+            }
+        }
+        return line;
+    }
+
+    @Override
     public int lineStartOffset(int lineIndex) {
         if (lineIndex < 0 || lineIndex >= lineCount()) {
             throw new IndexOutOfBoundsException("lineIndex: " + lineIndex + ", lineCount: " + lineCount());

@@ -54,6 +54,15 @@ public interface TextModel {
     int lineCount();
 
     /**
+     * 指定オフセットが属する行のインデックスを返す。
+     * 改行文字上のオフセットはその行の末尾として扱う。
+     *
+     * @param offset コードポイント単位のオフセット(0〜length()の範囲)
+     * @throws IndexOutOfBoundsException offsetが範囲外の場合
+     */
+    int lineIndexForOffset(int offset);
+
+    /**
      * 指定行の先頭オフセットをコードポイント単位で返す。
      *
      * @param lineIndex 0始まりの行インデックス
