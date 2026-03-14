@@ -34,7 +34,7 @@ public class Window {
      * バッファの長さを超過している場合は末尾にclampする。
      */
     public int getPoint() {
-        int length = buffer.getTextModel().length();
+        int length = buffer.length();
         if (point > length) {
             point = length;
         }
@@ -47,7 +47,7 @@ public class Window {
      * @throws IndexOutOfBoundsException pointが範囲外の場合
      */
     public void setPoint(int point) {
-        int length = buffer.getTextModel().length();
+        int length = buffer.length();
         if (point < 0 || point > length) {
             throw new IndexOutOfBoundsException("point " + point + " is out of bounds [0, " + length + "]");
         }
@@ -67,7 +67,7 @@ public class Window {
      * @throws IndexOutOfBoundsException lineが範囲外の場合
      */
     public void setDisplayStartLine(int line) {
-        int lineCount = buffer.getTextModel().lineCount();
+        int lineCount = buffer.lineCount();
         if (line < 0 || line >= lineCount) {
             throw new IndexOutOfBoundsException("line " + line + " is out of bounds [0, " + lineCount + ")");
         }
@@ -78,7 +78,7 @@ public class Window {
      * カーソル位置に文字列を挿入し、カーソルを挿入文字列の後ろに移動する。
      */
     public void insert(String text) {
-        buffer.getTextModel().insert(point, text);
+        buffer.insertText(point, text);
         int insertedCodePoints = (int) text.codePoints().count();
         point += insertedCodePoints;
         buffer.markDirty();
@@ -93,7 +93,7 @@ public class Window {
             return;
         }
         int deleteStart = point - deleteCount;
-        buffer.getTextModel().delete(deleteStart, deleteCount);
+        buffer.deleteText(deleteStart, deleteCount);
         point = deleteStart;
         buffer.markDirty();
     }
@@ -102,12 +102,12 @@ public class Window {
      * カーソルの後ろからcount文字を削除する(Delete相当)。
      */
     public void deleteForward(int count) {
-        int remaining = buffer.getTextModel().length() - point;
+        int remaining = buffer.length() - point;
         int deleteCount = Math.min(count, remaining);
         if (deleteCount == 0) {
             return;
         }
-        buffer.getTextModel().delete(point, deleteCount);
+        buffer.deleteText(point, deleteCount);
         buffer.markDirty();
     }
 }

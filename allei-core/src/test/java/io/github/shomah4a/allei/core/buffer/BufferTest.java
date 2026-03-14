@@ -22,7 +22,7 @@ class BufferTest {
         void 名前とテキストモデルを保持する() {
             var buffer = createBuffer();
             assertEquals("test", buffer.getName());
-            assertEquals(0, buffer.getTextModel().length());
+            assertEquals(0, buffer.length());
         }
 
         @Test
@@ -68,7 +68,7 @@ class BufferTest {
         @Test
         void テキストモデルの内容を取得できる() {
             var buffer = createBuffer();
-            buffer.getTextModel().insert(0, "Hello");
+            buffer.insertText(0, "Hello");
             assertEquals("Hello", buffer.getText());
         }
     }

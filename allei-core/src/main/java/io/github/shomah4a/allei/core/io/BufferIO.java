@@ -38,13 +38,11 @@ public class BufferIO {
         LineEnding lineEnding = LineEnding.detect(rawText);
         String normalizedText = LineEnding.normalize(rawText);
 
-        var textModel = new GapTextModel();
-        if (!normalizedText.isEmpty()) {
-            textModel.insert(0, normalizedText);
-        }
-
         String bufferName = filePath.getFileName().toString();
-        var buffer = new Buffer(bufferName, textModel, filePath);
+        var buffer = new Buffer(bufferName, new GapTextModel(), filePath);
+        if (!normalizedText.isEmpty()) {
+            buffer.insertText(0, normalizedText);
+        }
 
         return new LoadResult(buffer, lineEnding);
     }

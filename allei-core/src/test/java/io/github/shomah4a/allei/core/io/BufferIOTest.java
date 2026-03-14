@@ -64,7 +64,7 @@ class BufferIOTest {
             var result = io.load(Path.of("/tmp/empty.txt"));
 
             assertEquals("", result.buffer().getText());
-            assertEquals(0, result.buffer().getTextModel().length());
+            assertEquals(0, result.buffer().length());
         }
 
         @Test
@@ -87,8 +87,7 @@ class BufferIOTest {
             var result = io.load(Path.of("/tmp/test.txt"));
             var buffer = result.buffer();
 
-            var textModel = buffer.getTextModel();
-            textModel.insert(textModel.length(), "\nFoo");
+            buffer.insertText(buffer.length(), "\nFoo");
 
             io.save(buffer, LineEnding.LF);
 
