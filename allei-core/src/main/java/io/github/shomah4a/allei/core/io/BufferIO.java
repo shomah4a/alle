@@ -2,7 +2,6 @@ package io.github.shomah4a.allei.core.io;
 
 import io.github.shomah4a.allei.core.buffer.Buffer;
 import io.github.shomah4a.allei.core.textmodel.GapTextModel;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -86,6 +85,5 @@ public class BufferIO {
     /**
      * ファイル読み込みの結果。
      */
-    public record LoadResult(Buffer buffer, LineEnding lineEnding) {
-    }
+    public record LoadResult(Buffer buffer, LineEnding lineEnding) {}
 }

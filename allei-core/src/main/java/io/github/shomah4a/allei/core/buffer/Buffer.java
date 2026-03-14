@@ -1,7 +1,6 @@
 package io.github.shomah4a.allei.core.buffer;
 
 import io.github.shomah4a.allei.core.textmodel.TextModel;
-
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -67,8 +66,7 @@ public class Buffer {
      */
     public void setPoint(int point) {
         if (point < 0 || point > textModel.length()) {
-            throw new IndexOutOfBoundsException(
-                    "point " + point + " is out of bounds [0, " + textModel.length() + "]");
+            throw new IndexOutOfBoundsException("point " + point + " is out of bounds [0, " + textModel.length() + "]");
         }
         this.point = point;
     }

@@ -4,7 +4,6 @@ package io.github.shomah4a.allei.core.io;
  * 改行コードの種別。
  */
 public enum LineEnding {
-
     LF("\n"),
     CRLF("\r\n"),
     CR("\r");

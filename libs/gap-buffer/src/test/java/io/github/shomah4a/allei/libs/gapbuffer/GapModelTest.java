@@ -1,10 +1,10 @@
 package io.github.shomah4a.allei.libs.gapbuffer;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class GapModelTest {
 
@@ -250,9 +250,9 @@ class GapModelTest {
         void 連続して異なる位置に挿入と削除を繰り返せる() {
             var model = new GapModel(4);
             model.insert(0, "ABCDEF");
-            model.delete(1, 1);   // "ACDEF"
+            model.delete(1, 1); // "ACDEF"
             model.insert(3, "X"); // "ACDXEF"
-            model.delete(0, 1);   // "CDXEF"
+            model.delete(0, 1); // "CDXEF"
             model.insert(5, "G"); // "CDXEFG"
             assertEquals("CDXEFG", model.toString());
             assertEquals(6, model.length());

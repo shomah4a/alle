@@ -1,10 +1,10 @@
 package io.github.shomah4a.allei.core.textmodel;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class GapTextModelTest {
 

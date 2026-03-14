@@ -107,8 +107,7 @@ public class GapModel {
     public String substring(int start, int end) {
         int len = length();
         if (start < 0 || end < start || end > len) {
-            throw new IndexOutOfBoundsException(
-                    "Invalid range: [" + start + ", " + end + ") for length " + len);
+            throw new IndexOutOfBoundsException("Invalid range: [" + start + ", " + end + ") for length " + len);
         }
         if (start == end) {
             return "";
@@ -172,8 +171,7 @@ public class GapModel {
 
     private static void checkOffset(int offset, int upperBound) {
         if (offset < 0 || offset >= upperBound) {
-            throw new IndexOutOfBoundsException(
-                    "offset " + offset + " is out of bounds [0, " + upperBound + ")");
+            throw new IndexOutOfBoundsException("offset " + offset + " is out of bounds [0, " + upperBound + ")");
         }
     }
 }

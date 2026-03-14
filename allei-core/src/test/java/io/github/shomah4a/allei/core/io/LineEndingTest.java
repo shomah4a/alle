@@ -1,9 +1,9 @@
 package io.github.shomah4a.allei.core.io;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LineEndingTest {
 

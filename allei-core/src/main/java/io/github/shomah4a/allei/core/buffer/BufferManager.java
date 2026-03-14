@@ -40,9 +40,7 @@ public class BufferManager {
      * 名前でバッファを検索する。
      */
     public Optional<Buffer> findByName(String name) {
-        return buffers.stream()
-                .filter(b -> b.getName().equals(name))
-                .findFirst();
+        return buffers.stream().filter(b -> b.getName().equals(name)).findFirst();
     }
 
     /**

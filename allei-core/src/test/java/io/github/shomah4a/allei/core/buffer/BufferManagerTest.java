@@ -1,12 +1,12 @@
 package io.github.shomah4a.allei.core.buffer;
 
-import io.github.shomah4a.allei.core.textmodel.GapTextModel;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.github.shomah4a.allei.core.textmodel.GapTextModel;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class BufferManagerTest {
 
