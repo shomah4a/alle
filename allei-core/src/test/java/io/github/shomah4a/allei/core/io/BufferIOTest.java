@@ -87,8 +87,8 @@ class BufferIOTest {
             var result = io.load(Path.of("/tmp/test.txt"));
             var buffer = result.buffer();
 
-            buffer.setPoint(buffer.getTextModel().length());
-            buffer.insert("\nFoo");
+            var textModel = buffer.getTextModel();
+            textModel.insert(textModel.length(), "\nFoo");
 
             io.save(buffer, LineEnding.LF);
 
