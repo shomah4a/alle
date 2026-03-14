@@ -35,7 +35,8 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
-        try (Terminal terminal = new DefaultTerminalFactory().createTerminal()) {
+        try (Terminal terminal =
+                new DefaultTerminalFactory().setForceTextTerminal(true).createTerminal()) {
             Screen screen = new TerminalScreen(terminal);
             try {
                 screen.startScreen();
