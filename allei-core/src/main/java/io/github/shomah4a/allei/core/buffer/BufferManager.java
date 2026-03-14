@@ -1,20 +1,20 @@
 package io.github.shomah4a.allei.core.buffer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 
 /**
  * 複数のバッファを管理する。
  */
 public class BufferManager {
 
-    private final List<Buffer> buffers;
+    private final MutableList<Buffer> buffers;
     private int currentIndex;
 
     public BufferManager() {
-        this.buffers = new ArrayList<>();
+        this.buffers = Lists.mutable.empty();
         this.currentIndex = -1;
     }
 
@@ -40,7 +40,7 @@ public class BufferManager {
      * 名前でバッファを検索する。
      */
     public Optional<Buffer> findByName(String name) {
-        return buffers.stream().filter(b -> b.getName().equals(name)).findFirst();
+        return Optional.ofNullable(buffers.detect(b -> b.getName().equals(name)));
     }
 
     /**
@@ -84,8 +84,8 @@ public class BufferManager {
     /**
      * 全バッファの読み取り専用リストを返す。
      */
-    public List<Buffer> getBuffers() {
-        return Collections.unmodifiableList(buffers);
+    public ListIterable<Buffer> getBuffers() {
+        return buffers;
     }
 
     /**

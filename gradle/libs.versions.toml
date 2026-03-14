@@ -3,6 +3,7 @@ junit = "5.11.4"
 errorprone = "2.37.0"
 nullaway = "0.12.6"
 jspecify = "1.0.0"
+eclipse-collections = "13.0.0"
 spotless = "7.0.2"
 errorprone-gradle = "4.2.0"
 nullaway-gradle = "2.3.0"
@@ -14,6 +15,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+eclipse-collections = { module = "org.eclipse.collections:eclipse-collections", version.ref = "eclipse-collections" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

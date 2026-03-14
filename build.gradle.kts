@@ -43,6 +43,7 @@ subprojects {
         "errorprone"(catalog.findLibrary("errorprone-core").get())
         "errorprone"(catalog.findLibrary("nullaway").get())
         "implementation"(catalog.findLibrary("jspecify").get())
+        "implementation"(catalog.findLibrary("eclipse-collections").get())
 
         "testImplementation"(platform(catalog.findLibrary("junit-bom").get()))
         "testImplementation"(catalog.findLibrary("junit-jupiter").get())
