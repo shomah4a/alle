@@ -17,8 +17,8 @@ Lanternaを採用する。全画面ターミナル制御に適しており、Jav
 
 ### モジュール構成
 
-`alle-tui`を新規モジュールとして作成し、`alle-core`に依存させる。
-TUI固有のコード（Lanternaとの統合、画面描画、キー入力変換）をコアから分離する。
+- `alle-tui` — TUI固有のコード（Lanternaとの統合、画面描画、キー入力変換）。`alle-core`に依存
+- `alle-app` — アプリケーションエントリポイント。`alle-core`と`alle-tui`に依存。将来GUI等の別フロントエンドに切り替える場合を考慮し、Mainクラスはここに配置する
 
 ### 描画とCommandLoopの統合
 
