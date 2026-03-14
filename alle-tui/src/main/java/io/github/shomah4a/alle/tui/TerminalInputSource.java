@@ -30,17 +30,22 @@ public class TerminalInputSource implements InputSource {
 
     @Override
     public Optional<KeyStroke> readKeyStroke() {
-        if (shutdownRequested) {
-            return Optional.empty();
-        }
-        try {
-            var lanternaKeyStroke = screen.readInput();
-            if (lanternaKeyStroke == null) {
-                return Optional.empty();
+        while (!shutdownRequested) {
+            try {
+                var lanternaKeyStroke = screen.readInput();
+                if (lanternaKeyStroke == null
+                        || lanternaKeyStroke.getKeyType() == com.googlecode.lanterna.input.KeyType.EOF) {
+                    return Optional.empty();
+                }
+                var converted = KeyStrokeConverter.convert(lanternaKeyStroke);
+                if (converted.isPresent()) {
+                    return converted;
+                }
+                // 未対応キーはスキップして次のキーを読む
+            } catch (IOException e) {
+                throw new UncheckedIOException("キー入力の読み取りに失敗しました", e);
             }
-            return KeyStrokeConverter.convert(lanternaKeyStroke);
-        } catch (IOException e) {
-            throw new UncheckedIOException("キー入力の読み取りに失敗しました", e);
         }
+        return Optional.empty();
     }
 }
