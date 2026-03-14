@@ -258,4 +258,70 @@ class GapModelTest {
             assertEquals(6, model.length());
         }
     }
+
+    @Nested
+    class サロゲートペアを含む文字列 {
+
+        @Test
+        void 絵文字を含む文字列を挿入して取得できる() {
+            var model = new GapModel();
+            model.insert(0, "A😀B");
+            // 😀はサロゲートペア(2 char)なので長さは4
+            assertEquals(4, model.length());
+            assertEquals("A😀B", model.toString());
+        }
+
+        @Test
+        void 絵文字の前後に挿入しても文字列が壊れない() {
+            var model = new GapModel();
+            model.insert(0, "😀");
+            model.insert(0, "X");
+            model.insert(3, "Y");
+            assertEquals("X😀Y", model.toString());
+        }
+
+        @Test
+        void 絵文字全体をchar単位で削除できる() {
+            var model = new GapModel();
+            model.insert(0, "A😀B");
+            // 😀は位置1から2char
+            model.delete(1, 2);
+            assertEquals("AB", model.toString());
+        }
+
+        @Test
+        void 絵文字を含む部分文字列を取得できる() {
+            var model = new GapModel();
+            model.insert(0, "A😀B😃C");
+            // 😀は位置1-2、Bは位置3、😃は位置4-5
+            assertEquals("😀B😃", model.substring(1, 6));
+        }
+
+        @Test
+        void 複数の絵文字を連続して扱える() {
+            var model = new GapModel();
+            model.insert(0, "😀😃😄");
+            assertEquals(6, model.length());
+            assertEquals("😀😃😄", model.toString());
+        }
+
+        @Test
+        void CJK拡張漢字のサロゲートペアを扱える() {
+            // 𩸽(ほっけ) U+29E3D
+            var hokke = "\uD867\uDE3D";
+            var model = new GapModel();
+            model.insert(0, "魚は" + hokke + "が好き");
+            assertEquals(7, model.length()); // 魚(1) は(1) 𩸽(2) が(1) 好(1) き(1) = 7 char
+            assertEquals("魚は" + hokke + "が好き", model.toString());
+        }
+
+        @Test
+        void ZWJシーケンスの絵文字を扱える() {
+            // 👨‍👩‍👧 = U+1F468 U+200D U+1F469 U+200D U+1F467
+            var family = "👨\u200D👩\u200D👧";
+            var model = new GapModel();
+            model.insert(0, "A" + family + "B");
+            assertEquals("A" + family + "B", model.toString());
+        }
+    }
 }
