@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.command.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
 import io.github.shomah4a.alle.core.command.CommandLoop;
+import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.DeleteCharCommand;
 import io.github.shomah4a.alle.core.command.EndOfLineCommand;
 import io.github.shomah4a.alle.core.command.ForwardCharCommand;
@@ -55,7 +56,8 @@ public final class Main {
         bufferManager.add(buffer);
 
         var inputSource = new TerminalInputSource(screen);
-        var keymap = createKeymap(inputSource);
+        var registry = createCommandRegistry(inputSource);
+        var keymap = createKeymap(registry);
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
 
@@ -74,20 +76,35 @@ public final class Main {
         }
     }
 
-    private static Keymap createKeymap(TerminalInputSource inputSource) {
+    private static CommandRegistry createCommandRegistry(TerminalInputSource inputSource) {
+        var registry = new CommandRegistry();
+        registry.register(new SelfInsertCommand());
+        registry.register(new ForwardCharCommand());
+        registry.register(new BackwardCharCommand());
+        registry.register(new BeginningOfLineCommand());
+        registry.register(new EndOfLineCommand());
+        registry.register(new DeleteCharCommand());
+        registry.register(new KillLineCommand());
+        registry.register(new BackwardDeleteCharCommand());
+        registry.register(new NewlineCommand());
+        registry.register(new QuitCommand(inputSource));
+        return registry;
+    }
+
+    private static Keymap createKeymap(CommandRegistry registry) {
         var keymap = new Keymap("global");
 
-        keymap.setDefaultCommand(new SelfInsertCommand());
+        keymap.setDefaultCommand(registry.lookup("self-insert-command").orElseThrow());
 
-        keymap.bind(KeyStroke.ctrl('f'), new ForwardCharCommand());
-        keymap.bind(KeyStroke.ctrl('b'), new BackwardCharCommand());
-        keymap.bind(KeyStroke.ctrl('a'), new BeginningOfLineCommand());
-        keymap.bind(KeyStroke.ctrl('e'), new EndOfLineCommand());
-        keymap.bind(KeyStroke.ctrl('d'), new DeleteCharCommand());
-        keymap.bind(KeyStroke.ctrl('k'), new KillLineCommand());
-        keymap.bind(KeyStroke.of(0x7F), new BackwardDeleteCharCommand());
-        keymap.bind(KeyStroke.of('\n'), new NewlineCommand());
-        keymap.bind(KeyStroke.ctrl('q'), new QuitCommand(inputSource));
+        keymap.bind(KeyStroke.ctrl('f'), registry.lookup("forward-char").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('b'), registry.lookup("backward-char").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('a'), registry.lookup("beginning-of-line").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('e'), registry.lookup("end-of-line").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('d'), registry.lookup("delete-char").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('k'), registry.lookup("kill-line").orElseThrow());
+        keymap.bind(KeyStroke.of(0x7F), registry.lookup("backward-delete-char").orElseThrow());
+        keymap.bind(KeyStroke.of('\n'), registry.lookup("newline").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('q'), registry.lookup("quit").orElseThrow());
 
         return keymap;
     }
