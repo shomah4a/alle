@@ -36,10 +36,13 @@ class CommandLoopTest {
     class 印字可能文字の入力 {
 
         @Test
-        void キーマップ未マッチの印字可能文字がself_insertされる() {
+        void キーマップにバインドされた印字可能文字がself_insertされる() {
             var frame = createFrame();
             var bufferManager = new BufferManager();
+            var keymap = new Keymap("global");
+            keymap.bindPrintableAscii(new SelfInsertCommand());
             var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('H'), KeyStroke.of('i')));
 
             var loop = new CommandLoop(input, resolver, frame, bufferManager);
@@ -49,17 +52,16 @@ class CommandLoopTest {
         }
 
         @Test
-        void 絵文字がself_insertされる() {
+        void キーマップ未バインドの印字可能文字は挿入されない() {
             var frame = createFrame();
             var bufferManager = new BufferManager();
             var resolver = new KeyResolver();
-            int emoji = "😀".codePointAt(0);
-            var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of(emoji)));
+            var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('H'), KeyStroke.of('i')));
 
             var loop = new CommandLoop(input, resolver, frame, bufferManager);
             loop.run();
 
-            assertEquals("😀", frame.getActiveWindow().getBuffer().getText());
+            assertEquals("", frame.getActiveWindow().getBuffer().getText());
         }
     }
 
@@ -136,7 +138,22 @@ class CommandLoopTest {
     class processKey {
 
         @Test
-        void 単一キーを処理できる() {
+        void バインド済みの単一キーを処理できる() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+            var keymap = new Keymap("global");
+            keymap.bindPrintableAscii(new SelfInsertCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.of('A'));
+
+            assertEquals("A", frame.getActiveWindow().getBuffer().getText());
+        }
+
+        @Test
+        void 未バインドのキーは無視される() {
             var frame = createFrame();
             var bufferManager = new BufferManager();
             var resolver = new KeyResolver();
@@ -144,7 +161,7 @@ class CommandLoopTest {
             var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager);
             loop.processKey(KeyStroke.of('A'));
 
-            assertEquals("A", frame.getActiveWindow().getBuffer().getText());
+            assertEquals("", frame.getActiveWindow().getBuffer().getText());
         }
     }
 }

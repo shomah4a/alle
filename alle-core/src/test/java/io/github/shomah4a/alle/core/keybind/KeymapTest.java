@@ -70,6 +70,32 @@ class KeymapTest {
     }
 
     @Nested
+    class 印字可能文字の一括バインド {
+
+        @Test
+        void ASCII印字可能文字がバインドされる() {
+            var keymap = new Keymap("global");
+            var cmd = dummyCommand("self-insert-command");
+            keymap.bindPrintableAscii(cmd);
+
+            assertTrue(keymap.lookup(KeyStroke.of('a')).isPresent());
+            assertTrue(keymap.lookup(KeyStroke.of('Z')).isPresent());
+            assertTrue(keymap.lookup(KeyStroke.of(' ')).isPresent());
+            assertTrue(keymap.lookup(KeyStroke.of('~')).isPresent());
+        }
+
+        @Test
+        void 制御文字はバインドされない() {
+            var keymap = new Keymap("global");
+            var cmd = dummyCommand("self-insert-command");
+            keymap.bindPrintableAscii(cmd);
+
+            assertTrue(keymap.lookup(KeyStroke.of(0x1F)).isEmpty());
+            assertTrue(keymap.lookup(KeyStroke.of(0x7F)).isEmpty());
+        }
+    }
+
+    @Nested
     class 名前 {
 
         @Test

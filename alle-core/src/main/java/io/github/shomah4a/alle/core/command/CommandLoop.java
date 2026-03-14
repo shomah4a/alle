@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * キー入力→コマンド解決→コマンド実行のメインループ。
  * InputSourceからキーを読み、KeyResolverでコマンドを解決し、実行する。
- * キーマップに未マッチかつ印字可能文字の場合、self-insert-commandを実行する。
+ * キーマップに未マッチのキーは無視される。
  */
 public class CommandLoop {
 
@@ -20,14 +20,12 @@ public class CommandLoop {
     private final KeyResolver keyResolver;
     private final Frame frame;
     private final BufferManager bufferManager;
-    private final SelfInsertCommand selfInsertCommand;
 
     public CommandLoop(InputSource inputSource, KeyResolver keyResolver, Frame frame, BufferManager bufferManager) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
         this.bufferManager = bufferManager;
-        this.selfInsertCommand = new SelfInsertCommand();
     }
 
     /**
@@ -51,8 +49,6 @@ public class CommandLoop {
         var entryOpt = keyResolver.resolve(keyStroke);
         if (entryOpt.isPresent()) {
             handleEntry(entryOpt.get(), keyStroke);
-        } else {
-            handleUnbound(keyStroke);
         }
     }
 
@@ -76,20 +72,5 @@ public class CommandLoop {
         if (entryOpt.isPresent()) {
             handleEntry(entryOpt.get(), nextKey);
         }
-    }
-
-    private void handleUnbound(KeyStroke keyStroke) {
-        if (isPrintable(keyStroke)) {
-            var context = new CommandContext(frame, bufferManager, Optional.of(keyStroke));
-            selfInsertCommand.execute(context);
-        }
-    }
-
-    private static boolean isPrintable(KeyStroke keyStroke) {
-        if (!keyStroke.modifiers().isEmpty()) {
-            return false;
-        }
-        int codePoint = keyStroke.keyCode();
-        return Character.isValidCodePoint(codePoint) && Character.getType(codePoint) != Character.CONTROL;
     }
 }

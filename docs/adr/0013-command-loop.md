@@ -48,7 +48,8 @@ public interface InputSource {
 - InputSourceがemptyを返すとループ終了
 - 1ステップを独立メソッドとして抽出し、テスタビリティを確保
 - プレフィックスキー（C-x C-s等）に対応：PrefixBindingの場合は次のキー入力を待ち、子Keymapで解決
-- キーマップに未マッチかつ印字可能文字の場合、self-insert-commandを実行
+- キーマップに未マッチのキーは無視される（暗黙のself-insertは行わない）
+- self-insert-commandは明示的にキーマップでバインドする（Keymap.bindPrintableAscii()で一括バインド可能）
 
 ## パッケージ構成
 

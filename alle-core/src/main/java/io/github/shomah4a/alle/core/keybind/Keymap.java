@@ -38,6 +38,15 @@ public class Keymap {
     }
 
     /**
+     * ASCII印字可能文字(0x20~0x7E)に対して指定コマンドを一括バインドする。
+     */
+    public void bindPrintableAscii(Command command) {
+        for (int codePoint = 0x20; codePoint <= 0x7E; codePoint++) {
+            bindings.put(KeyStroke.of(codePoint), new KeymapEntry.CommandBinding(command));
+        }
+    }
+
+    /**
      * キーストロークに対応するエントリを返す。
      */
     public Optional<KeymapEntry> lookup(KeyStroke keyStroke) {
