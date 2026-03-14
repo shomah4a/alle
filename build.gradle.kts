@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.shomah4a.allei"
+    group = "io.github.shomah4a.alle"
     version = "0.1.0-SNAPSHOT"
 
     repositories {

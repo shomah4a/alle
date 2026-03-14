@@ -1,4 +1,4 @@
-rootProject.name = "allei"
+rootProject.name = "alle"
 
 include("libs:gap-buffer")
-include("allei-core")
+include("alle-core")
