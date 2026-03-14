@@ -54,7 +54,7 @@ subprojects {
         java {
             importOrder()
             removeUnusedImports()
-            palantirJavaFormat()
+            palantirJavaFormat("2.89.0")
         }
     }
 

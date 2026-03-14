@@ -68,21 +68,37 @@ public class Buffer {
     }
 
     /**
-     * 指定位置に文字列を挿入する。
+     * 指定位置に文字列を挿入し、逆操作（Delete）を返す。
      *
      * @throws IndexOutOfBoundsException indexが範囲外の場合
      */
-    public void insertText(int index, String text) {
+    public TextChange insertText(int index, String text) {
         textModel.insert(index, text);
+        return new TextChange.Delete(index, text);
     }
 
     /**
-     * 指定位置から指定コードポイント数を削除する。
+     * 指定位置から指定コードポイント数を削除し、逆操作（Insert）を返す。
      *
      * @throws IndexOutOfBoundsException 範囲が不正な場合
      */
-    public void deleteText(int index, int count) {
+    public TextChange deleteText(int index, int count) {
+        String deleted = textModel.substring(index, index + count);
         textModel.delete(index, count);
+        return new TextChange.Insert(index, deleted);
+    }
+
+    /**
+     * TextChangeを適用し、逆操作を返す。
+     */
+    public TextChange apply(TextChange change) {
+        return switch (change) {
+            case TextChange.Insert(var offset, var text) -> insertText(offset, text);
+            case TextChange.Delete(var offset, var text) -> {
+                int count = (int) text.codePoints().count();
+                yield deleteText(offset, count);
+            }
+        };
     }
 
     /**
