@@ -1,4 +1,4 @@
-# ADR-0015: LanternaによるTUI描画層
+# ADR-0016: LanternaによるTUI描画層
 
 ## ステータス
 
