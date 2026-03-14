@@ -44,6 +44,7 @@ subprojects {
         "errorprone"(catalog.findLibrary("nullaway").get())
         "implementation"(catalog.findLibrary("jspecify").get())
         "implementation"(catalog.findLibrary("eclipse-collections").get())
+        "implementation"(catalog.findLibrary("slf4j-api").get())
 
         "testImplementation"(platform(catalog.findLibrary("junit-bom").get()))
         "testImplementation"(catalog.findLibrary("junit-jupiter").get())

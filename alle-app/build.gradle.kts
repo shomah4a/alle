@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":alle-core"))
     implementation(project(":alle-tui"))
     implementation(libs.lanterna)
+    runtimeOnly(libs.logback.classic)
 }
 
 application {
