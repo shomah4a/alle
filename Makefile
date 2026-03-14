@@ -1,7 +1,7 @@
-.PHONY: build test lint fmt run
+.PHONY: build test lint fmt package run
 
 build:
-	./gradlew :alle-app:shadowJar
+	./gradlew build
 
 test:
 	./gradlew test
@@ -12,5 +12,8 @@ lint:
 fmt:
 	./gradlew spotlessApply
 
-run: build
+package:
+	./gradlew :alle-app:shadowJar
+
+run: package
 	java -jar alle-app/build/libs/alle-app-*-all.jar
