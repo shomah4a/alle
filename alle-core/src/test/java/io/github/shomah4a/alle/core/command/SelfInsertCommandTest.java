@@ -8,7 +8,6 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
-import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +20,7 @@ class SelfInsertCommandTest {
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
-        return new CommandContext(frame, bufferManager, Optional.of(triggeringKey));
+        return TestCommandContextFactory.create(frame, bufferManager, triggeringKey);
     }
 
     @Nested
@@ -78,7 +77,7 @@ class SelfInsertCommandTest {
             var window = new Window(buffer);
             var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
             var frame = new Frame(window, minibuffer);
-            var context = new CommandContext(frame, new BufferManager());
+            var context = TestCommandContextFactory.create(frame, new BufferManager());
             var cmd = new SelfInsertCommand();
 
             cmd.execute(context);

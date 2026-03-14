@@ -23,7 +23,7 @@ class CursorCommandTest {
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
-        return new CommandContext(frame, bufferManager);
+        return TestCommandContextFactory.create(frame, bufferManager);
     }
 
     @Nested

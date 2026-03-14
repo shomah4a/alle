@@ -21,7 +21,7 @@ class DeleteCharCommandTest {
             window.insert(text);
         }
         window.setPoint(point);
-        return new CommandContext(frame, new BufferManager());
+        return TestCommandContextFactory.create(frame, new BufferManager());
     }
 
     @Nested

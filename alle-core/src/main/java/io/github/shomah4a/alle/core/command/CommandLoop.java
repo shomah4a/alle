@@ -20,6 +20,7 @@ public class CommandLoop {
     private final KeyResolver keyResolver;
     private final Frame frame;
     private final BufferManager bufferManager;
+    private Optional<String> lastCommand = Optional.empty();
 
     public CommandLoop(InputSource inputSource, KeyResolver keyResolver, Frame frame, BufferManager bufferManager) {
         this.inputSource = inputSource;
@@ -55,8 +56,11 @@ public class CommandLoop {
     private void handleEntry(KeymapEntry entry, KeyStroke keyStroke) {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
-                var context = new CommandContext(frame, bufferManager, Optional.of(keyStroke));
+                var thisCommand = Optional.of(command.name());
+                var context =
+                        new CommandContext(frame, bufferManager, Optional.of(keyStroke), thisCommand, lastCommand);
                 command.execute(context);
+                lastCommand = thisCommand;
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> handlePrefix(prefixKeymap);
         }

@@ -10,13 +10,11 @@ import java.util.Optional;
  * 編集操作はframe経由のactiveWindowを通じて行い、
  * バッファの作成・削除・一覧取得はbufferManagerを通じて行う。
  * triggeringKeyはコマンドを発動したキーストローク（プログラム的呼び出し時はempty）。
+ * thisCommandは現在実行中のコマンド名、lastCommandは直前に実行されたコマンド名。
  */
-public record CommandContext(Frame frame, BufferManager bufferManager, Optional<KeyStroke> triggeringKey) {
-
-    /**
-     * triggeringKeyなしのコンテキストを生成する。
-     */
-    public CommandContext(Frame frame, BufferManager bufferManager) {
-        this(frame, bufferManager, Optional.empty());
-    }
-}
+public record CommandContext(
+        Frame frame,
+        BufferManager bufferManager,
+        Optional<KeyStroke> triggeringKey,
+        Optional<String> thisCommand,
+        Optional<String> lastCommand) {}
