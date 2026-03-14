@@ -1,0 +1,66 @@
+package io.github.shomah4a.alle.core.command;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.Window;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+class NewlineCommandTest {
+
+    private CommandContext createContext(String text, int point) {
+        var buffer = new Buffer("test", new GapTextModel());
+        var window = new Window(buffer);
+        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var frame = new Frame(window, minibuffer);
+        if (!text.isEmpty()) {
+            window.insert(text);
+        }
+        window.setPoint(point);
+        return new CommandContext(frame, new BufferManager());
+    }
+
+    @Nested
+    class 改行挿入 {
+
+        @Test
+        void カーソル位置に改行を挿入する() {
+            var context = createContext("HelloWorld", 5);
+            new NewlineCommand().execute(context);
+            assertEquals(
+                    "Hello\nWorld",
+                    context.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(6, context.frame().getActiveWindow().getPoint());
+        }
+
+        @Test
+        void 先頭に改行を挿入する() {
+            var context = createContext("Hello", 0);
+            new NewlineCommand().execute(context);
+            assertEquals(
+                    "\nHello", context.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(1, context.frame().getActiveWindow().getPoint());
+        }
+
+        @Test
+        void 末尾に改行を挿入する() {
+            var context = createContext("Hello", 5);
+            new NewlineCommand().execute(context);
+            assertEquals(
+                    "Hello\n", context.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(6, context.frame().getActiveWindow().getPoint());
+        }
+
+        @Test
+        void 空バッファに改行を挿入する() {
+            var context = createContext("", 0);
+            new NewlineCommand().execute(context);
+            assertEquals("\n", context.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(1, context.frame().getActiveWindow().getPoint());
+        }
+    }
+}
