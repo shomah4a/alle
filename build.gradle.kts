@@ -59,7 +59,7 @@ subprojects {
     }
 
     configure<net.ltgt.gradle.nullaway.NullAwayExtension> {
-        onlyNullMarked = true
+        annotatedPackages.add("io.github.shomah4a.alle")
     }
 
     tasks.withType<Test> {

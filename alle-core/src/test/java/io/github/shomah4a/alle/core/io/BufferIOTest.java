@@ -10,6 +10,7 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -91,7 +92,9 @@ class BufferIOTest {
 
             io.save(buffer, LineEnding.LF);
 
-            assertEquals("Hello\nWorld\nFoo", writerStorage.get("/tmp/test.txt").toString());
+            assertEquals(
+                    "Hello\nWorld\nFoo",
+                    Objects.requireNonNull(writerStorage.get("/tmp/test.txt")).toString());
             assertFalse(buffer.isDirty());
         }
 
@@ -103,7 +106,9 @@ class BufferIOTest {
 
             io.save(result.buffer(), LineEnding.CRLF);
 
-            assertEquals("Hello\r\nWorld", writerStorage.get("/tmp/test.txt").toString());
+            assertEquals(
+                    "Hello\r\nWorld",
+                    Objects.requireNonNull(writerStorage.get("/tmp/test.txt")).toString());
         }
 
         @Test

@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.buffer;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * エディタのバッファ。
@@ -13,7 +14,7 @@ public class Buffer {
 
     private final String name;
     private final TextModel textModel;
-    private Path filePath;
+    private @Nullable Path filePath;
     private boolean dirty;
 
     public Buffer(String name, TextModel textModel) {
