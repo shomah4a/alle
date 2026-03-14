@@ -62,9 +62,6 @@ public class ScreenRenderer {
             }
 
             screen.setCharacter(col, row, TextCharacter.fromString(ch)[0]);
-            if (displayWidth == 2 && col + 1 < maxColumns) {
-                screen.setCharacter(col + 1, row, TextCharacter.fromString(" ")[0]);
-            }
 
             col += displayWidth;
             offset += charCount;
