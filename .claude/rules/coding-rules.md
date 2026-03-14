@@ -1,6 +1,7 @@
 ## collectionの扱い
 
-Eclipse Collections を使うこと。
+java.util のコレクションクラス類は使わずに Eclipse Collections を使うこと。
+java.util のコレクションはmutabilityが型レベルでチェックできないので使用してはいけない。
 
 クラスのフィールドやメソッドのローカル変数では Mutable Collection を使うこと。
 返り値などでは Immutable なインターフェイスを返す。
