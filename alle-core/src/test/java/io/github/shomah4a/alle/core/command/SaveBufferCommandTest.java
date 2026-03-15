@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
@@ -20,6 +21,7 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 class SaveBufferCommandTest {
 
+    private final DirectoryLister stubLister = directory -> Lists.immutable.empty();
     private Frame frame;
     private BufferManager bufferManager;
     private final MutableMap<String, StringWriter> writerStorage = Maps.mutable.empty();
@@ -69,7 +72,7 @@ class SaveBufferCommandTest {
             buffer.insertText(0, "Hello\nWorld");
             buffer.markDirty();
 
-            var cmd = new SaveBufferCommand(bufferIO);
+            var cmd = new SaveBufferCommand(bufferIO, stubLister);
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -87,7 +90,7 @@ class SaveBufferCommandTest {
             buffer.markDirty();
             assertTrue(buffer.isDirty());
 
-            var cmd = new SaveBufferCommand(bufferIO);
+            var cmd = new SaveBufferCommand(bufferIO, stubLister);
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -102,7 +105,7 @@ class SaveBufferCommandTest {
             buffer.setLineEnding(LineEnding.CRLF);
             buffer.insertText(0, "Hello\nWorld");
 
-            var cmd = new SaveBufferCommand(bufferIO);
+            var cmd = new SaveBufferCommand(bufferIO, stubLister);
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -121,7 +124,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "New file content");
 
-            var cmd = new SaveBufferCommand(bufferIO);
+            var cmd = new SaveBufferCommand(bufferIO, stubLister);
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
 
             cmd.execute(context).join();
@@ -137,7 +140,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "Content");
 
-            var cmd = new SaveBufferCommand(bufferIO);
+            var cmd = new SaveBufferCommand(bufferIO, stubLister);
             var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
 
             cmd.execute(context).join();
@@ -151,7 +154,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "Content");
 
-            var cmd = new SaveBufferCommand(bufferIO);
+            var cmd = new SaveBufferCommand(bufferIO, stubLister);
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();

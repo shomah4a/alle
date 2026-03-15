@@ -16,4 +16,16 @@ public interface InputPrompter {
      * @return 入力結果
      */
     CompletableFuture<PromptResult> prompt(String message);
+
+    /**
+     * 補完機能付きでプロンプトを表示する。
+     * Tabキーで補完候補に基づく補完が行われる。
+     *
+     * @param message   プロンプトメッセージ
+     * @param completer 補完候補プロバイダ
+     * @return 入力結果
+     */
+    default CompletableFuture<PromptResult> prompt(String message, Completer completer) {
+        return prompt(message);
+    }
 }

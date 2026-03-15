@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,7 +24,8 @@ public class SwitchBufferCommand implements Command {
         var promptMessage =
                 defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
 
-        return context.inputPrompter().prompt(promptMessage).thenAccept(result -> {
+        var completer = new BufferNameCompleter(context.bufferManager());
+        return context.inputPrompter().prompt(promptMessage, completer).thenAccept(result -> {
             if (result instanceof PromptResult.Confirmed confirmed) {
                 var input = confirmed.value();
                 var bufferName = input.isEmpty() ? defaultName : input;

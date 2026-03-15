@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -21,9 +23,11 @@ public class FindFileCommand implements Command {
     private static final Logger logger = Logger.getLogger(FindFileCommand.class.getName());
 
     private final BufferIO bufferIO;
+    private final DirectoryLister directoryLister;
 
-    public FindFileCommand(BufferIO bufferIO) {
+    public FindFileCommand(BufferIO bufferIO, DirectoryLister directoryLister) {
         this.bufferIO = bufferIO;
+        this.directoryLister = directoryLister;
     }
 
     @Override
@@ -33,7 +37,8 @@ public class FindFileCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.inputPrompter().prompt("Find file: ").thenAccept(result -> {
+        var completer = new FilePathCompleter(directoryLister);
+        return context.inputPrompter().prompt("Find file: ", completer).thenAccept(result -> {
             if (result instanceof PromptResult.Confirmed confirmed) {
                 openFile(context, confirmed.value());
             }

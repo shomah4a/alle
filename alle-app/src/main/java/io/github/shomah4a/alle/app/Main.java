@@ -23,6 +23,7 @@ import io.github.shomah4a.alle.core.command.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
+import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * Alleエディタのエントリポイント。
@@ -76,7 +78,8 @@ public final class Main {
                 source -> new BufferedReader(Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8)),
                 destination ->
                         new BufferedWriter(Files.newBufferedWriter(Path.of(destination), StandardCharsets.UTF_8)));
-        var registry = createCommandRegistry(inputSource, bufferIO);
+        DirectoryLister directoryLister = Main::listDirectory;
+        var registry = createCommandRegistry(inputSource, bufferIO, directoryLister);
         var keymap = createKeymap(registry);
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
@@ -97,7 +100,8 @@ public final class Main {
         }
     }
 
-    private static CommandRegistry createCommandRegistry(TerminalInputSource inputSource, BufferIO bufferIO) {
+    private static CommandRegistry createCommandRegistry(
+            TerminalInputSource inputSource, BufferIO bufferIO, DirectoryLister directoryLister) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -111,8 +115,8 @@ public final class Main {
         registry.register(new NextLineCommand());
         registry.register(new PreviousLineCommand());
         registry.register(new QuitCommand(inputSource));
-        registry.register(new FindFileCommand(bufferIO));
-        registry.register(new SaveBufferCommand(bufferIO));
+        registry.register(new FindFileCommand(bufferIO, directoryLister));
+        registry.register(new SaveBufferCommand(bufferIO, directoryLister));
         registry.register(new SwitchBufferCommand());
         registry.register(new OtherWindowCommand());
         return registry;
@@ -158,6 +162,21 @@ public final class Main {
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         return keymap;
+    }
+
+    private static ListIterable<String> listDirectory(Path directory) throws IOException {
+        var entries = org.eclipse.collections.api.factory.Lists.mutable.<String>empty();
+        try (var stream = Files.list(directory)) {
+            stream.forEach(entry -> {
+                String name = entry.toString();
+                if (Files.isDirectory(entry)) {
+                    entries.add(name + "/");
+                } else {
+                    entries.add(name);
+                }
+            });
+        }
+        return entries;
     }
 
     private static void disableFlowControl() throws IOException {

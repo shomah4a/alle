@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import java.io.IOException;
@@ -19,9 +21,11 @@ public class SaveBufferCommand implements Command {
     private static final Logger logger = Logger.getLogger(SaveBufferCommand.class.getName());
 
     private final BufferIO bufferIO;
+    private final DirectoryLister directoryLister;
 
-    public SaveBufferCommand(BufferIO bufferIO) {
+    public SaveBufferCommand(BufferIO bufferIO, DirectoryLister directoryLister) {
         this.bufferIO = bufferIO;
+        this.directoryLister = directoryLister;
     }
 
     @Override
@@ -39,7 +43,8 @@ public class SaveBufferCommand implements Command {
         }
 
         // ファイルパス未設定の場合はプロンプトで入力を求める
-        return context.inputPrompter().prompt("Save file: ").thenAccept(result -> {
+        var completer = new FilePathCompleter(directoryLister);
+        return context.inputPrompter().prompt("Save file: ", completer).thenAccept(result -> {
             if (result instanceof PromptResult.Confirmed confirmed) {
                 String pathString = confirmed.value();
                 if (!pathString.isEmpty()) {

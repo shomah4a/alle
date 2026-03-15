@@ -3,6 +3,8 @@ package io.github.shomah4a.alle.tui;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
+import io.github.shomah4a.alle.core.input.Completer;
+import io.github.shomah4a.alle.core.input.CompletionResult;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -31,6 +33,15 @@ public class MinibufferInputPrompter implements InputPrompter {
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message) {
+        return promptInternal(message, null);
+    }
+
+    @Override
+    public CompletableFuture<PromptResult> prompt(String message, Completer completer) {
+        return promptInternal(message, completer);
+    }
+
+    private CompletableFuture<PromptResult> promptInternal(String message, @Nullable Completer completer) {
         if (activeFuture != null && !activeFuture.isDone()) {
             logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
             return CompletableFuture.completedFuture(new PromptResult.Cancelled());
@@ -51,7 +62,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         minibufferWindow.setPoint(promptLength);
 
         // ミニバッファ用キーマップを作成
-        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength);
+        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, completer);
         minibuffer.setLocalKeymap(keymap);
 
         // ミニバッファを有効化
@@ -61,7 +72,10 @@ public class MinibufferInputPrompter implements InputPrompter {
     }
 
     private Keymap createMinibufferKeymap(
-            CompletableFuture<PromptResult> future, Window previousActiveWindow, int promptLength) {
+            CompletableFuture<PromptResult> future,
+            Window previousActiveWindow,
+            int promptLength,
+            @Nullable Completer completer) {
         var keymap = new Keymap("minibuffer");
 
         // 通常文字入力
@@ -72,6 +86,11 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         // C-g: キャンセル
         keymap.bind(KeyStroke.ctrl('g'), new MinibufferCancelCommand(future, previousActiveWindow));
+
+        // Tab: 補完（Completerが提供されている場合のみ）
+        if (completer != null) {
+            keymap.bind(KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength));
+        }
 
         return keymap;
     }
@@ -124,6 +143,46 @@ public class MinibufferInputPrompter implements InputPrompter {
 
             cleanup(previousActiveWindow);
             future.complete(new PromptResult.Confirmed(userInput));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private class MinibufferCompleteCommand implements Command {
+
+        private final Completer completer;
+        private final int promptLength;
+
+        MinibufferCompleteCommand(Completer completer, int promptLength) {
+            this.completer = completer;
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "minibuffer-complete";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            var minibufferWindow = frame.getMinibufferWindow();
+            var minibuffer = minibufferWindow.getBuffer();
+            String fullText = minibuffer.getText();
+            int fullLength = (int) fullText.codePoints().count();
+            String userInput = fullLength > promptLength ? minibuffer.substring(promptLength, fullLength) : "";
+
+            var candidates = completer.complete(userInput);
+            String completed = CompletionResult.resolve(userInput, candidates);
+
+            if (!completed.equals(userInput)) {
+                // 入力部分を置換
+                if (fullLength > promptLength) {
+                    minibuffer.deleteText(promptLength, fullLength - promptLength);
+                }
+                minibuffer.insertText(promptLength, completed);
+                int newLength = (int) completed.codePoints().count();
+                minibufferWindow.setPoint(promptLength + newLength);
+            }
+
             return CompletableFuture.completedFuture(null);
         }
     }
