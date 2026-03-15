@@ -15,7 +15,6 @@ public class DeleteCharCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        context.frame().getActiveWindow().deleteForward(1);
-        return CompletableFuture.completedFuture(null);
+        return context.activeWindowActor().deleteForward(1);
     }
 }

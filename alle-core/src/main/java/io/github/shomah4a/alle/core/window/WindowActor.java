@@ -18,63 +18,63 @@ public class WindowActor {
     }
 
     /**
-     * 任意の操作をウィンドウに対して実行する。
-     * 将来的にはキュー経由で逐次実行される。
+     * 複数の操作をアトミックに実行する。
+     * 将来的にはキュー経由で1つのメッセージとして逐次実行される。
      */
-    private <T> CompletableFuture<T> send(Function<Window, T> operation) {
+    public <T> CompletableFuture<T> atomicPerform(Function<Window, T> operation) {
         T result = operation.apply(window);
         return CompletableFuture.completedFuture(result);
     }
 
     public CompletableFuture<Buffer> getBuffer() {
-        return send(Window::getBuffer);
+        return atomicPerform(Window::getBuffer);
     }
 
     public CompletableFuture<Void> setBuffer(Buffer buffer) {
-        return send(w -> {
+        return atomicPerform(w -> {
             w.setBuffer(buffer);
             return null;
         });
     }
 
     public CompletableFuture<Integer> getPoint() {
-        return send(Window::getPoint);
+        return atomicPerform(Window::getPoint);
     }
 
     public CompletableFuture<Void> setPoint(int point) {
-        return send(w -> {
+        return atomicPerform(w -> {
             w.setPoint(point);
             return null;
         });
     }
 
     public CompletableFuture<Integer> getDisplayStartLine() {
-        return send(Window::getDisplayStartLine);
+        return atomicPerform(Window::getDisplayStartLine);
     }
 
     public CompletableFuture<Void> setDisplayStartLine(int line) {
-        return send(w -> {
+        return atomicPerform(w -> {
             w.setDisplayStartLine(line);
             return null;
         });
     }
 
     public CompletableFuture<Void> insert(String text) {
-        return send(w -> {
+        return atomicPerform(w -> {
             w.insert(text);
             return null;
         });
     }
 
     public CompletableFuture<Void> deleteBackward(int count) {
-        return send(w -> {
+        return atomicPerform(w -> {
             w.deleteBackward(count);
             return null;
         });
     }
 
     public CompletableFuture<Void> deleteForward(int count) {
-        return send(w -> {
+        return atomicPerform(w -> {
             w.deleteForward(count);
             return null;
         });

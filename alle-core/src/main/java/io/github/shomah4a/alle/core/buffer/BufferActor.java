@@ -19,85 +19,85 @@ public class BufferActor {
     }
 
     /**
-     * 任意の操作をバッファに対して実行する。
-     * 将来的にはキュー経由で逐次実行される。
+     * 複数の操作をアトミックに実行する。
+     * 将来的にはキュー経由で1つのメッセージとして逐次実行される。
      */
-    private <T> CompletableFuture<T> send(Function<Buffer, T> operation) {
+    public <T> CompletableFuture<T> atomicPerform(Function<Buffer, T> operation) {
         T result = operation.apply(buffer);
         return CompletableFuture.completedFuture(result);
     }
 
     public CompletableFuture<String> getName() {
-        return send(Buffer::getName);
+        return atomicPerform(Buffer::getName);
     }
 
     public CompletableFuture<Optional<Path>> getFilePath() {
-        return send(Buffer::getFilePath);
+        return atomicPerform(Buffer::getFilePath);
     }
 
     public CompletableFuture<Void> setFilePath(Path filePath) {
-        return send(b -> {
+        return atomicPerform(b -> {
             b.setFilePath(filePath);
             return null;
         });
     }
 
     public CompletableFuture<Boolean> isDirty() {
-        return send(Buffer::isDirty);
+        return atomicPerform(Buffer::isDirty);
     }
 
     public CompletableFuture<Void> markDirty() {
-        return send(b -> {
+        return atomicPerform(b -> {
             b.markDirty();
             return null;
         });
     }
 
     public CompletableFuture<Void> markClean() {
-        return send(b -> {
+        return atomicPerform(b -> {
             b.markClean();
             return null;
         });
     }
 
     public CompletableFuture<Integer> length() {
-        return send(Buffer::length);
+        return atomicPerform(Buffer::length);
     }
 
     public CompletableFuture<TextChange> insertText(int index, String text) {
-        return send(b -> b.insertText(index, text));
+        return atomicPerform(b -> b.insertText(index, text));
     }
 
     public CompletableFuture<TextChange> deleteText(int index, int count) {
-        return send(b -> b.deleteText(index, count));
+        return atomicPerform(b -> b.deleteText(index, count));
     }
 
     public CompletableFuture<TextChange> apply(TextChange change) {
-        return send(b -> b.apply(change));
+        return atomicPerform(b -> b.apply(change));
     }
 
     public CompletableFuture<String> substring(int start, int end) {
-        return send(b -> b.substring(start, end));
+        return atomicPerform(b -> b.substring(start, end));
     }
 
     public CompletableFuture<Integer> lineCount() {
-        return send(Buffer::lineCount);
+        return atomicPerform(Buffer::lineCount);
     }
 
     public CompletableFuture<Integer> lineIndexForOffset(int offset) {
-        return send(b -> b.lineIndexForOffset(offset));
+        return atomicPerform(b -> b.lineIndexForOffset(offset));
     }
 
     public CompletableFuture<Integer> lineStartOffset(int lineIndex) {
-        return send(b -> b.lineStartOffset(lineIndex));
+        return atomicPerform(b -> b.lineStartOffset(lineIndex));
     }
 
     public CompletableFuture<String> lineText(int lineIndex) {
-        return send(b -> b.lineText(lineIndex));
+        return atomicPerform(b -> b.lineText(lineIndex));
     }
 
     public CompletableFuture<String> getText() {
-        return send(Buffer::getText);
+        return atomicPerform(Buffer::getText);
     }
 
     /**

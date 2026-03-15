@@ -15,11 +15,12 @@ public class BackwardCharCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var window = context.frame().getActiveWindow();
-        int point = window.getPoint();
-        if (point > 0) {
-            window.setPoint(point - 1);
-        }
-        return CompletableFuture.completedFuture(null);
+        return context.activeWindowActor().atomicPerform(window -> {
+            int point = window.getPoint();
+            if (point > 0) {
+                window.setPoint(point - 1);
+            }
+            return null;
+        });
     }
 }

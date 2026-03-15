@@ -28,8 +28,6 @@ public class SelfInsertCommand implements Command {
         if (!Character.isValidCodePoint(codePoint) || Character.getType(codePoint) == Character.CONTROL) {
             return CompletableFuture.completedFuture(null);
         }
-        var window = context.frame().getActiveWindow();
-        window.insert(Character.toString(codePoint));
-        return CompletableFuture.completedFuture(null);
+        return context.activeWindowActor().insert(Character.toString(codePoint));
     }
 }

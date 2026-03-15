@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 
 /**
@@ -57,8 +58,9 @@ public class CommandLoop {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
-                var context =
-                        new CommandContext(frame, bufferManager, Optional.of(keyStroke), thisCommand, lastCommand);
+                var windowActor = new WindowActor(frame.getActiveWindow());
+                var context = new CommandContext(
+                        frame, bufferManager, windowActor, Optional.of(keyStroke), thisCommand, lastCommand);
                 command.execute(context);
                 lastCommand = thisCommand;
             }

@@ -15,7 +15,6 @@ public class BackwardDeleteCharCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        context.frame().getActiveWindow().deleteBackward(1);
-        return CompletableFuture.completedFuture(null);
+        return context.activeWindowActor().deleteBackward(1);
     }
 }

@@ -6,6 +6,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 
 /**
@@ -19,14 +20,18 @@ final class TestCommandContextFactory {
      * 最小限のコンテキストを生成する。triggeringKey・コマンド履歴なし。
      */
     static CommandContext create(Frame frame, BufferManager bufferManager) {
-        return new CommandContext(frame, bufferManager, Optional.empty(), Optional.empty(), Optional.empty());
+        var windowActor = new WindowActor(frame.getActiveWindow());
+        return new CommandContext(
+                frame, bufferManager, windowActor, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /**
      * triggeringKey付きのコンテキストを生成する。コマンド履歴なし。
      */
     static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
-        return new CommandContext(frame, bufferManager, Optional.of(triggeringKey), Optional.empty(), Optional.empty());
+        var windowActor = new WindowActor(frame.getActiveWindow());
+        return new CommandContext(
+                frame, bufferManager, windowActor, Optional.of(triggeringKey), Optional.empty(), Optional.empty());
     }
 
     /**
