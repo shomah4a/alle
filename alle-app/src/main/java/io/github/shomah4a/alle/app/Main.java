@@ -18,9 +18,11 @@ import io.github.shomah4a.alle.core.command.ForwardCharCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
 import io.github.shomah4a.alle.core.command.NewlineCommand;
 import io.github.shomah4a.alle.core.command.NextLineCommand;
+import io.github.shomah4a.alle.core.command.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
+import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -111,6 +113,8 @@ public final class Main {
         registry.register(new QuitCommand(inputSource));
         registry.register(new FindFileCommand(bufferIO));
         registry.register(new SaveBufferCommand(bufferIO));
+        registry.register(new SwitchBufferCommand());
+        registry.register(new OtherWindowCommand());
         return registry;
     }
 
@@ -149,6 +153,8 @@ public final class Main {
         ctrlXMap.bind(KeyStroke.ctrl('c'), registry.lookup("quit").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('f'), registry.lookup("find-file").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('s'), registry.lookup("save-buffer").orElseThrow());
+        ctrlXMap.bind(KeyStroke.ctrl('o'), registry.lookup("other-window").orElseThrow());
+        ctrlXMap.bind(KeyStroke.ctrl('b'), registry.lookup("switch-to-buffer").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         return keymap;

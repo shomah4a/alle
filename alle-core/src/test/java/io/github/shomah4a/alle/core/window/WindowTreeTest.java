@@ -176,6 +176,56 @@ class WindowTreeTest {
     }
 
     @Nested
+    class windows {
+
+        @Test
+        void 単一ウィンドウのツリーは1要素のリストを返す() {
+            var window = createWindow("a");
+            var tree = new WindowTree.Leaf(window);
+
+            var result = tree.windows();
+
+            assertEquals(1, result.size());
+            assertSame(window, result.get(0));
+        }
+
+        @Test
+        void 二分割のツリーは深さ優先順で2要素のリストを返す() {
+            var windowA = createWindow("a");
+            var windowB = createWindow("b");
+            var tree = new WindowTree.Split(
+                    Direction.VERTICAL, 0.5, new WindowTree.Leaf(windowA), new WindowTree.Leaf(windowB));
+
+            var result = tree.windows();
+
+            assertEquals(2, result.size());
+            assertSame(windowA, result.get(0));
+            assertSame(windowB, result.get(1));
+        }
+
+        @Test
+        void ネストした分割でも深さ優先順で全ウィンドウを返す() {
+            var windowA = createWindow("a");
+            var windowB = createWindow("b");
+            var windowC = createWindow("c");
+            // A | (B / C) の構造
+            var tree = new WindowTree.Split(
+                    Direction.VERTICAL,
+                    0.5,
+                    new WindowTree.Leaf(windowA),
+                    new WindowTree.Split(
+                            Direction.HORIZONTAL, 0.5, new WindowTree.Leaf(windowB), new WindowTree.Leaf(windowC)));
+
+            var result = tree.windows();
+
+            assertEquals(3, result.size());
+            assertSame(windowA, result.get(0));
+            assertSame(windowB, result.get(1));
+            assertSame(windowC, result.get(2));
+        }
+    }
+
+    @Nested
     class contains {
 
         @Test

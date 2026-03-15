@@ -122,6 +122,28 @@ public class Frame {
     }
 
     /**
+     * アクティブウィンドウを次のウィンドウに切り替える。
+     * ウィンドウツリーの深さ優先順で循環する。
+     * ミニバッファアクティブ中でもツリー内のウィンドウに移動する。
+     * ウィンドウが1つしかない場合は何もしない。
+     */
+    public void nextWindow() {
+        var windows = windowTree.windows();
+        if (windows.size() <= 1) {
+            return;
+        }
+        // ミニバッファアクティブ中はactiveWindowがミニバッファなので、
+        // ツリーの最初のウィンドウに移動する
+        if (activeWindow == minibufferWindow) {
+            activeWindow = windows.get(0);
+            return;
+        }
+        int index = windows.indexOf(activeWindow);
+        int nextIndex = (index + 1) % windows.size();
+        activeWindow = windows.get(nextIndex);
+    }
+
+    /**
      * ツリーの最初のLeafに含まれるウィンドウを返す。
      */
     private static Window findFirstWindow(WindowTree tree) {

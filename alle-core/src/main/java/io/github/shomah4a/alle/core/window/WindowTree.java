@@ -1,6 +1,9 @@
 package io.github.shomah4a.alle.core.window;
 
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.MutableList;
 
 /**
  * ウィンドウの分割状態を表すimmutableな木構造。
@@ -84,6 +87,25 @@ public sealed interface WindowTree {
                 yield Optional.empty();
             }
         };
+    }
+
+    /**
+     * ツリーに含まれる全ウィンドウを深さ優先順で返す。
+     */
+    default ImmutableList<Window> windows() {
+        MutableList<Window> result = Lists.mutable.empty();
+        collectWindows(this, result);
+        return result.toImmutable();
+    }
+
+    private static void collectWindows(WindowTree tree, MutableList<Window> result) {
+        switch (tree) {
+            case Leaf leaf -> result.add(leaf.window());
+            case Split split -> {
+                collectWindows(split.first(), result);
+                collectWindows(split.second(), result);
+            }
+        }
     }
 
     /**
