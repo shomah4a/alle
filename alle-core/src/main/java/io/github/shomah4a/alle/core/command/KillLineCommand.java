@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * カーソルから行末まで削除するコマンド。
  * 行末にいる場合は改行文字を削除して次の行と結合する。
@@ -14,14 +16,14 @@ public class KillLineCommand implements Command {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.frame().getActiveWindow();
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int bufferLength = buffer.length();
 
         if (point >= bufferLength) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
         int lineIndex = buffer.lineIndexForOffset(point);
@@ -35,5 +37,6 @@ public class KillLineCommand implements Command {
         } else {
             window.deleteForward(1);
         }
+        return CompletableFuture.completedFuture(null);
     }
 }

@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * トリガーキーのキーコードに対応する文字をカーソル位置に挿入するコマンド。
  * Emacsのself-insert-commandに相当する。
@@ -13,20 +15,21 @@ public class SelfInsertCommand implements Command {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public CompletableFuture<Void> execute(CommandContext context) {
         var keyOpt = context.triggeringKey();
         if (keyOpt.isEmpty()) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         var key = keyOpt.get();
         if (!key.modifiers().isEmpty()) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         int codePoint = key.keyCode();
         if (!Character.isValidCodePoint(codePoint) || Character.getType(codePoint) == Character.CONTROL) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         var window = context.frame().getActiveWindow();
         window.insert(Character.toString(codePoint));
+        return CompletableFuture.completedFuture(null);
     }
 }

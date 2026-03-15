@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * カーソル位置の文字を削除するコマンド。
  * Emacsのdelete-charに相当する。
@@ -12,7 +14,8 @@ public class DeleteCharCommand implements Command {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public CompletableFuture<Void> execute(CommandContext context) {
         context.frame().getActiveWindow().deleteForward(1);
+        return CompletableFuture.completedFuture(null);
     }
 }

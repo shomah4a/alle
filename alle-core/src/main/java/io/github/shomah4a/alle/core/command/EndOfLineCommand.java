@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * カーソルを行末に移動するコマンド。
  * Emacsのend-of-lineに相当する。
@@ -12,7 +14,7 @@ public class EndOfLineCommand implements Command {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.frame().getActiveWindow();
         var buffer = window.getBuffer();
         int point = window.getPoint();
@@ -21,5 +23,6 @@ public class EndOfLineCommand implements Command {
         String lineText = buffer.lineText(lineIndex);
         int lineLength = (int) lineText.codePoints().count();
         window.setPoint(lineStart + lineLength);
+        return CompletableFuture.completedFuture(null);
     }
 }

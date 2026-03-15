@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +20,9 @@ class KeymapTest {
             }
 
             @Override
-            public void execute(CommandContext context) {}
+            public CompletableFuture<Void> execute(CommandContext context) {
+                return CompletableFuture.completedFuture(null);
+            }
         };
     }
 

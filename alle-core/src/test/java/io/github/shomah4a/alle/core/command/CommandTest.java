@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -35,8 +36,9 @@ class CommandTest {
                 }
 
                 @Override
-                public void execute(CommandContext ctx) {
+                public CompletableFuture<Void> execute(CommandContext ctx) {
                     ctx.frame().getActiveWindow().insert("Hello");
+                    return CompletableFuture.completedFuture(null);
                 }
             };
 
@@ -55,7 +57,9 @@ class CommandTest {
                 }
 
                 @Override
-                public void execute(CommandContext ctx) {}
+                public CompletableFuture<Void> execute(CommandContext ctx) {
+                    return CompletableFuture.completedFuture(null);
+                }
             };
 
             assertEquals("noop", noop.name());

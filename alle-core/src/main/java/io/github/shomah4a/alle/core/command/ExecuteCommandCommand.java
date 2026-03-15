@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * コマンドレジストリから名前でコマンドを検索し実行する。
  * Emacsのexecute-extended-command (M-x) に相当する基盤。
@@ -24,16 +26,17 @@ public class ExecuteCommandCommand implements Command {
      *
      * @throws IllegalArgumentException 指定された名前のコマンドが存在しない場合
      */
-    public void executeByName(String commandName, CommandContext context) {
+    public CompletableFuture<Void> executeByName(String commandName, CommandContext context) {
         var command = registry.lookup(commandName);
         if (command.isEmpty()) {
             throw new IllegalArgumentException("コマンド '" + commandName + "' は登録されていません");
         }
-        command.get().execute(context);
+        return command.get().execute(context);
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public CompletableFuture<Void> execute(CommandContext context) {
         // ミニバッファUIが実装されるまでは何もしない
+        return CompletableFuture.completedFuture(null);
     }
 }

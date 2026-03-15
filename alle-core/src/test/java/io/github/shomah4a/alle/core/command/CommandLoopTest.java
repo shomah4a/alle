@@ -14,6 +14,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
@@ -173,8 +174,9 @@ class CommandLoopTest {
             }
 
             @Override
-            public void execute(CommandContext context) {
+            public CompletableFuture<Void> execute(CommandContext context) {
                 capturedContexts.add(context);
+                return CompletableFuture.completedFuture(null);
             }
         }
 

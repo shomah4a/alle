@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.tui;
 
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * エディタを終了するコマンド。
@@ -21,7 +22,8 @@ public class QuitCommand implements Command {
     }
 
     @Override
-    public void execute(CommandContext context) {
+    public CompletableFuture<Void> execute(CommandContext context) {
         inputSource.requestShutdown();
+        return CompletableFuture.completedFuture(null);
     }
 }
