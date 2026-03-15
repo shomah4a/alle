@@ -36,6 +36,7 @@ import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -92,6 +93,8 @@ public final class Main {
                         new BufferedWriter(Files.newBufferedWriter(Path.of(destination), StandardCharsets.UTF_8)));
         DirectoryLister directoryLister = Main::listDirectory;
         var autoModeMap = new AutoModeMap(TextMode::new);
+        autoModeMap.register("md", MarkdownMode::new);
+        autoModeMap.register("markdown", MarkdownMode::new);
         var registry = createCommandRegistry(inputSource, bufferIO, directoryLister, autoModeMap);
         var keymap = createKeymap(registry);
         var resolver = new KeyResolver();

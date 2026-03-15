@@ -6,11 +6,15 @@ import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextCharacter;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
+import io.github.shomah4a.alle.core.highlight.StyledSpan;
+import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowTree;
 import java.io.IOException;
+import java.util.Optional;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
@@ -23,9 +27,11 @@ import org.eclipse.collections.api.set.ImmutableSet;
 public class ScreenRenderer {
 
     private final Screen screen;
+    private final FaceResolver faceResolver;
 
     public ScreenRenderer(Screen screen) {
         this.screen = screen;
+        this.faceResolver = new FaceResolver();
     }
 
     /**
@@ -72,11 +78,17 @@ public class ScreenRenderer {
         var buffer = window.getBuffer();
         int lineCount = buffer.lineCount();
         int displayStart = window.getDisplayStartLine();
+        Optional<SyntaxHighlighter> highlighter = buffer.getMajorMode().highlighter();
 
         for (int row = 0; row < maxRows && displayStart + row < lineCount; row++) {
             int lineIndex = displayStart + row;
             String lineText = buffer.lineText(lineIndex);
-            renderLine(lineText, row, maxColumns);
+            if (highlighter.isPresent()) {
+                var spans = highlighter.get().highlight(lineText);
+                renderLineWithHighlight(lineText, row, maxColumns, spans);
+            } else {
+                renderLine(lineText, row, maxColumns);
+            }
         }
     }
 
@@ -112,6 +124,44 @@ public class ScreenRenderer {
 
     private void renderLine(String lineText, int row, int maxColumns) {
         renderLineAt(lineText, row, maxColumns);
+    }
+
+    private void renderLineWithHighlight(String text, int row, int maxColumns, ListIterable<StyledSpan> spans) {
+        int col = 0;
+        int charOffset = 0;
+        int cpIndex = 0;
+        int spanIdx = 0;
+
+        while (charOffset < text.length() && col < maxColumns) {
+            int codePoint = text.codePointAt(charOffset);
+            int charCount = Character.charCount(codePoint);
+            String ch = text.substring(charOffset, charOffset + charCount);
+
+            int displayWidth = getDisplayWidth(codePoint);
+            if (col + displayWidth > maxColumns) {
+                break;
+            }
+
+            // 現在のコードポイント位置に適用するスパンを探す
+            while (spanIdx < spans.size() && spans.get(spanIdx).end() <= cpIndex) {
+                spanIdx++;
+            }
+
+            TextCharacter tc;
+            if (spanIdx < spans.size()
+                    && spans.get(spanIdx).start() <= cpIndex
+                    && cpIndex < spans.get(spanIdx).end()) {
+                var resolved = faceResolver.resolve(spans.get(spanIdx).face());
+                tc = TextCharacter.fromString(ch, resolved.foreground(), resolved.background(), resolved.sgrs())[0];
+            } else {
+                tc = TextCharacter.fromString(ch)[0];
+            }
+
+            screen.setCharacter(col, row, tc);
+            col += displayWidth;
+            charOffset += charCount;
+            cpIndex++;
+        }
     }
 
     private void renderLineAt(String text, int row, int maxColumns) {
