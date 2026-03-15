@@ -1,12 +1,13 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.input.CommandNameCompleter;
+import io.github.shomah4a.alle.core.input.PromptResult;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * コマンドレジストリから名前でコマンドを検索し実行する。
- * Emacsのexecute-extended-command (M-x) に相当する基盤。
- * 現時点ではプログラム的な呼び出しのみサポートし、
- * ミニバッファUIによるインタラクティブな名前入力は別途実装する。
+ * Emacsのexecute-extended-command (M-x) に相当。
+ * ミニバッファでコマンド名を入力し、Tab補完付きで実行する。
  */
 public class ExecuteCommandCommand implements Command {
 
@@ -36,7 +37,13 @@ public class ExecuteCommandCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        // ミニバッファUIが実装されるまでは何もしない
-        return CompletableFuture.completedFuture(null);
+        var completer = new CommandNameCompleter(registry);
+        return context.inputPrompter().prompt("M-x ", completer).thenCompose(result -> {
+            if (result instanceof PromptResult.Confirmed confirmed
+                    && !confirmed.value().isEmpty()) {
+                return executeByName(confirmed.value(), context);
+            }
+            return CompletableFuture.completedFuture(null);
+        });
     }
 }
