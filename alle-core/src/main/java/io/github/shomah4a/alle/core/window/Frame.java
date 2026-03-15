@@ -12,6 +12,7 @@ public class Frame {
     private WindowTree windowTree;
     private final Window minibufferWindow;
     private Window activeWindow;
+    private boolean minibufferActive;
 
     public Frame(Window initialWindow, Window minibufferWindow) {
         this.windowTree = new WindowTree.Leaf(initialWindow);
@@ -42,15 +43,44 @@ public class Frame {
 
     /**
      * アクティブウィンドウを設定する。
-     * ウィンドウツリーに含まれるウィンドウのみ設定可能。
+     * ウィンドウツリーに含まれるウィンドウ、
+     * またはミニバッファが入力受付中の場合はミニバッファウィンドウを設定可能。
      *
-     * @throws IllegalArgumentException ウィンドウがツリーに含まれない場合
+     * @throws IllegalArgumentException ウィンドウが設定可能な対象でない場合
      */
     public void setActiveWindow(Window window) {
+        if (window == minibufferWindow && minibufferActive) {
+            this.activeWindow = window;
+            return;
+        }
         if (!windowTree.contains(window)) {
             throw new IllegalArgumentException("Window is not in the window tree");
         }
         this.activeWindow = window;
+    }
+
+    /**
+     * ミニバッファが入力受付中かどうかを返す。
+     */
+    public boolean isMinibufferActive() {
+        return minibufferActive;
+    }
+
+    /**
+     * ミニバッファを入力受付状態にし、アクティブウィンドウをミニバッファに切り替える。
+     * 呼び出し前のアクティブウィンドウを記憶しておくのは呼び出し側の責務。
+     */
+    public void activateMinibuffer() {
+        this.minibufferActive = true;
+        this.activeWindow = minibufferWindow;
+    }
+
+    /**
+     * ミニバッファの入力受付状態を解除する。
+     * アクティブウィンドウの復帰は呼び出し側が行う。
+     */
+    public void deactivateMinibuffer() {
+        this.minibufferActive = false;
     }
 
     /**

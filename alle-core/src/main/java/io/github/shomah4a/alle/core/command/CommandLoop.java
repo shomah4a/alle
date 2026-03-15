@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -9,12 +10,11 @@ import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * キー入力→コマンド解決→コマンド実行のメインループ。
  * InputSourceからキーを読み、KeyResolverでコマンドを解決し、実行する。
- * コマンドはVirtual Thread上で実行され、完了を待ってから次のキー入力を処理する。
+ * コマンドはCompletableFutureを返し、後続処理はthenRunで繋ぐ（fire-and-forget）。
  * キーマップに未マッチのキーは無視される。
  */
 public class CommandLoop {
@@ -23,13 +23,20 @@ public class CommandLoop {
     private final KeyResolver keyResolver;
     private final Frame frame;
     private final BufferManager bufferManager;
+    private final InputPrompter inputPrompter;
     private Optional<String> lastCommand = Optional.empty();
 
-    public CommandLoop(InputSource inputSource, KeyResolver keyResolver, Frame frame, BufferManager bufferManager) {
+    public CommandLoop(
+            InputSource inputSource,
+            KeyResolver keyResolver,
+            Frame frame,
+            BufferManager bufferManager,
+            InputPrompter inputPrompter) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
         this.bufferManager = bufferManager;
+        this.inputPrompter = inputPrompter;
     }
 
     /**
@@ -48,12 +55,24 @@ public class CommandLoop {
 
     /**
      * 1つのキーストロークを処理する。テスト用に公開。
+     * アクティブウィンドウのバッファにローカルキーマップがあればそちらを優先する。
      */
     public void processKey(KeyStroke keyStroke) {
-        var entryOpt = keyResolver.resolve(keyStroke);
+        var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
             handleEntry(entryOpt.get(), keyStroke);
         }
+    }
+
+    private Optional<KeymapEntry> resolveKey(KeyStroke keyStroke) {
+        var localKeymapOpt = frame.getActiveWindow().getBuffer().getLocalKeymap();
+        if (localKeymapOpt.isPresent()) {
+            var localEntry = localKeymapOpt.get().lookup(keyStroke);
+            if (localEntry.isPresent()) {
+                return localEntry;
+            }
+        }
+        return keyResolver.resolve(keyStroke);
     }
 
     private void handleEntry(KeymapEntry entry, KeyStroke keyStroke) {
@@ -62,10 +81,14 @@ public class CommandLoop {
                 var thisCommand = Optional.of(command.name());
                 var windowActor = new WindowActor(frame.getActiveWindow());
                 var context = new CommandContext(
-                        frame, bufferManager, windowActor, Optional.of(keyStroke), thisCommand, lastCommand);
-                CompletableFuture.runAsync(() -> command.execute(context).join(), Thread::startVirtualThread)
-                        .join();
-                lastCommand = thisCommand;
+                        frame,
+                        bufferManager,
+                        windowActor,
+                        inputPrompter,
+                        Optional.of(keyStroke),
+                        thisCommand,
+                        lastCommand);
+                command.execute(context).thenRun(() -> lastCommand = thisCommand);
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> handlePrefix(prefixKeymap);
         }

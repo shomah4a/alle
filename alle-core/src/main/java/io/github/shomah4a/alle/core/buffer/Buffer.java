@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -15,6 +16,7 @@ public class Buffer {
     private final String name;
     private final TextModel textModel;
     private @Nullable Path filePath;
+    private @Nullable Keymap localKeymap;
     private boolean dirty;
 
     public Buffer(String name, TextModel textModel) {
@@ -50,6 +52,28 @@ public class Buffer {
 
     public void markClean() {
         this.dirty = false;
+    }
+
+    /**
+     * バッファローカルキーマップを返す。
+     * 設定されていない場合はempty。
+     */
+    public Optional<Keymap> getLocalKeymap() {
+        return Optional.ofNullable(localKeymap);
+    }
+
+    /**
+     * バッファローカルキーマップを設定する。
+     */
+    public void setLocalKeymap(Keymap keymap) {
+        this.localKeymap = keymap;
+    }
+
+    /**
+     * バッファローカルキーマップを解除する。
+     */
+    public void clearLocalKeymap() {
+        this.localKeymap = null;
     }
 
     /**

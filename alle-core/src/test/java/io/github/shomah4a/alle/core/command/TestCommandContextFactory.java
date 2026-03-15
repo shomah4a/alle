@@ -2,17 +2,23 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.input.InputPrompter;
+import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * テスト用のCommandContext生成ヘルパー。
  */
 final class TestCommandContextFactory {
+
+    private static final InputPrompter NOOP_PROMPTER =
+            message -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
 
     private TestCommandContextFactory() {}
 
@@ -22,7 +28,7 @@ final class TestCommandContextFactory {
     static CommandContext create(Frame frame, BufferManager bufferManager) {
         var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
-                frame, bufferManager, windowActor, Optional.empty(), Optional.empty(), Optional.empty());
+                frame, bufferManager, windowActor, NOOP_PROMPTER, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /**
@@ -31,7 +37,13 @@ final class TestCommandContextFactory {
     static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
         var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
-                frame, bufferManager, windowActor, Optional.of(triggeringKey), Optional.empty(), Optional.empty());
+                frame,
+                bufferManager,
+                windowActor,
+                NOOP_PROMPTER,
+                Optional.of(triggeringKey),
+                Optional.empty(),
+                Optional.empty());
     }
 
     /**

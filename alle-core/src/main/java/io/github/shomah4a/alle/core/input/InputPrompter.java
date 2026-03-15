@@ -1,0 +1,19 @@
+package io.github.shomah4a.alle.core.input;
+
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * ユーザーから文字列入力を受け付ける汎用インターフェース。
+ * TUIではミニバッファ、GUIではダイアログ等で実装する。
+ */
+public interface InputPrompter {
+
+    /**
+     * プロンプトを表示してユーザーから文字列入力を受け付ける。
+     * CompletableFutureは即座に返り、入力確定またはキャンセル時に完了する。
+     *
+     * @param message プロンプトメッセージ
+     * @return 入力結果
+     */
+    CompletableFuture<PromptResult> prompt(String message);
+}
