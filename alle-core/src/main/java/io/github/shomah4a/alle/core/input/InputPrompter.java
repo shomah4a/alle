@@ -28,4 +28,17 @@ public interface InputPrompter {
     default CompletableFuture<PromptResult> prompt(String message, Completer completer) {
         return prompt(message);
     }
+
+    /**
+     * 初期値と補完機能付きでプロンプトを表示する。
+     * ユーザー入力エリアにinitialValueが事前入力された状態で開始される。
+     *
+     * @param message      プロンプトメッセージ
+     * @param initialValue 入力エリアの初期値
+     * @param completer    補完候補プロバイダ
+     * @return 入力結果
+     */
+    default CompletableFuture<PromptResult> prompt(String message, String initialValue, Completer completer) {
+        return prompt(message, completer);
+    }
 }

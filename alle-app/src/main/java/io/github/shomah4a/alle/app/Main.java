@@ -115,7 +115,8 @@ public final class Main {
         registry.register(new NextLineCommand());
         registry.register(new PreviousLineCommand());
         registry.register(new QuitCommand(inputSource));
-        registry.register(new FindFileCommand(bufferIO, directoryLister));
+        registry.register(
+                new FindFileCommand(bufferIO, directoryLister, Path.of("").toAbsolutePath()));
         registry.register(new SaveBufferCommand(bufferIO, directoryLister));
         registry.register(new SwitchBufferCommand());
         registry.register(new OtherWindowCommand());

@@ -24,10 +24,12 @@ public class FindFileCommand implements Command {
 
     private final BufferIO bufferIO;
     private final DirectoryLister directoryLister;
+    private final Path workingDirectory;
 
-    public FindFileCommand(BufferIO bufferIO, DirectoryLister directoryLister) {
+    public FindFileCommand(BufferIO bufferIO, DirectoryLister directoryLister, Path workingDirectory) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
+        this.workingDirectory = workingDirectory;
     }
 
     @Override
@@ -38,11 +40,14 @@ public class FindFileCommand implements Command {
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var completer = new FilePathCompleter(directoryLister);
-        return context.inputPrompter().prompt("Find file: ", completer).thenAccept(result -> {
-            if (result instanceof PromptResult.Confirmed confirmed) {
-                openFile(context, confirmed.value());
-            }
-        });
+        String initialValue = workingDirectory + "/";
+        return context.inputPrompter()
+                .prompt("Find file: ", initialValue, completer)
+                .thenAccept(result -> {
+                    if (result instanceof PromptResult.Confirmed confirmed) {
+                        openFile(context, confirmed.value());
+                    }
+                });
     }
 
     private void openFile(CommandContext context, String pathString) {

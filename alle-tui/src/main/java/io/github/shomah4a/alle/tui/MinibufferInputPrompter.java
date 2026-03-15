@@ -33,15 +33,21 @@ public class MinibufferInputPrompter implements InputPrompter {
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message) {
-        return promptInternal(message, null);
+        return promptInternal(message, "", null);
     }
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message, Completer completer) {
-        return promptInternal(message, completer);
+        return promptInternal(message, "", completer);
     }
 
-    private CompletableFuture<PromptResult> promptInternal(String message, @Nullable Completer completer) {
+    @Override
+    public CompletableFuture<PromptResult> prompt(String message, String initialValue, Completer completer) {
+        return promptInternal(message, initialValue, completer);
+    }
+
+    private CompletableFuture<PromptResult> promptInternal(
+            String message, String initialValue, @Nullable Completer completer) {
         if (activeFuture != null && !activeFuture.isDone()) {
             logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
             return CompletableFuture.completedFuture(new PromptResult.Cancelled());
@@ -53,13 +59,14 @@ public class MinibufferInputPrompter implements InputPrompter {
         var minibuffer = minibufferWindow.getBuffer();
         int promptLength = (int) message.codePoints().count();
 
-        // ミニバッファをクリアしてプロンプト文字列を挿入
+        // ミニバッファをクリアしてプロンプト文字列と初期値を挿入
         int currentLength = minibuffer.length();
         if (currentLength > 0) {
             minibuffer.deleteText(0, currentLength);
         }
-        minibuffer.insertText(0, message);
-        minibufferWindow.setPoint(promptLength);
+        minibuffer.insertText(0, message + initialValue);
+        int initialValueLength = (int) initialValue.codePoints().count();
+        minibufferWindow.setPoint(promptLength + initialValueLength);
 
         // ミニバッファ用キーマップを作成
         var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, completer);
