@@ -154,7 +154,7 @@ public final class Main {
         ctrlXMap.bind(KeyStroke.ctrl('f'), registry.lookup("find-file").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('s'), registry.lookup("save-buffer").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('o'), registry.lookup("other-window").orElseThrow());
-        ctrlXMap.bind(KeyStroke.ctrl('b'), registry.lookup("switch-to-buffer").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('b'), registry.lookup("switch-to-buffer").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         return keymap;

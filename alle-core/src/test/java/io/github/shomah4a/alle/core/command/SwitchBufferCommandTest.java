@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
@@ -9,7 +10,9 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +41,13 @@ class SwitchBufferCommandTest {
 
     private InputPrompter confirming(String value) {
         return message -> CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+    }
+
+    private InputPrompter confirmingAndCapture(String value, AtomicReference<String> capturedMessage) {
+        return message -> {
+            capturedMessage.set(message);
+            return CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+        };
     }
 
     private InputPrompter cancelling() {
@@ -70,6 +80,63 @@ class SwitchBufferCommandTest {
     }
 
     @Nested
+    class デフォルトバッファ {
+
+        @Test
+        void 直前バッファがある場合プロンプトにデフォルト名が表示される() {
+            // まず other.txt に切り替えて previousBuffer を作る
+            frame.getActiveWindow().setBuffer(otherBuffer);
+            frame.getActiveWindow().setBuffer(scratchBuffer);
+
+            var capturedMessage = new AtomicReference<>("");
+            var cmd = new SwitchBufferCommand();
+            var context =
+                    TestCommandContextFactory.create(frame, bufferManager, confirmingAndCapture("", capturedMessage));
+
+            cmd.execute(context).join();
+
+            var message = Objects.requireNonNull(capturedMessage.get());
+            assertTrue(message.contains("other.txt"));
+        }
+
+        @Test
+        void 空入力時にデフォルトバッファに切り替わる() {
+            // まず other.txt に切り替えて previousBuffer を作る
+            frame.getActiveWindow().setBuffer(otherBuffer);
+            frame.getActiveWindow().setBuffer(scratchBuffer);
+
+            var cmd = new SwitchBufferCommand();
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
+
+            cmd.execute(context).join();
+
+            assertEquals("other.txt", frame.getActiveWindow().getBuffer().getName());
+        }
+
+        @Test
+        void 直前バッファがない場合はデフォルトなしのプロンプトになる() {
+            var capturedMessage = new AtomicReference<>("");
+            var cmd = new SwitchBufferCommand();
+            var context =
+                    TestCommandContextFactory.create(frame, bufferManager, confirmingAndCapture("", capturedMessage));
+
+            cmd.execute(context).join();
+
+            assertEquals("Switch to buffer: ", Objects.requireNonNull(capturedMessage.get()));
+        }
+
+        @Test
+        void 直前バッファがなく空入力の場合は何も変わらない() {
+            var cmd = new SwitchBufferCommand();
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
+
+            cmd.execute(context).join();
+
+            assertEquals("*scratch*", frame.getActiveWindow().getBuffer().getName());
+        }
+    }
+
+    @Nested
     class 存在しないバッファ名 {
 
         @Test
@@ -90,20 +157,6 @@ class SwitchBufferCommandTest {
         void キャンセル時は何も変わらない() {
             var cmd = new SwitchBufferCommand();
             var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
-
-            cmd.execute(context).join();
-
-            assertEquals("*scratch*", frame.getActiveWindow().getBuffer().getName());
-        }
-    }
-
-    @Nested
-    class 空文字列入力 {
-
-        @Test
-        void 空文字列では何も変わらない() {
-            var cmd = new SwitchBufferCommand();
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();
 

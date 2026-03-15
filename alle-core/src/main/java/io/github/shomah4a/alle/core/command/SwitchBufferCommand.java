@@ -6,6 +6,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * バッファを切り替えるコマンド。
  * ミニバッファでバッファ名を入力させ、該当バッファに切り替える。
+ * 直前のバッファがある場合はデフォルト値としてプロンプトに表示し、
+ * 空入力時はデフォルトバッファに切り替える。
  */
 public class SwitchBufferCommand implements Command {
 
@@ -16,9 +18,16 @@ public class SwitchBufferCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.inputPrompter().prompt("Switch to buffer: ").thenAccept(result -> {
+        var window = context.frame().getActiveWindow();
+        var defaultName = window.getPreviousBuffer().map(b -> b.getName()).orElse("");
+        var promptMessage =
+                defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
+
+        return context.inputPrompter().prompt(promptMessage).thenAccept(result -> {
             if (result instanceof PromptResult.Confirmed confirmed) {
-                switchBuffer(context, confirmed.value());
+                var input = confirmed.value();
+                var bufferName = input.isEmpty() ? defaultName : input;
+                switchBuffer(context, bufferName);
             }
         });
     }

@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * バッファに対するビュー。
@@ -10,6 +12,7 @@ import io.github.shomah4a.alle.core.buffer.Buffer;
 public class Window {
 
     private Buffer buffer;
+    private @Nullable Buffer previousBuffer;
     private int point;
     private int displayStartLine;
 
@@ -23,10 +26,22 @@ public class Window {
         return buffer;
     }
 
+    /**
+     * ウィンドウに表示するバッファを切り替える。
+     * 切り替え前のバッファを直前バッファとして記録する。
+     */
     public void setBuffer(Buffer buffer) {
+        this.previousBuffer = this.buffer;
         this.buffer = buffer;
         this.point = 0;
         this.displayStartLine = 0;
+    }
+
+    /**
+     * 直前に表示していたバッファを返す。
+     */
+    public Optional<Buffer> getPreviousBuffer() {
+        return Optional.ofNullable(previousBuffer);
     }
 
     /**

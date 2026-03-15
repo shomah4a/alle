@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.window;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -165,6 +166,40 @@ class WindowTest {
             assertEquals("other", window.getBuffer().getName());
             assertEquals(0, window.getPoint());
             assertEquals(0, window.getDisplayStartLine());
+        }
+    }
+
+    @Nested
+    class 直前バッファ {
+
+        @Test
+        void 初期状態では直前バッファがない() {
+            var window = createWindow();
+            assertTrue(window.getPreviousBuffer().isEmpty());
+        }
+
+        @Test
+        void バッファ切り替え後に直前バッファが記録される() {
+            var window = createWindow();
+            var originalBuffer = window.getBuffer();
+            var newBuffer = new Buffer("new", new GapTextModel());
+
+            window.setBuffer(newBuffer);
+
+            assertTrue(window.getPreviousBuffer().isPresent());
+            assertSame(originalBuffer, window.getPreviousBuffer().get());
+        }
+
+        @Test
+        void 複数回切り替えると直近の切り替え元が直前バッファになる() {
+            var window = createWindow();
+            var bufferB = new Buffer("b", new GapTextModel());
+            var bufferC = new Buffer("c", new GapTextModel());
+
+            window.setBuffer(bufferB);
+            window.setBuffer(bufferC);
+
+            assertSame(bufferB, window.getPreviousBuffer().get());
         }
     }
 
