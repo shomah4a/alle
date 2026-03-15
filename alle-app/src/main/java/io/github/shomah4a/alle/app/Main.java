@@ -17,6 +17,8 @@ import io.github.shomah4a.alle.core.command.FindFileCommand;
 import io.github.shomah4a.alle.core.command.ForwardCharCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
 import io.github.shomah4a.alle.core.command.NewlineCommand;
+import io.github.shomah4a.alle.core.command.NextLineCommand;
+import io.github.shomah4a.alle.core.command.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.io.BufferIO;
@@ -104,6 +106,8 @@ public final class Main {
         registry.register(new KillLineCommand());
         registry.register(new BackwardDeleteCharCommand());
         registry.register(new NewlineCommand());
+        registry.register(new NextLineCommand());
+        registry.register(new PreviousLineCommand());
         registry.register(new QuitCommand(inputSource));
         registry.register(new FindFileCommand(bufferIO));
         registry.register(new SaveBufferCommand(bufferIO));
@@ -119,6 +123,8 @@ public final class Main {
         keymap.bind(KeyStroke.ctrl('b'), registry.lookup("backward-char").orElseThrow());
         keymap.bind(KeyStroke.ctrl('a'), registry.lookup("beginning-of-line").orElseThrow());
         keymap.bind(KeyStroke.ctrl('e'), registry.lookup("end-of-line").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('n'), registry.lookup("next-line").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('p'), registry.lookup("previous-line").orElseThrow());
         keymap.bind(KeyStroke.ctrl('d'), registry.lookup("delete-char").orElseThrow());
         keymap.bind(KeyStroke.ctrl('k'), registry.lookup("kill-line").orElseThrow());
         keymap.bind(KeyStroke.of(0x7F), registry.lookup("backward-delete-char").orElseThrow());
