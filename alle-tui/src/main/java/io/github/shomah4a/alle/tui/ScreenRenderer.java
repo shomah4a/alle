@@ -9,8 +9,11 @@ import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.highlight.StyledSpan;
 import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.LayoutResult;
+import io.github.shomah4a.alle.core.window.Rect;
+import io.github.shomah4a.alle.core.window.Separator;
 import io.github.shomah4a.alle.core.window.Window;
-import io.github.shomah4a.alle.core.window.WindowTree;
+import io.github.shomah4a.alle.core.window.WindowLayout;
 import java.io.IOException;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Sets;
@@ -20,8 +23,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
 /**
  * Frame/Window/Bufferの内容をLanternaのScreenに描画する。
  * 画面レイアウト:
- * - 行0 〜 rows-3: バッファ表示エリア
- * - 行rows-2: モードライン（反転表示）
+ * - 行0 〜 rows-2: ウィンドウツリー領域（各ウィンドウにバッファ表示+モードライン）
  * - 行rows-1: ミニバッファ
  */
 public class ScreenRenderer {
@@ -48,21 +50,30 @@ public class ScreenRenderer {
             return;
         }
 
-        int bufferAreaRows = rows - 2;
-        int modeLineRow = rows - 2;
+        int windowAreaRows = rows - 1;
         int minibufferRow = rows - 1;
 
-        // メインウィンドウ（ウィンドウツリーの最初のウィンドウ）を取得
-        Window mainWindow = findFirstWindow(frame.getWindowTree());
+        // レイアウト計算
+        var treeArea = new Rect(0, 0, cols, windowAreaRows);
+        LayoutResult layoutResult = WindowLayout.compute(frame.getWindowTree(), treeArea);
 
-        // スクロール調整
-        mainWindow.ensurePointVisible(bufferAreaRows);
+        // 各ウィンドウを描画
+        layoutResult.windowRects().forEachKeyValue((window, rect) -> {
+            if (rect.height() < 2) {
+                return;
+            }
+            int bufferRows = rect.height() - 1;
+            window.ensurePointVisible(bufferRows);
+            renderWindowInRect(window, rect);
+        });
 
-        // バッファ表示
-        renderWindow(mainWindow, bufferAreaRows, cols);
-
-        // モードライン
-        renderModeLine(mainWindow, modeLineRow, cols);
+        // 垂直分割セパレータ描画
+        for (Separator sep : layoutResult.separators()) {
+            for (int row = sep.top(); row < sep.top() + sep.height(); row++) {
+                screen.setCharacter(
+                        sep.column(), row, new TextCharacter('│', TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT));
+            }
+        }
 
         // ミニバッファ
         renderMinibuffer(frame.getMinibufferWindow(), minibufferRow, cols);
@@ -71,31 +82,40 @@ public class ScreenRenderer {
         if (frame.isMinibufferActive()) {
             positionMinibufferCursor(frame.getMinibufferWindow(), minibufferRow, cols);
         } else {
-            positionCursor(mainWindow, bufferAreaRows);
+            var activeWindow = frame.getActiveWindow();
+            var activeRect = layoutResult.windowRects().get(activeWindow);
+            if (activeRect != null && activeRect.height() >= 2) {
+                positionCursorInRect(activeWindow, activeRect);
+            }
         }
 
         screen.refresh();
     }
 
-    private void renderWindow(Window window, int maxRows, int maxColumns) {
+    private void renderWindowInRect(Window window, Rect rect) {
         var buffer = window.getBuffer();
         int lineCount = buffer.lineCount();
         int displayStart = window.getDisplayStartLine();
+        int bufferRows = rect.height() - 1; // 最終行はモードライン
         Optional<SyntaxHighlighter> highlighter = buffer.getMajorMode().highlighter();
 
-        for (int row = 0; row < maxRows && displayStart + row < lineCount; row++) {
+        for (int row = 0; row < bufferRows && displayStart + row < lineCount; row++) {
             int lineIndex = displayStart + row;
             String lineText = buffer.lineText(lineIndex);
+            int screenRow = rect.top() + row;
             if (highlighter.isPresent()) {
                 var spans = highlighter.get().highlight(lineText);
-                renderLineWithHighlight(lineText, row, maxColumns, spans);
+                renderLineWithHighlight(lineText, screenRow, rect.left(), rect.width(), spans);
             } else {
-                renderLine(lineText, row, maxColumns);
+                renderLineAt(lineText, screenRow, rect.left(), rect.width());
             }
         }
+
+        // モードライン
+        renderModeLine(window, rect.top() + rect.height() - 1, rect.left(), rect.width());
     }
 
-    private void renderModeLine(Window window, int row, int maxColumns) {
+    private void renderModeLine(Window window, int row, int left, int maxColumns) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int lineIndex = buffer.lineIndexForOffset(point);
@@ -112,7 +132,9 @@ public class ScreenRenderer {
         for (int col = 0; col < maxColumns; col++) {
             char ch = col < modeLine.length() ? modeLine.charAt(col) : '-';
             screen.setCharacter(
-                    col, row, new TextCharacter(ch, TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT, SGR.REVERSE));
+                    left + col,
+                    row,
+                    new TextCharacter(ch, TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT, SGR.REVERSE));
         }
     }
 
@@ -122,14 +144,11 @@ public class ScreenRenderer {
             return;
         }
         String text = buffer.getText();
-        renderLineAt(text, row, maxColumns);
+        renderLineAt(text, row, 0, maxColumns);
     }
 
-    private void renderLine(String lineText, int row, int maxColumns) {
-        renderLineAt(lineText, row, maxColumns);
-    }
-
-    private void renderLineWithHighlight(String text, int row, int maxColumns, ListIterable<StyledSpan> spans) {
+    private void renderLineWithHighlight(
+            String text, int row, int left, int maxColumns, ListIterable<StyledSpan> spans) {
         int col = 0;
         int charOffset = 0;
         int cpIndex = 0;
@@ -160,14 +179,14 @@ public class ScreenRenderer {
                 tc = TextCharacter.fromString(ch)[0];
             }
 
-            screen.setCharacter(col, row, tc);
+            screen.setCharacter(left + col, row, tc);
             col += displayWidth;
             charOffset += charCount;
             cpIndex++;
         }
     }
 
-    private void renderLineAt(String text, int row, int maxColumns) {
+    private void renderLineAt(String text, int row, int left, int maxColumns) {
         int col = 0;
         int offset = 0;
         while (offset < text.length() && col < maxColumns) {
@@ -180,27 +199,28 @@ public class ScreenRenderer {
                 break;
             }
 
-            screen.setCharacter(col, row, TextCharacter.fromString(ch)[0]);
+            screen.setCharacter(left + col, row, TextCharacter.fromString(ch)[0]);
 
             col += displayWidth;
             offset += charCount;
         }
     }
 
-    private void positionCursor(Window window, int maxRows) {
+    private void positionCursorInRect(Window window, Rect rect) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int lineIndex = buffer.lineIndexForOffset(point);
         int lineStart = buffer.lineStartOffset(lineIndex);
         int displayStart = window.getDisplayStartLine();
+        int bufferRows = rect.height() - 1;
 
         int screenRow = lineIndex - displayStart;
-        if (screenRow < 0 || screenRow >= maxRows) {
+        if (screenRow < 0 || screenRow >= bufferRows) {
             return;
         }
 
         int col = computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
-        screen.setCursorPosition(new TerminalPosition(col, screenRow));
+        screen.setCursorPosition(new TerminalPosition(rect.left() + col, rect.top() + screenRow));
     }
 
     private void positionMinibufferCursor(Window minibufferWindow, int row, int maxColumns) {
@@ -268,12 +288,5 @@ public class ScreenRenderer {
             return (codePoint >= 0xFF01 && codePoint <= 0xFF60) || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6);
         }
         return false;
-    }
-
-    private static Window findFirstWindow(WindowTree tree) {
-        return switch (tree) {
-            case WindowTree.Leaf leaf -> leaf.window();
-            case WindowTree.Split split -> findFirstWindow(split.first());
-        };
     }
 }

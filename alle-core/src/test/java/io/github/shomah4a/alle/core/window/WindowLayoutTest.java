@@ -22,10 +22,10 @@ class WindowLayoutTest {
             var tree = new WindowTree.Leaf(window);
             var available = new Rect(0, 0, 80, 24);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            assertEquals(1, layout.size());
-            var rect = layout.get(window);
+            assertEquals(1, result.windowRects().size());
+            var rect = result.windowRects().get(window);
             assertEquals(0, rect.top());
             assertEquals(0, rect.left());
             assertEquals(80, rect.width());
@@ -44,15 +44,15 @@ class WindowLayoutTest {
                     Direction.HORIZONTAL, 0.5, new WindowTree.Leaf(window1), new WindowTree.Leaf(window2));
             var available = new Rect(0, 0, 80, 24);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            assertEquals(2, layout.size());
-            var rect1 = layout.get(window1);
+            assertEquals(2, result.windowRects().size());
+            var rect1 = result.windowRects().get(window1);
             assertEquals(0, rect1.top());
             assertEquals(80, rect1.width());
             assertEquals(12, rect1.height());
 
-            var rect2 = layout.get(window2);
+            var rect2 = result.windowRects().get(window2);
             assertEquals(12, rect2.top());
             assertEquals(80, rect2.width());
             assertEquals(12, rect2.height());
@@ -66,10 +66,10 @@ class WindowLayoutTest {
                     Direction.HORIZONTAL, 0.5, new WindowTree.Leaf(window1), new WindowTree.Leaf(window2));
             var available = new Rect(0, 0, 80, 25);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            var rect1 = layout.get(window1);
-            var rect2 = layout.get(window2);
+            var rect1 = result.windowRects().get(window1);
+            var rect2 = result.windowRects().get(window2);
             // 12 + 13 = 25
             assertEquals(12, rect1.height());
             assertEquals(13, rect2.height());
@@ -88,18 +88,25 @@ class WindowLayoutTest {
                     Direction.VERTICAL, 0.5, new WindowTree.Leaf(window1), new WindowTree.Leaf(window2));
             var available = new Rect(0, 0, 81, 24);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            assertEquals(2, layout.size());
-            var rect1 = layout.get(window1);
+            assertEquals(2, result.windowRects().size());
+            var rect1 = result.windowRects().get(window1);
             assertEquals(0, rect1.left());
             assertEquals(40, rect1.width());
             assertEquals(24, rect1.height());
 
-            var rect2 = layout.get(window2);
+            var rect2 = result.windowRects().get(window2);
             assertEquals(41, rect2.left()); // 40 + 1(separator)
             assertEquals(40, rect2.width());
             assertEquals(24, rect2.height());
+
+            // セパレータ位置の検証
+            assertEquals(1, result.separators().size());
+            var sep = result.separators().get(0);
+            assertEquals(40, sep.column());
+            assertEquals(0, sep.top());
+            assertEquals(24, sep.height());
         }
 
         @Test
@@ -110,10 +117,10 @@ class WindowLayoutTest {
                     Direction.VERTICAL, 0.5, new WindowTree.Leaf(window1), new WindowTree.Leaf(window2));
             var available = new Rect(0, 0, 80, 24);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            var rect1 = layout.get(window1);
-            var rect2 = layout.get(window2);
+            var rect1 = result.windowRects().get(window1);
+            var rect2 = result.windowRects().get(window2);
             // first.width + separator(1) + second.width <= available.width
             int totalWidth = rect1.width() + 1 + rect2.width();
             assertEquals(available.width(), totalWidth);
@@ -134,22 +141,22 @@ class WindowLayoutTest {
             var tree = new WindowTree.Split(Direction.HORIZONTAL, 0.5, new WindowTree.Leaf(window1), bottomSplit);
             var available = new Rect(0, 0, 81, 24);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            assertEquals(3, layout.size());
+            assertEquals(3, result.windowRects().size());
 
-            var rect1 = layout.get(window1);
+            var rect1 = result.windowRects().get(window1);
             assertEquals(0, rect1.top());
             assertEquals(0, rect1.left());
             assertEquals(81, rect1.width());
             assertEquals(12, rect1.height());
 
-            var rect2 = layout.get(window2);
+            var rect2 = result.windowRects().get(window2);
             assertEquals(12, rect2.top());
             assertEquals(0, rect2.left());
             assertEquals(40, rect2.width());
 
-            var rect3 = layout.get(window3);
+            var rect3 = result.windowRects().get(window3);
             assertEquals(12, rect3.top());
             assertEquals(41, rect3.left());
             assertEquals(40, rect3.width());
@@ -167,15 +174,15 @@ class WindowLayoutTest {
                     Direction.HORIZONTAL, 0.5, new WindowTree.Leaf(window1), new WindowTree.Leaf(window2));
             var available = new Rect(5, 10, 60, 20);
 
-            var layout = WindowLayout.compute(tree, available);
+            var result = WindowLayout.compute(tree, available);
 
-            var rect1 = layout.get(window1);
+            var rect1 = result.windowRects().get(window1);
             assertEquals(5, rect1.top());
             assertEquals(10, rect1.left());
             assertEquals(60, rect1.width());
             assertEquals(10, rect1.height());
 
-            var rect2 = layout.get(window2);
+            var rect2 = result.windowRects().get(window2);
             assertEquals(15, rect2.top());
             assertEquals(10, rect2.left());
             assertEquals(60, rect2.width());
