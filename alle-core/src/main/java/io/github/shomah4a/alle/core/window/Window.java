@@ -145,6 +145,23 @@ public class Window {
     }
 
     /**
+     * カーソル位置が表示範囲内に収まるようにdisplayStartLineを調整する。
+     *
+     * @param visibleRows 表示可能な行数
+     */
+    public void ensurePointVisible(int visibleRows) {
+        if (visibleRows <= 0) {
+            return;
+        }
+        int currentLine = buffer.lineIndexForOffset(getPoint());
+        if (currentLine < displayStartLine) {
+            displayStartLine = currentLine;
+        } else if (currentLine >= displayStartLine + visibleRows) {
+            displayStartLine = currentLine - visibleRows + 1;
+        }
+    }
+
+    /**
      * markを設定する。
      */
     public void setMark(int mark) {

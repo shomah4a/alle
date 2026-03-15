@@ -55,6 +55,9 @@ public class ScreenRenderer {
         // メインウィンドウ（ウィンドウツリーの最初のウィンドウ）を取得
         Window mainWindow = findFirstWindow(frame.getWindowTree());
 
+        // スクロール調整
+        mainWindow.ensurePointVisible(bufferAreaRows);
+
         // バッファ表示
         renderWindow(mainWindow, bufferAreaRows, cols);
 

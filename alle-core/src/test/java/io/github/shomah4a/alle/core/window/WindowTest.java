@@ -152,6 +152,51 @@ class WindowTest {
     }
 
     @Nested
+    class スクロール調整 {
+
+        @Test
+        void カーソルが表示範囲より下にある場合displayStartLineが進む() {
+            var window = createWindow();
+            window.insert("line1\nline2\nline3\nline4\nline5");
+            // カーソルは最終行(line5)にいる
+            // 表示可能行数3でensurePointVisibleを呼ぶ
+            window.ensurePointVisible(3);
+            // line5(index=4)が見えるように、displayStartLine = 4 - 3 + 1 = 2
+            assertEquals(2, window.getDisplayStartLine());
+        }
+
+        @Test
+        void カーソルが表示範囲より上にある場合displayStartLineが戻る() {
+            var window = createWindow();
+            window.insert("line1\nline2\nline3\nline4\nline5");
+            window.setDisplayStartLine(3);
+            // カーソルを先頭行に移動
+            window.setPoint(0);
+            window.ensurePointVisible(3);
+            assertEquals(0, window.getDisplayStartLine());
+        }
+
+        @Test
+        void カーソルが表示範囲内の場合displayStartLineは変わらない() {
+            var window = createWindow();
+            window.insert("line1\nline2\nline3\nline4\nline5");
+            window.setDisplayStartLine(1);
+            // カーソルをline3(index=2)に移動 — 表示範囲[1,3]に含まれる
+            window.setPoint(12); // "line1\nline2\n" = 12
+            window.ensurePointVisible(3);
+            assertEquals(1, window.getDisplayStartLine());
+        }
+
+        @Test
+        void visibleRowsが0以下の場合何もしない() {
+            var window = createWindow();
+            window.insert("line1\nline2");
+            window.ensurePointVisible(0);
+            assertEquals(0, window.getDisplayStartLine());
+        }
+    }
+
+    @Nested
     class バッファ切り替え {
 
         @Test
