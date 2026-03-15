@@ -122,6 +122,14 @@ public class Frame {
     }
 
     /**
+     * アクティブウィンドウ以外のすべてのウィンドウを閉じる。
+     * ウィンドウツリーをアクティブウィンドウのみのLeafに置換する。
+     */
+    public void deleteOtherWindows() {
+        windowTree = new WindowTree.Leaf(activeWindow);
+    }
+
+    /**
      * アクティブウィンドウを次のウィンドウに切り替える。
      * ウィンドウツリーの深さ優先順で循環する。
      * ミニバッファアクティブ中でもツリー内のウィンドウに移動する。

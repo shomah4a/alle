@@ -156,6 +156,38 @@ class FrameTest {
     }
 
     @Nested
+    class 他ウィンドウ全削除 {
+
+        @Test
+        void 複数ウィンドウからアクティブウィンドウのみが残る() {
+            var frame = createFrame();
+            var originalWindow = frame.getActiveWindow();
+            frame.splitActiveWindow(Direction.VERTICAL, createBuffer("b"));
+            frame.setActiveWindow(originalWindow);
+            frame.splitActiveWindow(Direction.HORIZONTAL, createBuffer("c"));
+            frame.setActiveWindow(originalWindow);
+            assertEquals(3, frame.getWindowTree().windows().size());
+
+            frame.deleteOtherWindows();
+
+            var leaf = assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+            assertSame(originalWindow, leaf.window());
+            assertSame(originalWindow, frame.getActiveWindow());
+        }
+
+        @Test
+        void ウィンドウが1つの場合でもエラーにならない() {
+            var frame = createFrame();
+            var originalWindow = frame.getActiveWindow();
+
+            frame.deleteOtherWindows();
+
+            var leaf = assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+            assertSame(originalWindow, leaf.window());
+        }
+    }
+
+    @Nested
     class アクティブウィンドウ設定 {
 
         @Test

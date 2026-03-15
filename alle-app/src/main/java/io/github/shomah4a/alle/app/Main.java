@@ -12,6 +12,8 @@ import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CopyRegionCommand;
 import io.github.shomah4a.alle.core.command.DeleteCharCommand;
+import io.github.shomah4a.alle.core.command.DeleteOtherWindowsCommand;
+import io.github.shomah4a.alle.core.command.DeleteWindowCommand;
 import io.github.shomah4a.alle.core.command.EndOfLineCommand;
 import io.github.shomah4a.alle.core.command.ExecuteCommandCommand;
 import io.github.shomah4a.alle.core.command.FindFileCommand;
@@ -27,6 +29,8 @@ import io.github.shomah4a.alle.core.command.RedoCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.command.SetMarkCommand;
+import io.github.shomah4a.alle.core.command.SplitWindowBelowCommand;
+import io.github.shomah4a.alle.core.command.SplitWindowRightCommand;
 import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.command.UndoCommand;
 import io.github.shomah4a.alle.core.command.YankCommand;
@@ -147,6 +151,10 @@ public final class Main {
         registry.register(new YankCommand());
         registry.register(new UndoCommand());
         registry.register(new RedoCommand());
+        registry.register(new SplitWindowBelowCommand());
+        registry.register(new SplitWindowRightCommand());
+        registry.register(new DeleteWindowCommand());
+        registry.register(new DeleteOtherWindowsCommand());
         return registry;
     }
 
@@ -188,6 +196,10 @@ public final class Main {
         ctrlXMap.bind(KeyStroke.ctrl('o'), registry.lookup("other-window").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('b'), registry.lookup("switch-to-buffer").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('k'), registry.lookup("kill-buffer").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('1'), registry.lookup("delete-other-windows").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('2'), registry.lookup("split-window-below").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('3'), registry.lookup("split-window-right").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('0'), registry.lookup("delete-window").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         // C-SPC (mark)
