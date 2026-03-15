@@ -9,10 +9,12 @@ import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * キー入力→コマンド解決→コマンド実行のメインループ。
  * InputSourceからキーを読み、KeyResolverでコマンドを解決し、実行する。
+ * コマンドはVirtual Thread上で実行され、完了を待ってから次のキー入力を処理する。
  * キーマップに未マッチのキーは無視される。
  */
 public class CommandLoop {
@@ -61,7 +63,8 @@ public class CommandLoop {
                 var windowActor = new WindowActor(frame.getActiveWindow());
                 var context = new CommandContext(
                         frame, bufferManager, windowActor, Optional.of(keyStroke), thisCommand, lastCommand);
-                command.execute(context);
+                CompletableFuture.runAsync(() -> command.execute(context).join(), Thread::startVirtualThread)
+                        .join();
                 lastCommand = thisCommand;
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> handlePrefix(prefixKeymap);
