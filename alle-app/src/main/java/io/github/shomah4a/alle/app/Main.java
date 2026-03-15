@@ -13,10 +13,13 @@ import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.DeleteCharCommand;
 import io.github.shomah4a.alle.core.command.EndOfLineCommand;
+import io.github.shomah4a.alle.core.command.FindFileCommand;
 import io.github.shomah4a.alle.core.command.ForwardCharCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
 import io.github.shomah4a.alle.core.command.NewlineCommand;
+import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
+import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
@@ -27,8 +30,12 @@ import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
 import io.github.shomah4a.alle.tui.QuitCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Alleエディタのエントリポイント。
@@ -57,7 +64,11 @@ public final class Main {
         bufferManager.add(buffer);
 
         var inputSource = new TerminalInputSource(screen);
-        var registry = createCommandRegistry(inputSource);
+        var bufferIO = new BufferIO(
+                source -> new BufferedReader(Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8)),
+                destination ->
+                        new BufferedWriter(Files.newBufferedWriter(Path.of(destination), StandardCharsets.UTF_8)));
+        var registry = createCommandRegistry(inputSource, bufferIO);
         var keymap = createKeymap(registry);
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
@@ -78,7 +89,7 @@ public final class Main {
         }
     }
 
-    private static CommandRegistry createCommandRegistry(TerminalInputSource inputSource) {
+    private static CommandRegistry createCommandRegistry(TerminalInputSource inputSource, BufferIO bufferIO) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -90,6 +101,8 @@ public final class Main {
         registry.register(new BackwardDeleteCharCommand());
         registry.register(new NewlineCommand());
         registry.register(new QuitCommand(inputSource));
+        registry.register(new FindFileCommand(bufferIO));
+        registry.register(new SaveBufferCommand(bufferIO));
         return registry;
     }
 
@@ -107,6 +120,12 @@ public final class Main {
         keymap.bind(KeyStroke.of(0x7F), registry.lookup("backward-delete-char").orElseThrow());
         keymap.bind(KeyStroke.of('\n'), registry.lookup("newline").orElseThrow());
         keymap.bind(KeyStroke.ctrl('q'), registry.lookup("quit").orElseThrow());
+
+        // C-x プレフィックスキーマップ
+        var ctrlXMap = new Keymap("C-x");
+        ctrlXMap.bind(KeyStroke.ctrl('f'), registry.lookup("find-file").orElseThrow());
+        ctrlXMap.bind(KeyStroke.ctrl('s'), registry.lookup("save-buffer").orElseThrow());
+        keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         return keymap;
     }
