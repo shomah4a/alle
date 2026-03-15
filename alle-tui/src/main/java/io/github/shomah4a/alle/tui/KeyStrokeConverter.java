@@ -34,6 +34,18 @@ public final class KeyStrokeConverter {
             }
             case Enter -> Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(modifiers, '\n'));
             case Backspace -> Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(modifiers, 0x7F));
+            case ArrowUp ->
+                Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                        modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_UP));
+            case ArrowDown ->
+                Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                        modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_DOWN));
+            case ArrowLeft ->
+                Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                        modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_LEFT));
+            case ArrowRight ->
+                Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                        modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_RIGHT));
             case EOF -> Optional.empty();
             default -> Optional.empty();
         };

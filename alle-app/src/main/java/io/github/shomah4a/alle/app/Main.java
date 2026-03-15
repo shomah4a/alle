@@ -131,6 +131,19 @@ public final class Main {
         keymap.bind(KeyStroke.of('\n'), registry.lookup("newline").orElseThrow());
         keymap.bind(KeyStroke.ctrl('q'), registry.lookup("quit").orElseThrow());
 
+        // アローキー
+        keymap.bind(
+                KeyStroke.of(KeyStroke.ARROW_RIGHT),
+                registry.lookup("forward-char").orElseThrow());
+        keymap.bind(
+                KeyStroke.of(KeyStroke.ARROW_LEFT),
+                registry.lookup("backward-char").orElseThrow());
+        keymap.bind(
+                KeyStroke.of(KeyStroke.ARROW_DOWN), registry.lookup("next-line").orElseThrow());
+        keymap.bind(
+                KeyStroke.of(KeyStroke.ARROW_UP),
+                registry.lookup("previous-line").orElseThrow());
+
         // C-x プレフィックスキーマップ
         var ctrlXMap = new Keymap("C-x");
         ctrlXMap.bind(KeyStroke.ctrl('c'), registry.lookup("quit").orElseThrow());

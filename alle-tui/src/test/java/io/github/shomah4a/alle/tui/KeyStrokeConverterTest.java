@@ -95,6 +95,42 @@ class KeyStrokeConverterTest {
         }
 
         @Test
+        void 上矢印キーをARROW_UPに変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.ArrowUp);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of(KeyStroke.ARROW_UP), result.get());
+        }
+
+        @Test
+        void 下矢印キーをARROW_DOWNに変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.ArrowDown);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of(KeyStroke.ARROW_DOWN), result.get());
+        }
+
+        @Test
+        void 左矢印キーをARROW_LEFTに変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.ArrowLeft);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of(KeyStroke.ARROW_LEFT), result.get());
+        }
+
+        @Test
+        void 右矢印キーをARROW_RIGHTに変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.ArrowRight);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of(KeyStroke.ARROW_RIGHT), result.get());
+        }
+
+        @Test
         void EOFはemptyを返す() {
             var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.EOF);
             var result = KeyStrokeConverter.convert(lanterna);
@@ -104,7 +140,7 @@ class KeyStrokeConverterTest {
 
         @Test
         void 未対応の特殊キーはemptyを返す() {
-            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.ArrowUp);
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.Insert);
             var result = KeyStrokeConverter.convert(lanterna);
 
             assertTrue(result.isEmpty());

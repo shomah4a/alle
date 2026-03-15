@@ -10,6 +10,12 @@ import java.util.Set;
  */
 public record KeyStroke(Set<Modifier> modifiers, int keyCode) {
 
+    // 特殊キー用コードポイント（Unicode Private Use Area）
+    public static final int ARROW_UP = 0xF700;
+    public static final int ARROW_DOWN = 0xF701;
+    public static final int ARROW_LEFT = 0xF702;
+    public static final int ARROW_RIGHT = 0xF703;
+
     public KeyStroke {
         modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
     }
