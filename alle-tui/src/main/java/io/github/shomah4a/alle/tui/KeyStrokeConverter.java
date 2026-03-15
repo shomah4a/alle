@@ -47,6 +47,7 @@ public final class KeyStrokeConverter {
             case ArrowRight ->
                 Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
                         modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_RIGHT));
+            case Tab -> Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(modifiers, '\t'));
             case EOF -> Optional.empty();
             default -> Optional.empty();
         };

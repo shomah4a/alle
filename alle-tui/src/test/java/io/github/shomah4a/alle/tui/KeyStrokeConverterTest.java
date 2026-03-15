@@ -131,6 +131,15 @@ class KeyStrokeConverterTest {
         }
 
         @Test
+        void Tabキーをタブ文字に変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.Tab);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of('\t'), result.get());
+        }
+
+        @Test
         void EOFはemptyを返す() {
             var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.EOF);
             var result = KeyStrokeConverter.convert(lanterna);
