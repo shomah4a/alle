@@ -45,6 +45,9 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
+        // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
+        disableFlowControl();
+
         Terminal terminal = new UnixTerminal(System.in, System.out, StandardCharsets.UTF_8);
         Screen screen = new TerminalScreen(terminal);
         try {
@@ -52,6 +55,7 @@ public final class Main {
             run(screen);
         } finally {
             screen.stopScreen();
+            restoreFlowControl();
         }
     }
 
@@ -129,5 +133,13 @@ public final class Main {
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         return keymap;
+    }
+
+    private static void disableFlowControl() throws IOException {
+        new ProcessBuilder("stty", "-ixon").inheritIO().start().onExit().join();
+    }
+
+    private static void restoreFlowControl() throws IOException {
+        new ProcessBuilder("stty", "ixon").inheritIO().start().onExit().join();
     }
 }
