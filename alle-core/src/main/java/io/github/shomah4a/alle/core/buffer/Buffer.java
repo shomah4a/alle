@@ -2,9 +2,15 @@ package io.github.shomah4a.alle.core.buffer;
 
 import io.github.shomah4a.alle.core.io.LineEnding;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.MajorMode;
+import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -19,12 +25,16 @@ public class Buffer {
     private @Nullable Path filePath;
     private LineEnding lineEnding;
     private @Nullable Keymap localKeymap;
+    private MajorMode majorMode;
+    private final MutableList<MinorMode> minorModes;
     private boolean dirty;
 
     public Buffer(String name, TextModel textModel) {
         this.name = name;
         this.textModel = textModel;
         this.lineEnding = LineEnding.LF;
+        this.majorMode = new TextMode();
+        this.minorModes = Lists.mutable.empty();
         this.dirty = false;
     }
 
@@ -85,6 +95,43 @@ public class Buffer {
      */
     public void clearLocalKeymap() {
         this.localKeymap = null;
+    }
+
+    /**
+     * メジャーモードを返す。
+     */
+    public MajorMode getMajorMode() {
+        return majorMode;
+    }
+
+    /**
+     * メジャーモードを設定する。
+     */
+    public void setMajorMode(MajorMode majorMode) {
+        this.majorMode = majorMode;
+    }
+
+    /**
+     * 有効なマイナーモードの一覧を返す。
+     */
+    public ListIterable<MinorMode> getMinorModes() {
+        return minorModes;
+    }
+
+    /**
+     * マイナーモードを有効にする。
+     */
+    public void enableMinorMode(MinorMode mode) {
+        if (!minorModes.contains(mode)) {
+            minorModes.add(mode);
+        }
+    }
+
+    /**
+     * マイナーモードを無効にする。
+     */
+    public void disableMinorMode(MinorMode mode) {
+        minorModes.remove(mode);
     }
 
     /**

@@ -89,7 +89,9 @@ public class ScreenRenderer {
 
         String dirty = buffer.isDirty() ? "**" : "--";
         String bufferName = buffer.getName();
-        String modeLine = String.format("--%s  %s    (%d,%d)", dirty, bufferName, lineIndex + 1, column);
+        String modeName = buffer.getMajorMode().name();
+        String modeLine =
+                String.format("--%s  %s    (%d,%d)  (%s)", dirty, bufferName, lineIndex + 1, column, modeName);
 
         // モードライン全体を反転表示で描画
         for (int col = 0; col < maxColumns; col++) {

@@ -29,6 +29,8 @@ import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -80,7 +82,8 @@ public final class Main {
                 destination ->
                         new BufferedWriter(Files.newBufferedWriter(Path.of(destination), StandardCharsets.UTF_8)));
         DirectoryLister directoryLister = Main::listDirectory;
-        var registry = createCommandRegistry(inputSource, bufferIO, directoryLister);
+        var autoModeMap = new AutoModeMap(TextMode::new);
+        var registry = createCommandRegistry(inputSource, bufferIO, directoryLister, autoModeMap);
         var keymap = createKeymap(registry);
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
@@ -102,7 +105,10 @@ public final class Main {
     }
 
     private static CommandRegistry createCommandRegistry(
-            TerminalInputSource inputSource, BufferIO bufferIO, DirectoryLister directoryLister) {
+            TerminalInputSource inputSource,
+            BufferIO bufferIO,
+            DirectoryLister directoryLister,
+            AutoModeMap autoModeMap) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -117,7 +123,7 @@ public final class Main {
         registry.register(new PreviousLineCommand());
         registry.register(new QuitCommand(inputSource));
         registry.register(
-                new FindFileCommand(bufferIO, directoryLister, Path.of("").toAbsolutePath()));
+                new FindFileCommand(bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap));
         registry.register(new SaveBufferCommand(bufferIO, directoryLister));
         registry.register(new SwitchBufferCommand());
         registry.register(new OtherWindowCommand());

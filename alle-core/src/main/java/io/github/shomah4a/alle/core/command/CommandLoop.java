@@ -69,13 +69,39 @@ public class CommandLoop {
     }
 
     private Optional<KeymapEntry> resolveKey(KeyStroke keyStroke) {
-        var localKeymapOpt = frame.getActiveWindow().getBuffer().getLocalKeymap();
+        var buffer = frame.getActiveWindow().getBuffer();
+
+        // 1. バッファローカルキーマップ（ミニバッファ用）
+        var localKeymapOpt = buffer.getLocalKeymap();
         if (localKeymapOpt.isPresent()) {
             var localEntry = localKeymapOpt.get().lookup(keyStroke);
             if (localEntry.isPresent()) {
                 return localEntry;
             }
         }
+
+        // 2. マイナーモードキーマップ（後から有効にしたものが優先）
+        var minorModes = buffer.getMinorModes();
+        for (int i = minorModes.size() - 1; i >= 0; i--) {
+            var modeKeymapOpt = minorModes.get(i).keymap();
+            if (modeKeymapOpt.isPresent()) {
+                var entry = modeKeymapOpt.get().lookup(keyStroke);
+                if (entry.isPresent()) {
+                    return entry;
+                }
+            }
+        }
+
+        // 3. メジャーモードキーマップ
+        var majorKeymapOpt = buffer.getMajorMode().keymap();
+        if (majorKeymapOpt.isPresent()) {
+            var entry = majorKeymapOpt.get().lookup(keyStroke);
+            if (entry.isPresent()) {
+                return entry;
+            }
+        }
+
+        // 4. グローバルキーマップ
         return keyResolver.resolve(keyStroke);
     }
 

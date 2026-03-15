@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,11 +26,14 @@ public class FindFileCommand implements Command {
     private final BufferIO bufferIO;
     private final DirectoryLister directoryLister;
     private final Path workingDirectory;
+    private final AutoModeMap autoModeMap;
 
-    public FindFileCommand(BufferIO bufferIO, DirectoryLister directoryLister, Path workingDirectory) {
+    public FindFileCommand(
+            BufferIO bufferIO, DirectoryLister directoryLister, Path workingDirectory, AutoModeMap autoModeMap) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
+        this.autoModeMap = autoModeMap;
     }
 
     @Override
@@ -73,6 +77,7 @@ public class FindFileCommand implements Command {
             buffer = new Buffer(path.getFileName().toString(), new GapTextModel(), path);
         }
 
+        buffer.setMajorMode(autoModeMap.resolve(buffer.getName()));
         context.bufferManager().add(buffer);
         switchToBuffer(context, buffer);
     }
