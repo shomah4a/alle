@@ -123,6 +123,7 @@ public final class Main {
 
         // C-x プレフィックスキーマップ
         var ctrlXMap = new Keymap("C-x");
+        ctrlXMap.bind(KeyStroke.ctrl('c'), registry.lookup("quit").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('f'), registry.lookup("find-file").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('s'), registry.lookup("save-buffer").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
