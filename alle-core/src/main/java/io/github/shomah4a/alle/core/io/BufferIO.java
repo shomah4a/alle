@@ -40,6 +40,7 @@ public class BufferIO {
 
         String bufferName = filePath.getFileName().toString();
         var buffer = new Buffer(bufferName, new GapTextModel(), filePath);
+        buffer.setLineEnding(lineEnding);
         if (!normalizedText.isEmpty()) {
             buffer.insertText(0, normalizedText);
         }
@@ -49,19 +50,18 @@ public class BufferIO {
 
     /**
      * バッファの内容をファイルに保存する。
-     * 指定された改行コードに変換して書き込む。
+     * バッファが保持するLineEndingに変換して書き込む。
      *
-     * @param buffer    保存するバッファ
-     * @param lineEnding 書き込み時の改行コード
+     * @param buffer 保存するバッファ
      * @throws IOException 書き込みに失敗した場合
      * @throws IllegalStateException バッファにファイルパスが設定されていない場合
      */
-    public void save(Buffer buffer, LineEnding lineEnding) throws IOException {
+    public void save(Buffer buffer) throws IOException {
         Path filePath = buffer.getFilePath()
                 .orElseThrow(() -> new IllegalStateException("Buffer has no file path: " + buffer.getName()));
 
         String text = buffer.getText();
-        String denormalizedText = lineEnding.denormalize(text);
+        String denormalizedText = buffer.getLineEnding().denormalize(text);
 
         try (Writer writer = bufferWriter.open(filePath.toString())) {
             writer.write(denormalizedText);

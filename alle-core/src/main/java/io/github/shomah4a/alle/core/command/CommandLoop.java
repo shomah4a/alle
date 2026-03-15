@@ -10,6 +10,8 @@ import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * キー入力→コマンド解決→コマンド実行のメインループ。
@@ -18,6 +20,8 @@ import java.util.Optional;
  * キーマップに未マッチのキーは無視される。
  */
 public class CommandLoop {
+
+    private static final Logger logger = Logger.getLogger(CommandLoop.class.getName());
 
     private final InputSource inputSource;
     private final KeyResolver keyResolver;
@@ -88,7 +92,12 @@ public class CommandLoop {
                         Optional.of(keyStroke),
                         thisCommand,
                         lastCommand);
-                command.execute(context).thenRun(() -> lastCommand = thisCommand);
+                command.execute(context)
+                        .thenRun(() -> lastCommand = thisCommand)
+                        .exceptionally(ex -> {
+                            logger.log(Level.WARNING, "コマンド実行中に例外が発生: " + command.name(), ex);
+                            return null;
+                        });
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> handlePrefix(prefixKeymap);
         }

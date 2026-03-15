@@ -26,9 +26,16 @@ final class TestCommandContextFactory {
      * 最小限のコンテキストを生成する。triggeringKey・コマンド履歴なし。
      */
     static CommandContext create(Frame frame, BufferManager bufferManager) {
+        return create(frame, bufferManager, NOOP_PROMPTER);
+    }
+
+    /**
+     * InputPrompter指定でコンテキストを生成する。triggeringKey・コマンド履歴なし。
+     */
+    static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
         var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
-                frame, bufferManager, windowActor, NOOP_PROMPTER, Optional.empty(), Optional.empty(), Optional.empty());
+                frame, bufferManager, windowActor, inputPrompter, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /**

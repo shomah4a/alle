@@ -44,6 +44,7 @@ class BufferIOTest {
             assertEquals("test.txt", result.buffer().getName());
             assertEquals("Hello\nWorld", result.buffer().getText());
             assertEquals(LineEnding.LF, result.lineEnding());
+            assertEquals(LineEnding.LF, result.buffer().getLineEnding());
             assertFalse(result.buffer().isDirty());
             assertEquals(Path.of("/tmp/test.txt"), result.buffer().getFilePath().orElseThrow());
         }
@@ -56,6 +57,7 @@ class BufferIOTest {
 
             assertEquals("Hello\nWorld\n", result.buffer().getText());
             assertEquals(LineEnding.CRLF, result.lineEnding());
+            assertEquals(LineEnding.CRLF, result.buffer().getLineEnding());
         }
 
         @Test
@@ -90,7 +92,7 @@ class BufferIOTest {
 
             buffer.insertText(buffer.length(), "\nFoo");
 
-            io.save(buffer, LineEnding.LF);
+            io.save(buffer);
 
             assertEquals(
                     "Hello\nWorld\nFoo",
@@ -104,7 +106,7 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/test.txt"));
 
-            io.save(result.buffer(), LineEnding.CRLF);
+            io.save(result.buffer());
 
             assertEquals(
                     "Hello\r\nWorld",
@@ -117,7 +119,7 @@ class BufferIOTest {
             var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
             var buffer = new io.github.shomah4a.alle.core.buffer.Buffer("nopath", textModel);
 
-            assertThrows(IllegalStateException.class, () -> io.save(buffer, LineEnding.LF));
+            assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }
     }
 }

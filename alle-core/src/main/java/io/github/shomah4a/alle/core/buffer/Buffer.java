@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.io.LineEnding;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
@@ -16,12 +17,14 @@ public class Buffer {
     private final String name;
     private final TextModel textModel;
     private @Nullable Path filePath;
+    private LineEnding lineEnding;
     private @Nullable Keymap localKeymap;
     private boolean dirty;
 
     public Buffer(String name, TextModel textModel) {
         this.name = name;
         this.textModel = textModel;
+        this.lineEnding = LineEnding.LF;
         this.dirty = false;
     }
 
@@ -40,6 +43,14 @@ public class Buffer {
 
     public void setFilePath(Path filePath) {
         this.filePath = filePath;
+    }
+
+    public LineEnding getLineEnding() {
+        return lineEnding;
+    }
+
+    public void setLineEnding(LineEnding lineEnding) {
+        this.lineEnding = lineEnding;
     }
 
     public boolean isDirty() {

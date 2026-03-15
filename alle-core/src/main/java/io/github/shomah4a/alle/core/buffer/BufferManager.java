@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
@@ -41,6 +42,14 @@ public class BufferManager {
      */
     public Optional<Buffer> findByName(String name) {
         return Optional.ofNullable(buffers.detect(b -> b.getName().equals(name)));
+    }
+
+    /**
+     * ファイルパスでバッファを検索する。
+     */
+    public Optional<Buffer> findByPath(Path path) {
+        return Optional.ofNullable(
+                buffers.detect(b -> b.getFilePath().map(p -> p.equals(path)).orElse(false)));
     }
 
     /**
