@@ -18,10 +18,10 @@ import io.github.shomah4a.alle.core.window.Window;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class SaveBufferCommandTest {
 
     private Frame frame;
     private BufferManager bufferManager;
-    private final Map<String, StringWriter> writerStorage = new HashMap<>();
+    private final MutableMap<String, StringWriter> writerStorage = Maps.mutable.empty();
     private BufferIO bufferIO;
 
     @BeforeEach

@@ -8,21 +8,21 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class BufferIOTest {
 
-    private final Map<String, String> storage = new HashMap<>();
+    private final MutableMap<String, String> storage = Maps.mutable.empty();
 
     private BufferReader inMemoryReader() {
         return source -> new StringReader(storage.getOrDefault(source, ""));
     }
 
-    private final Map<String, StringWriter> writerStorage = new HashMap<>();
+    private final MutableMap<String, StringWriter> writerStorage = Maps.mutable.empty();
 
     private BufferWriter inMemoryWriter() {
         return destination -> {

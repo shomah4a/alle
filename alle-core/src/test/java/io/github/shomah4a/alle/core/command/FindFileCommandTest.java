@@ -18,16 +18,16 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class FindFileCommandTest {
 
-    private final Map<String, String> storage = new HashMap<>();
+    private final MutableMap<String, String> storage = Maps.mutable.empty();
     private Frame frame;
     private BufferManager bufferManager;
     private BufferIO bufferIO;

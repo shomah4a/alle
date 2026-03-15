@@ -10,7 +10,8 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowTree;
 import java.io.IOException;
-import java.util.Set;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
  * Frame/Window/Bufferの内容をLanternaのScreenに描画する。
@@ -188,7 +189,7 @@ public class ScreenRenderer {
      * 全角文字かどうかを判定する。
      * East Asian Width が Wide (W) または Fullwidth (F) の場合にtrueを返す。
      */
-    private static final Set<Character.UnicodeBlock> FULL_WIDTH_BLOCKS = Set.of(
+    private static final ImmutableSet<Character.UnicodeBlock> FULL_WIDTH_BLOCKS = Sets.immutable.with(
             Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
             Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
             Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B,

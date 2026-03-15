@@ -1,14 +1,14 @@
 package io.github.shomah4a.alle.core.keybind;
 
-import java.util.EnumSet;
 import java.util.Objects;
-import java.util.Set;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
  * 単一のキー入力。修飾キーの組み合わせとキーコードで構成される。
  * 例: Ctrl+X, Meta+F など。
  */
-public record KeyStroke(Set<Modifier> modifiers, int keyCode) {
+public record KeyStroke(ImmutableSet<Modifier> modifiers, int keyCode) {
 
     // 特殊キー用コードポイント（Unicode Private Use Area）
     public static final int ARROW_UP = 0xF700;
@@ -16,37 +16,32 @@ public record KeyStroke(Set<Modifier> modifiers, int keyCode) {
     public static final int ARROW_LEFT = 0xF702;
     public static final int ARROW_RIGHT = 0xF703;
 
-    public KeyStroke {
-        modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
-    }
-
     /**
      * 修飾キーなしのキーストロークを生成する。
      */
     public static KeyStroke of(int keyCode) {
-        return new KeyStroke(EnumSet.noneOf(Modifier.class), keyCode);
+        return new KeyStroke(Sets.immutable.empty(), keyCode);
     }
 
     /**
      * 修飾キー付きのキーストロークを生成する。
      */
     public static KeyStroke of(int keyCode, Modifier... modifiers) {
-        return new KeyStroke(
-                modifiers.length == 0 ? EnumSet.noneOf(Modifier.class) : EnumSet.of(modifiers[0], modifiers), keyCode);
+        return new KeyStroke(Sets.immutable.with(modifiers), keyCode);
     }
 
     /**
      * Ctrl+キーのキーストロークを生成する。
      */
     public static KeyStroke ctrl(int keyCode) {
-        return new KeyStroke(EnumSet.of(Modifier.CTRL), keyCode);
+        return new KeyStroke(Sets.immutable.of(Modifier.CTRL), keyCode);
     }
 
     /**
      * Meta+キーのキーストロークを生成する。
      */
     public static KeyStroke meta(int keyCode) {
-        return new KeyStroke(EnumSet.of(Modifier.META), keyCode);
+        return new KeyStroke(Sets.immutable.of(Modifier.META), keyCode);
     }
 
     @Override

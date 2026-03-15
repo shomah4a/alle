@@ -2,9 +2,10 @@ package io.github.shomah4a.alle.tui;
 
 import com.googlecode.lanterna.input.KeyType;
 import io.github.shomah4a.alle.core.keybind.Modifier;
-import java.util.EnumSet;
 import java.util.Optional;
-import java.util.Set;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.ImmutableSet;
+import org.eclipse.collections.api.set.MutableSet;
 
 /**
  * LanternaのKeyStrokeからalleのKeyStrokeへの変換を行う。
@@ -20,7 +21,7 @@ public final class KeyStrokeConverter {
      */
     public static Optional<io.github.shomah4a.alle.core.keybind.KeyStroke> convert(
             com.googlecode.lanterna.input.KeyStroke lanternaKeyStroke) {
-        Set<Modifier> modifiers = extractModifiers(lanternaKeyStroke);
+        ImmutableSet<Modifier> modifiers = extractModifiers(lanternaKeyStroke);
         KeyType keyType = lanternaKeyStroke.getKeyType();
 
         return switch (keyType) {
@@ -51,8 +52,8 @@ public final class KeyStrokeConverter {
         };
     }
 
-    private static Set<Modifier> extractModifiers(com.googlecode.lanterna.input.KeyStroke keyStroke) {
-        EnumSet<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
+    private static ImmutableSet<Modifier> extractModifiers(com.googlecode.lanterna.input.KeyStroke keyStroke) {
+        MutableSet<Modifier> modifiers = Sets.mutable.empty();
         if (keyStroke.isCtrlDown()) {
             modifiers.add(Modifier.CTRL);
         }
@@ -62,6 +63,6 @@ public final class KeyStrokeConverter {
         if (keyStroke.isShiftDown()) {
             modifiers.add(Modifier.SHIFT);
         }
-        return modifiers;
+        return modifiers.toImmutable();
     }
 }
