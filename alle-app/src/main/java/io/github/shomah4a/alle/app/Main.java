@@ -193,7 +193,7 @@ public final class Main {
         ctrlXMap.bind(KeyStroke.ctrl('c'), registry.lookup("quit").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('f'), registry.lookup("find-file").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('s'), registry.lookup("save-buffer").orElseThrow());
-        ctrlXMap.bind(KeyStroke.ctrl('o'), registry.lookup("other-window").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('o'), registry.lookup("other-window").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('b'), registry.lookup("switch-to-buffer").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('k'), registry.lookup("kill-buffer").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('1'), registry.lookup("delete-other-windows").orElseThrow());
