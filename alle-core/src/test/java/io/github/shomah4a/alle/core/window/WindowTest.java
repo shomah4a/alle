@@ -191,6 +191,32 @@ class WindowTest {
         }
 
         @Test
+        void 削除対象と一致する直前バッファがクリアされる() {
+            var window = createWindow();
+            var originalBuffer = window.getBuffer();
+            var newBuffer = new Buffer("new", new GapTextModel());
+            window.setBuffer(newBuffer);
+
+            window.clearPreviousBufferIf(originalBuffer);
+
+            assertTrue(window.getPreviousBuffer().isEmpty());
+        }
+
+        @Test
+        void 削除対象と一致しない直前バッファはクリアされない() {
+            var window = createWindow();
+            var originalBuffer = window.getBuffer();
+            var newBuffer = new Buffer("new", new GapTextModel());
+            var unrelated = new Buffer("unrelated", new GapTextModel());
+            window.setBuffer(newBuffer);
+
+            window.clearPreviousBufferIf(unrelated);
+
+            assertTrue(window.getPreviousBuffer().isPresent());
+            assertSame(originalBuffer, window.getPreviousBuffer().get());
+        }
+
+        @Test
         void 複数回切り替えると直近の切り替え元が直前バッファになる() {
             var window = createWindow();
             var bufferB = new Buffer("b", new GapTextModel());

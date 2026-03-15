@@ -45,6 +45,16 @@ public class Window {
     }
 
     /**
+     * 直前バッファが指定バッファと同一の場合にクリアする。
+     * バッファ削除時の dangling reference 防止用。
+     */
+    public void clearPreviousBufferIf(Buffer target) {
+        if (previousBuffer == target) {
+            previousBuffer = null;
+        }
+    }
+
+    /**
      * カーソル位置(point)をコードポイント単位で返す。
      * バッファの長さを超過している場合は末尾にclampする。
      */
