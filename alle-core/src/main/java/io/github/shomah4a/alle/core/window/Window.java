@@ -15,6 +15,7 @@ public class Window {
     private @Nullable Buffer previousBuffer;
     private int point;
     private int displayStartLine;
+    private @Nullable Integer mark;
 
     public Window(Buffer buffer) {
         this.buffer = buffer;
@@ -35,6 +36,7 @@ public class Window {
         this.buffer = buffer;
         this.point = 0;
         this.displayStartLine = 0;
+        this.mark = null;
     }
 
     /**
@@ -103,9 +105,11 @@ public class Window {
      * カーソル位置に文字列を挿入し、カーソルを挿入文字列の後ろに移動する。
      */
     public void insert(String text) {
-        buffer.insertText(point, text);
+        int cursorBefore = point;
+        var inverseChange = buffer.insertText(point, text);
         int insertedCodePoints = (int) text.codePoints().count();
         point += insertedCodePoints;
+        buffer.getUndoManager().record(inverseChange, cursorBefore);
         buffer.markDirty();
     }
 
@@ -117,9 +121,11 @@ public class Window {
         if (deleteCount == 0) {
             return;
         }
+        int cursorBefore = point;
         int deleteStart = point - deleteCount;
-        buffer.deleteText(deleteStart, deleteCount);
+        var inverseChange = buffer.deleteText(deleteStart, deleteCount);
         point = deleteStart;
+        buffer.getUndoManager().record(inverseChange, cursorBefore);
         buffer.markDirty();
     }
 
@@ -132,7 +138,57 @@ public class Window {
         if (deleteCount == 0) {
             return;
         }
-        buffer.deleteText(point, deleteCount);
+        int cursorBefore = point;
+        var inverseChange = buffer.deleteText(point, deleteCount);
+        buffer.getUndoManager().record(inverseChange, cursorBefore);
         buffer.markDirty();
+    }
+
+    /**
+     * markを設定する。
+     */
+    public void setMark(int mark) {
+        int length = buffer.length();
+        if (mark < 0 || mark > length) {
+            throw new IndexOutOfBoundsException("mark " + mark + " is out of bounds [0, " + length + "]");
+        }
+        this.mark = mark;
+    }
+
+    /**
+     * markをクリアする。
+     */
+    public void clearMark() {
+        this.mark = null;
+    }
+
+    /**
+     * markを返す。バッファ長を超過している場合はclampする。
+     */
+    public Optional<Integer> getMark() {
+        if (mark == null) {
+            return Optional.empty();
+        }
+        int length = buffer.length();
+        if (mark > length) {
+            mark = length;
+        }
+        return Optional.of(mark);
+    }
+
+    /**
+     * regionの開始位置（markとpointの小さい方）を返す。
+     * markが未設定の場合はempty。
+     */
+    public Optional<Integer> getRegionStart() {
+        return getMark().map(m -> Math.min(m, getPoint()));
+    }
+
+    /**
+     * regionの終了位置（markとpointの大きい方）を返す。
+     * markが未設定の場合はempty。
+     */
+    public Optional<Integer> getRegionEnd() {
+        return getMark().map(m -> Math.max(m, getPoint()));
     }
 }

@@ -267,7 +267,8 @@ class MinibufferInputPrompterTest {
                     prompter,
                     Optional.of(keyStroke),
                     Optional.empty(),
-                    Optional.empty());
+                    Optional.empty(),
+                    new io.github.shomah4a.alle.core.command.KillRing());
             binding.command().execute(context).join();
         }
     }

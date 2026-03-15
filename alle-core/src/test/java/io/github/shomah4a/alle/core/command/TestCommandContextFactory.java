@@ -35,7 +35,14 @@ final class TestCommandContextFactory {
     static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
         var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
-                frame, bufferManager, windowActor, inputPrompter, Optional.empty(), Optional.empty(), Optional.empty());
+                frame,
+                bufferManager,
+                windowActor,
+                inputPrompter,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                new KillRing());
     }
 
     /**
@@ -50,7 +57,25 @@ final class TestCommandContextFactory {
                 NOOP_PROMPTER,
                 Optional.of(triggeringKey),
                 Optional.empty(),
-                Optional.empty());
+                Optional.empty(),
+                new KillRing());
+    }
+
+    /**
+     * KillRingとlastCommand指定でコンテキストを生成する。
+     */
+    static CommandContext create(
+            Frame frame, BufferManager bufferManager, KillRing killRing, Optional<String> lastCommand) {
+        var windowActor = new WindowActor(frame.getActiveWindow());
+        return new CommandContext(
+                frame,
+                bufferManager,
+                windowActor,
+                NOOP_PROMPTER,
+                Optional.empty(),
+                Optional.empty(),
+                lastCommand,
+                killRing);
     }
 
     /**

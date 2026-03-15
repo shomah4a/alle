@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.command.CopyRegionCommand;
 import io.github.shomah4a.alle.core.command.DeleteCharCommand;
 import io.github.shomah4a.alle.core.command.EndOfLineCommand;
 import io.github.shomah4a.alle.core.command.ExecuteCommandCommand;
@@ -17,13 +18,18 @@ import io.github.shomah4a.alle.core.command.FindFileCommand;
 import io.github.shomah4a.alle.core.command.ForwardCharCommand;
 import io.github.shomah4a.alle.core.command.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
+import io.github.shomah4a.alle.core.command.KillRegionCommand;
 import io.github.shomah4a.alle.core.command.NewlineCommand;
 import io.github.shomah4a.alle.core.command.NextLineCommand;
 import io.github.shomah4a.alle.core.command.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.PreviousLineCommand;
+import io.github.shomah4a.alle.core.command.RedoCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
+import io.github.shomah4a.alle.core.command.SetMarkCommand;
 import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
+import io.github.shomah4a.alle.core.command.UndoCommand;
+import io.github.shomah4a.alle.core.command.YankCommand;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
@@ -132,6 +138,12 @@ public final class Main {
         registry.register(new OtherWindowCommand());
         registry.register(new KillBufferCommand());
         registry.register(new ExecuteCommandCommand(registry));
+        registry.register(new SetMarkCommand());
+        registry.register(new KillRegionCommand());
+        registry.register(new CopyRegionCommand());
+        registry.register(new YankCommand());
+        registry.register(new UndoCommand());
+        registry.register(new RedoCommand());
         return registry;
     }
 
@@ -174,6 +186,22 @@ public final class Main {
         ctrlXMap.bind(KeyStroke.of('b'), registry.lookup("switch-to-buffer").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('k'), registry.lookup("kill-buffer").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
+
+        // C-SPC (mark)
+        keymap.bind(KeyStroke.ctrl(' '), registry.lookup("set-mark").orElseThrow());
+
+        // kill/yank
+        keymap.bind(KeyStroke.ctrl('w'), registry.lookup("kill-region").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('y'), registry.lookup("yank").orElseThrow());
+
+        // M-w (copy region)
+        keymap.bind(KeyStroke.meta('w'), registry.lookup("copy-region").orElseThrow());
+
+        // C-/ (undo) — ターミナルでは0x1FとしてLanternaがCtrl+'_'に変換する
+        keymap.bind(KeyStroke.ctrl('_'), registry.lookup("undo").orElseThrow());
+
+        // M-/ (redo)
+        keymap.bind(KeyStroke.meta('/'), registry.lookup("redo").orElseThrow());
 
         // M-x
         keymap.bind(KeyStroke.meta('x'), registry.lookup("execute-command").orElseThrow());

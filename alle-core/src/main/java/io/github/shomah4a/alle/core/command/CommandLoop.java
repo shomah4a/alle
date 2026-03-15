@@ -28,6 +28,7 @@ public class CommandLoop {
     private final Frame frame;
     private final BufferManager bufferManager;
     private final InputPrompter inputPrompter;
+    private final KillRing killRing;
     private Optional<String> lastCommand = Optional.empty();
 
     public CommandLoop(
@@ -36,11 +37,22 @@ public class CommandLoop {
             Frame frame,
             BufferManager bufferManager,
             InputPrompter inputPrompter) {
+        this(inputSource, keyResolver, frame, bufferManager, inputPrompter, new KillRing());
+    }
+
+    public CommandLoop(
+            InputSource inputSource,
+            KeyResolver keyResolver,
+            Frame frame,
+            BufferManager bufferManager,
+            InputPrompter inputPrompter,
+            KillRing killRing) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.inputPrompter = inputPrompter;
+        this.killRing = killRing;
     }
 
     /**
@@ -117,7 +129,8 @@ public class CommandLoop {
                         inputPrompter,
                         Optional.of(keyStroke),
                         thisCommand,
-                        lastCommand);
+                        lastCommand,
+                        killRing);
                 command.execute(context)
                         .thenRun(() -> lastCommand = thisCommand)
                         .exceptionally(ex -> {

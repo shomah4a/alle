@@ -6,7 +6,9 @@ import java.util.concurrent.CompletableFuture;
  * カーソルから行末まで削除するコマンド。
  * 行末にいる場合は改行文字を削除して次の行と結合する。
  * バッファ末尾では何もしない。
- * Emacsのkill-lineに相当する（kill-ringへの蓄積は未実装）。
+ * 削除したテキストはkill-ringに蓄積される。
+ * 連続実行時は前回のエントリに追記する。
+ * Emacsのkill-lineに相当する。
  */
 public class KillLineCommand implements Command {
 
@@ -32,10 +34,22 @@ public class KillLineCommand implements Command {
             int lineLength = (int) lineText.codePoints().count();
             int lineEnd = lineStart + lineLength;
 
+            int deleteCount;
             if (point < lineEnd) {
-                window.deleteForward(lineEnd - point);
+                deleteCount = lineEnd - point;
             } else {
-                window.deleteForward(1);
+                deleteCount = 1;
+            }
+
+            String killedText = buffer.substring(point, point + deleteCount);
+            window.deleteForward(deleteCount);
+
+            boolean isConsecutiveKill =
+                    context.lastCommand().map(last -> last.equals(name())).orElse(false);
+            if (isConsecutiveKill) {
+                context.killRing().appendToLast(killedText);
+            } else {
+                context.killRing().push(killedText);
             }
             return null;
         });

@@ -14,6 +14,7 @@ import java.util.Optional;
  * ユーザーからの文字列入力はinputPrompter経由で行う。
  * triggeringKeyはコマンドを発動したキーストローク（プログラム的呼び出し時はempty）。
  * thisCommandは現在実行中のコマンド名、lastCommandは直前に実行されたコマンド名。
+ * killRingはkillコマンドで削除されたテキストの蓄積先。
  */
 public record CommandContext(
         Frame frame,
@@ -22,4 +23,5 @@ public record CommandContext(
         InputPrompter inputPrompter,
         Optional<KeyStroke> triggeringKey,
         Optional<String> thisCommand,
-        Optional<String> lastCommand) {}
+        Optional<String> lastCommand,
+        KillRing killRing) {}

@@ -27,6 +27,7 @@ public class Buffer {
     private @Nullable Keymap localKeymap;
     private MajorMode majorMode;
     private final MutableList<MinorMode> minorModes;
+    private final UndoManager undoManager;
     private boolean dirty;
 
     public Buffer(String name, TextModel textModel) {
@@ -35,6 +36,7 @@ public class Buffer {
         this.lineEnding = LineEnding.LF;
         this.majorMode = new TextMode();
         this.minorModes = Lists.mutable.empty();
+        this.undoManager = new UndoManager();
         this.dirty = false;
     }
 
@@ -132,6 +134,13 @@ public class Buffer {
      */
     public void disableMinorMode(MinorMode mode) {
         minorModes.remove(mode);
+    }
+
+    /**
+     * UndoManagerを返す。
+     */
+    public UndoManager getUndoManager() {
+        return undoManager;
     }
 
     /**

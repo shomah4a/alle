@@ -1,12 +1,14 @@
 package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +24,20 @@ class KillLineCommandTest {
         }
         window.setPoint(point);
         return TestCommandContextFactory.create(frame, new BufferManager());
+    }
+
+    private CommandContext createContextWithKillRing(
+            String text, int point, KillRing killRing, Optional<String> lastCommand) {
+        var buffer = new Buffer("test", new GapTextModel());
+        var window = new Window(buffer);
+        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var frame = new Frame(window, minibuffer);
+        var bufferManager = new BufferManager();
+        if (!text.isEmpty()) {
+            window.insert(text);
+        }
+        window.setPoint(point);
+        return TestCommandContextFactory.create(frame, bufferManager, killRing, lastCommand);
     }
 
     @Nested
@@ -94,6 +110,40 @@ class KillLineCommandTest {
             new KillLineCommand().execute(context);
             assertEquals("", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(0, context.frame().getActiveWindow().getPoint());
+        }
+    }
+
+    @Nested
+    class killRing蓄積 {
+
+        @Test
+        void 削除テキストがkillRingにpushされる() {
+            var killRing = new KillRing();
+            var context = createContextWithKillRing("Hello\nWorld", 0, killRing, Optional.empty());
+            new KillLineCommand().execute(context).join();
+            assertEquals("Hello", killRing.current().orElseThrow());
+        }
+
+        @Test
+        void 連続killでは前回エントリに追記される() {
+            var killRing = new KillRing();
+            // 1回目のkill
+            var context1 = createContextWithKillRing("Hello\nWorld", 0, killRing, Optional.empty());
+            new KillLineCommand().execute(context1).join();
+            assertEquals("Hello", killRing.current().orElseThrow());
+
+            // 2回目のkill（lastCommandがkill-line）
+            var context2 = createContextWithKillRing("\nWorld", 0, killRing, Optional.of("kill-line"));
+            new KillLineCommand().execute(context2).join();
+            assertEquals("Hello\n", killRing.current().orElseThrow());
+        }
+
+        @Test
+        void バッファ末尾ではkillRingに何も追加されない() {
+            var killRing = new KillRing();
+            var context = createContextWithKillRing("Hello", 5, killRing, Optional.empty());
+            new KillLineCommand().execute(context).join();
+            assertTrue(killRing.current().isEmpty());
         }
     }
 }

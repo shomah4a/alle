@@ -230,6 +230,95 @@ class WindowTest {
     }
 
     @Nested
+    class マーク {
+
+        @Test
+        void 初期状態ではmarkが未設定() {
+            var window = createWindow();
+            assertTrue(window.getMark().isEmpty());
+        }
+
+        @Test
+        void markを設定して取得できる() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setMark(2);
+            assertEquals(2, window.getMark().orElseThrow());
+        }
+
+        @Test
+        void markをクリアするとemptyになる() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setMark(2);
+            window.clearMark();
+            assertTrue(window.getMark().isEmpty());
+        }
+
+        @Test
+        void 範囲外のmark設定で例外が発生する() {
+            var window = createWindow();
+            window.insert("Hello");
+            assertThrows(IndexOutOfBoundsException.class, () -> window.setMark(6));
+            assertThrows(IndexOutOfBoundsException.class, () -> window.setMark(-1));
+        }
+
+        @Test
+        void バッファ切り替えでmarkがクリアされる() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setMark(2);
+            window.setBuffer(new Buffer("other", new GapTextModel()));
+            assertTrue(window.getMark().isEmpty());
+        }
+
+        @Test
+        void markがバッファ長を超過した場合clampされる() {
+            var buffer = createBuffer();
+            var window1 = new Window(buffer);
+            var window2 = new Window(buffer);
+            window1.insert("Hello");
+            window2.setMark(5);
+            window1.setPoint(0);
+            window1.deleteForward(3);
+            // バッファ長が2なので、markは2にclampされる
+            assertEquals(2, window2.getMark().orElseThrow());
+        }
+    }
+
+    @Nested
+    class リージョン {
+
+        @Test
+        void markが未設定の場合regionStartはempty() {
+            var window = createWindow();
+            window.insert("Hello");
+            assertTrue(window.getRegionStart().isEmpty());
+            assertTrue(window.getRegionEnd().isEmpty());
+        }
+
+        @Test
+        void markがpointより前にある場合() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setMark(1);
+            window.setPoint(4);
+            assertEquals(1, window.getRegionStart().orElseThrow());
+            assertEquals(4, window.getRegionEnd().orElseThrow());
+        }
+
+        @Test
+        void markがpointより後にある場合() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setMark(4);
+            window.setPoint(1);
+            assertEquals(1, window.getRegionStart().orElseThrow());
+            assertEquals(4, window.getRegionEnd().orElseThrow());
+        }
+    }
+
+    @Nested
     class 同一バッファの複数ウィンドウ {
 
         @Test
