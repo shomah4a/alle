@@ -17,20 +17,18 @@ import io.github.shomah4a.alle.core.command.ForwardCharCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
 import io.github.shomah4a.alle.core.command.NewlineCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
-import io.github.shomah4a.alle.core.input.InputPrompter;
-import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
 import io.github.shomah4a.alle.tui.QuitCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Alleエディタのエントリポイント。
@@ -64,7 +62,7 @@ public final class Main {
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
 
-        InputPrompter prompter = message -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+        var prompter = new MinibufferInputPrompter(frame);
         var commandLoop = new CommandLoop(inputSource, resolver, frame, bufferManager, prompter);
         var renderer = new ScreenRenderer(screen);
 
