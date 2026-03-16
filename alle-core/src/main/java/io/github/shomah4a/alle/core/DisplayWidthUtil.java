@@ -1,0 +1,78 @@
+package io.github.shomah4a.alle.core;
+
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.ImmutableSet;
+
+/**
+ * Unicode文字の表示幅を計算するユーティリティ。
+ * CJK文字等の全角文字は2カラム、それ以外は1カラムとして扱う。
+ */
+public final class DisplayWidthUtil {
+
+    private DisplayWidthUtil() {}
+
+    private static final ImmutableSet<Character.UnicodeBlock> FULL_WIDTH_BLOCKS = Sets.immutable.with(
+            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
+            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
+            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B,
+            Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
+            Character.UnicodeBlock.CJK_COMPATIBILITY_FORMS,
+            Character.UnicodeBlock.CJK_RADICALS_SUPPLEMENT,
+            Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION,
+            Character.UnicodeBlock.ENCLOSED_CJK_LETTERS_AND_MONTHS,
+            Character.UnicodeBlock.HIRAGANA,
+            Character.UnicodeBlock.KATAKANA,
+            Character.UnicodeBlock.KATAKANA_PHONETIC_EXTENSIONS,
+            Character.UnicodeBlock.HANGUL_COMPATIBILITY_JAMO,
+            Character.UnicodeBlock.HANGUL_JAMO,
+            Character.UnicodeBlock.HANGUL_SYLLABLES,
+            Character.UnicodeBlock.EMOTICONS,
+            Character.UnicodeBlock.MISCELLANEOUS_SYMBOLS_AND_PICTOGRAPHS);
+
+    /**
+     * コードポイントの表示幅を返す。
+     * CJK文字等の全角文字は2、それ以外は1。
+     */
+    public static int getDisplayWidth(int codePoint) {
+        if (isFullWidth(codePoint)) {
+            return 2;
+        }
+        return 1;
+    }
+
+    /**
+     * 全角文字かどうかを判定する。
+     * East Asian Width が Wide (W) または Fullwidth (F) の場合にtrueを返す。
+     */
+    public static boolean isFullWidth(int codePoint) {
+        Character.UnicodeBlock block = Character.UnicodeBlock.of(codePoint);
+        if (block == null) {
+            return false;
+        }
+        if (FULL_WIDTH_BLOCKS.contains(block)) {
+            return true;
+        }
+        // HALFWIDTH_AND_FULLWIDTH_FORMSは半角文字も含むため、全角範囲のみ判定
+        // Lanterna の TerminalTextUtils.isCharCJK と一致させる (< 0xFF61)
+        if (block.equals(Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS)) {
+            return codePoint < 0xFF61;
+        }
+        return false;
+    }
+
+    /**
+     * 行内のコードポイントオフセットから画面上のカラム位置を計算する。
+     */
+    public static int computeColumnForOffset(String lineText, int codePointOffset) {
+        int col = 0;
+        int offset = 0;
+        int cpCount = 0;
+        while (offset < lineText.length() && cpCount < codePointOffset) {
+            int codePoint = lineText.codePointAt(offset);
+            col += getDisplayWidth(codePoint);
+            offset += Character.charCount(codePoint);
+            cpCount++;
+        }
+        return col;
+    }
+}

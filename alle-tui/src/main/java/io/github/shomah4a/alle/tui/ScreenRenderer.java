@@ -6,6 +6,7 @@ import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextCharacter;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
+import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.highlight.StyledSpan;
 import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -16,9 +17,7 @@ import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowLayout;
 import java.io.IOException;
 import java.util.Optional;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
  * Frame/Window/Bufferの内容をLanternaのScreenに描画する。
@@ -159,7 +158,7 @@ public class ScreenRenderer {
             int charCount = Character.charCount(codePoint);
             String ch = text.substring(charOffset, charOffset + charCount);
 
-            int displayWidth = getDisplayWidth(codePoint);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
             if (col + displayWidth > maxColumns) {
                 break;
             }
@@ -194,7 +193,7 @@ public class ScreenRenderer {
             int charCount = Character.charCount(codePoint);
             String ch = text.substring(offset, offset + charCount);
 
-            int displayWidth = getDisplayWidth(codePoint);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
             if (col + displayWidth > maxColumns) {
                 break;
             }
@@ -219,7 +218,7 @@ public class ScreenRenderer {
             return;
         }
 
-        int col = computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
+        int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
         screen.setCursorPosition(new TerminalPosition(rect.left() + col, rect.top() + screenRow));
     }
 
@@ -227,66 +226,9 @@ public class ScreenRenderer {
         var buffer = minibufferWindow.getBuffer();
         int point = minibufferWindow.getPoint();
         String text = buffer.getText();
-        int col = computeColumnForOffset(text, point);
+        int col = DisplayWidthUtil.computeColumnForOffset(text, point);
         if (col < maxColumns) {
             screen.setCursorPosition(new TerminalPosition(col, row));
         }
-    }
-
-    /**
-     * 行内のコードポイントオフセットから画面上のカラム位置を計算する。
-     */
-    private static int computeColumnForOffset(String lineText, int codePointOffset) {
-        int col = 0;
-        int offset = 0;
-        int cpCount = 0;
-        while (offset < lineText.length() && cpCount < codePointOffset) {
-            int codePoint = lineText.codePointAt(offset);
-            col += getDisplayWidth(codePoint);
-            offset += Character.charCount(codePoint);
-            cpCount++;
-        }
-        return col;
-    }
-
-    /**
-     * コードポイントの表示幅を返す。
-     * CJK文字等の全角文字は2、それ以外は1。
-     */
-    private static int getDisplayWidth(int codePoint) {
-        if (isFullWidth(codePoint)) {
-            return 2;
-        }
-        return 1;
-    }
-
-    /**
-     * 全角文字かどうかを判定する。
-     * East Asian Width が Wide (W) または Fullwidth (F) の場合にtrueを返す。
-     */
-    private static final ImmutableSet<Character.UnicodeBlock> FULL_WIDTH_BLOCKS = Sets.immutable.with(
-            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
-            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
-            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B,
-            Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
-            Character.UnicodeBlock.HIRAGANA,
-            Character.UnicodeBlock.KATAKANA,
-            Character.UnicodeBlock.HANGUL_SYLLABLES,
-            Character.UnicodeBlock.EMOTICONS,
-            Character.UnicodeBlock.MISCELLANEOUS_SYMBOLS_AND_PICTOGRAPHS);
-
-    private static boolean isFullWidth(int codePoint) {
-        Character.UnicodeBlock block = Character.UnicodeBlock.of(codePoint);
-        if (block == null) {
-            return false;
-        }
-        if (FULL_WIDTH_BLOCKS.contains(block)) {
-            return true;
-        }
-        // HALFWIDTH_AND_FULLWIDTH_FORMSは半角文字も含むため、全角範囲のみ判定
-        if (block.equals(Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS)) {
-            return (codePoint >= 0xFF01 && codePoint <= 0xFF60) || (codePoint >= 0xFFE0 && codePoint <= 0xFFE6);
-        }
-        return false;
     }
 }
