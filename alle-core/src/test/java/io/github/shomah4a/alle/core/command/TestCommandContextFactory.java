@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -42,7 +43,8 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
-                new KillRing());
+                new KillRing(),
+                new MessageBuffer("*Messages*", 100));
     }
 
     /**
@@ -58,7 +60,8 @@ final class TestCommandContextFactory {
                 Optional.of(triggeringKey),
                 Optional.empty(),
                 Optional.empty(),
-                new KillRing());
+                new KillRing(),
+                new MessageBuffer("*Messages*", 100));
     }
 
     /**
@@ -75,7 +78,8 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 Optional.empty(),
                 lastCommand,
-                killRing);
+                killRing,
+                new MessageBuffer("*Messages*", 100));
     }
 
     /**

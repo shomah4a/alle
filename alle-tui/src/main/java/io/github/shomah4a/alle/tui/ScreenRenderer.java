@@ -7,6 +7,7 @@ import com.googlecode.lanterna.TextCharacter;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.highlight.StyledSpan;
 import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -29,10 +30,12 @@ public class ScreenRenderer {
 
     private final Screen screen;
     private final FaceResolver faceResolver;
+    private final MessageBuffer messageBuffer;
 
-    public ScreenRenderer(Screen screen) {
+    public ScreenRenderer(Screen screen, MessageBuffer messageBuffer) {
         this.screen = screen;
         this.faceResolver = new FaceResolver();
+        this.messageBuffer = messageBuffer;
     }
 
     /**
@@ -75,10 +78,14 @@ public class ScreenRenderer {
             }
         }
 
-        // ミニバッファ
+        // ミニバッファ / エコーエリア
         var minibufferWindow = frame.getMinibufferWindow();
-        minibufferWindow.ensurePointHorizontallyVisible(cols);
-        renderMinibuffer(minibufferWindow, minibufferRow, cols);
+        if (frame.isMinibufferActive()) {
+            minibufferWindow.ensurePointHorizontallyVisible(cols);
+            renderMinibuffer(minibufferWindow, minibufferRow, cols);
+        } else if (messageBuffer.isShowingMessage()) {
+            messageBuffer.getLastMessage().ifPresent(msg -> renderLineAt(msg, minibufferRow, 0, cols, 0));
+        }
 
         // カーソル位置
         if (frame.isMinibufferActive()) {

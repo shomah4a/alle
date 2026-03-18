@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * triggeringKeyはコマンドを発動したキーストローク（プログラム的呼び出し時はempty）。
  * thisCommandは現在実行中のコマンド名、lastCommandは直前に実行されたコマンド名。
  * killRingはkillコマンドで削除されたテキストの蓄積先。
+ * messageBufferはエコーエリアへのメッセージ出力先。
  */
 public record CommandContext(
         Frame frame,
@@ -24,4 +26,5 @@ public record CommandContext(
         Optional<KeyStroke> triggeringKey,
         Optional<String> thisCommand,
         Optional<String> lastCommand,
-        KillRing killRing) {}
+        KillRing killRing,
+        MessageBuffer messageBuffer) {}

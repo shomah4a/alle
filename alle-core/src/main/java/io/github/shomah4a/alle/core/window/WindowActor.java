@@ -22,8 +22,12 @@ public class WindowActor {
      * 将来的にはキュー経由で1つのメッセージとして逐次実行される。
      */
     public <T> CompletableFuture<T> atomicPerform(Function<Window, T> operation) {
-        T result = operation.apply(window);
-        return CompletableFuture.completedFuture(result);
+        try {
+            T result = operation.apply(window);
+            return CompletableFuture.completedFuture(result);
+        } catch (RuntimeException ex) {
+            return CompletableFuture.failedFuture(ex);
+        }
     }
 
     public CompletableFuture<Buffer> getBuffer() {

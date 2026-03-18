@@ -85,13 +85,13 @@ public class KillBufferCommand implements Command {
                 allWindows.collect(Window::getBuffer).toSet().toImmutable().newWithout(excluded);
 
         // 他のウィンドウで表示されていないバッファを優先
-        var candidate = bufferManager.getBuffers().detect(b -> b != excluded && !displayedBuffers.contains(b));
+        var candidate = bufferManager.getBuffers().detect(b -> !b.equals(excluded) && !displayedBuffers.contains(b));
         if (candidate != null) {
             return candidate;
         }
 
         // なければ削除対象以外の任意のバッファ
-        var fallback = bufferManager.getBuffers().detect(b -> b != excluded);
+        var fallback = bufferManager.getBuffers().detect(b -> !b.equals(excluded));
         if (fallback != null) {
             return fallback;
         }

@@ -30,6 +30,11 @@
 - name() ベースの判定か equals/hashCode 定義かを決める
 - 具象実装追加時に対応
 
+### CommandContext のビルダーパターン
+- フィールド数が多く（9個）、テストコードでの生成が煩雑
+- TestCommandContextFactory が部分的にカバーしているが、本体側にもビルダーが欲しい
+- テストの可読性向上のため
+
 ### MajorMode/MinorMode の共通インターフェース
 - 同一メソッドシグネチャ (name(), keymap()) を持つが共通親がない
 - 意味論的に異なる概念なので現時点では不要

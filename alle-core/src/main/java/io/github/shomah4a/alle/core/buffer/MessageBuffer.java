@@ -112,7 +112,6 @@ public class MessageBuffer implements Buffer {
 
     @Override
     public String substring(int start, int end) {
-        var sb = new StringBuilder();
         String text = getText();
         int cpStart = text.offsetByCodePoints(0, start);
         int cpEnd = text.offsetByCodePoints(0, end);

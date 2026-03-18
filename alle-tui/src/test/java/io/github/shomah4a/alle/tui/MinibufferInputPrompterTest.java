@@ -268,7 +268,8 @@ class MinibufferInputPrompterTest {
                     Optional.of(keyStroke),
                     Optional.empty(),
                     Optional.empty(),
-                    new io.github.shomah4a.alle.core.command.KillRing());
+                    new io.github.shomah4a.alle.core.command.KillRing(),
+                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100));
             binding.command().execute(context).join();
         }
     }

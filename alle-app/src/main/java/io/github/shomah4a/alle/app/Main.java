@@ -5,6 +5,7 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
@@ -87,8 +88,10 @@ public final class Main {
         var window = new Window(buffer);
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
+        var messageBuffer = new MessageBuffer("*Messages*", 1000);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
+        bufferManager.add(messageBuffer);
 
         var inputSource = new TerminalInputSource(screen);
         var bufferIO = new BufferIO(
@@ -105,8 +108,10 @@ public final class Main {
         resolver.addKeymap(keymap);
 
         var prompter = new MinibufferInputPrompter(frame);
-        var commandLoop = new CommandLoop(inputSource, resolver, frame, bufferManager, prompter);
-        var renderer = new ScreenRenderer(screen);
+        var killRing = new io.github.shomah4a.alle.core.command.KillRing();
+        var commandLoop =
+                new CommandLoop(inputSource, resolver, frame, bufferManager, prompter, killRing, messageBuffer);
+        var renderer = new ScreenRenderer(screen, messageBuffer);
 
         renderer.render(frame);
 

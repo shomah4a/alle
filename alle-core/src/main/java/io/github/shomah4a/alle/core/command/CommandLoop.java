@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
@@ -29,6 +30,7 @@ public class CommandLoop {
     private final BufferManager bufferManager;
     private final InputPrompter inputPrompter;
     private final KillRing killRing;
+    private final MessageBuffer messageBuffer;
     private Optional<String> lastCommand = Optional.empty();
 
     public CommandLoop(
@@ -37,7 +39,14 @@ public class CommandLoop {
             Frame frame,
             BufferManager bufferManager,
             InputPrompter inputPrompter) {
-        this(inputSource, keyResolver, frame, bufferManager, inputPrompter, new KillRing());
+        this(
+                inputSource,
+                keyResolver,
+                frame,
+                bufferManager,
+                inputPrompter,
+                new KillRing(),
+                new MessageBuffer("*Messages*", 1000));
     }
 
     public CommandLoop(
@@ -46,13 +55,15 @@ public class CommandLoop {
             Frame frame,
             BufferManager bufferManager,
             InputPrompter inputPrompter,
-            KillRing killRing) {
+            KillRing killRing,
+            MessageBuffer messageBuffer) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.inputPrompter = inputPrompter;
         this.killRing = killRing;
+        this.messageBuffer = messageBuffer;
     }
 
     /**
@@ -74,6 +85,7 @@ public class CommandLoop {
      * アクティブウィンドウのバッファにローカルキーマップがあればそちらを優先する。
      */
     public void processKey(KeyStroke keyStroke) {
+        messageBuffer.clearShowingMessage();
         var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
             handleEntry(entryOpt.get(), keyStroke);
@@ -130,7 +142,8 @@ public class CommandLoop {
                         Optional.of(keyStroke),
                         thisCommand,
                         lastCommand,
-                        killRing);
+                        killRing,
+                        messageBuffer);
                 command.execute(context)
                         .thenRun(() -> lastCommand = thisCommand)
                         .exceptionally(ex -> {
