@@ -63,6 +63,7 @@ public class ScreenRenderer {
             }
             int bufferRows = rect.height() - 1;
             window.ensurePointVisible(bufferRows);
+            window.ensurePointHorizontallyVisible(rect.width());
             renderWindowInRect(window, rect);
         });
 
@@ -75,11 +76,13 @@ public class ScreenRenderer {
         }
 
         // ミニバッファ
-        renderMinibuffer(frame.getMinibufferWindow(), minibufferRow, cols);
+        var minibufferWindow = frame.getMinibufferWindow();
+        minibufferWindow.ensurePointHorizontallyVisible(cols);
+        renderMinibuffer(minibufferWindow, minibufferRow, cols);
 
         // カーソル位置
         if (frame.isMinibufferActive()) {
-            positionMinibufferCursor(frame.getMinibufferWindow(), minibufferRow, cols);
+            positionMinibufferCursor(minibufferWindow, minibufferRow, cols);
         } else {
             var activeWindow = frame.getActiveWindow();
             var activeRect = layoutResult.windowRects().get(activeWindow);
@@ -95,6 +98,7 @@ public class ScreenRenderer {
         var buffer = window.getBuffer();
         int lineCount = buffer.lineCount();
         int displayStart = window.getDisplayStartLine();
+        int displayStartColumn = window.getDisplayStartColumn();
         int bufferRows = rect.height() - 1; // 最終行はモードライン
         Optional<SyntaxHighlighter> highlighter = buffer.getMajorMode().highlighter();
 
@@ -104,9 +108,9 @@ public class ScreenRenderer {
             int screenRow = rect.top() + row;
             if (highlighter.isPresent()) {
                 var spans = highlighter.get().highlight(lineText);
-                renderLineWithHighlight(lineText, screenRow, rect.left(), rect.width(), spans);
+                renderLineWithHighlight(lineText, screenRow, rect.left(), rect.width(), displayStartColumn, spans);
             } else {
-                renderLineAt(lineText, screenRow, rect.left(), rect.width());
+                renderLineAt(lineText, screenRow, rect.left(), rect.width(), displayStartColumn);
             }
         }
 
@@ -143,23 +147,40 @@ public class ScreenRenderer {
             return;
         }
         String text = buffer.getText();
-        renderLineAt(text, row, 0, maxColumns);
+        renderLineAt(text, row, 0, maxColumns, minibufferWindow.getDisplayStartColumn());
     }
 
     private void renderLineWithHighlight(
-            String text, int row, int left, int maxColumns, ListIterable<StyledSpan> spans) {
-        int col = 0;
+            String text, int row, int left, int maxColumns, int displayStartColumn, ListIterable<StyledSpan> spans) {
+        int textCol = 0;
         int charOffset = 0;
         int cpIndex = 0;
         int spanIdx = 0;
 
-        while (charOffset < text.length() && col < maxColumns) {
+        // displayStartColumn までスキップ
+        while (charOffset < text.length() && textCol < displayStartColumn) {
+            int codePoint = text.codePointAt(charOffset);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
+            textCol += displayWidth;
+            charOffset += Character.charCount(codePoint);
+            cpIndex++;
+        }
+
+        // displayStartColumn が全角文字の途中だった場合、1カラム空白を埋める
+        int screenCol = 0;
+        if (textCol > displayStartColumn) {
+            screen.setCharacter(left, row, TextCharacter.fromString(" ")[0]);
+            screenCol = 1;
+        }
+
+        // 描画
+        while (charOffset < text.length() && screenCol < maxColumns) {
             int codePoint = text.codePointAt(charOffset);
             int charCount = Character.charCount(codePoint);
             String ch = text.substring(charOffset, charOffset + charCount);
 
             int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
-            if (col + displayWidth > maxColumns) {
+            if (screenCol + displayWidth > maxColumns) {
                 break;
             }
 
@@ -178,29 +199,46 @@ public class ScreenRenderer {
                 tc = TextCharacter.fromString(ch)[0];
             }
 
-            screen.setCharacter(left + col, row, tc);
-            col += displayWidth;
+            screen.setCharacter(left + screenCol, row, tc);
+            screenCol += displayWidth;
             charOffset += charCount;
             cpIndex++;
         }
     }
 
-    private void renderLineAt(String text, int row, int left, int maxColumns) {
-        int col = 0;
+    private void renderLineAt(String text, int row, int left, int maxColumns, int displayStartColumn) {
+        int textCol = 0;
         int offset = 0;
-        while (offset < text.length() && col < maxColumns) {
+
+        // displayStartColumn までスキップ
+        while (offset < text.length() && textCol < displayStartColumn) {
+            int codePoint = text.codePointAt(offset);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
+            textCol += displayWidth;
+            offset += Character.charCount(codePoint);
+        }
+
+        // displayStartColumn が全角文字の途中だった場合、1カラム空白を埋める
+        int screenCol = 0;
+        if (textCol > displayStartColumn) {
+            screen.setCharacter(left, row, TextCharacter.fromString(" ")[0]);
+            screenCol = 1;
+        }
+
+        // 描画
+        while (offset < text.length() && screenCol < maxColumns) {
             int codePoint = text.codePointAt(offset);
             int charCount = Character.charCount(codePoint);
             String ch = text.substring(offset, offset + charCount);
 
             int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
-            if (col + displayWidth > maxColumns) {
+            if (screenCol + displayWidth > maxColumns) {
                 break;
             }
 
-            screen.setCharacter(left + col, row, TextCharacter.fromString(ch)[0]);
+            screen.setCharacter(left + screenCol, row, TextCharacter.fromString(ch)[0]);
 
-            col += displayWidth;
+            screenCol += displayWidth;
             offset += charCount;
         }
     }
@@ -219,7 +257,10 @@ public class ScreenRenderer {
         }
 
         int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
-        screen.setCursorPosition(new TerminalPosition(rect.left() + col, rect.top() + screenRow));
+        int screenCol = col - window.getDisplayStartColumn();
+        if (screenCol >= 0 && screenCol < rect.width()) {
+            screen.setCursorPosition(new TerminalPosition(rect.left() + screenCol, rect.top() + screenRow));
+        }
     }
 
     private void positionMinibufferCursor(Window minibufferWindow, int row, int maxColumns) {
@@ -227,8 +268,9 @@ public class ScreenRenderer {
         int point = minibufferWindow.getPoint();
         String text = buffer.getText();
         int col = DisplayWidthUtil.computeColumnForOffset(text, point);
-        if (col < maxColumns) {
-            screen.setCursorPosition(new TerminalPosition(col, row));
+        int screenCol = col - minibufferWindow.getDisplayStartColumn();
+        if (screenCol >= 0 && screenCol < maxColumns) {
+            screen.setCursorPosition(new TerminalPosition(screenCol, row));
         }
     }
 }

@@ -197,6 +197,73 @@ class WindowTest {
     }
 
     @Nested
+    class 水平スクロール調整 {
+
+        @Test
+        void カーソルが表示範囲より右にある場合displayStartColumnが進む() {
+            var window = createWindow();
+            // "abcdefghij" = 10文字、visibleColumns=5
+            window.insert("abcdefghij");
+            // カーソルはcol=10
+            window.ensurePointHorizontallyVisible(5);
+            // cursorColumn(10) >= displayStartColumn(0) + 5 → newStart = 10 - 5 + 1 = 6
+            assertEquals(6, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void カーソルが表示範囲より左にある場合displayStartColumnが戻る() {
+            var window = createWindow();
+            window.insert("abcdefghij");
+            window.ensurePointHorizontallyVisible(5);
+            // displayStartColumn = 6
+            window.setPoint(2); // col=2
+            window.ensurePointHorizontallyVisible(5);
+            assertEquals(2, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void カーソルが表示範囲内の場合displayStartColumnは変わらない() {
+            var window = createWindow();
+            window.insert("abcdefghij");
+            window.ensurePointHorizontallyVisible(5);
+            // displayStartColumn = 6, cursor at col=10
+            window.setPoint(8); // col=8, 6 <= 8 < 11 → 範囲内
+            window.ensurePointHorizontallyVisible(5);
+            assertEquals(6, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void 全角文字でカーソルが右に出る場合displayStartColumnが丸められる() {
+            var window = createWindow();
+            // "あいうえお" = 全角5文字、各2カラム、合計10カラム
+            window.insert("あいうえお");
+            // カーソルはcol=10、visibleColumns=6
+            window.ensurePointHorizontallyVisible(6);
+            // newStart = 10 - 6 + 1 = 5 → 全角文字途中 → snap → 4
+            assertEquals(4, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void visibleColumnsが0以下の場合何もしない() {
+            var window = createWindow();
+            window.insert("abcde");
+            window.ensurePointHorizontallyVisible(0);
+            assertEquals(0, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void バッファ切り替えでdisplayStartColumnがリセットされる() {
+            var window = createWindow();
+            window.insert("abcdefghij");
+            window.ensurePointHorizontallyVisible(5);
+            assertTrue(window.getDisplayStartColumn() > 0);
+
+            window.setBuffer(new Buffer("new", new GapTextModel()));
+            assertEquals(0, window.getDisplayStartColumn());
+        }
+    }
+
+    @Nested
     class バッファ切り替え {
 
         @Test

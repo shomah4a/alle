@@ -75,4 +75,31 @@ public final class DisplayWidthUtil {
         }
         return col;
     }
+
+    /**
+     * 指定カラムが全角文字の途中に位置する場合、その文字の先頭カラムに丸める。
+     * 文字境界上であればそのまま返す。
+     *
+     * @return 文字先頭カラムに丸めた値
+     */
+    public static int snapColumnToCharBoundary(String lineText, int column) {
+        if (column <= 0) {
+            return 0;
+        }
+        int col = 0;
+        int offset = 0;
+        while (offset < lineText.length()) {
+            int codePoint = lineText.codePointAt(offset);
+            int width = getDisplayWidth(codePoint);
+            if (col + width > column) {
+                return col;
+            }
+            col += width;
+            if (col >= column) {
+                return column;
+            }
+            offset += Character.charCount(codePoint);
+        }
+        return col;
+    }
 }

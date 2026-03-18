@@ -112,4 +112,42 @@ class DisplayWidthUtilTest {
     void computeColumnForOffsetで空文字列() {
         assertEquals(0, DisplayWidthUtil.computeColumnForOffset("", 0));
     }
+
+    @Test
+    void snapColumnToCharBoundaryで文字境界上はそのまま返す() {
+        // "aあb" → a(col0), あ(col1-2), b(col3)
+        assertEquals(0, DisplayWidthUtil.snapColumnToCharBoundary("aあb", 0));
+        assertEquals(1, DisplayWidthUtil.snapColumnToCharBoundary("aあb", 1));
+        assertEquals(3, DisplayWidthUtil.snapColumnToCharBoundary("aあb", 3));
+    }
+
+    @Test
+    void snapColumnToCharBoundaryで全角文字途中は先頭カラムに丸める() {
+        // "aあb" → あは col1-2、column=2 は あの途中 → col1 に丸め
+        assertEquals(1, DisplayWidthUtil.snapColumnToCharBoundary("aあb", 2));
+    }
+
+    @Test
+    void snapColumnToCharBoundaryで全角文字のみの場合() {
+        // "あい" → あ(col0-1), い(col2-3)
+        assertEquals(0, DisplayWidthUtil.snapColumnToCharBoundary("あい", 0));
+        assertEquals(0, DisplayWidthUtil.snapColumnToCharBoundary("あい", 1)); // あの途中
+        assertEquals(2, DisplayWidthUtil.snapColumnToCharBoundary("あい", 2));
+        assertEquals(2, DisplayWidthUtil.snapColumnToCharBoundary("あい", 3)); // いの途中
+    }
+
+    @Test
+    void snapColumnToCharBoundaryでテキスト末尾を超える場合() {
+        assertEquals(2, DisplayWidthUtil.snapColumnToCharBoundary("ab", 5));
+    }
+
+    @Test
+    void snapColumnToCharBoundaryで負の値は0を返す() {
+        assertEquals(0, DisplayWidthUtil.snapColumnToCharBoundary("abc", -1));
+    }
+
+    @Test
+    void snapColumnToCharBoundaryで空文字列() {
+        assertEquals(0, DisplayWidthUtil.snapColumnToCharBoundary("", 3));
+    }
 }

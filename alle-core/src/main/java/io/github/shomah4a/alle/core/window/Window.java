@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.window;
 
+import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
@@ -15,6 +16,7 @@ public class Window {
     private @Nullable Buffer previousBuffer;
     private int point;
     private int displayStartLine;
+    private int displayStartColumn;
     private @Nullable Integer mark;
 
     public Window(Buffer buffer) {
@@ -36,6 +38,7 @@ public class Window {
         this.buffer = buffer;
         this.point = 0;
         this.displayStartLine = 0;
+        this.displayStartColumn = 0;
         this.mark = null;
     }
 
@@ -158,6 +161,36 @@ public class Window {
             displayStartLine = currentLine;
         } else if (currentLine >= displayStartLine + visibleRows) {
             displayStartLine = currentLine - visibleRows + 1;
+        }
+    }
+
+    /**
+     * 水平方向の表示開始カラムを返す。
+     */
+    public int getDisplayStartColumn() {
+        return displayStartColumn;
+    }
+
+    /**
+     * カーソル位置が水平方向の表示範囲内に収まるようにdisplayStartColumnを調整する。
+     *
+     * @param visibleColumns 表示可能なカラム数
+     */
+    public void ensurePointHorizontallyVisible(int visibleColumns) {
+        if (visibleColumns <= 0) {
+            return;
+        }
+        int currentPoint = getPoint();
+        int lineIndex = buffer.lineIndexForOffset(currentPoint);
+        int lineStart = buffer.lineStartOffset(lineIndex);
+        String lineText = buffer.lineText(lineIndex);
+        int cursorColumn = DisplayWidthUtil.computeColumnForOffset(lineText, currentPoint - lineStart);
+
+        if (cursorColumn < displayStartColumn) {
+            displayStartColumn = DisplayWidthUtil.snapColumnToCharBoundary(lineText, cursorColumn);
+        } else if (cursorColumn >= displayStartColumn + visibleColumns) {
+            int newStart = cursorColumn - visibleColumns + 1;
+            displayStartColumn = DisplayWidthUtil.snapColumnToCharBoundary(lineText, newStart);
         }
     }
 
