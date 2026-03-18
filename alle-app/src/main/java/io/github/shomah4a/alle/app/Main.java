@@ -29,8 +29,10 @@ import io.github.shomah4a.alle.core.command.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.RedoCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
+import io.github.shomah4a.alle.core.command.SaveBuffersKillAlleCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.command.SetMarkCommand;
+import io.github.shomah4a.alle.core.command.ShutdownHandler;
 import io.github.shomah4a.alle.core.command.SplitWindowBelowCommand;
 import io.github.shomah4a.alle.core.command.SplitWindowRightCommand;
 import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
@@ -105,7 +107,8 @@ public final class Main {
         var autoModeMap = new AutoModeMap(TextMode::new);
         autoModeMap.register("md", MarkdownMode::new);
         autoModeMap.register("markdown", MarkdownMode::new);
-        var registry = createCommandRegistry(inputSource, bufferIO, directoryLister, autoModeMap);
+        var shutdownHandler = new ShutdownHandler();
+        var registry = createCommandRegistry(inputSource, bufferIO, directoryLister, autoModeMap, shutdownHandler);
         var keymap = createKeymap(registry);
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
@@ -132,7 +135,8 @@ public final class Main {
             TerminalInputSource inputSource,
             BufferIO bufferIO,
             DirectoryLister directoryLister,
-            AutoModeMap autoModeMap) {
+            AutoModeMap autoModeMap,
+            ShutdownHandler shutdownHandler) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -164,6 +168,7 @@ public final class Main {
         registry.register(new DeleteWindowCommand());
         registry.register(new DeleteOtherWindowsCommand());
         registry.register(new KeyboardQuitCommand());
+        registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, inputSource));
         return registry;
     }
 
@@ -200,7 +205,8 @@ public final class Main {
 
         // C-x プレフィックスキーマップ
         var ctrlXMap = new Keymap("C-x");
-        ctrlXMap.bind(KeyStroke.ctrl('c'), registry.lookup("quit").orElseThrow());
+        ctrlXMap.bind(
+                KeyStroke.ctrl('c'), registry.lookup("save-buffers-kill-alle").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('f'), registry.lookup("find-file").orElseThrow());
         ctrlXMap.bind(KeyStroke.ctrl('s'), registry.lookup("save-buffer").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('o'), registry.lookup("other-window").orElseThrow());

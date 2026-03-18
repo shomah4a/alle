@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.tui;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.input.InputSource;
+import io.github.shomah4a.alle.core.input.ShutdownRequestable;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -12,7 +13,7 @@ import java.util.Optional;
  * LanternaのScreenからキー入力を読み取るInputSource実装。
  * shutdownフラグによる安全な終了をサポートする。
  */
-public class TerminalInputSource implements InputSource, Loggable {
+public class TerminalInputSource implements InputSource, ShutdownRequestable, Loggable {
 
     private final Screen screen;
     private volatile boolean shutdownRequested;
@@ -25,6 +26,7 @@ public class TerminalInputSource implements InputSource, Loggable {
     /**
      * 終了を要求する。次のreadKeyStroke呼び出しでemptyを返す。
      */
+    @Override
     public void requestShutdown() {
         this.shutdownRequested = true;
     }
