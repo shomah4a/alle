@@ -198,6 +198,23 @@ public class BufferFacade implements Buffer {
         buffer.clearLocalKeymap();
     }
 
+    // ── テキストプロパティ ──
+
+    @Override
+    public void putReadOnly(int start, int end) {
+        buffer.putReadOnly(start, end);
+    }
+
+    @Override
+    public void removeReadOnly(int start, int end) {
+        buffer.removeReadOnly(start, end);
+    }
+
+    @Override
+    public boolean isReadOnlyAt(int index) {
+        return buffer.isReadOnlyAt(index);
+    }
+
     // ── Undo ──
 
     @Override

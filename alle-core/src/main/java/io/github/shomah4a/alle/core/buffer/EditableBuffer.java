@@ -28,6 +28,7 @@ public class EditableBuffer implements Buffer {
     private MajorMode majorMode;
     private final MutableList<MinorMode> minorModes;
     private final UndoManager undoManager;
+    private final TextPropertyStore textPropertyStore;
     private boolean dirty;
 
     public EditableBuffer(String name, TextModel textModel) {
@@ -37,6 +38,7 @@ public class EditableBuffer implements Buffer {
         this.majorMode = new TextMode();
         this.minorModes = Lists.mutable.empty();
         this.undoManager = new UndoManager();
+        this.textPropertyStore = new TextPropertyStore();
         this.dirty = false;
     }
 
@@ -149,14 +151,23 @@ public class EditableBuffer implements Buffer {
 
     @Override
     public TextChange insertText(int index, String text) {
+        if (textPropertyStore.isReadOnly(index)) {
+            throw new ReadOnlyBufferException(name);
+        }
+        int length = (int) text.codePoints().count();
         textModel.insert(index, text);
+        textPropertyStore.adjustForInsert(index, length);
         return new TextChange.Delete(index, text);
     }
 
     @Override
     public TextChange deleteText(int index, int count) {
+        if (textPropertyStore.hasReadOnly(index, count)) {
+            throw new ReadOnlyBufferException(name);
+        }
         String deleted = textModel.substring(index, index + count);
         textModel.delete(index, count);
+        textPropertyStore.adjustForDelete(index, count);
         return new TextChange.Insert(index, deleted);
     }
 
@@ -199,6 +210,21 @@ public class EditableBuffer implements Buffer {
     @Override
     public String getText() {
         return textModel.getText();
+    }
+
+    @Override
+    public void putReadOnly(int start, int end) {
+        textPropertyStore.putReadOnly(start, end);
+    }
+
+    @Override
+    public void removeReadOnly(int start, int end) {
+        textPropertyStore.removeReadOnly(start, end);
+    }
+
+    @Override
+    public boolean isReadOnlyAt(int index) {
+        return textPropertyStore.isReadOnly(index);
     }
 
     /**

@@ -194,6 +194,24 @@ public interface Buffer {
      */
     void clearLocalKeymap();
 
+    // ── テキストプロパティ ──
+
+    /**
+     * 指定範囲にread-onlyプロパティを設定する。
+     * 半開区間 [start, end) で管理される。
+     */
+    void putReadOnly(int start, int end);
+
+    /**
+     * 指定範囲のread-onlyプロパティを解除する。
+     */
+    void removeReadOnly(int start, int end);
+
+    /**
+     * 指定位置がread-onlyプロパティで保護されているかを返す。
+     */
+    boolean isReadOnlyAt(int index);
+
     // ── Undo ──
 
     /**

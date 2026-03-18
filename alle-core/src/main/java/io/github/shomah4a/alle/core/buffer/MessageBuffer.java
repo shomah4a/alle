@@ -292,6 +292,23 @@ public class MessageBuffer implements Buffer {
         // メッセージバッファにローカルキーマップは不要
     }
 
+    // ── テキストプロパティ（メッセージバッファでは不要） ──
+
+    @Override
+    public void putReadOnly(int start, int end) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
+    public void removeReadOnly(int start, int end) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
+    public boolean isReadOnlyAt(int index) {
+        return false;
+    }
+
     // ── Undo ──
 
     @Override
