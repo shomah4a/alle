@@ -156,6 +156,49 @@ class KeymapTest {
     }
 
     @Nested
+    class quitコマンド {
+
+        @Test
+        void Cgにquitコマンドがフォールバックで返される() {
+            var quit = dummyCommand("keyboard-quit");
+            Keymap.setQuitCommand(quit);
+            var keymap = new Keymap("global");
+
+            var entry = keymap.lookup(KeyStroke.ctrl('g'));
+            assertTrue(entry.isPresent());
+            var binding = assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
+            assertEquals("keyboard-quit", binding.command().name());
+        }
+
+        @Test
+        void 明示バインドがquitコマンドより優先される() {
+            var quit = dummyCommand("keyboard-quit");
+            var cancel = dummyCommand("minibuffer-cancel");
+            Keymap.setQuitCommand(quit);
+            var keymap = new Keymap("test");
+            keymap.bind(KeyStroke.ctrl('g'), cancel);
+
+            var entry = keymap.lookup(KeyStroke.ctrl('g'));
+            assertTrue(entry.isPresent());
+            var binding = assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
+            assertEquals("minibuffer-cancel", binding.command().name());
+        }
+
+        @Test
+        void プレフィックスキーマップでもquitコマンドが効く() {
+            var quit = dummyCommand("keyboard-quit");
+            Keymap.setQuitCommand(quit);
+            var prefixKeymap = new Keymap("C-x");
+            prefixKeymap.bind(KeyStroke.ctrl('s'), dummyCommand("save-buffer"));
+
+            var entry = prefixKeymap.lookup(KeyStroke.ctrl('g'));
+            assertTrue(entry.isPresent());
+            var binding = assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
+            assertEquals("keyboard-quit", binding.command().name());
+        }
+    }
+
+    @Nested
     class 名前 {
 
         @Test

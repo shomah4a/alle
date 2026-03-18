@@ -19,6 +19,7 @@ import io.github.shomah4a.alle.core.command.EndOfLineCommand;
 import io.github.shomah4a.alle.core.command.ExecuteCommandCommand;
 import io.github.shomah4a.alle.core.command.FindFileCommand;
 import io.github.shomah4a.alle.core.command.ForwardCharCommand;
+import io.github.shomah4a.alle.core.command.KeyboardQuitCommand;
 import io.github.shomah4a.alle.core.command.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
 import io.github.shomah4a.alle.core.command.KillRegionCommand;
@@ -162,10 +163,12 @@ public final class Main {
         registry.register(new SplitWindowRightCommand());
         registry.register(new DeleteWindowCommand());
         registry.register(new DeleteOtherWindowsCommand());
+        registry.register(new KeyboardQuitCommand());
         return registry;
     }
 
     private static Keymap createKeymap(CommandRegistry registry) {
+        Keymap.setQuitCommand(registry.lookup("keyboard-quit").orElseThrow());
         var keymap = new Keymap("global");
 
         keymap.setDefaultCommand(registry.lookup("self-insert-command").orElseThrow());

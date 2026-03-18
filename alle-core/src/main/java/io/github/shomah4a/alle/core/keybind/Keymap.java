@@ -12,6 +12,10 @@ import org.jspecify.annotations.Nullable;
  */
 public class Keymap {
 
+    private static final KeyStroke QUIT_KEY = KeyStroke.ctrl('g');
+
+    private static @Nullable Command quitCommand;
+
     private final String name;
     private final MutableMap<KeyStroke, KeymapEntry> bindings;
     private @Nullable Command defaultCommand;
@@ -19,6 +23,14 @@ public class Keymap {
     public Keymap(String name) {
         this.name = name;
         this.bindings = Maps.mutable.empty();
+    }
+
+    /**
+     * 全Keymapインスタンスで C-g に対してフォールバックするquitコマンドを設定する。
+     * 明示的にC-gがバインドされているキーマップではそちらが優先される。
+     */
+    public static void setQuitCommand(Command command) {
+        quitCommand = command;
     }
 
     public String getName() {
@@ -68,6 +80,9 @@ public class Keymap {
         }
         if (defaultCommand != null && isPrintable(keyStroke)) {
             return Optional.of(new KeymapEntry.CommandBinding(defaultCommand));
+        }
+        if (quitCommand != null && QUIT_KEY.equals(keyStroke)) {
+            return Optional.of(new KeymapEntry.CommandBinding(quitCommand));
         }
         return Optional.empty();
     }
