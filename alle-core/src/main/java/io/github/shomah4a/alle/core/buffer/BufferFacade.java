@@ -149,6 +149,11 @@ public class BufferFacade implements Buffer {
         return buffer.isReadOnly();
     }
 
+    @Override
+    public boolean isSystemBuffer() {
+        return buffer.isSystemBuffer();
+    }
+
     // ── モード（そのまま委譲） ──
 
     @Override

@@ -9,11 +9,6 @@
 - ExecuteCommandCommand と executeByName() が既に存在するので拡張する形
 - CommandRegistry.registeredNames() も既に存在
 
-### システムバッファの特別扱い
-- `*Messages*`、`*Warnings*` 等のエディタ内部管理バッファをシステムバッファとして区別する
-- Buffer に `isSystemBuffer()` を追加し、KillBufferCommand で削除を抑止（ウィンドウ切り替えのみ）
-- 将来的には `*scratch*` 等も対象
-
 ## 将来課題
 
 ### CommandContext のスナップショット化

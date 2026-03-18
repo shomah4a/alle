@@ -243,6 +243,11 @@ public class MessageBuffer implements Buffer {
         return true;
     }
 
+    @Override
+    public boolean isSystemBuffer() {
+        return true;
+    }
+
     // ── モード ──
 
     @Override

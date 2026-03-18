@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -187,6 +188,33 @@ class KillBufferCommandTest {
             cmd.execute(context).join();
 
             assertEquals(fooBuffer, frame.getActiveWindow().getBuffer());
+        }
+    }
+
+    @Nested
+    class システムバッファ {
+
+        @Test
+        void システムバッファは削除できない() {
+            var msgBuffer = new MessageBuffer("*Messages*", 100);
+            bufferManager.add(msgBuffer);
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("*Messages*"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("*Messages*").isPresent());
+            assertEquals(3, bufferManager.size());
+        }
+
+        @Test
+        void システムバッファの削除拒否時にエコーエリアにメッセージが表示される() {
+            var msgBuffer = new MessageBuffer("*Messages*", 100);
+            bufferManager.add(msgBuffer);
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("*Messages*"));
+
+            cmd.execute(context).join();
+
+            assertTrue(context.messageBuffer().isShowingMessage());
         }
     }
 

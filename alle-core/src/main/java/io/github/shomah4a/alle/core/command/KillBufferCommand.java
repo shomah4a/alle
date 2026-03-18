@@ -49,6 +49,11 @@ public class KillBufferCommand implements Command {
         }
         var target = targetOpt.get();
 
+        if (target.isSystemBuffer()) {
+            context.messageBuffer().message("Cannot kill system buffer: " + bufferName);
+            return;
+        }
+
         if (bufferManager.size() <= 1) {
             return;
         }

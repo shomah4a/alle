@@ -141,6 +141,14 @@ public interface Buffer {
      */
     boolean isReadOnly();
 
+    /**
+     * エディタが内部管理するシステムバッファかどうかを返す。
+     * システムバッファはkill-bufferで削除できない。
+     */
+    default boolean isSystemBuffer() {
+        return false;
+    }
+
     // ── モード ──
 
     /**
