@@ -13,7 +13,6 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Separator;
 import io.github.shomah4a.alle.core.window.WindowLayout;
-import java.io.IOException;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
@@ -37,21 +36,6 @@ public class ScreenRenderer {
         this.screen = screen;
         this.faceResolver = new FaceResolver();
         this.messageBuffer = messageBuffer;
-    }
-
-    /**
-     * フレームの内容を画面に描画する。
-     */
-    public void render(Frame frame) throws IOException {
-        TerminalSize size = screen.getTerminalSize();
-        if (size.getRows() < 3) {
-            screen.refresh(Screen.RefreshType.DELTA);
-            return;
-        }
-
-        var snapshot = createSnapshot(frame, size);
-        renderSnapshot(snapshot);
-        screen.refresh(Screen.RefreshType.DELTA);
     }
 
     /**

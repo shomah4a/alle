@@ -49,6 +49,7 @@ import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
 import io.github.shomah4a.alle.tui.QuitCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
@@ -118,16 +119,12 @@ public final class Main {
         var commandLoop = new CommandLoop(
                 inputSource, resolver, frame, bufferManager, prompter, killRing, messageBuffer, warningBuffer);
         var renderer = new ScreenRenderer(screen, messageBuffer);
+        var runner = new EditorRunner(inputSource, screen, renderer, commandLoop, frame);
 
-        renderer.render(frame);
-
-        while (true) {
-            var keyOpt = inputSource.readKeyStroke();
-            if (keyOpt.isEmpty()) {
-                break;
-            }
-            commandLoop.processKey(keyOpt.get());
-            renderer.render(frame);
+        try {
+            runner.run();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
