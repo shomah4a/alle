@@ -28,6 +28,7 @@ class RenderThread implements Runnable, Loggable {
                 if (snapshot == null) {
                     break;
                 }
+                screen.doResizeIfNecessary();
                 renderer.renderSnapshot(snapshot);
                 screen.refresh(Screen.RefreshType.DELTA);
             }
