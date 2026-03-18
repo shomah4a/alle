@@ -2,8 +2,8 @@ package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 class SelfInsertCommandTest {
 
     private CommandContext createContext(KeyStroke triggeringKey) {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
@@ -73,9 +73,9 @@ class SelfInsertCommandTest {
 
         @Test
         void triggeringKeyがemptyでは挿入しない() {
-            var buffer = new Buffer("test", new GapTextModel());
+            var buffer = new EditableBuffer("test", new GapTextModel());
             var window = new Window(buffer);
-            var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+            var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
             var frame = new Frame(window, minibuffer);
             var context = TestCommandContextFactory.create(frame, new BufferManager());
             var cmd = new SelfInsertCommand();

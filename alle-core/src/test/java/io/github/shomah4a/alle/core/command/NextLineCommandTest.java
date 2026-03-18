@@ -2,8 +2,8 @@ package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -18,9 +18,9 @@ class NextLineCommandTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(buffer);

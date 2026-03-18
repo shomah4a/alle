@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -28,10 +29,10 @@ class KillBufferCommandTest {
 
     @BeforeEach
     void setUp() {
-        scratch = new Buffer("*scratch*", new GapTextModel());
-        fooBuffer = new Buffer("foo.txt", new GapTextModel());
+        scratch = new EditableBuffer("*scratch*", new GapTextModel());
+        fooBuffer = new EditableBuffer("foo.txt", new GapTextModel());
         var window = new Window(scratch);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(scratch);
@@ -121,7 +122,7 @@ class KillBufferCommandTest {
         @Test
         void 非アクティブウィンドウが削除対象を表示中の場合も切り替わる() {
             // ウィンドウを分割して両方にfooBufferを表示
-            var barBuffer = new Buffer("bar.txt", new GapTextModel());
+            var barBuffer = new EditableBuffer("bar.txt", new GapTextModel());
             bufferManager.add(barBuffer);
             frame.splitActiveWindow(Direction.VERTICAL, barBuffer);
             // 最初のウィンドウ(scratch)をfooに変更
@@ -139,7 +140,7 @@ class KillBufferCommandTest {
 
         @Test
         void 他のウィンドウで表示されていないバッファに優先的に切り替わる() {
-            var barBuffer = new Buffer("bar.txt", new GapTextModel());
+            var barBuffer = new EditableBuffer("bar.txt", new GapTextModel());
             bufferManager.add(barBuffer);
             // window1: scratch, window2: fooBuffer
             frame.splitActiveWindow(Direction.VERTICAL, fooBuffer);

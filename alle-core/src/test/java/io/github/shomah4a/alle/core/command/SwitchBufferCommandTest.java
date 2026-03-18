@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -26,15 +27,15 @@ class SwitchBufferCommandTest {
 
     @BeforeEach
     void setUp() {
-        scratchBuffer = new Buffer("*scratch*", new GapTextModel());
+        scratchBuffer = new EditableBuffer("*scratch*", new GapTextModel());
         scratchBuffer.insertText(0, "scratch content");
         var window = new Window(scratchBuffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(scratchBuffer);
 
-        otherBuffer = new Buffer("other.txt", new GapTextModel());
+        otherBuffer = new EditableBuffer("other.txt", new GapTextModel());
         otherBuffer.insertText(0, "other content");
         bufferManager.add(otherBuffer);
     }

@@ -3,8 +3,8 @@ package io.github.shomah4a.alle.core.input;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,10 +17,10 @@ class BufferNameCompleterTest {
     @BeforeEach
     void setUp() {
         bufferManager = new BufferManager();
-        bufferManager.add(new Buffer("*scratch*", new GapTextModel()));
-        bufferManager.add(new Buffer("foo.txt", new GapTextModel()));
-        bufferManager.add(new Buffer("foobar.txt", new GapTextModel()));
-        bufferManager.add(new Buffer("bar.txt", new GapTextModel()));
+        bufferManager.add(new EditableBuffer("*scratch*", new GapTextModel()));
+        bufferManager.add(new EditableBuffer("foo.txt", new GapTextModel()));
+        bufferManager.add(new EditableBuffer("foobar.txt", new GapTextModel()));
+        bufferManager.add(new EditableBuffer("bar.txt", new GapTextModel()));
         completer = new BufferNameCompleter(bufferManager);
     }
 

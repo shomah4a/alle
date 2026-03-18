@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -28,9 +28,9 @@ class MinibufferInputPrompterTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         mainWindow = new Window(buffer);
-        minibufferWindow = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        minibufferWindow = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         frame = new Frame(mainWindow, minibufferWindow);
         prompter = new MinibufferInputPrompter(frame);
     }

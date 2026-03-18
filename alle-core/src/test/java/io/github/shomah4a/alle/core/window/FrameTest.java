@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class FrameTest {
 
     private Buffer createBuffer(String name) {
-        return new Buffer(name, new GapTextModel());
+        return new EditableBuffer(name, new GapTextModel());
     }
 
     private Frame createFrame() {

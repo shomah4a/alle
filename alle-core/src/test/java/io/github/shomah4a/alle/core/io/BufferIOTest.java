@@ -117,7 +117,7 @@ class BufferIOTest {
         void ファイルパスが未設定のバッファを保存すると例外が発生する() {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
-            var buffer = new io.github.shomah4a.alle.core.buffer.Buffer("nopath", textModel);
+            var buffer = new io.github.shomah4a.alle.core.buffer.EditableBuffer("nopath", textModel);
 
             assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }

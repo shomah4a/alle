@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 class WindowSplitCommandsTest {
 
     private Frame createFrame() {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         return new Frame(window, minibuffer);
     }
 

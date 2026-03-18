@@ -2,7 +2,7 @@ package io.github.shomah4a.alle.core.window;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,14 +10,14 @@ import org.junit.jupiter.api.Test;
 class WindowActorTest {
 
     private WindowActor createActor() {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         return new WindowActor(new Window(buffer));
     }
 
     private WindowActor createActorWithText(String text) {
         var model = new GapTextModel();
         model.insert(0, text);
-        var buffer = new Buffer("test", model);
+        var buffer = new EditableBuffer("test", model);
         var window = new Window(buffer);
         return new WindowActor(window);
     }
@@ -76,7 +76,7 @@ class WindowActorTest {
         @Test
         void バッファを切り替えられる() {
             var actor = createActor();
-            var newBuffer = new Buffer("new-buffer", new GapTextModel());
+            var newBuffer = new EditableBuffer("new-buffer", new GapTextModel());
             actor.setBuffer(newBuffer).join();
             assertEquals("new-buffer", actor.getBuffer().join().getName());
             assertEquals(0, actor.getPoint().join());
@@ -88,7 +88,7 @@ class WindowActorTest {
 
         @Test
         void ラップしているWindowを取得できる() {
-            var buffer = new Buffer("test", new GapTextModel());
+            var buffer = new EditableBuffer("test", new GapTextModel());
             var window = new Window(buffer);
             var actor = new WindowActor(window);
             assertEquals(window, actor.getWindow());

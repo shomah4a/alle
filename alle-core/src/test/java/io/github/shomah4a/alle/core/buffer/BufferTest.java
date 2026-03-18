@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class BufferTest {
 
     private Buffer createBuffer() {
-        return new Buffer("test", new GapTextModel());
+        return new EditableBuffer("test", new GapTextModel());
     }
 
     @Nested
@@ -36,7 +36,7 @@ class BufferTest {
             var buffer = createBuffer();
             assertTrue(buffer.getFilePath().isEmpty());
 
-            var bufferWithPath = new Buffer("test", new GapTextModel(), Path.of("/tmp/test.txt"));
+            var bufferWithPath = new EditableBuffer("test", new GapTextModel(), Path.of("/tmp/test.txt"));
             assertEquals(Path.of("/tmp/test.txt"), bufferWithPath.getFilePath().orElseThrow());
         }
     }

@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -74,7 +75,7 @@ public class FindFileCommand implements Command {
             buffer = loadResult.buffer();
         } catch (IOException e) {
             logger.log(Level.FINE, "ファイルが存在しないため空バッファを作成: " + path, e);
-            buffer = new Buffer(path.getFileName().toString(), new GapTextModel(), path);
+            buffer = new EditableBuffer(path.getFileName().toString(), new GapTextModel(), path);
         }
 
         buffer.setMajorMode(autoModeMap.resolve(buffer.getName()));

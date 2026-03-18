@@ -3,8 +3,8 @@ package io.github.shomah4a.alle.core.command;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 class KillLineCommandTest {
 
     private CommandContext createContext(String text, int point) {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         if (!text.isEmpty()) {
             window.insert(text);
@@ -28,9 +28,9 @@ class KillLineCommandTest {
 
     private CommandContext createContextWithKillRing(
             String text, int point, KillRing killRing, Optional<String> lastCommand) {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         if (!text.isEmpty()) {

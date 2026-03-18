@@ -12,13 +12,13 @@ import org.junit.jupiter.api.Test;
 class BufferActorTest {
 
     private BufferActor createActor(String name) {
-        return new BufferActor(new Buffer(name, new GapTextModel()));
+        return new BufferActor(new EditableBuffer(name, new GapTextModel()));
     }
 
     private BufferActor createActorWithText(String name, String text) {
         var model = new GapTextModel();
         model.insert(0, text);
-        return new BufferActor(new Buffer(name, model));
+        return new BufferActor(new EditableBuffer(name, model));
     }
 
     @Nested
@@ -116,7 +116,7 @@ class BufferActorTest {
 
         @Test
         void ラップしているBufferを取得できる() {
-            var buffer = new Buffer("test", new GapTextModel());
+            var buffer = new EditableBuffer("test", new GapTextModel());
             var actor = new BufferActor(buffer);
             assertEquals(buffer, actor.getBuffer());
         }

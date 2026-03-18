@@ -4,242 +4,192 @@ import io.github.shomah4a.alle.core.io.LineEnding;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
-import io.github.shomah4a.alle.core.mode.TextMode;
-import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.jspecify.annotations.Nullable;
 
 /**
  * エディタのバッファ。
- * テキストデータ、ファイルパス、変更フラグを管理する。
- * カーソル位置等のビュー固有の状態はWindowが持つ。
+ * テキストデータ、メタデータ、モード情報を統一的に扱うインターフェース。
+ * ストレージの実装（GapBuffer、RingBuffer等）に依存しない。
+ *
+ * @see EditableBuffer GapBufferベースの標準実装
  */
-public class Buffer {
+public interface Buffer {
 
-    private final String name;
-    private final TextModel textModel;
-    private @Nullable Path filePath;
-    private LineEnding lineEnding;
-    private @Nullable Keymap localKeymap;
-    private MajorMode majorMode;
-    private final MutableList<MinorMode> minorModes;
-    private final UndoManager undoManager;
-    private boolean dirty;
-
-    public Buffer(String name, TextModel textModel) {
-        this.name = name;
-        this.textModel = textModel;
-        this.lineEnding = LineEnding.LF;
-        this.majorMode = new TextMode();
-        this.minorModes = Lists.mutable.empty();
-        this.undoManager = new UndoManager();
-        this.dirty = false;
-    }
-
-    public Buffer(String name, TextModel textModel, Path filePath) {
-        this(name, textModel);
-        this.filePath = filePath;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Optional<Path> getFilePath() {
-        return Optional.ofNullable(filePath);
-    }
-
-    public void setFilePath(Path filePath) {
-        this.filePath = filePath;
-    }
-
-    public LineEnding getLineEnding() {
-        return lineEnding;
-    }
-
-    public void setLineEnding(LineEnding lineEnding) {
-        this.lineEnding = lineEnding;
-    }
-
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    public void markDirty() {
-        this.dirty = true;
-    }
-
-    public void markClean() {
-        this.dirty = false;
-    }
-
-    /**
-     * バッファローカルキーマップを返す。
-     * 設定されていない場合はempty。
-     */
-    public Optional<Keymap> getLocalKeymap() {
-        return Optional.ofNullable(localKeymap);
-    }
-
-    /**
-     * バッファローカルキーマップを設定する。
-     */
-    public void setLocalKeymap(Keymap keymap) {
-        this.localKeymap = keymap;
-    }
-
-    /**
-     * バッファローカルキーマップを解除する。
-     */
-    public void clearLocalKeymap() {
-        this.localKeymap = null;
-    }
-
-    /**
-     * メジャーモードを返す。
-     */
-    public MajorMode getMajorMode() {
-        return majorMode;
-    }
-
-    /**
-     * メジャーモードを設定する。
-     */
-    public void setMajorMode(MajorMode majorMode) {
-        this.majorMode = majorMode;
-    }
-
-    /**
-     * 有効なマイナーモードの一覧を返す。
-     */
-    public ListIterable<MinorMode> getMinorModes() {
-        return minorModes;
-    }
-
-    /**
-     * マイナーモードを有効にする。
-     */
-    public void enableMinorMode(MinorMode mode) {
-        if (!minorModes.contains(mode)) {
-            minorModes.add(mode);
-        }
-    }
-
-    /**
-     * マイナーモードを無効にする。
-     */
-    public void disableMinorMode(MinorMode mode) {
-        minorModes.remove(mode);
-    }
-
-    /**
-     * UndoManagerを返す。
-     */
-    public UndoManager getUndoManager() {
-        return undoManager;
-    }
+    // ── テキスト読み取り ──
 
     /**
      * テキストの長さをコードポイント数で返す。
      */
-    public int length() {
-        return textModel.length();
-    }
+    int length();
 
     /**
      * 指定位置のコードポイントを返す。
      *
      * @throws IndexOutOfBoundsException indexが範囲外の場合
      */
-    public int codePointAt(int index) {
-        return textModel.codePointAt(index);
-    }
-
-    /**
-     * 指定位置に文字列を挿入し、逆操作（Delete）を返す。
-     *
-     * @throws IndexOutOfBoundsException indexが範囲外の場合
-     */
-    public TextChange insertText(int index, String text) {
-        textModel.insert(index, text);
-        return new TextChange.Delete(index, text);
-    }
-
-    /**
-     * 指定位置から指定コードポイント数を削除し、逆操作（Insert）を返す。
-     *
-     * @throws IndexOutOfBoundsException 範囲が不正な場合
-     */
-    public TextChange deleteText(int index, int count) {
-        String deleted = textModel.substring(index, index + count);
-        textModel.delete(index, count);
-        return new TextChange.Insert(index, deleted);
-    }
-
-    /**
-     * TextChangeを適用し、逆操作を返す。
-     */
-    public TextChange apply(TextChange change) {
-        return switch (change) {
-            case TextChange.Insert(var offset, var text) -> insertText(offset, text);
-            case TextChange.Delete(var offset, var text) -> {
-                int count = (int) text.codePoints().count();
-                yield deleteText(offset, count);
-            }
-        };
-    }
+    int codePointAt(int index);
 
     /**
      * 指定範囲の部分文字列を返す。
      *
      * @throws IndexOutOfBoundsException 範囲が不正な場合
      */
-    public String substring(int start, int end) {
-        return textModel.substring(start, end);
-    }
+    String substring(int start, int end);
 
     /**
      * 行数を返す。
      */
-    public int lineCount() {
-        return textModel.lineCount();
-    }
+    int lineCount();
 
     /**
      * 指定オフセットが属する行のインデックスを返す。
      *
      * @throws IndexOutOfBoundsException offsetが範囲外の場合
      */
-    public int lineIndexForOffset(int offset) {
-        return textModel.lineIndexForOffset(offset);
-    }
+    int lineIndexForOffset(int offset);
 
     /**
      * 指定行の先頭オフセットをコードポイント単位で返す。
      *
      * @throws IndexOutOfBoundsException lineIndexが範囲外の場合
      */
-    public int lineStartOffset(int lineIndex) {
-        return textModel.lineStartOffset(lineIndex);
-    }
+    int lineStartOffset(int lineIndex);
 
     /**
      * 指定行のテキストを返す(改行文字を含まない)。
      *
      * @throws IndexOutOfBoundsException lineIndexが範囲外の場合
      */
-    public String lineText(int lineIndex) {
-        return textModel.lineText(lineIndex);
-    }
+    String lineText(int lineIndex);
 
     /**
      * 全テキストを返す。
      */
-    public String getText() {
-        return textModel.getText();
-    }
+    String getText();
+
+    // ── テキスト書き込み ──
+
+    /**
+     * 指定位置に文字列を挿入し、逆操作（Delete）を返す。
+     *
+     * @throws IndexOutOfBoundsException indexが範囲外の場合
+     * @throws ReadOnlyBufferException バッファが読み取り専用の場合
+     */
+    TextChange insertText(int index, String text);
+
+    /**
+     * 指定位置から指定コードポイント数を削除し、逆操作（Insert）を返す。
+     *
+     * @throws IndexOutOfBoundsException 範囲が不正な場合
+     * @throws ReadOnlyBufferException バッファが読み取り専用の場合
+     */
+    TextChange deleteText(int index, int count);
+
+    /**
+     * TextChangeを適用し、逆操作を返す。
+     *
+     * @throws ReadOnlyBufferException バッファが読み取り専用の場合
+     */
+    TextChange apply(TextChange change);
+
+    // ── メタデータ ──
+
+    /**
+     * バッファ名を返す。
+     */
+    String getName();
+
+    /**
+     * ファイルパスを返す。
+     */
+    Optional<Path> getFilePath();
+
+    /**
+     * ファイルパスを設定する。
+     */
+    void setFilePath(Path filePath);
+
+    /**
+     * 改行コードを返す。
+     */
+    LineEnding getLineEnding();
+
+    /**
+     * 改行コードを設定する。
+     */
+    void setLineEnding(LineEnding lineEnding);
+
+    /**
+     * 変更済みかどうかを返す。
+     */
+    boolean isDirty();
+
+    /**
+     * 変更済みとしてマークする。
+     */
+    void markDirty();
+
+    /**
+     * 未変更としてマークする。
+     */
+    void markClean();
+
+    /**
+     * バッファが読み取り専用かどうかを返す。
+     */
+    boolean isReadOnly();
+
+    // ── モード ──
+
+    /**
+     * メジャーモードを返す。
+     */
+    MajorMode getMajorMode();
+
+    /**
+     * メジャーモードを設定する。
+     */
+    void setMajorMode(MajorMode majorMode);
+
+    /**
+     * 有効なマイナーモードの一覧を返す。
+     */
+    ListIterable<MinorMode> getMinorModes();
+
+    /**
+     * マイナーモードを有効にする。
+     */
+    void enableMinorMode(MinorMode mode);
+
+    /**
+     * マイナーモードを無効にする。
+     */
+    void disableMinorMode(MinorMode mode);
+
+    // ── キーマップ ──
+
+    /**
+     * バッファローカルキーマップを返す。
+     * 設定されていない場合はempty。
+     */
+    Optional<Keymap> getLocalKeymap();
+
+    /**
+     * バッファローカルキーマップを設定する。
+     */
+    void setLocalKeymap(Keymap keymap);
+
+    /**
+     * バッファローカルキーマップを解除する。
+     */
+    void clearLocalKeymap();
+
+    // ── Undo ──
+
+    /**
+     * UndoManagerを返す。
+     */
+    UndoManager getUndoManager();
 }

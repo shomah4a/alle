@@ -3,8 +3,8 @@ package io.github.shomah4a.alle.app;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
@@ -83,9 +83,9 @@ public final class Main {
     }
 
     private static void run(Screen screen) throws IOException {
-        var buffer = new Buffer("*scratch*", new GapTextModel());
+        var buffer = new EditableBuffer("*scratch*", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);

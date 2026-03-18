@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -82,9 +82,9 @@ final class TestCommandContextFactory {
      * デフォルトのバッファ・ウィンドウ・フレームでコンテキストを生成する。
      */
     static CommandContext createDefault() {
-        var buffer = new Buffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new Buffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class BufferManagerTest {
 
     private Buffer createBuffer(String name) {
-        return new Buffer(name, new GapTextModel());
+        return new EditableBuffer(name, new GapTextModel());
     }
 
     @Nested
