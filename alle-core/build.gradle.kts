@@ -2,4 +2,5 @@
 
 dependencies {
     implementation(project(":libs:gap-buffer"))
+    implementation(project(":libs:ring-buffer"))
 }
