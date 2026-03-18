@@ -6,11 +6,13 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 入力スレッドとロジックスレッドの分離を管理する。
+ * 入力・ロジック・描画の3スレッドを管理する。
  * 入力スレッド（呼び出し元）はキー入力の読み取りのみを担当し、
- * ロジックスレッドがコマンド処理・スナップショット作成・描画を担当する。
+ * ロジックスレッドがコマンド処理・スナップショット作成、
+ * 描画スレッドがスナップショットの画面描画を担当する。
  */
 public class EditorRunner {
 
@@ -34,14 +36,24 @@ public class EditorRunner {
     }
 
     /**
-     * 入力スレッド + ロジックスレッドでエディタを実行する。
+     * 3スレッドでエディタを実行する。
      * 呼び出し元スレッドがキー入力を読み取り、ロジックスレッドに渡す。
-     * ロジックスレッドがコマンド処理と描画を行う。
+     * ロジックスレッドがコマンド処理とスナップショット作成を行い、
+     * 描画スレッドがスナップショットを画面に描画する。
      */
     public void run() throws IOException, InterruptedException {
         var keyQueue = new LinkedBlockingQueue<KeyStroke>();
+        var snapshotRef = new AtomicReference<RenderSnapshot>();
+        var renderNotifier = new Object();
 
-        var logicThread = new Thread(new EditorThread(keyQueue, screen, renderer, commandLoop, frame), "editor-logic");
+        var renderThread = new RenderThread(snapshotRef, renderNotifier, screen, renderer);
+        var renderThreadHandle = new Thread(renderThread, "editor-render");
+        renderThreadHandle.setDaemon(true);
+        renderThreadHandle.start();
+
+        var logicThread = new Thread(
+                new EditorThread(keyQueue, screen, renderer, commandLoop, frame, snapshotRef, renderNotifier),
+                "editor-logic");
         logicThread.setDaemon(true);
         logicThread.start();
 
@@ -57,6 +69,8 @@ public class EditorRunner {
         } finally {
             keyQueue.put(EditorThread.POISON_PILL);
             logicThread.join(3000);
+            renderThread.requestShutdown();
+            renderThreadHandle.join(3000);
         }
     }
 }
