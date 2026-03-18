@@ -6,12 +6,11 @@ import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * コマンド処理・スナップショット作成を担当するロジックスレッド。
  * 入力スレッドからキー入力をBlockingQueueで受け取り、
- * 処理結果のスナップショットをAtomicReference経由で描画スレッドに渡す。
+ * 処理結果のスナップショットをSnapshotExchanger経由で描画スレッドに渡す。
  */
 class EditorThread implements Runnable, Loggable {
 
@@ -20,8 +19,7 @@ class EditorThread implements Runnable, Loggable {
     private final ScreenRenderer renderer;
     private final CommandLoop commandLoop;
     private final Frame frame;
-    private final AtomicReference<RenderSnapshot> snapshotRef;
-    private final Object renderNotifier;
+    private final SnapshotExchanger exchanger;
 
     EditorThread(
             BlockingQueue<KeyStroke> keyQueue,
@@ -29,15 +27,13 @@ class EditorThread implements Runnable, Loggable {
             ScreenRenderer renderer,
             CommandLoop commandLoop,
             Frame frame,
-            AtomicReference<RenderSnapshot> snapshotRef,
-            Object renderNotifier) {
+            SnapshotExchanger exchanger) {
         this.keyQueue = keyQueue;
         this.screen = screen;
         this.renderer = renderer;
         this.commandLoop = commandLoop;
         this.frame = frame;
-        this.snapshotRef = snapshotRef;
-        this.renderNotifier = renderNotifier;
+        this.exchanger = exchanger;
     }
 
     @Override
@@ -66,10 +62,7 @@ class EditorThread implements Runnable, Loggable {
             return;
         }
         var snapshot = renderer.createSnapshot(frame, size);
-        snapshotRef.set(snapshot);
-        synchronized (renderNotifier) {
-            renderNotifier.notifyAll();
-        }
+        exchanger.publish(snapshot);
     }
 
     /**

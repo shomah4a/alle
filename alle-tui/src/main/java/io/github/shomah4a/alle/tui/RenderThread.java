@@ -3,24 +3,20 @@ package io.github.shomah4a.alle.tui;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.Loggable;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * スナップショットの画面描画を担当する描画スレッド。
- * ロジックスレッドがAtomicReferenceにスナップショットを格納し通知すると、
- * 最新のスナップショットを取得して描画する。
+ * SnapshotExchangerから最新のスナップショットを受け取り描画する。
  */
 class RenderThread implements Runnable, Loggable {
 
-    private final AtomicReference<RenderSnapshot> snapshotRef;
-    private final Object notifier;
+    private final SnapshotExchanger exchanger;
     private final Screen screen;
     private final ScreenRenderer renderer;
     private volatile boolean running = true;
 
-    RenderThread(AtomicReference<RenderSnapshot> snapshotRef, Object notifier, Screen screen, ScreenRenderer renderer) {
-        this.snapshotRef = snapshotRef;
-        this.notifier = notifier;
+    RenderThread(SnapshotExchanger exchanger, Screen screen, ScreenRenderer renderer) {
+        this.exchanger = exchanger;
         this.screen = screen;
         this.renderer = renderer;
     }
@@ -29,18 +25,9 @@ class RenderThread implements Runnable, Loggable {
     public void run() {
         try {
             while (running) {
-                RenderSnapshot snapshot;
-                synchronized (notifier) {
-                    while (running && snapshotRef.get() == null) {
-                        notifier.wait();
-                    }
-                }
-                if (!running) {
+                var snapshot = exchanger.awaitNext();
+                if (snapshot == null || !running) {
                     break;
-                }
-                snapshot = snapshotRef.getAndSet(null);
-                if (snapshot == null) {
-                    continue;
                 }
                 renderer.renderSnapshot(snapshot);
                 screen.refresh(Screen.RefreshType.DELTA);
@@ -55,8 +42,6 @@ class RenderThread implements Runnable, Loggable {
 
     void requestShutdown() {
         running = false;
-        synchronized (notifier) {
-            notifier.notifyAll();
-        }
+        exchanger.wakeUp();
     }
 }

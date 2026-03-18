@@ -6,7 +6,6 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 入力・ロジック・描画の3スレッドを管理する。
@@ -43,17 +42,15 @@ public class EditorRunner {
      */
     public void run() throws IOException, InterruptedException {
         var keyQueue = new LinkedBlockingQueue<KeyStroke>();
-        var snapshotRef = new AtomicReference<RenderSnapshot>();
-        var renderNotifier = new Object();
+        var exchanger = new SnapshotExchanger();
 
-        var renderThread = new RenderThread(snapshotRef, renderNotifier, screen, renderer);
+        var renderThread = new RenderThread(exchanger, screen, renderer);
         var renderThreadHandle = new Thread(renderThread, "editor-render");
         renderThreadHandle.setDaemon(true);
         renderThreadHandle.start();
 
-        var logicThread = new Thread(
-                new EditorThread(keyQueue, screen, renderer, commandLoop, frame, snapshotRef, renderNotifier),
-                "editor-logic");
+        var logicThread =
+                new Thread(new EditorThread(keyQueue, screen, renderer, commandLoop, frame, exchanger), "editor-logic");
         logicThread.setDaemon(true);
         logicThread.start();
 
