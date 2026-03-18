@@ -13,12 +13,16 @@ import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jspecify.annotations.Nullable;
 
 /**
  * キー入力→コマンド解決→コマンド実行のメインループ。
  * InputSourceからキーを読み、KeyResolverでコマンドを解決し、実行する。
  * コマンドはCompletableFutureを返し、後続処理はthenRunで繋ぐ（fire-and-forget）。
  * キーマップに未マッチのキーは無視される。
+ *
+ * processKeyは1キーにつき1回の状態遷移で即座にreturnする（非ブロッキング）。
+ * プレフィックスキーの場合は内部状態として保持し、次のprocessKey呼び出しで解決する。
  */
 public class CommandLoop {
 
@@ -33,6 +37,12 @@ public class CommandLoop {
     private final MessageBuffer messageBuffer;
     private final MessageBuffer warningBuffer;
     private Optional<String> lastCommand = Optional.empty();
+    private @Nullable PendingPrefix pendingPrefix;
+
+    /**
+     * プレフィックスキー入力待ち状態を表す。
+     */
+    private record PendingPrefix(Keymap keymap, String displayText) {}
 
     public CommandLoop(
             InputSource inputSource,
@@ -86,13 +96,36 @@ public class CommandLoop {
 
     /**
      * 1つのキーストロークを処理する。テスト用に公開。
-     * アクティブウィンドウのバッファにローカルキーマップがあればそちらを優先する。
+     * 非ブロッキング: 1キーにつき1回の状態遷移で即座にreturnする。
+     * プレフィックスキーの場合は内部状態として保持し、次の呼び出しで解決する。
      */
     public void processKey(KeyStroke keyStroke) {
         messageBuffer.clearShowingMessage();
+
+        if (pendingPrefix != null) {
+            processPrefixKey(keyStroke);
+        } else {
+            processNormalKey(keyStroke);
+        }
+    }
+
+    private void processNormalKey(KeyStroke keyStroke) {
         var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
-            handleEntry(entryOpt.get(), keyStroke);
+            handleEntry(entryOpt.get(), keyStroke, "");
+        }
+    }
+
+    private void processPrefixKey(KeyStroke keyStroke) {
+        var prefix = pendingPrefix;
+        pendingPrefix = null;
+        if (prefix == null) {
+            return;
+        }
+
+        var entryOpt = prefix.keymap().lookup(keyStroke);
+        if (entryOpt.isPresent()) {
+            handleEntry(entryOpt.get(), keyStroke, prefix.displayText());
         }
     }
 
@@ -133,7 +166,7 @@ public class CommandLoop {
         return keyResolver.resolve(keyStroke);
     }
 
-    private void handleEntry(KeymapEntry entry, KeyStroke keyStroke) {
+    private void handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
@@ -158,19 +191,11 @@ public class CommandLoop {
                             return null;
                         });
             }
-            case KeymapEntry.PrefixBinding(var prefixKeymap) -> handlePrefix(prefixKeymap);
-        }
-    }
-
-    private void handlePrefix(Keymap prefixKeymap) {
-        var nextKeyOpt = inputSource.readKeyStroke();
-        if (nextKeyOpt.isEmpty()) {
-            return;
-        }
-        var nextKey = nextKeyOpt.get();
-        var entryOpt = prefixKeymap.lookup(nextKey);
-        if (entryOpt.isPresent()) {
-            handleEntry(entryOpt.get(), nextKey);
+            case KeymapEntry.PrefixBinding(var prefixKeymap) -> {
+                var displayText = prefixDisplay + keyStroke.displayString() + " ";
+                pendingPrefix = new PendingPrefix(prefixKeymap, displayText);
+                messageBuffer.message(displayText);
+            }
         }
     }
 }

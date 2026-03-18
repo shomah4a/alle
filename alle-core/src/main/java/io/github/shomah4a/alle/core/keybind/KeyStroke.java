@@ -44,6 +44,44 @@ public record KeyStroke(ImmutableSet<Modifier> modifiers, int keyCode) {
         return new KeyStroke(Sets.immutable.of(Modifier.META), keyCode);
     }
 
+    /**
+     * キーストロークをEmacs風の表示文字列に変換する。
+     * 例: Ctrl+x → "C-x", Meta+x → "M-x", 通常文字 → "a"
+     */
+    public String displayString() {
+        var sb = new StringBuilder();
+        if (modifiers.contains(Modifier.CTRL)) {
+            sb.append("C-");
+        }
+        if (modifiers.contains(Modifier.META)) {
+            sb.append("M-");
+        }
+        if (modifiers.contains(Modifier.SHIFT)) {
+            sb.append("S-");
+        }
+        sb.append(keyCodeToString(keyCode));
+        return sb.toString();
+    }
+
+    private static String keyCodeToString(int keyCode) {
+        return switch (keyCode) {
+            case ARROW_UP -> "<up>";
+            case ARROW_DOWN -> "<down>";
+            case ARROW_LEFT -> "<left>";
+            case ARROW_RIGHT -> "<right>";
+            case '\n' -> "RET";
+            case ' ' -> "SPC";
+            case 0x7F -> "DEL";
+            case 0x1B -> "ESC";
+            default -> {
+                if (Character.isValidCodePoint(keyCode) && !Character.isISOControl(keyCode)) {
+                    yield String.valueOf(Character.toChars(keyCode));
+                }
+                yield String.format("<%d>", keyCode);
+            }
+        };
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

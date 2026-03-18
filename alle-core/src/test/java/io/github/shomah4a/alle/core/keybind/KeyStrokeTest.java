@@ -63,4 +63,79 @@ class KeyStrokeTest {
             assertNotEquals(KeyStroke.of('x'), KeyStroke.ctrl('x'));
         }
     }
+
+    @Nested
+    class 表示文字列 {
+
+        @Test
+        void 修飾キーなしの通常文字() {
+            assertEquals("a", KeyStroke.of('a').displayString());
+        }
+
+        @Test
+        void Ctrl修飾キー付き() {
+            assertEquals("C-x", KeyStroke.ctrl('x').displayString());
+        }
+
+        @Test
+        void Meta修飾キー付き() {
+            assertEquals("M-f", KeyStroke.meta('f').displayString());
+        }
+
+        @Test
+        void 複数修飾キー付き() {
+            assertEquals(
+                    "C-S-a", KeyStroke.of('a', Modifier.CTRL, Modifier.SHIFT).displayString());
+        }
+
+        @Test
+        void スペースキー() {
+            assertEquals("SPC", KeyStroke.of(' ').displayString());
+        }
+
+        @Test
+        void リターンキー() {
+            assertEquals("RET", KeyStroke.of('\n').displayString());
+        }
+
+        @Test
+        void デリートキー() {
+            assertEquals("DEL", KeyStroke.of(0x7F).displayString());
+        }
+
+        @Test
+        void エスケープキー() {
+            assertEquals("ESC", KeyStroke.of(0x1B).displayString());
+        }
+
+        @Test
+        void 矢印キー上() {
+            assertEquals("<up>", KeyStroke.of(KeyStroke.ARROW_UP).displayString());
+        }
+
+        @Test
+        void 矢印キー下() {
+            assertEquals("<down>", KeyStroke.of(KeyStroke.ARROW_DOWN).displayString());
+        }
+
+        @Test
+        void 矢印キー左() {
+            assertEquals("<left>", KeyStroke.of(KeyStroke.ARROW_LEFT).displayString());
+        }
+
+        @Test
+        void 矢印キー右() {
+            assertEquals("<right>", KeyStroke.of(KeyStroke.ARROW_RIGHT).displayString());
+        }
+
+        @Test
+        void 制御文字はコード番号で表示される() {
+            assertEquals("<1>", KeyStroke.of(0x01).displayString());
+        }
+
+        @Test
+        void Ctrl修飾付きスペースキー() {
+            assertEquals("C-SPC", KeyStroke.ctrl(' ').displayString());
+        }
+    }
 }
