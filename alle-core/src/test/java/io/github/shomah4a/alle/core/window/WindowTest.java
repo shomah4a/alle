@@ -1,7 +1,6 @@
 package io.github.shomah4a.alle.core.window;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -300,7 +299,7 @@ class WindowTest {
             window.setBuffer(newBuffer);
 
             assertTrue(window.getPreviousBuffer().isPresent());
-            assertSame(originalBuffer, window.getPreviousBuffer().get());
+            assertEquals(originalBuffer, window.getPreviousBuffer().get());
         }
 
         @Test
@@ -326,7 +325,7 @@ class WindowTest {
             window.clearPreviousBufferIf(unrelated);
 
             assertTrue(window.getPreviousBuffer().isPresent());
-            assertSame(originalBuffer, window.getPreviousBuffer().get());
+            assertEquals(originalBuffer, window.getPreviousBuffer().get());
         }
 
         @Test
@@ -338,7 +337,7 @@ class WindowTest {
             window.setBuffer(bufferB);
             window.setBuffer(bufferC);
 
-            assertSame(bufferB, window.getPreviousBuffer().get());
+            assertEquals(bufferB, window.getPreviousBuffer().get());
         }
     }
 

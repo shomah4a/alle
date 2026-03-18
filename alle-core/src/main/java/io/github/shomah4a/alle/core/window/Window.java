@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
@@ -9,24 +10,29 @@ import org.jspecify.annotations.Nullable;
  * バッファに対するビュー。
  * カーソル位置(point)、スクロール位置等のビュー固有の状態を持つ。
  * 同一バッファを複数のWindowで表示した場合、それぞれが独立した状態を持てる。
+ * バッファへのアクセスはBufferFacade経由で行い、読み取り専用チェックが適用される。
  */
 public class Window {
 
-    private Buffer buffer;
-    private @Nullable Buffer previousBuffer;
+    private BufferFacade bufferFacade;
+    private @Nullable BufferFacade previousBuffer;
     private int point;
     private int displayStartLine;
     private int displayStartColumn;
     private @Nullable Integer mark;
 
     public Window(Buffer buffer) {
-        this.buffer = buffer;
+        this.bufferFacade = new BufferFacade(buffer);
         this.point = 0;
         this.displayStartLine = 0;
     }
 
+    /**
+     * バッファをBufferFacade経由で返す。
+     * 読み取り専用バッファの場合、書き込み操作時にReadOnlyBufferExceptionがスローされる。
+     */
     public Buffer getBuffer() {
-        return buffer;
+        return bufferFacade;
     }
 
     /**
@@ -34,8 +40,8 @@ public class Window {
      * 切り替え前のバッファを直前バッファとして記録する。
      */
     public void setBuffer(Buffer buffer) {
-        this.previousBuffer = this.buffer;
-        this.buffer = buffer;
+        this.previousBuffer = this.bufferFacade;
+        this.bufferFacade = new BufferFacade(buffer);
         this.point = 0;
         this.displayStartLine = 0;
         this.displayStartColumn = 0;
@@ -54,7 +60,7 @@ public class Window {
      * バッファ削除時の dangling reference 防止用。
      */
     public void clearPreviousBufferIf(Buffer target) {
-        if (previousBuffer == target) {
+        if (target.equals(previousBuffer)) {
             previousBuffer = null;
         }
     }
@@ -64,7 +70,7 @@ public class Window {
      * バッファの長さを超過している場合は末尾にclampする。
      */
     public int getPoint() {
-        int length = buffer.length();
+        int length = bufferFacade.length();
         if (point > length) {
             point = length;
         }
@@ -77,7 +83,7 @@ public class Window {
      * @throws IndexOutOfBoundsException pointが範囲外の場合
      */
     public void setPoint(int point) {
-        int length = buffer.length();
+        int length = bufferFacade.length();
         if (point < 0 || point > length) {
             throw new IndexOutOfBoundsException("point " + point + " is out of bounds [0, " + length + "]");
         }
@@ -97,7 +103,7 @@ public class Window {
      * @throws IndexOutOfBoundsException lineが範囲外の場合
      */
     public void setDisplayStartLine(int line) {
-        int lineCount = buffer.lineCount();
+        int lineCount = bufferFacade.lineCount();
         if (line < 0 || line >= lineCount) {
             throw new IndexOutOfBoundsException("line " + line + " is out of bounds [0, " + lineCount + ")");
         }
@@ -109,11 +115,11 @@ public class Window {
      */
     public void insert(String text) {
         int cursorBefore = point;
-        var inverseChange = buffer.insertText(point, text);
+        var inverseChange = bufferFacade.insertText(point, text);
         int insertedCodePoints = (int) text.codePoints().count();
         point += insertedCodePoints;
-        buffer.getUndoManager().record(inverseChange, cursorBefore);
-        buffer.markDirty();
+        bufferFacade.getUndoManager().record(inverseChange, cursorBefore);
+        bufferFacade.markDirty();
     }
 
     /**
@@ -126,25 +132,25 @@ public class Window {
         }
         int cursorBefore = point;
         int deleteStart = point - deleteCount;
-        var inverseChange = buffer.deleteText(deleteStart, deleteCount);
+        var inverseChange = bufferFacade.deleteText(deleteStart, deleteCount);
         point = deleteStart;
-        buffer.getUndoManager().record(inverseChange, cursorBefore);
-        buffer.markDirty();
+        bufferFacade.getUndoManager().record(inverseChange, cursorBefore);
+        bufferFacade.markDirty();
     }
 
     /**
      * カーソルの後ろからcount文字を削除する(Delete相当)。
      */
     public void deleteForward(int count) {
-        int remaining = buffer.length() - point;
+        int remaining = bufferFacade.length() - point;
         int deleteCount = Math.min(count, remaining);
         if (deleteCount == 0) {
             return;
         }
         int cursorBefore = point;
-        var inverseChange = buffer.deleteText(point, deleteCount);
-        buffer.getUndoManager().record(inverseChange, cursorBefore);
-        buffer.markDirty();
+        var inverseChange = bufferFacade.deleteText(point, deleteCount);
+        bufferFacade.getUndoManager().record(inverseChange, cursorBefore);
+        bufferFacade.markDirty();
     }
 
     /**
@@ -156,7 +162,7 @@ public class Window {
         if (visibleRows <= 0) {
             return;
         }
-        int currentLine = buffer.lineIndexForOffset(getPoint());
+        int currentLine = bufferFacade.lineIndexForOffset(getPoint());
         if (currentLine < displayStartLine) {
             displayStartLine = currentLine;
         } else if (currentLine >= displayStartLine + visibleRows) {
@@ -181,9 +187,9 @@ public class Window {
             return;
         }
         int currentPoint = getPoint();
-        int lineIndex = buffer.lineIndexForOffset(currentPoint);
-        int lineStart = buffer.lineStartOffset(lineIndex);
-        String lineText = buffer.lineText(lineIndex);
+        int lineIndex = bufferFacade.lineIndexForOffset(currentPoint);
+        int lineStart = bufferFacade.lineStartOffset(lineIndex);
+        String lineText = bufferFacade.lineText(lineIndex);
         int cursorColumn = DisplayWidthUtil.computeColumnForOffset(lineText, currentPoint - lineStart);
 
         if (cursorColumn < displayStartColumn) {
@@ -198,7 +204,7 @@ public class Window {
      * markを設定する。
      */
     public void setMark(int mark) {
-        int length = buffer.length();
+        int length = bufferFacade.length();
         if (mark < 0 || mark > length) {
             throw new IndexOutOfBoundsException("mark " + mark + " is out of bounds [0, " + length + "]");
         }
@@ -219,7 +225,7 @@ public class Window {
         if (mark == null) {
             return Optional.empty();
         }
-        int length = buffer.length();
+        int length = bufferFacade.length();
         if (mark > length) {
             mark = length;
         }

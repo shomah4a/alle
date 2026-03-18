@@ -200,4 +200,23 @@ public class EditableBuffer implements Buffer {
     public String getText() {
         return textModel.getText();
     }
+
+    /**
+     * BufferFacadeとの比較時は順序を入れ替えてBufferFacade.equalsに委譲し、対称性を保つ。
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof BufferFacade) {
+            return obj.equals(this);
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

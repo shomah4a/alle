@@ -1,8 +1,8 @@
 package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
@@ -151,9 +151,9 @@ class KillBufferCommandTest {
 
             // scratch削除後に再作成されるので、barかscratchが切り替え先
             var windows = frame.getWindowTree().windows();
-            var switchedWindow = windows.detect(w -> w.getBuffer() != fooBuffer);
+            var switchedWindow = windows.detect(w -> !w.getBuffer().equals(fooBuffer));
             // barが他ウィンドウで表示されていないので優先される
-            assertSame(barBuffer, switchedWindow.getBuffer());
+            assertEquals(barBuffer, switchedWindow.getBuffer());
         }
     }
 
@@ -186,7 +186,7 @@ class KillBufferCommandTest {
 
             cmd.execute(context).join();
 
-            assertSame(fooBuffer, frame.getActiveWindow().getBuffer());
+            assertEquals(fooBuffer, frame.getActiveWindow().getBuffer());
         }
     }
 
@@ -197,7 +197,7 @@ class KillBufferCommandTest {
         void 削除対象がpreviousBufferの場合にクリアされる() {
             // scratch → foo に切り替え → scratch が previousBuffer になる
             frame.getActiveWindow().setBuffer(fooBuffer);
-            assertSame(scratch, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
+            assertEquals(scratch, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
 
             // scratch を削除
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("*scratch*"));
@@ -207,7 +207,7 @@ class KillBufferCommandTest {
             // (setBufferで切り替えが発生するのでpreviousBufferは更新される)
             var prevOpt = frame.getActiveWindow().getPreviousBuffer();
             if (prevOpt.isPresent()) {
-                assertNotSame(scratch, prevOpt.get());
+                assertNotEquals(scratch, prevOpt.get());
             }
         }
     }

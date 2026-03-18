@@ -55,8 +55,8 @@ class WindowSplitCommandsTest {
             new SplitWindowBelowCommand().execute(context).join();
 
             var windows = frame.getWindowTree().windows();
-            assertSame(originalBuffer, windows.get(0).getBuffer());
-            assertSame(originalBuffer, windows.get(1).getBuffer());
+            assertEquals(originalBuffer, windows.get(0).getBuffer());
+            assertEquals(originalBuffer, windows.get(1).getBuffer());
         }
     }
 

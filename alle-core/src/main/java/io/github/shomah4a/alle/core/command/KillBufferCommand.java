@@ -67,7 +67,7 @@ public class KillBufferCommand implements Command {
 
         // 削除対象を表示中の全ウィンドウを切り替え
         for (var window : allWindows) {
-            if (window.getBuffer() == target) {
+            if (window.getBuffer().equals(target)) {
                 window.setBuffer(replacement);
             }
         }
