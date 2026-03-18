@@ -68,6 +68,11 @@ public class MinibufferInputPrompter implements InputPrompter {
         int initialValueLength = (int) initialValue.codePoints().count();
         minibufferWindow.setPoint(promptLength + initialValueLength);
 
+        // プロンプト文字列をread-onlyに設定
+        if (promptLength > 0) {
+            minibuffer.putReadOnly(0, promptLength);
+        }
+
         // ミニバッファ用キーマップを作成
         var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, completer);
         minibuffer.setLocalKeymap(keymap);
@@ -106,7 +111,8 @@ public class MinibufferInputPrompter implements InputPrompter {
         var minibufferWindow = frame.getMinibufferWindow();
         var minibuffer = minibufferWindow.getBuffer();
 
-        // ミニバッファをクリア
+        // read-onlyプロパティを解除してからクリア
+        minibuffer.removeReadOnly(0, minibuffer.length());
         int length = minibuffer.length();
         if (length > 0) {
             minibuffer.deleteText(0, length);

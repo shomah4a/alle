@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.buffer.ReadOnlyBufferException;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
@@ -185,9 +186,14 @@ public class CommandLoop {
                 command.execute(context)
                         .thenRun(() -> lastCommand = thisCommand)
                         .exceptionally(ex -> {
-                            var message = "コマンド実行中にエラーが発生: " + command.name();
-                            logger.log(Level.WARNING, message, ex);
-                            context.handleError(message, ex);
+                            var cause = ex.getCause() != null ? ex.getCause() : ex;
+                            if (cause instanceof ReadOnlyBufferException) {
+                                messageBuffer.message("Text is read-only");
+                            } else {
+                                var message = "コマンド実行中にエラーが発生: " + command.name();
+                                logger.log(Level.WARNING, message, ex);
+                                context.handleError(message, ex);
+                            }
                             return null;
                         });
             }
