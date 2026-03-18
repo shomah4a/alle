@@ -89,9 +89,11 @@ public final class Main {
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var messageBuffer = new MessageBuffer("*Messages*", 1000);
+        var warningBuffer = new MessageBuffer("*Warnings*", 1000);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
         bufferManager.add(messageBuffer);
+        bufferManager.add(warningBuffer);
 
         var inputSource = new TerminalInputSource(screen);
         var bufferIO = new BufferIO(
@@ -109,8 +111,8 @@ public final class Main {
 
         var prompter = new MinibufferInputPrompter(frame);
         var killRing = new io.github.shomah4a.alle.core.command.KillRing();
-        var commandLoop =
-                new CommandLoop(inputSource, resolver, frame, bufferManager, prompter, killRing, messageBuffer);
+        var commandLoop = new CommandLoop(
+                inputSource, resolver, frame, bufferManager, prompter, killRing, messageBuffer, warningBuffer);
         var renderer = new ScreenRenderer(screen, messageBuffer);
 
         renderer.render(frame);

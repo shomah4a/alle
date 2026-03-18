@@ -38,7 +38,7 @@ public class SaveBufferCommand implements Command {
         var buffer = context.frame().getActiveWindow().getBuffer();
 
         if (buffer.getFilePath().isPresent()) {
-            saveBuffer(buffer);
+            saveBuffer(buffer, context);
             return CompletableFuture.completedFuture(null);
         }
 
@@ -49,17 +49,19 @@ public class SaveBufferCommand implements Command {
                 String pathString = confirmed.value();
                 if (!pathString.isEmpty()) {
                     buffer.setFilePath(Path.of(pathString));
-                    saveBuffer(buffer);
+                    saveBuffer(buffer, context);
                 }
             }
         });
     }
 
-    private void saveBuffer(Buffer buffer) {
+    private void saveBuffer(Buffer buffer, CommandContext context) {
         try {
             bufferIO.save(buffer);
         } catch (IOException e) {
-            logger.log(Level.WARNING, "バッファの保存に失敗: " + buffer.getName(), e);
+            var message = "バッファの保存に失敗: " + buffer.getName();
+            logger.log(Level.WARNING, message, e);
+            context.handleError(message, e);
         }
     }
 }

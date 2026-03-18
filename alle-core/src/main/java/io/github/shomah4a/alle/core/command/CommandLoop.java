@@ -31,6 +31,7 @@ public class CommandLoop {
     private final InputPrompter inputPrompter;
     private final KillRing killRing;
     private final MessageBuffer messageBuffer;
+    private final MessageBuffer warningBuffer;
     private Optional<String> lastCommand = Optional.empty();
 
     public CommandLoop(
@@ -46,7 +47,8 @@ public class CommandLoop {
                 bufferManager,
                 inputPrompter,
                 new KillRing(),
-                new MessageBuffer("*Messages*", 1000));
+                new MessageBuffer("*Messages*", 1000),
+                new MessageBuffer("*Warnings*", 1000));
     }
 
     public CommandLoop(
@@ -56,7 +58,8 @@ public class CommandLoop {
             BufferManager bufferManager,
             InputPrompter inputPrompter,
             KillRing killRing,
-            MessageBuffer messageBuffer) {
+            MessageBuffer messageBuffer,
+            MessageBuffer warningBuffer) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
@@ -64,6 +67,7 @@ public class CommandLoop {
         this.inputPrompter = inputPrompter;
         this.killRing = killRing;
         this.messageBuffer = messageBuffer;
+        this.warningBuffer = warningBuffer;
     }
 
     /**
@@ -143,11 +147,14 @@ public class CommandLoop {
                         thisCommand,
                         lastCommand,
                         killRing,
-                        messageBuffer);
+                        messageBuffer,
+                        warningBuffer);
                 command.execute(context)
                         .thenRun(() -> lastCommand = thisCommand)
                         .exceptionally(ex -> {
-                            logger.log(Level.WARNING, "コマンド実行中に例外が発生: " + command.name(), ex);
+                            var message = "コマンド実行中にエラーが発生: " + command.name();
+                            logger.log(Level.WARNING, message, ex);
+                            context.handleError(message, ex);
                             return null;
                         });
             }

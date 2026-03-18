@@ -44,7 +44,8 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
-                new MessageBuffer("*Messages*", 100));
+                new MessageBuffer("*Messages*", 100),
+                new MessageBuffer("*Warnings*", 100));
     }
 
     /**
@@ -61,7 +62,8 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
-                new MessageBuffer("*Messages*", 100));
+                new MessageBuffer("*Messages*", 100),
+                new MessageBuffer("*Warnings*", 100));
     }
 
     /**
@@ -79,7 +81,8 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 lastCommand,
                 killRing,
-                new MessageBuffer("*Messages*", 100));
+                new MessageBuffer("*Messages*", 100),
+                new MessageBuffer("*Warnings*", 100));
     }
 
     /**

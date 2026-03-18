@@ -6,6 +6,8 @@ import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.WindowActor;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
 
 /**
@@ -27,4 +29,24 @@ public record CommandContext(
         Optional<String> thisCommand,
         Optional<String> lastCommand,
         KillRing killRing,
-        MessageBuffer messageBuffer) {}
+        MessageBuffer messageBuffer,
+        MessageBuffer warningBuffer) {
+
+    /**
+     * エラーをエコーエリアと*Warnings*バッファに通知する。
+     * エコーエリアには短いメッセージを表示し、*Warnings*にはメッセージとスタックトレース全行を書き込む。
+     */
+    public void handleError(String message, Throwable ex) {
+        messageBuffer.message(message);
+        warningBuffer.message(message);
+        for (String line : stackTraceToString(ex).split("\n")) {
+            warningBuffer.message(line);
+        }
+    }
+
+    private static String stackTraceToString(Throwable ex) {
+        var sw = new StringWriter();
+        ex.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+}
