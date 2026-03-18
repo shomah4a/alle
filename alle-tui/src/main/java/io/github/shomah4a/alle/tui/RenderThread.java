@@ -13,7 +13,6 @@ class RenderThread implements Runnable, Loggable {
     private final SnapshotExchanger exchanger;
     private final Screen screen;
     private final ScreenRenderer renderer;
-    private volatile boolean running = true;
 
     RenderThread(SnapshotExchanger exchanger, Screen screen, ScreenRenderer renderer) {
         this.exchanger = exchanger;
@@ -24,9 +23,9 @@ class RenderThread implements Runnable, Loggable {
     @Override
     public void run() {
         try {
-            while (running) {
+            while (true) {
                 var snapshot = exchanger.awaitNext();
-                if (snapshot == null || !running) {
+                if (snapshot == null) {
                     break;
                 }
                 renderer.renderSnapshot(snapshot);
@@ -38,10 +37,5 @@ class RenderThread implements Runnable, Loggable {
         } catch (IOException e) {
             logger().error("描画中にエラーが発生しました", e);
         }
-    }
-
-    void requestShutdown() {
-        running = false;
-        exchanger.wakeUp();
     }
 }

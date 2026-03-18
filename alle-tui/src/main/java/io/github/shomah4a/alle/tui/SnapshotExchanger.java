@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.tui;
 
-import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ロジックスレッドから描画スレッドへのスナップショット受け渡しを担う。
@@ -8,13 +8,14 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class SnapshotExchanger {
 
-    private final AtomicReference<RenderSnapshot> ref = new AtomicReference<>();
+    private @Nullable RenderSnapshot pending;
+    private boolean closed;
 
     /**
      * 最新のスナップショットを格納し、描画スレッドに通知する。
      */
     synchronized void publish(RenderSnapshot snapshot) {
-        ref.set(snapshot);
+        pending = snapshot;
         notifyAll();
     }
 
@@ -22,19 +23,22 @@ class SnapshotExchanger {
      * 新しいスナップショットが利用可能になるまで待機し、取得する。
      * 複数のスナップショットがpublishされていた場合は最新のみを返す。
      *
-     * @return スナップショット。shutdownが呼ばれた場合はnull
+     * @return スナップショット。closeされた場合はnull
      */
-    synchronized RenderSnapshot awaitNext() throws InterruptedException {
-        while (ref.get() == null) {
+    synchronized @Nullable RenderSnapshot awaitNext() throws InterruptedException {
+        while (pending == null && !closed) {
             wait();
         }
-        return ref.getAndSet(null);
+        var snapshot = pending;
+        pending = null;
+        return snapshot;
     }
 
     /**
-     * 待機中のスレッドを起こす。終了処理用。
+     * エクスチェンジャーを閉じ、待機中のスレッドを起こす。
      */
-    synchronized void wakeUp() {
+    synchronized void close() {
+        closed = true;
         notifyAll();
     }
 }

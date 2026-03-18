@@ -66,7 +66,7 @@ public class EditorRunner {
         } finally {
             keyQueue.put(EditorThread.POISON_PILL);
             logicThread.join(3000);
-            renderThread.requestShutdown();
+            exchanger.close();
             renderThreadHandle.join(3000);
         }
     }
