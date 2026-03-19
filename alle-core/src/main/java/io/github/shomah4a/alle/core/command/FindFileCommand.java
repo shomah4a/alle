@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
@@ -28,13 +29,19 @@ public class FindFileCommand implements Command {
     private final DirectoryLister directoryLister;
     private final Path workingDirectory;
     private final AutoModeMap autoModeMap;
+    private final InputHistory filePathHistory;
 
     public FindFileCommand(
-            BufferIO bufferIO, DirectoryLister directoryLister, Path workingDirectory, AutoModeMap autoModeMap) {
+            BufferIO bufferIO,
+            DirectoryLister directoryLister,
+            Path workingDirectory,
+            AutoModeMap autoModeMap,
+            InputHistory filePathHistory) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.autoModeMap = autoModeMap;
+        this.filePathHistory = filePathHistory;
     }
 
     @Override
@@ -47,7 +54,7 @@ public class FindFileCommand implements Command {
         var completer = new FilePathCompleter(directoryLister);
         String initialValue = workingDirectory + "/";
         return context.inputPrompter()
-                .prompt("Find file: ", initialValue, completer)
+                .prompt("Find file: ", initialValue, completer, filePathHistory)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         openFile(context, confirmed.value());

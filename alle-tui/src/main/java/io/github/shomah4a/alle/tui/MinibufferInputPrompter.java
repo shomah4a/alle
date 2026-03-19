@@ -5,6 +5,8 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.CompletionResult;
+import io.github.shomah4a.alle.core.input.HistoryNavigator;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -33,21 +35,27 @@ public class MinibufferInputPrompter implements InputPrompter {
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message) {
-        return promptInternal(message, "", null);
+        return promptInternal(message, "", null, null);
     }
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message, Completer completer) {
-        return promptInternal(message, "", completer);
+        return promptInternal(message, "", completer, null);
     }
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message, String initialValue, Completer completer) {
-        return promptInternal(message, initialValue, completer);
+        return promptInternal(message, initialValue, completer, null);
+    }
+
+    @Override
+    public CompletableFuture<PromptResult> prompt(
+            String message, String initialValue, Completer completer, InputHistory history) {
+        return promptInternal(message, initialValue, completer, history);
     }
 
     private CompletableFuture<PromptResult> promptInternal(
-            String message, String initialValue, @Nullable Completer completer) {
+            String message, String initialValue, @Nullable Completer completer, @Nullable InputHistory history) {
         if (activeFuture != null && !activeFuture.isDone()) {
             logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
             return CompletableFuture.completedFuture(new PromptResult.Cancelled());
@@ -74,7 +82,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         }
 
         // ミニバッファ用キーマップを作成
-        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, completer);
+        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, completer, history);
         minibuffer.setLocalKeymap(keymap);
 
         // ミニバッファを有効化
@@ -87,14 +95,16 @@ public class MinibufferInputPrompter implements InputPrompter {
             CompletableFuture<PromptResult> future,
             Window previousActiveWindow,
             int promptLength,
-            @Nullable Completer completer) {
+            @Nullable Completer completer,
+            @Nullable InputHistory history) {
         var keymap = new Keymap("minibuffer");
 
         // 通常文字入力
         keymap.setDefaultCommand(new SelfInsertCommand());
 
         // RET: 入力確定
-        keymap.bind(KeyStroke.of('\n'), new MinibufferConfirmCommand(future, previousActiveWindow, promptLength));
+        keymap.bind(
+                KeyStroke.of('\n'), new MinibufferConfirmCommand(future, previousActiveWindow, promptLength, history));
 
         // C-g: キャンセル
         keymap.bind(KeyStroke.ctrl('g'), new MinibufferCancelCommand(future, previousActiveWindow));
@@ -102,6 +112,17 @@ public class MinibufferInputPrompter implements InputPrompter {
         // Tab: 補完（Completerが提供されている場合のみ）
         if (completer != null) {
             keymap.bind(KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength));
+        }
+
+        // ヒストリナビゲーション（InputHistoryが提供されている場合のみ）
+        if (history != null) {
+            var navigator = new HistoryNavigator(history, "");
+            var prevCommand = new MinibufferPreviousHistoryCommand(navigator, promptLength);
+            var nextCommand = new MinibufferNextHistoryCommand(navigator, promptLength);
+            keymap.bind(KeyStroke.meta('p'), prevCommand);
+            keymap.bind(KeyStroke.of(KeyStroke.ARROW_UP), prevCommand);
+            keymap.bind(KeyStroke.meta('n'), nextCommand);
+            keymap.bind(KeyStroke.of(KeyStroke.ARROW_DOWN), nextCommand);
         }
 
         return keymap;
@@ -129,17 +150,48 @@ public class MinibufferInputPrompter implements InputPrompter {
         activeFuture = null;
     }
 
+    /**
+     * ミニバッファの入力部分（プロンプト以降）を取得する。
+     */
+    private String getUserInput(int promptLength) {
+        var minibuffer = frame.getMinibufferWindow().getBuffer();
+        String fullText = minibuffer.getText();
+        int fullLength = (int) fullText.codePoints().count();
+        return fullLength > promptLength ? minibuffer.substring(promptLength, fullLength) : "";
+    }
+
+    /**
+     * ミニバッファの入力部分（プロンプト以降）を置換する。
+     */
+    private void replaceUserInput(int promptLength, String newInput) {
+        var minibufferWindow = frame.getMinibufferWindow();
+        var minibuffer = minibufferWindow.getBuffer();
+        String fullText = minibuffer.getText();
+        int fullLength = (int) fullText.codePoints().count();
+        if (fullLength > promptLength) {
+            minibuffer.deleteText(promptLength, fullLength - promptLength);
+        }
+        minibuffer.insertText(promptLength, newInput);
+        int newLength = (int) newInput.codePoints().count();
+        minibufferWindow.setPoint(promptLength + newLength);
+    }
+
     private class MinibufferConfirmCommand implements Command {
 
         private final CompletableFuture<PromptResult> future;
         private final Window previousActiveWindow;
         private final int promptLength;
+        private final @Nullable InputHistory history;
 
         MinibufferConfirmCommand(
-                CompletableFuture<PromptResult> future, Window previousActiveWindow, int promptLength) {
+                CompletableFuture<PromptResult> future,
+                Window previousActiveWindow,
+                int promptLength,
+                @Nullable InputHistory history) {
             this.future = future;
             this.previousActiveWindow = previousActiveWindow;
             this.promptLength = promptLength;
+            this.history = history;
         }
 
         @Override
@@ -149,10 +201,11 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            var minibuffer = frame.getMinibufferWindow().getBuffer();
-            String fullText = minibuffer.getText();
-            int fullLength = (int) fullText.codePoints().count();
-            String userInput = fullLength > promptLength ? minibuffer.substring(promptLength, fullLength) : "";
+            String userInput = getUserInput(promptLength);
+
+            if (history != null) {
+                history.add(userInput);
+            }
 
             cleanup(previousActiveWindow);
             future.complete(new PromptResult.Confirmed(userInput));
@@ -177,25 +230,66 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            var minibufferWindow = frame.getMinibufferWindow();
-            var minibuffer = minibufferWindow.getBuffer();
-            String fullText = minibuffer.getText();
-            int fullLength = (int) fullText.codePoints().count();
-            String userInput = fullLength > promptLength ? minibuffer.substring(promptLength, fullLength) : "";
+            String userInput = getUserInput(promptLength);
 
             var candidates = completer.complete(userInput);
             String completed = CompletionResult.resolve(userInput, candidates);
 
             if (!completed.equals(userInput)) {
-                // 入力部分を置換
-                if (fullLength > promptLength) {
-                    minibuffer.deleteText(promptLength, fullLength - promptLength);
-                }
-                minibuffer.insertText(promptLength, completed);
-                int newLength = (int) completed.codePoints().count();
-                minibufferWindow.setPoint(promptLength + newLength);
+                replaceUserInput(promptLength, completed);
             }
 
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private class MinibufferPreviousHistoryCommand implements Command {
+
+        private final HistoryNavigator navigator;
+        private final int promptLength;
+        private boolean firstNavigation = true;
+
+        MinibufferPreviousHistoryCommand(HistoryNavigator navigator, int promptLength) {
+            this.navigator = navigator;
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "minibuffer-previous-history";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            if (firstNavigation) {
+                // 初回ナビゲーション時に現在の入力を元入力として保存
+                String currentInput = getUserInput(promptLength);
+                navigator.updateOriginalInput(currentInput);
+                firstNavigation = false;
+            }
+            navigator.previous().ifPresent(entry -> replaceUserInput(promptLength, entry));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private class MinibufferNextHistoryCommand implements Command {
+
+        private final HistoryNavigator navigator;
+        private final int promptLength;
+
+        MinibufferNextHistoryCommand(HistoryNavigator navigator, int promptLength) {
+            this.navigator = navigator;
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "minibuffer-next-history";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            navigator.next().ifPresent(entry -> replaceUserInput(promptLength, entry));
             return CompletableFuture.completedFuture(null);
         }
     }

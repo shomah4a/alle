@@ -37,6 +37,7 @@ import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.command.UndoCommand;
 import io.github.shomah4a.alle.core.command.YankCommand;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.input.ShutdownRequestable;
@@ -155,9 +156,10 @@ public final class EditorCore {
         registry.register(new NewlineCommand());
         registry.register(new NextLineCommand());
         registry.register(new PreviousLineCommand());
-        registry.register(
-                new FindFileCommand(bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap));
-        registry.register(new SaveBufferCommand(bufferIO, directoryLister));
+        var filePathHistory = new InputHistory();
+        registry.register(new FindFileCommand(
+                bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, filePathHistory));
+        registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
         registry.register(new SwitchBufferCommand());
         registry.register(new OtherWindowCommand());
         registry.register(new KillBufferCommand());

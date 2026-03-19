@@ -41,4 +41,19 @@ public interface InputPrompter {
     default CompletableFuture<PromptResult> prompt(String message, String initialValue, Completer completer) {
         return prompt(message, completer);
     }
+
+    /**
+     * 初期値・補完・履歴機能付きでプロンプトを表示する。
+     * M-p/M-n等で入力履歴をナビゲートでき、確定入力がhistoryに追加される。
+     *
+     * @param message      プロンプトメッセージ
+     * @param initialValue 入力エリアの初期値
+     * @param completer    補完候補プロバイダ
+     * @param history      入力履歴
+     * @return 入力結果
+     */
+    default CompletableFuture<PromptResult> prompt(
+            String message, String initialValue, Completer completer, InputHistory history) {
+        return prompt(message, initialValue, completer);
+    }
 }

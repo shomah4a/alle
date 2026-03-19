@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandLoop;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -246,6 +247,142 @@ class MinibufferInputPrompterTest {
             var result = future.join();
             assertTrue(result instanceof PromptResult.Confirmed);
             assertEquals("ab", ((PromptResult.Confirmed) result).value());
+        }
+    }
+
+    @Nested
+    class ヒストリナビゲーション {
+
+        private InputHistory history;
+
+        @BeforeEach
+        void setUpHistory() {
+            history = new InputHistory();
+            history.add("/home/a.txt");
+            history.add("/home/b.txt");
+            history.add("/home/c.txt");
+        }
+
+        @Test
+        void Mpで最新の履歴がミニバッファに表示される() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+
+            assertEquals("Find file: /home/c.txt", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void Mpを複数回押すと古い履歴に遡る() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+            executeMinibufferKey(KeyStroke.meta('p'));
+
+            assertEquals("Find file: /home/b.txt", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void ArrowUpでMpと同じ動作をする() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.of(KeyStroke.ARROW_UP));
+
+            assertEquals("Find file: /home/c.txt", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void MnでMpの後に次の履歴に進む() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+            executeMinibufferKey(KeyStroke.meta('p'));
+            executeMinibufferKey(KeyStroke.meta('n'));
+
+            assertEquals("Find file: /home/c.txt", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void ArrowDownでMnと同じ動作をする() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+            executeMinibufferKey(KeyStroke.meta('p'));
+            executeMinibufferKey(KeyStroke.of(KeyStroke.ARROW_DOWN));
+
+            assertEquals("Find file: /home/c.txt", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void Mnで末尾を超えると元入力に戻る() {
+            prompter.prompt(
+                    "Find file: ",
+                    "original",
+                    input -> org.eclipse.collections.api.factory.Lists.immutable.empty(),
+                    history);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+            executeMinibufferKey(KeyStroke.meta('n'));
+
+            assertEquals("Find file: original", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void 履歴が空の場合Mpで入力が変わらない() {
+            var emptyHistory = new InputHistory();
+            prompter.prompt(
+                    "Find file: ",
+                    "test",
+                    input -> org.eclipse.collections.api.factory.Lists.immutable.empty(),
+                    emptyHistory);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+
+            assertEquals("Find file: test", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void 確定時に履歴に入力が追加される() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            minibufferWindow.getBuffer().insertText(11, "/home/new.txt");
+            minibufferWindow.setPoint(24);
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            assertEquals(4, history.size());
+            assertEquals("/home/new.txt", history.get(3));
+        }
+
+        @Test
+        void ヒストリナビゲーション後に入力を編集して確定できる() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.meta('p')); // /home/c.txt
+
+            // ポイント位置を確認して確定
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            // /home/c.txt は既に履歴にあるため重複移動でサイズは3のまま
+            assertEquals(3, history.size());
+            assertEquals("/home/c.txt", history.get(2));
+        }
+
+        @Test
+        void ポイントが履歴テキストの末尾に移動する() {
+            prompter.prompt(
+                    "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
+
+            executeMinibufferKey(KeyStroke.meta('p'));
+
+            // promptLength(11) + "/home/c.txt"(11) = 22
+            assertEquals(22, minibufferWindow.getPoint());
         }
     }
 

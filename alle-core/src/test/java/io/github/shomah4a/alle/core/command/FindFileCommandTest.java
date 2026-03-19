@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
@@ -71,7 +72,7 @@ class FindFileCommandTest {
         @Test
         void 指定パスのファイルを読み込みバッファに表示する() {
             storage.put("/tmp/hello.txt", "Hello\nWorld");
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
 
             cmd.execute(context).join();
@@ -87,7 +88,7 @@ class FindFileCommandTest {
         @Test
         void 読み込んだバッファがBufferManagerに追加される() {
             storage.put("/tmp/hello.txt", "Hello");
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
 
             cmd.execute(context).join();
@@ -99,7 +100,7 @@ class FindFileCommandTest {
         @Test
         void CRLFファイルのLineEndingがバッファに保持される() {
             storage.put("/tmp/crlf.txt", "Hello\r\nWorld");
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/crlf.txt"));
 
             cmd.execute(context).join();
@@ -113,7 +114,7 @@ class FindFileCommandTest {
 
         @Test
         void 空バッファがファイルパス付きで作成される() {
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
 
             cmd.execute(context).join();
@@ -132,7 +133,7 @@ class FindFileCommandTest {
         @Test
         void 既存バッファに切り替わる() {
             storage.put("/tmp/hello.txt", "Hello");
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
 
             // 1回目: ファイルを開く
             var context1 = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
@@ -181,7 +182,7 @@ class FindFileCommandTest {
 
         @Test
         void キャンセル時は何も変わらない() {
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
 
             cmd.execute(context).join();
@@ -196,7 +197,7 @@ class FindFileCommandTest {
 
         @Test
         void 空文字列で確定した場合は何も変わらない() {
-            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap);
+            var cmd = new FindFileCommand(bufferIO, stubLister, Path.of("/test"), autoModeMap, new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();
