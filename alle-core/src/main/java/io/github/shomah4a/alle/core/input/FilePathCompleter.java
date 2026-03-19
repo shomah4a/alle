@@ -27,6 +27,17 @@ public class FilePathCompleter implements Completer {
             return Lists.immutable.empty();
         }
 
+        // 末尾が "/" の場合はそのディレクトリの中身を一覧する
+        if (input.endsWith("/")) {
+            Path directory = Path.of(input);
+            try {
+                return directoryLister.list(directory);
+            } catch (IOException e) {
+                logger.log(Level.FINE, "ディレクトリ一覧の取得に失敗: " + directory, e);
+                return Lists.immutable.empty();
+            }
+        }
+
         Path inputPath = Path.of(input);
         Path parent = inputPath.getParent();
         if (parent == null) {

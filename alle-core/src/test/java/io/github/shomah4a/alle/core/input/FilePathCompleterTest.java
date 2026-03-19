@@ -58,4 +58,35 @@ class FilePathCompleterTest {
         assertEquals(1, result.size());
         assertEquals("/tmp/subdir/", result.get(0));
     }
+
+    @Test
+    void 末尾スラッシュの入力ではそのディレクトリの中身を一覧する() {
+        var completer = new FilePathCompleter(stubLister("/tmp/subdir/file1.txt", "/tmp/subdir/file2.txt"));
+        var result = completer.complete("/tmp/subdir/");
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains("/tmp/subdir/file1.txt"));
+        assertTrue(result.contains("/tmp/subdir/file2.txt"));
+    }
+
+    @Test
+    void ルートディレクトリの入力ではルートの中身を一覧する() {
+        var completer = new FilePathCompleter(stubLister("/tmp/", "/home/"));
+        var result = completer.complete("/");
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains("/tmp/"));
+        assertTrue(result.contains("/home/"));
+    }
+
+    @Test
+    void 末尾スラッシュの入力で存在しないディレクトリは空リストを返す() {
+        DirectoryLister failingLister = directory -> {
+            throw new IOException("no such directory");
+        };
+        var completer = new FilePathCompleter(failingLister);
+        var result = completer.complete("/tmp/nonexistent/");
+
+        assertTrue(result.isEmpty());
+    }
 }
