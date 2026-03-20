@@ -20,15 +20,13 @@ import org.junit.jupiter.api.Test;
  */
 class AlleModuleTest {
 
+    private GraalPyEngineFactory factory;
     private GraalPyEngine engine;
     private EditableBuffer buffer;
     private MessageBuffer messageBuffer;
 
     @BeforeEach
     void setUp() {
-        var factory = new GraalPyEngineFactory();
-        engine = (GraalPyEngine) factory.create();
-
         buffer = new EditableBuffer("test.py", new GapTextModel());
         var window = new Window(buffer);
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
@@ -38,12 +36,14 @@ class AlleModuleTest {
         messageBuffer = new MessageBuffer("*Messages*", 100);
 
         var facade = new EditorFacade(frame, bufferManager, messageBuffer);
-        engine.initAlleModule(facade);
+        factory = new GraalPyEngineFactory(facade);
+        engine = (GraalPyEngine) factory.create();
     }
 
     @AfterEach
     void tearDown() {
         engine.close();
+        factory.close();
     }
 
     @Test

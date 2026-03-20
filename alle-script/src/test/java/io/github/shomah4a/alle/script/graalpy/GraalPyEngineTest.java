@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.github.shomah4a.alle.script.ScriptResult;
+import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ class GraalPyEngineTest {
 
     @BeforeEach
     void setUp() {
-        var factory = new GraalPyEngineFactory();
-        engine = (GraalPyEngine) factory.create();
+        var context = Context.newBuilder("python").allowAllAccess(true).build();
+        engine = new GraalPyEngine(context);
     }
 
     @AfterEach

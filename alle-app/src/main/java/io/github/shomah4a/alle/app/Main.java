@@ -9,7 +9,6 @@ import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.EvalExpressionCommand;
-import io.github.shomah4a.alle.script.graalpy.GraalPyEngine;
 import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
@@ -65,10 +64,9 @@ public final class Main {
                 .bind(KeyStroke.ctrl('q'), core.commandRegistry().lookup("quit").orElseThrow());
 
         // スクリプトエンジンの初期化
-        var scriptEngineFactory = new GraalPyEngineFactory();
-        var scriptEngine = (GraalPyEngine) scriptEngineFactory.create();
         var editorFacade = new EditorFacade(core.frame(), core.bufferManager(), core.messageBuffer());
-        scriptEngine.initAlleModule(editorFacade);
+        var scriptEngineFactory = new GraalPyEngineFactory(editorFacade);
+        var scriptEngine = scriptEngineFactory.create();
 
         // eval-expression コマンド (M-:)
         core.commandRegistry().register(new EvalExpressionCommand(scriptEngine));
@@ -86,6 +84,7 @@ public final class Main {
             Thread.currentThread().interrupt();
         } finally {
             scriptEngine.close();
+            scriptEngineFactory.close();
         }
     }
 
