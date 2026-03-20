@@ -65,12 +65,16 @@ public final class Main {
                 .bind(KeyStroke.ctrl('q'), core.commandRegistry().lookup("quit").orElseThrow());
 
         // スクリプトエンジンの初期化
-        var editorFacade = new EditorFacade(core.frame(), core.bufferManager(), core.messageBuffer());
+        var msg = core.messageBuffer();
+        msg.message("Initializing script engine...");
+        var editorFacade = new EditorFacade(core.frame(), core.bufferManager(), msg);
         var stdoutStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000);
+        msg.message("Creating GraalPy engine...");
         var scriptEngineFactory = new GraalPyEngineFactory(editorFacade, stdoutStream, stderrStream, logStream);
         var scriptEngine = scriptEngineFactory.create();
+        msg.message("Script engine initialized.");
 
         // eval-expression コマンド (M-:)
         core.commandRegistry().register(new EvalExpressionCommand(scriptEngine));
