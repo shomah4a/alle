@@ -4,11 +4,13 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.EditorCore;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.EvalExpressionCommand;
+import io.github.shomah4a.alle.script.MessageBufferOutputStream;
 import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
@@ -64,8 +66,16 @@ public final class Main {
                 .bind(KeyStroke.ctrl('q'), core.commandRegistry().lookup("quit").orElseThrow());
 
         // スクリプトエンジンの初期化
+        var pythonStdout = new MessageBuffer("*Python Output*", 1000);
+        var pythonStderr = new MessageBuffer("*Python Error*", 1000);
+        core.bufferManager().add(pythonStdout);
+        core.bufferManager().add(pythonStderr);
+        core.bufferManager().switchTo("*scratch*");
+
         var editorFacade = new EditorFacade(core.frame(), core.bufferManager(), core.messageBuffer());
-        var scriptEngineFactory = new GraalPyEngineFactory(editorFacade);
+        var stdoutStream = new MessageBufferOutputStream(pythonStdout);
+        var stderrStream = new MessageBufferOutputStream(pythonStderr);
+        var scriptEngineFactory = new GraalPyEngineFactory(editorFacade, stdoutStream, stderrStream);
         var scriptEngine = scriptEngineFactory.create();
 
         // eval-expression コマンド (M-:)
