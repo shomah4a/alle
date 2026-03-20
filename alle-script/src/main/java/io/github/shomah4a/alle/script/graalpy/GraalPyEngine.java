@@ -3,9 +3,7 @@ package io.github.shomah4a.alle.script.graalpy;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.ScriptEngine;
 import io.github.shomah4a.alle.script.ScriptResult;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.net.URL;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
@@ -20,7 +18,7 @@ public class GraalPyEngine implements ScriptEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(GraalPyEngine.class);
     private static final String LANGUAGE_ID = "python";
-    private static final String ALLE_MODULE_RESOURCE = "/io/github/shomah4a/alle/script/alle.py";
+    private static final String ALLE_INIT_RESOURCE = "/io/github/shomah4a/alle/script/alle/__init__.py";
 
     private final Context context;
 
@@ -31,20 +29,21 @@ public class GraalPyEngine implements ScriptEngine {
     /**
      * alleモジュールをロードし、EditorFacadeを注入する。
      * エンジン生成後、スクリプト実行前に呼ぶこと。
+     *
+     * <p>リソースのURLからモジュール検索パスを解決する。
+     * JAR内の場合はzipimport経由、classesディレクトリの場合はファイルパス経由で読み込む。
      */
     public void initAlleModule(EditorFacade editorFacade) {
-        String moduleSource = loadResource(ALLE_MODULE_RESOURCE);
-        // alleモジュールをsys.modulesに登録し、import alleで使えるようにする
-        bind("_alle_module_source", moduleSource);
+        String modulePath = resolveModulePath();
         bind("_editor_facade", editorFacade);
+        bind("_alle_module_path", modulePath);
         context.eval(LANGUAGE_ID, """
-                import types, sys
-                _alle_mod = types.ModuleType('alle')
-                _alle_mod.__dict__['__name__'] = 'alle'
-                exec(_alle_module_source, _alle_mod.__dict__)
-                sys.modules['alle'] = _alle_mod
-                _alle_mod._init(_editor_facade)
-                del _alle_module_source
+                import sys
+                sys.path.insert(0, _alle_module_path)
+                del _alle_module_path
+                import alle
+                alle._init(_editor_facade)
+                del _editor_facade
                 """);
     }
 
@@ -88,15 +87,31 @@ public class GraalPyEngine implements ScriptEngine {
         context.close();
     }
 
-    private static String loadResource(String path) {
-        @Nullable InputStream is = GraalPyEngine.class.getResourceAsStream(path);
-        if (is == null) {
-            throw new IllegalStateException("リソースが見つかりません: " + path);
+    /**
+     * alleパッケージの親ディレクトリのパスを解決する。
+     * JAR内の場合: /path/to/app.jar/io/github/shomah4a/alle/script
+     * classesの場合: /path/to/classes/io/github/shomah4a/alle/script
+     */
+    private static String resolveModulePath() {
+        @Nullable URL url = GraalPyEngine.class.getResource(ALLE_INIT_RESOURCE);
+        if (url == null) {
+            throw new IllegalStateException("alleモジュールのリソースが見つかりません: " + ALLE_INIT_RESOURCE);
         }
-        try (is) {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("リソースの読み込みに失敗しました: " + path, e);
+        String urlStr = url.toString();
+        // alle/__init__.py の親の親（= alle パッケージの親）を取得
+        String suffix = "/alle/__init__.py";
+        if (urlStr.startsWith("jar:file:")) {
+            // jar:file:/path/to/app.jar!/io/github/.../alle/__init__.py
+            String inner = urlStr.substring("jar:file:".length());
+            String jarPath = inner.substring(0, inner.indexOf("!"));
+            String resourceDir = inner.substring(inner.indexOf("!") + 1);
+            return jarPath + resourceDir.replace(suffix, "");
+        } else if (urlStr.startsWith("file:")) {
+            // file:/path/to/classes/io/github/.../alle/__init__.py
+            String filePath = urlStr.substring("file:".length());
+            return filePath.replace(suffix, "");
+        } else {
+            throw new IllegalStateException("未対応のURLスキーム: " + urlStr);
         }
     }
 }
