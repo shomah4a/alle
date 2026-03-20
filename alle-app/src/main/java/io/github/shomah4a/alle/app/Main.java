@@ -7,6 +7,10 @@ import io.github.shomah4a.alle.core.EditorCore;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.script.EditorFacade;
+import io.github.shomah4a.alle.script.EvalExpressionCommand;
+import io.github.shomah4a.alle.script.graalpy.GraalPyEngine;
+import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
 import io.github.shomah4a.alle.tui.QuitCommand;
@@ -60,6 +64,19 @@ public final class Main {
         core.keymap()
                 .bind(KeyStroke.ctrl('q'), core.commandRegistry().lookup("quit").orElseThrow());
 
+        // スクリプトエンジンの初期化
+        var scriptEngineFactory = new GraalPyEngineFactory();
+        var scriptEngine = (GraalPyEngine) scriptEngineFactory.create();
+        var editorFacade = new EditorFacade(core.frame(), core.bufferManager(), core.messageBuffer());
+        scriptEngine.initAlleModule(editorFacade);
+
+        // eval-expression コマンド (M-:)
+        core.commandRegistry().register(new EvalExpressionCommand(scriptEngine));
+        core.keymap()
+                .bind(
+                        KeyStroke.meta(':'),
+                        core.commandRegistry().lookup("eval-expression").orElseThrow());
+
         var renderer = new ScreenRenderer(screen, core.messageBuffer());
         var runner = new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame());
 
@@ -67,6 +84,8 @@ public final class Main {
             runner.run();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } finally {
+            scriptEngine.close();
         }
     }
 
