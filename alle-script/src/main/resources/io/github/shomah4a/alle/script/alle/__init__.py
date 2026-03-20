@@ -18,47 +18,33 @@ Java側のEditorFacadeをラップし、Python的なAPIを提供する。
     alle.global_set_key([ctrl('c'), key('h')], cmd)
 """
 
-from alle.futures import JavaFuture, wrap, wrap_transform
-from alle.window import Window
+from __future__ import annotations
+
+from typing import Any
+
 from alle.buffer import Buffer
-from alle.command import CommandBase, make_command
-
-_editor_facade = None
-
-
-def _init(editor_facade):
-    """エンジン初期化時に呼ばれる。"""
-    global _editor_facade
-    _editor_facade = editor_facade
+from alle.command import CommandBase
+from alle.futures import JavaFuture
+from alle.internal.facade import _init, _require_facade, _wrap_command
+from alle.window import Window
 
 
-def _wrap_command(command):
-    """CommandBase を Java Command にラップする。"""
-    return make_command(command)
-
-
-def _require_facade():
-    if _editor_facade is None:
-        raise RuntimeError("alle module is not initialized")
-    return _editor_facade
-
-
-def active_window():
+def active_window() -> Window:
     """アクティブウィンドウを返す。"""
     return Window(_require_facade().activeWindow())
 
 
-def current_buffer():
+def current_buffer() -> Buffer:
     """カレントバッファを返す。"""
     return Buffer(_require_facade().currentBuffer())
 
 
-def message(text):
+def message(text: str) -> None:
     """エコーエリアにメッセージを表示する。"""
     _require_facade().message(text)
 
 
-def register_command(command):
+def register_command(command: CommandBase) -> None:
     """コマンドを登録する。同名のコマンドが既に存在する場合は上書きする。
 
     Args:
@@ -67,7 +53,7 @@ def register_command(command):
     _require_facade().registerCommand(_wrap_command(command))
 
 
-def global_set_key(keystrokes, command):
+def global_set_key(keystrokes: list[Any], command: CommandBase) -> None:
     """グローバルキーマップにキーバインドを設定する。
 
     Args:

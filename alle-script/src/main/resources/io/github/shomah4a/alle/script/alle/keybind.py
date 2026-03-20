@@ -10,21 +10,25 @@ KeyStroke の生成を Python 的に行うための関数を提供する。
     alle.global_set_key([ctrl('s')], save_cmd)
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import java
 
-KeyStroke = java.type('io.github.shomah4a.alle.core.keybind.KeyStroke')
+KeyStroke: Any = java.type('io.github.shomah4a.alle.core.keybind.KeyStroke')
 
 
-def ctrl(char):
+def ctrl(char: str) -> Any:
     """Ctrl+キーの KeyStroke を返す。"""
     return KeyStroke.ctrl(ord(char))
 
 
-def meta(char):
+def meta(char: str) -> Any:
     """Meta+キーの KeyStroke を返す。"""
     return KeyStroke.meta(ord(char))
 
 
-def key(char):
+def key(char: str) -> Any:
     """修飾キーなしの KeyStroke を返す。"""
     return KeyStroke.of(ord(char))

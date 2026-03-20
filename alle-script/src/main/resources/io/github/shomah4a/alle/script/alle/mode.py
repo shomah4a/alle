@@ -11,11 +11,15 @@ Python側でモードを定義するための基底クラスを提供する。
             return "my-mode"
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import java
 from java.util import Optional
 
-MajorMode = java.type('io.github.shomah4a.alle.core.mode.MajorMode')
-MinorMode = java.type('io.github.shomah4a.alle.core.mode.MinorMode')
+MajorMode: Any = java.type('io.github.shomah4a.alle.core.mode.MajorMode')
+MinorMode: Any = java.type('io.github.shomah4a.alle.core.mode.MinorMode')
 
 
 class AlleMajorMode(MajorMode):
@@ -25,7 +29,7 @@ class AlleMajorMode(MajorMode):
     keymap() はデフォルトで空を返す。必要に応じてオーバーライドする。
     """
 
-    def keymap(self):
+    def keymap(self) -> Any:
         return Optional.empty()
 
 
@@ -36,5 +40,5 @@ class AlleMinorMode(MinorMode):
     keymap() はデフォルトで空を返す。必要に応じてオーバーライドする。
     """
 
-    def keymap(self):
+    def keymap(self) -> Any:
         return Optional.empty()
