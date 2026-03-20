@@ -1,44 +1,56 @@
 """モード基底クラス。
 
-JavaのMajorMode/MinorModeインターフェースを継承し、
-Python側でモードを定義するための基底クラスを提供する。
+ユーザーは MajorModeBase / MinorModeBase を継承してモードを定義する。
 
 使用例:
-    from alle.mode import AlleMajorMode
+    from alle.mode import MajorModeBase
 
-    class MyMode(AlleMajorMode):
+    class MyMode(MajorModeBase):
         def name(self):
             return "my-mode"
 """
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import Any
 
-import java
-from java.util import Optional
 
-MajorMode: Any = java.type('io.github.shomah4a.alle.core.mode.MajorMode')
-MinorMode: Any = java.type('io.github.shomah4a.alle.core.mode.MinorMode')
-
-
-class AlleMajorMode(MajorMode):
+class MajorModeBase(ABC):
     """メジャーモードの基底クラス。
 
     サブクラスは name() を実装する。
-    keymap() はデフォルトで空を返す。必要に応じてオーバーライドする。
+    keymap() / highlighter() はデフォルトで None を返す。
+    必要に応じてオーバーライドする。
     """
 
-    def keymap(self) -> Any:
-        return Optional.empty()
+    @abstractmethod
+    def name(self) -> str:
+        """モード名を返す。"""
+        ...
+
+    def keymap(self) -> Any | None:
+        """モード固有のキーマップを返す。不要なら None。"""
+        return None
+
+    def highlighter(self) -> Any | None:
+        """シンタックスハイライターを返す。不要なら None。"""
+        return None
 
 
-class AlleMinorMode(MinorMode):
+class MinorModeBase(ABC):
     """マイナーモードの基底クラス。
 
     サブクラスは name() を実装する。
-    keymap() はデフォルトで空を返す。必要に応じてオーバーライドする。
+    keymap() はデフォルトで None を返す。
+    必要に応じてオーバーライドする。
     """
 
-    def keymap(self) -> Any:
-        return Optional.empty()
+    @abstractmethod
+    def name(self) -> str:
+        """モード名を返す。"""
+        ...
+
+    def keymap(self) -> Any | None:
+        """モード固有のキーマップを返す。不要なら None。"""
+        return None
