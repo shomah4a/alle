@@ -4,10 +4,10 @@ Java側のEditorFacadeをラップし、Python的なAPIを提供する。
 
 使用例:
     import alle
-    from alle.command import AlleCommand
+    from alle.command import CommandBase
     from alle.keybind import ctrl, meta, key
 
-    class MyCommand(AlleCommand):
+    class MyCommand(CommandBase):
         def name(self):
             return "my-command"
         def run(self):
@@ -21,6 +21,7 @@ Java側のEditorFacadeをラップし、Python的なAPIを提供する。
 from alle.futures import JavaFuture, wrap, wrap_transform
 from alle.window import Window
 from alle.buffer import Buffer
+from alle.command import CommandBase, make_command
 
 _editor_facade = None
 
@@ -29,6 +30,11 @@ def _init(editor_facade):
     """エンジン初期化時に呼ばれる。"""
     global _editor_facade
     _editor_facade = editor_facade
+
+
+def _wrap_command(command):
+    """CommandBase を Java Command にラップする。"""
+    return make_command(command)
 
 
 def _require_facade():
@@ -53,8 +59,12 @@ def message(text):
 
 
 def register_command(command):
-    """コマンドを登録する。同名のコマンドが既に存在する場合は上書きする。"""
-    _require_facade().registerCommand(command)
+    """コマンドを登録する。同名のコマンドが既に存在する場合は上書きする。
+
+    Args:
+        command: CommandBase のサブクラスのインスタンス
+    """
+    _require_facade().registerCommand(_wrap_command(command))
 
 
 def global_set_key(keystrokes, command):
@@ -62,6 +72,6 @@ def global_set_key(keystrokes, command):
 
     Args:
         keystrokes: KeyStroke のリスト（例: [ctrl('x'), ctrl('f')]）
-        command: バインドするコマンドインスタンス
+        command: CommandBase のサブクラスのインスタンス
     """
-    _require_facade().globalSetKey(keystrokes, command)
+    _require_facade().globalSetKey(keystrokes, _wrap_command(command))

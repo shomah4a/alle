@@ -77,6 +77,11 @@ public final class Main {
         var scriptEngine = scriptEngineFactory.create();
         msg.message("Script engine initialized.");
 
+        // ユーザー初期化スクリプトの読み込み
+        var warningBuffer = (io.github.shomah4a.alle.core.buffer.MessageBuffer)
+                core.bufferManager().findByName("*Warnings*").orElseThrow();
+        loadUserInit(scriptEngine, msg, warningBuffer);
+
         // eval-expression コマンド (M-:)
         core.commandRegistry().register(new EvalExpressionCommand(scriptEngine));
         core.keymap()
@@ -110,6 +115,34 @@ public final class Main {
             });
         }
         return entries;
+    }
+
+    private static void loadUserInit(
+            io.github.shomah4a.alle.script.ScriptEngine scriptEngine,
+            io.github.shomah4a.alle.core.buffer.MessageBuffer msg,
+            io.github.shomah4a.alle.core.buffer.MessageBuffer warnings) {
+        Path initFile = Path.of(System.getProperty("user.home"), ".alle.d", "init.py");
+        if (!Files.isRegularFile(initFile)) {
+            return;
+        }
+        msg.message("Loading " + initFile + "...");
+        try {
+            String code = Files.readString(initFile, StandardCharsets.UTF_8);
+            var result = scriptEngine.eval(code);
+            if (result instanceof io.github.shomah4a.alle.script.ScriptResult.Failure failure) {
+                msg.message("init.py error: " + failure.message());
+                warnings.message("init.py error: " + failure.message());
+                var sw = new java.io.StringWriter();
+                failure.cause().printStackTrace(new java.io.PrintWriter(sw));
+                for (String line : sw.toString().split("\n")) {
+                    warnings.message(line);
+                }
+            } else {
+                msg.message("Loaded " + initFile);
+            }
+        } catch (IOException e) {
+            msg.message("init.py read error: " + e.getMessage());
+        }
     }
 
     private static void disableFlowControl() throws IOException {

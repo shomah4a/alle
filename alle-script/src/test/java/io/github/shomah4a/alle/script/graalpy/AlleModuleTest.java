@@ -132,4 +132,23 @@ class AlleModuleTest {
         assertEquals("line1", stdoutBuffer.lineText(0));
         assertEquals("line2", stdoutBuffer.lineText(1));
     }
+
+    @Test
+    void CommandBaseでコマンドを定義して登録できる() {
+        engine.eval("import alle");
+        engine.eval("from alle.command import CommandBase");
+        engine.eval("""
+                class TestCmd(CommandBase):
+                    def name(self):
+                        return "test-cmd"
+                    def run(self):
+                        alle.message("test-cmd executed")
+                """);
+        ScriptResult result = engine.eval("alle.register_command(TestCmd())");
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("register_command failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+    }
 }

@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.script;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.Command;
@@ -11,13 +12,14 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.List;
 import java.util.Optional;
+import org.graalvm.polyglot.Value;
 
 /**
  * スクリプトに公開するエディタのルートファサード。
  * アクティブウィンドウ・バッファの解決、メッセージ表示、
  * コマンド登録・実行、キーバインド設定を担う。
  */
-public class EditorFacade {
+public class EditorFacade implements Loggable {
 
     private final Frame frame;
     private final BufferManager bufferManager;
@@ -61,9 +63,10 @@ public class EditorFacade {
 
     /**
      * コマンドを登録する。同名のコマンドが既に存在する場合は上書きする。
+     * Python側からAlleCommand（Java Commandを直接継承）が渡される。
      */
-    public void registerCommand(Command command) {
-        commandRegistry.registerOrReplace(command);
+    public void registerCommand(Value command) {
+        commandRegistry.registerOrReplace(command.as(Command.class));
     }
 
     /**
@@ -73,7 +76,8 @@ public class EditorFacade {
      * @param keyStrokes キーストロークのリスト（例: [ctrl('x'), ctrl('f')]）
      * @param command バインドするコマンド
      */
-    public void globalSetKey(List<KeyStroke> keyStrokes, Command command) {
+    public void globalSetKey(List<KeyStroke> keyStrokes, Value commandValue) {
+        Command command = commandValue.as(Command.class);
         if (keyStrokes.isEmpty()) {
             throw new IllegalArgumentException("キーストロークのリストが空です");
         }
