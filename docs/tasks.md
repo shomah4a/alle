@@ -2,12 +2,23 @@
 
 ## 未着手タスク
 
-### M-x (execute-extended-command)
-- ミニバッファでコマンド名を入力して実行する
-- CommandNameCompleter でコマンド名のTab補完
-- M-x にバインド
-- ExecuteCommandCommand と executeByName() が既に存在するので拡張する形
-- CommandRegistry.registeredNames() も既に存在
+### スクリプトエンジン: stdout/stderr リダイレクト
+- Python の sys.stdout/sys.stderr をエディタバッファにリダイレクトする
+- `*Python stdout*` / `*Python stderr*` 専用バッファの作成
+- GraalVM Context.Builder の `.out()` / `.err()` で OutputStream を設定
+
+### スクリプトエンジン: BufferFacade のスレッド安全性
+- BufferFacade の insertAt/deleteAt が Buffer を直接操作しており WindowActor を経由していない
+- WindowActor が非同期化された場合にレースコンディションの温床になる
+- BufferFacade を読み取り専用にするか、WindowActor 経由に統一する
+
+### スクリプトエンジン: init-loader
+- `.alle.d/init-loader` からスクリプトファイルを自動読み込みする仕組み
+- alle-script モジュール内にローダーを実装
+
+### スクリプトエンジン: 未完了 Future の asyncio 統合
+- 現在の JavaFuture.__await__ は完了済み Future のみ対応
+- asyncio イベントループとの統合で未完了 Future を非同期待ちできるようにする
 
 ## 将来課題
 
