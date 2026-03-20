@@ -21,8 +21,12 @@ public class GraalPyEngineFactory implements ScriptEngineFactory, AutoCloseable 
     private final OutputStream stdout;
     private final OutputStream stderr;
 
-    public GraalPyEngineFactory(EditorFacade editorFacade, OutputStream stdout, OutputStream stderr) {
-        this.engine = Engine.create();
+    public GraalPyEngineFactory(
+            EditorFacade editorFacade, OutputStream stdout, OutputStream stderr, OutputStream logOutput) {
+        this.engine = Engine.newBuilder()
+                .option("engine.WarnInterpreterOnly", "false")
+                .logHandler(logOutput)
+                .build();
         this.editorFacade = editorFacade;
         this.stdout = stdout;
         this.stderr = stderr;

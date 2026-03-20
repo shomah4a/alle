@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.script;
 
+import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -7,20 +9,28 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * MessageBufferに出力するOutputStream。
  * 書き込まれたバイト列をUTF-8デコードし、改行ごとにMessageBuffer.message()で追加する。
- * GraalVM Context.Builder の .out() / .err() で使用する。
+ * GraalVM Context.Builder の .out() / .err() / .logHandler() で使用する。
+ *
+ * <p>バッファはBufferManager経由で名前解決する。
+ * バッファが存在しない場合は自動的に新規作成してBufferManagerに登録する。
  */
 public class MessageBufferOutputStream extends OutputStream {
 
-    private final MessageBuffer buffer;
+    private final BufferManager bufferManager;
+    private final String bufferName;
+    private final int maxLines;
     private final ByteArrayOutputStream pending;
     private final CharsetDecoder decoder;
 
-    public MessageBufferOutputStream(MessageBuffer buffer) {
-        this.buffer = buffer;
+    public MessageBufferOutputStream(BufferManager bufferManager, String bufferName, int maxLines) {
+        this.bufferManager = bufferManager;
+        this.bufferName = bufferName;
+        this.maxLines = maxLines;
         this.pending = new ByteArrayOutputStream();
         this.decoder = StandardCharsets.UTF_8.newDecoder();
     }
@@ -55,6 +65,18 @@ public class MessageBufferOutputStream extends OutputStream {
         flush();
     }
 
+    private MessageBuffer getOrCreateBuffer() {
+        Optional<Buffer> existing = bufferManager.findByName(bufferName);
+        if (existing.isPresent() && existing.get() instanceof MessageBuffer mb) {
+            return mb;
+        }
+        var newBuffer = new MessageBuffer(bufferName, maxLines);
+        bufferManager.add(newBuffer);
+        // add() がカレントバッファを変更するので元に戻す
+        // ただしカレントバッファがない場合（初回）はそのまま
+        return newBuffer;
+    }
+
     private void flushLine() {
         byte[] bytes = pending.toByteArray();
         pending.reset();
@@ -77,7 +99,7 @@ public class MessageBufferOutputStream extends OutputStream {
         }
 
         if (!line.isEmpty()) {
-            buffer.message(line);
+            getOrCreateBuffer().message(line);
         }
     }
 }
