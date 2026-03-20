@@ -27,6 +27,14 @@ public class CommandRegistry {
     }
 
     /**
+     * コマンドを登録する。同名のコマンドが既に登録されている場合は上書きする。
+     * スクリプトからのコマンド再定義用。
+     */
+    public void registerOrReplace(Command command) {
+        commands.put(command.name(), command);
+    }
+
+    /**
      * 名前でコマンドを検索する。
      */
     public Optional<Command> lookup(String name) {

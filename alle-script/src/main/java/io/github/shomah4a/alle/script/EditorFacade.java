@@ -2,26 +2,40 @@ package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.command.Command;
+import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.WindowActor;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * スクリプトに公開するエディタのルートファサード。
- * アクティブウィンドウ・バッファの解決とメッセージ表示を担う。
- * 個別の操作はWindowFacade, BufferFacade等に委譲する。
- *
- * <p>コマンド実行ごとにCommandContextが更新される。
+ * アクティブウィンドウ・バッファの解決、メッセージ表示、
+ * コマンド登録・実行、キーバインド設定を担う。
  */
 public class EditorFacade {
 
     private final Frame frame;
     private final BufferManager bufferManager;
     private final MessageBuffer messageBuffer;
+    private final CommandRegistry commandRegistry;
+    private final Keymap globalKeymap;
 
-    public EditorFacade(Frame frame, BufferManager bufferManager, MessageBuffer messageBuffer) {
+    public EditorFacade(
+            Frame frame,
+            BufferManager bufferManager,
+            MessageBuffer messageBuffer,
+            CommandRegistry commandRegistry,
+            Keymap globalKeymap) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
+        this.commandRegistry = commandRegistry;
+        this.globalKeymap = globalKeymap;
     }
 
     /**
@@ -43,5 +57,43 @@ public class EditorFacade {
      */
     public void message(String text) {
         messageBuffer.message(text);
+    }
+
+    /**
+     * コマンドを登録する。同名のコマンドが既に存在する場合は上書きする。
+     */
+    public void registerCommand(Command command) {
+        commandRegistry.registerOrReplace(command);
+    }
+
+    /**
+     * グローバルキーマップにキーバインドを設定する。
+     * キーストロークのリストが複数要素の場合、プレフィックスキーを自動解決する。
+     *
+     * @param keyStrokes キーストロークのリスト（例: [ctrl('x'), ctrl('f')]）
+     * @param command バインドするコマンド
+     */
+    public void globalSetKey(List<KeyStroke> keyStrokes, Command command) {
+        if (keyStrokes.isEmpty()) {
+            throw new IllegalArgumentException("キーストロークのリストが空です");
+        }
+        if (keyStrokes.size() == 1) {
+            globalKeymap.bind(keyStrokes.get(0), command);
+            return;
+        }
+        // プレフィックスキーの自動解決
+        Keymap current = globalKeymap;
+        for (int i = 0; i < keyStrokes.size() - 1; i++) {
+            KeyStroke prefix = keyStrokes.get(i);
+            Optional<KeymapEntry> entry = current.lookup(prefix);
+            if (entry.isPresent() && entry.get() instanceof KeymapEntry.PrefixBinding pb) {
+                current = pb.keymap();
+            } else {
+                var newMap = new Keymap(prefix.displayString());
+                current.bindPrefix(prefix, newMap);
+                current = newMap;
+            }
+        }
+        current.bind(keyStrokes.get(keyStrokes.size() - 1), command);
     }
 }

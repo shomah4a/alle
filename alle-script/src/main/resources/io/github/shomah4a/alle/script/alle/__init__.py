@@ -4,15 +4,18 @@ Java側のEditorFacadeをラップし、Python的なAPIを提供する。
 
 使用例:
     import alle
+    from alle.command import AlleCommand
+    from alle.keybind import ctrl, meta, key
 
-    win = alle.active_window()
-    pos = await win.point()
-    await win.insert("hello")
+    class MyCommand(AlleCommand):
+        def name(self):
+            return "my-command"
+        def run(self):
+            alle.message("hello")
 
-    buf = alle.current_buffer()
-    print(buf.name())
-
-    alle.message("done")
+    cmd = MyCommand()
+    alle.register_command(cmd)
+    alle.global_set_key([ctrl('c'), key('h')], cmd)
 """
 
 from alle.futures import JavaFuture, wrap, wrap_transform
@@ -47,3 +50,18 @@ def current_buffer():
 def message(text):
     """エコーエリアにメッセージを表示する。"""
     _require_facade().message(text)
+
+
+def register_command(command):
+    """コマンドを登録する。同名のコマンドが既に存在する場合は上書きする。"""
+    _require_facade().registerCommand(command)
+
+
+def global_set_key(keystrokes, command):
+    """グローバルキーマップにキーバインドを設定する。
+
+    Args:
+        keystrokes: KeyStroke のリスト（例: [ctrl('x'), ctrl('f')]）
+        command: バインドするコマンドインスタンス
+    """
+    _require_facade().globalSetKey(keystrokes, command)

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -26,7 +28,7 @@ class EditorFacadeTest {
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
         messageBuffer = new MessageBuffer("*Messages*", 100);
-        facade = new EditorFacade(frame, bufferManager, messageBuffer);
+        facade = new EditorFacade(frame, bufferManager, messageBuffer, new CommandRegistry(), new Keymap("global"));
     }
 
     @Test
