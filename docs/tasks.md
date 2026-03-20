@@ -2,6 +2,12 @@
 
 ## 未着手タスク
 
+### C-c (SIGINT) のターミナル制御無効化
+- C-c がターミナルの SIGINT として処理されプロセスが終了してしまう
+- Emacs のように C-c をプレフィックスキーとして使うには SIGINT を無効化する必要がある
+- `stty intr undef` が効かない環境がある（手動実行でも効かないケースを確認済み）
+- JVM の SignalHandler や Lanterna 側での対処を調査する必要がある
+
 ### スクリプトエンジン: BufferFacade のスレッド安全性
 - BufferFacade の insertAt/deleteAt が Buffer を直接操作しており WindowActor を経由していない
 - WindowActor が非同期化された場合にレースコンディションの温床になる
