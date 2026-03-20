@@ -11,6 +11,7 @@ spotless = "7.0.2"
 errorprone-gradle = "4.2.0"
 nullaway-gradle = "2.3.0"
 shadow = "9.3.2"
+graalvm-polyglot = "25.0.2"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -23,6 +24,8 @@ eclipse-collections = { module = "org.eclipse.collections:eclipse-collections", 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 lanterna = { module = "com.googlecode.lanterna:lanterna", version.ref = "lanterna" }
+graalvm-polyglot = { module = "org.graalvm.polyglot:polyglot", version.ref = "graalvm-polyglot" }
+graalvm-python = { module = "org.graalvm.polyglot:python", version.ref = "graalvm-polyglot" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
