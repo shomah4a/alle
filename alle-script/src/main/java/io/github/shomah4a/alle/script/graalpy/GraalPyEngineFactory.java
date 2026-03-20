@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.script.graalpy;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.ScriptEngine;
 import io.github.shomah4a.alle.script.ScriptEngineFactory;
+import java.io.OutputStream;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 
@@ -17,10 +18,14 @@ public class GraalPyEngineFactory implements ScriptEngineFactory, AutoCloseable 
 
     private final Engine engine;
     private final EditorFacade editorFacade;
+    private final OutputStream stdout;
+    private final OutputStream stderr;
 
-    public GraalPyEngineFactory(EditorFacade editorFacade) {
+    public GraalPyEngineFactory(EditorFacade editorFacade, OutputStream stdout, OutputStream stderr) {
         this.engine = Engine.create();
         this.editorFacade = editorFacade;
+        this.stdout = stdout;
+        this.stderr = stderr;
     }
 
     @Override
@@ -33,6 +38,8 @@ public class GraalPyEngineFactory implements ScriptEngineFactory, AutoCloseable 
         Context context = Context.newBuilder(LANGUAGE_ID)
                 .engine(engine)
                 .allowAllAccess(true)
+                .out(stdout)
+                .err(stderr)
                 .build();
         var pyEngine = new GraalPyEngine(context);
         pyEngine.initAlleModule(editorFacade);

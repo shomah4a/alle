@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.script.EditorFacade;
+import io.github.shomah4a.alle.script.MessageBufferOutputStream;
 import io.github.shomah4a.alle.script.ScriptResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ class AlleModuleTest {
     private GraalPyEngine engine;
     private EditableBuffer buffer;
     private MessageBuffer messageBuffer;
+    private MessageBuffer stdoutBuffer;
 
     @BeforeEach
     void setUp() {
@@ -34,9 +36,12 @@ class AlleModuleTest {
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
         messageBuffer = new MessageBuffer("*Messages*", 100);
+        stdoutBuffer = new MessageBuffer("*Python Output*", 1000);
 
         var facade = new EditorFacade(frame, bufferManager, messageBuffer);
-        factory = new GraalPyEngineFactory(facade);
+        var stdoutStream = new MessageBufferOutputStream(stdoutBuffer);
+        var stderrStream = new MessageBufferOutputStream(new MessageBuffer("*Python Error*", 1000));
+        factory = new GraalPyEngineFactory(facade, stdoutStream, stderrStream);
         engine = (GraalPyEngine) factory.create();
     }
 
@@ -106,5 +111,19 @@ class AlleModuleTest {
         ScriptResult result = engine.eval("asyncio.run(test())");
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("5", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void printの出力がstdoutバッファに記録される() {
+        engine.eval("print('hello from python')");
+        assertEquals("hello from python", stdoutBuffer.lineText(0));
+    }
+
+    @Test
+    void 複数回のprintが個別に記録される() {
+        engine.eval("print('line1')");
+        engine.eval("print('line2')");
+        assertEquals("line1", stdoutBuffer.lineText(0));
+        assertEquals("line2", stdoutBuffer.lineText(1));
     }
 }
