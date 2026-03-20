@@ -2,11 +2,6 @@
 
 ## 未着手タスク
 
-### スクリプトエンジン: stdout/stderr リダイレクト
-- Python の sys.stdout/sys.stderr をエディタバッファにリダイレクトする
-- `*Python stdout*` / `*Python stderr*` 専用バッファの作成
-- GraalVM Context.Builder の `.out()` / `.err()` で OutputStream を設定
-
 ### スクリプトエンジン: BufferFacade のスレッド安全性
 - BufferFacade の insertAt/deleteAt が Buffer を直接操作しており WindowActor を経由していない
 - WindowActor が非同期化された場合にレースコンディションの温床になる
