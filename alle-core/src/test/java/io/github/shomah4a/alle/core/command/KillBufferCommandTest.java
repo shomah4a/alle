@@ -9,6 +9,7 @@ import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -26,7 +27,7 @@ class KillBufferCommandTest {
     private Buffer fooBuffer;
     private Frame frame;
     private BufferManager bufferManager;
-    private final KillBufferCommand cmd = new KillBufferCommand();
+    private final KillBufferCommand cmd = new KillBufferCommand(new InputHistory());
 
     @BeforeEach
     void setUp() {

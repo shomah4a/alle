@@ -160,10 +160,12 @@ public final class EditorCore {
         registry.register(new FindFileCommand(
                 bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, filePathHistory));
         registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
-        registry.register(new SwitchBufferCommand());
+        var bufferHistory = new InputHistory();
+        registry.register(new SwitchBufferCommand(bufferHistory));
         registry.register(new OtherWindowCommand());
-        registry.register(new KillBufferCommand());
-        registry.register(new ExecuteCommandCommand(registry));
+        registry.register(new KillBufferCommand(bufferHistory));
+        var commandHistory = new InputHistory();
+        registry.register(new ExecuteCommandCommand(registry, commandHistory));
         registry.register(new SetMarkCommand());
         registry.register(new KillRegionCommand());
         registry.register(new CopyRegionCommand());

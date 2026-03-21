@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Window;
@@ -21,6 +22,12 @@ public class KillBufferCommand implements Command {
 
     private static final String SCRATCH_BUFFER_NAME = "*scratch*";
 
+    private final InputHistory bufferHistory;
+
+    public KillBufferCommand(InputHistory bufferHistory) {
+        this.bufferHistory = bufferHistory;
+    }
+
     @Override
     public String name() {
         return "kill-buffer";
@@ -32,13 +39,15 @@ public class KillBufferCommand implements Command {
         var promptMessage = "Kill buffer (default " + currentBufferName + "): ";
         var completer = new BufferNameCompleter(context.bufferManager());
 
-        return context.inputPrompter().prompt(promptMessage, completer).thenAccept(result -> {
-            if (result instanceof PromptResult.Confirmed confirmed) {
-                var input = confirmed.value();
-                var bufferName = input.isEmpty() ? currentBufferName : input;
-                killBuffer(context, bufferName);
-            }
-        });
+        return context.inputPrompter()
+                .prompt(promptMessage, "", completer, bufferHistory)
+                .thenAccept(result -> {
+                    if (result instanceof PromptResult.Confirmed confirmed) {
+                        var input = confirmed.value();
+                        var bufferName = input.isEmpty() ? currentBufferName : input;
+                        killBuffer(context, bufferName);
+                    }
+                });
     }
 
     private void killBuffer(CommandContext context, String bufferName) {

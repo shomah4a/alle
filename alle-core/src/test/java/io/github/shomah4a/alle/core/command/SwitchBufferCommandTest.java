@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -60,7 +61,7 @@ class SwitchBufferCommandTest {
 
         @Test
         void 指定した名前のバッファに切り替わる() {
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("other.txt"));
 
             cmd.execute(context).join();
@@ -71,7 +72,7 @@ class SwitchBufferCommandTest {
 
         @Test
         void 切り替え後のカーソル位置が先頭になる() {
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("other.txt"));
 
             cmd.execute(context).join();
@@ -90,7 +91,7 @@ class SwitchBufferCommandTest {
             frame.getActiveWindow().setBuffer(scratchBuffer);
 
             var capturedMessage = new AtomicReference<>("");
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context =
                     TestCommandContextFactory.create(frame, bufferManager, confirmingAndCapture("", capturedMessage));
 
@@ -106,7 +107,7 @@ class SwitchBufferCommandTest {
             frame.getActiveWindow().setBuffer(otherBuffer);
             frame.getActiveWindow().setBuffer(scratchBuffer);
 
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();
@@ -117,7 +118,7 @@ class SwitchBufferCommandTest {
         @Test
         void 直前バッファがない場合はデフォルトなしのプロンプトになる() {
             var capturedMessage = new AtomicReference<>("");
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context =
                     TestCommandContextFactory.create(frame, bufferManager, confirmingAndCapture("", capturedMessage));
 
@@ -128,7 +129,7 @@ class SwitchBufferCommandTest {
 
         @Test
         void 直前バッファがなく空入力の場合は何も変わらない() {
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();
@@ -142,7 +143,7 @@ class SwitchBufferCommandTest {
 
         @Test
         void 存在しないバッファ名では何も変わらない() {
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("nonexistent"));
 
             cmd.execute(context).join();
@@ -156,7 +157,7 @@ class SwitchBufferCommandTest {
 
         @Test
         void キャンセル時は何も変わらない() {
-            var cmd = new SwitchBufferCommand();
+            var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
 
             cmd.execute(context).join();

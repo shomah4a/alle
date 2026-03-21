@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import java.util.concurrent.CompletableFuture;
 
@@ -11,6 +12,12 @@ import java.util.concurrent.CompletableFuture;
  * 空入力時はデフォルトバッファに切り替える。
  */
 public class SwitchBufferCommand implements Command {
+
+    private final InputHistory bufferHistory;
+
+    public SwitchBufferCommand(InputHistory bufferHistory) {
+        this.bufferHistory = bufferHistory;
+    }
 
     @Override
     public String name() {
@@ -25,13 +32,15 @@ public class SwitchBufferCommand implements Command {
                 defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
 
         var completer = new BufferNameCompleter(context.bufferManager());
-        return context.inputPrompter().prompt(promptMessage, completer).thenAccept(result -> {
-            if (result instanceof PromptResult.Confirmed confirmed) {
-                var input = confirmed.value();
-                var bufferName = input.isEmpty() ? defaultName : input;
-                switchBuffer(context, bufferName);
-            }
-        });
+        return context.inputPrompter()
+                .prompt(promptMessage, "", completer, bufferHistory)
+                .thenAccept(result -> {
+                    if (result instanceof PromptResult.Confirmed confirmed) {
+                        var input = confirmed.value();
+                        var bufferName = input.isEmpty() ? defaultName : input;
+                        switchBuffer(context, bufferName);
+                    }
+                });
     }
 
     private void switchBuffer(CommandContext context, String bufferName) {
