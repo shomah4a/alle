@@ -1,7 +1,7 @@
 # ADR-0043: ミニバッファ ヒストリ機能
 
 ## ステータス
-承認済み
+承認済み (InputHistory のオプショナル設計は [ADR-0052](0052-inputprompter-history-required.md) で必須化に変更)
 
 ## コンテキスト
 find-file, save-buffer などのファイルパス入力ミニバッファで、過去に確定した入力を再利用できるヒストリ機能が必要である。Emacsと同様に M-p / M-n / Arrow Up / Arrow Down でヒストリをナビゲートできるようにする。
