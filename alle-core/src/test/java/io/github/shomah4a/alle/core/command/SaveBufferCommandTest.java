@@ -84,6 +84,22 @@ class SaveBufferCommandTest {
         }
 
         @Test
+        void 保存後にミニバッファにファイルパスを含むメッセージが表示される() {
+            var buffer = frame.getActiveWindow().getBuffer();
+            buffer.setFilePath(Path.of("/tmp/test.txt"));
+            buffer.insertText(0, "Hello");
+
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager);
+
+            cmd.execute(context).join();
+
+            assertEquals(
+                    "Saved: /tmp/test.txt",
+                    context.messageBuffer().getLastMessage().orElseThrow());
+        }
+
+        @Test
         void 保存後にダーティフラグがクリアされる() {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.setFilePath(Path.of("/tmp/test.txt"));
@@ -134,6 +150,21 @@ class SaveBufferCommandTest {
                     "New file content",
                     Objects.requireNonNull(writerStorage.get("/tmp/new.txt")).toString());
             assertEquals(Path.of("/tmp/new.txt"), buffer.getFilePath().orElseThrow());
+        }
+
+        @Test
+        void プロンプト入力後の保存でミニバッファにメッセージが表示される() {
+            var buffer = frame.getActiveWindow().getBuffer();
+            buffer.insertText(0, "New file content");
+
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
+
+            cmd.execute(context).join();
+
+            assertEquals(
+                    "Saved: /tmp/new.txt",
+                    context.messageBuffer().getLastMessage().orElseThrow());
         }
 
         @Test

@@ -63,6 +63,7 @@ public class SaveBufferCommand implements Command {
     private void saveBuffer(Buffer buffer, CommandContext context) {
         try {
             bufferIO.save(buffer);
+            context.messageBuffer().message("Saved: " + buffer.getFilePath().orElseThrow());
         } catch (IOException e) {
             var message = "バッファの保存に失敗: " + buffer.getName();
             logger.log(Level.WARNING, message, e);
