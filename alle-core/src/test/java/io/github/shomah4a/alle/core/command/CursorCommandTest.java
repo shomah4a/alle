@@ -34,7 +34,7 @@ class CursorCommandTest {
             var context = createContext("Hello");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals(1, context.frame().getActiveWindow().getPoint());
         }
@@ -44,9 +44,9 @@ class CursorCommandTest {
             var context = createContext("Hello");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context);
-            cmd.execute(context);
-            cmd.execute(context);
+            cmd.execute(context).join();
+            cmd.execute(context).join();
+            cmd.execute(context).join();
 
             assertEquals(3, context.frame().getActiveWindow().getPoint());
         }
@@ -57,7 +57,7 @@ class CursorCommandTest {
             var cmd = new ForwardCharCommand();
             context.frame().getActiveWindow().setPoint(2);
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals(2, context.frame().getActiveWindow().getPoint());
         }
@@ -67,7 +67,7 @@ class CursorCommandTest {
             var context = createContext("");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
@@ -77,13 +77,13 @@ class CursorCommandTest {
             var context = createContext("A😀B");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
             assertEquals(1, context.frame().getActiveWindow().getPoint());
 
-            cmd.execute(context);
+            cmd.execute(context).join();
             assertEquals(2, context.frame().getActiveWindow().getPoint());
 
-            cmd.execute(context);
+            cmd.execute(context).join();
             assertEquals(3, context.frame().getActiveWindow().getPoint());
         }
     }
@@ -97,7 +97,7 @@ class CursorCommandTest {
             context.frame().getActiveWindow().setPoint(3);
             var cmd = new BackwardCharCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals(2, context.frame().getActiveWindow().getPoint());
         }
@@ -107,7 +107,7 @@ class CursorCommandTest {
             var context = createContext("Hello");
             var cmd = new BackwardCharCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
@@ -117,7 +117,7 @@ class CursorCommandTest {
             var context = createContext("");
             var cmd = new BackwardCharCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }

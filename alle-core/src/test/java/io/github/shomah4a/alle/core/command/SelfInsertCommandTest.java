@@ -31,7 +31,7 @@ class SelfInsertCommandTest {
             var context = createContext(KeyStroke.of('a'));
             var cmd = new SelfInsertCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals("a", context.frame().getActiveWindow().getBuffer().getText());
         }
@@ -41,7 +41,7 @@ class SelfInsertCommandTest {
             var context = createContext(KeyStroke.of('あ'));
             var cmd = new SelfInsertCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals("あ", context.frame().getActiveWindow().getBuffer().getText());
         }
@@ -52,7 +52,7 @@ class SelfInsertCommandTest {
             var context = createContext(KeyStroke.of(codePoint));
             var cmd = new SelfInsertCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals("😀", context.frame().getActiveWindow().getBuffer().getText());
         }
@@ -66,7 +66,7 @@ class SelfInsertCommandTest {
             var context = createContext(KeyStroke.ctrl('a'));
             var cmd = new SelfInsertCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals("", context.frame().getActiveWindow().getBuffer().getText());
         }
@@ -80,7 +80,7 @@ class SelfInsertCommandTest {
             var context = TestCommandContextFactory.create(frame, new BufferManager());
             var cmd = new SelfInsertCommand();
 
-            cmd.execute(context);
+            cmd.execute(context).join();
 
             assertEquals("", buffer.getText());
         }

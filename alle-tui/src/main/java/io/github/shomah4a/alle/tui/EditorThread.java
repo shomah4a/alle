@@ -44,7 +44,7 @@ class EditorThread implements Runnable, Loggable {
 
             while (true) {
                 var keyStroke = keyQueue.take();
-                if (keyStroke == POISON_PILL) {
+                if (keyStroke.equals(POISON_PILL)) {
                     break;
                 }
                 commandLoop.processKey(keyStroke);

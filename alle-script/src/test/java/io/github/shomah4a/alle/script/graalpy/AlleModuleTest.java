@@ -39,7 +39,7 @@ class AlleModuleTest {
         bufferManager.add(buffer);
         messageBuffer = new MessageBuffer("*Messages*", 100);
 
-        var facade = new EditorFacade(frame, bufferManager, messageBuffer, new CommandRegistry(), new Keymap("global"));
+        var facade = new EditorFacade(frame, messageBuffer, new CommandRegistry(), new Keymap("global"));
         var stdoutStream = new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(bufferManager, "*Python Log*", 1000);

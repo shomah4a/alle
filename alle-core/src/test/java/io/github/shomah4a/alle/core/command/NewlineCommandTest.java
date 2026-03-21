@@ -30,7 +30,7 @@ class NewlineCommandTest {
         @Test
         void カーソル位置に改行を挿入する() {
             var context = createContext("HelloWorld", 5);
-            new NewlineCommand().execute(context);
+            new NewlineCommand().execute(context).join();
             assertEquals(
                     "Hello\nWorld",
                     context.frame().getActiveWindow().getBuffer().getText());
@@ -40,7 +40,7 @@ class NewlineCommandTest {
         @Test
         void 先頭に改行を挿入する() {
             var context = createContext("Hello", 0);
-            new NewlineCommand().execute(context);
+            new NewlineCommand().execute(context).join();
             assertEquals(
                     "\nHello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(1, context.frame().getActiveWindow().getPoint());
@@ -49,7 +49,7 @@ class NewlineCommandTest {
         @Test
         void 末尾に改行を挿入する() {
             var context = createContext("Hello", 5);
-            new NewlineCommand().execute(context);
+            new NewlineCommand().execute(context).join();
             assertEquals(
                     "Hello\n", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(6, context.frame().getActiveWindow().getPoint());
@@ -58,7 +58,7 @@ class NewlineCommandTest {
         @Test
         void 空バッファに改行を挿入する() {
             var context = createContext("", 0);
-            new NewlineCommand().execute(context);
+            new NewlineCommand().execute(context).join();
             assertEquals("\n", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(1, context.frame().getActiveWindow().getPoint());
         }

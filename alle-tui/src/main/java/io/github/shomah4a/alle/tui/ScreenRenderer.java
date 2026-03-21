@@ -77,7 +77,7 @@ public class ScreenRenderer {
                 }
             }
 
-            String modeLine = buildModeLineText(window, rect.width());
+            String modeLine = buildModeLineText(window);
             windowSnapshots.add(new RenderSnapshot.WindowSnapshot(rect, visibleLines, displayStartColumn, modeLine));
         });
 
@@ -138,7 +138,9 @@ public class ScreenRenderer {
         for (Separator sep : snapshot.separators()) {
             for (int row = sep.top(); row < sep.top() + sep.height(); row++) {
                 screen.setCharacter(
-                        sep.column(), row, new TextCharacter('│', TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT));
+                        sep.column(),
+                        row,
+                        TextCharacter.fromCharacter('│', TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT)[0]);
             }
         }
 
@@ -156,7 +158,6 @@ public class ScreenRenderer {
 
     private void renderWindowSnapshot(RenderSnapshot.WindowSnapshot ws) {
         var rect = ws.rect();
-        int bufferRows = rect.height() - 1;
         int displayStartColumn = ws.displayStartColumn();
 
         for (int row = 0; row < ws.visibleLines().size(); row++) {
@@ -181,7 +182,7 @@ public class ScreenRenderer {
         renderModeLine(ws.modeLine(), rect.top() + rect.height() - 1, rect.left(), rect.width());
     }
 
-    private String buildModeLineText(io.github.shomah4a.alle.core.window.Window window, int maxColumns) {
+    private String buildModeLineText(io.github.shomah4a.alle.core.window.Window window) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int lineIndex = buffer.lineIndexForOffset(point);
@@ -200,7 +201,7 @@ public class ScreenRenderer {
             screen.setCharacter(
                     left + col,
                     row,
-                    new TextCharacter(ch, TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT, SGR.REVERSE));
+                    TextCharacter.fromCharacter(ch, TextColor.ANSI.DEFAULT, TextColor.ANSI.DEFAULT, SGR.REVERSE)[0]);
         }
     }
 
@@ -282,7 +283,11 @@ public class ScreenRenderer {
                     && spans.get(spanIdx).start() <= cpIndex
                     && cpIndex < spans.get(spanIdx).end()) {
                 var resolved = faceResolver.resolve(spans.get(spanIdx).face());
-                tc = TextCharacter.fromString(ch, resolved.foreground(), resolved.background(), resolved.sgrs())[0];
+                tc = TextCharacter.fromString(
+                        ch,
+                        resolved.foreground(),
+                        resolved.background(),
+                        resolved.sgrs().toArray(new SGR[0]))[0];
             } else {
                 tc = TextCharacter.fromString(ch)[0];
             }

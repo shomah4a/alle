@@ -30,28 +30,28 @@ class BeginningOfLineCommandTest {
         @Test
         void 行中から行頭に移動する() {
             var context = createContext("Hello", 3);
-            new BeginningOfLineCommand().execute(context);
+            new BeginningOfLineCommand().execute(context).join();
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 行頭にいる場合は移動しない() {
             var context = createContext("Hello", 0);
-            new BeginningOfLineCommand().execute(context);
+            new BeginningOfLineCommand().execute(context).join();
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 複数行の2行目で行頭に移動する() {
             var context = createContext("Hello\nWorld", 8);
-            new BeginningOfLineCommand().execute(context);
+            new BeginningOfLineCommand().execute(context).join();
             assertEquals(6, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 改行文字上から行頭に移動する() {
             var context = createContext("Hello\nWorld", 5);
-            new BeginningOfLineCommand().execute(context);
+            new BeginningOfLineCommand().execute(context).join();
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
     }

@@ -41,14 +41,14 @@ class MinibufferInputPrompterTest {
 
         @Test
         void プロンプト文字列がミニバッファに挿入される() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             assertEquals("Find file: ", minibufferWindow.getBuffer().getText());
         }
 
         @Test
         void ミニバッファがアクティブになる() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             assertTrue(frame.isMinibufferActive());
             assertEquals(minibufferWindow, frame.getActiveWindow());
@@ -56,7 +56,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ポイントがプロンプト文字列の末尾に設定される() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             assertEquals(11, minibufferWindow.getPoint());
         }
@@ -70,7 +70,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ミニバッファにローカルキーマップが設定される() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             assertTrue(minibufferWindow.getBuffer().getLocalKeymap().isPresent());
         }
@@ -91,7 +91,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 確定後は再度promptを呼べる() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
             executeMinibufferKey(KeyStroke.of('\n'));
 
             var future2 = prompter.prompt("Save file: ");
@@ -102,7 +102,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void キャンセル後は再度promptを呼べる() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
             executeMinibufferKey(KeyStroke.ctrl('g'));
 
             var future2 = prompter.prompt("Save file: ");
@@ -146,7 +146,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 確定後にミニバッファがクリアされる() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             executeMinibufferKey(KeyStroke.of('\n'));
 
@@ -155,7 +155,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 確定後にアクティブウィンドウが元に戻る() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             executeMinibufferKey(KeyStroke.of('\n'));
 
@@ -165,7 +165,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 確定後にローカルキーマップが解除される() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             executeMinibufferKey(KeyStroke.of('\n'));
 
@@ -189,7 +189,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void キャンセル後にミニバッファがクリアされる() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             minibufferWindow.getBuffer().insertText(11, "test.txt");
 
@@ -200,7 +200,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void キャンセル後にアクティブウィンドウが元に戻る() {
-            prompter.prompt("Find file: ");
+            var unused = prompter.prompt("Find file: ");
 
             executeMinibufferKey(KeyStroke.ctrl('g'));
 
@@ -265,7 +265,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void Mpで最新の履歴がミニバッファに表示される() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -275,7 +275,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void Mpを複数回押すと古い履歴に遡る() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -286,7 +286,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ArrowUpでMpと同じ動作をする() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.of(KeyStroke.ARROW_UP));
@@ -296,7 +296,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void MnでMpの後に次の履歴に進む() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -308,7 +308,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ArrowDownでMnと同じ動作をする() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -320,7 +320,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void Mnで末尾を超えると元入力に戻る() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ",
                     "original",
                     input -> org.eclipse.collections.api.factory.Lists.immutable.empty(),
@@ -335,7 +335,7 @@ class MinibufferInputPrompterTest {
         @Test
         void 履歴が空の場合Mpで入力が変わらない() {
             var emptyHistory = new InputHistory();
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ",
                     "test",
                     input -> org.eclipse.collections.api.factory.Lists.immutable.empty(),
@@ -348,7 +348,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 確定時に履歴に入力が追加される() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             minibufferWindow.getBuffer().insertText(11, "/home/new.txt");
@@ -361,7 +361,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ヒストリナビゲーション後に入力を編集して確定できる() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.meta('p')); // /home/c.txt
@@ -376,7 +376,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ポイントが履歴テキストの末尾に移動する() {
-            prompter.prompt(
+            var unused = prompter.prompt(
                     "Find file: ", "", input -> org.eclipse.collections.api.factory.Lists.immutable.empty(), history);
 
             executeMinibufferKey(KeyStroke.meta('p'));

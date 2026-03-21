@@ -30,7 +30,7 @@ class DeleteCharCommandTest {
         @Test
         void カーソル位置の文字を削除する() {
             var context = createContext("Hello", 0);
-            new DeleteCharCommand().execute(context);
+            new DeleteCharCommand().execute(context).join();
             assertEquals("ello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
@@ -38,7 +38,7 @@ class DeleteCharCommandTest {
         @Test
         void 中間位置の文字を削除する() {
             var context = createContext("Hello", 2);
-            new DeleteCharCommand().execute(context);
+            new DeleteCharCommand().execute(context).join();
             assertEquals("Helo", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(2, context.frame().getActiveWindow().getPoint());
         }
@@ -46,7 +46,7 @@ class DeleteCharCommandTest {
         @Test
         void バッファ末尾では何もしない() {
             var context = createContext("Hello", 5);
-            new DeleteCharCommand().execute(context);
+            new DeleteCharCommand().execute(context).join();
             assertEquals("Hello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(5, context.frame().getActiveWindow().getPoint());
         }

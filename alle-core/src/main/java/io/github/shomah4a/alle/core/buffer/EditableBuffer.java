@@ -238,11 +238,11 @@ public class EditableBuffer implements Buffer {
         if (obj instanceof BufferFacade) {
             return obj.equals(this);
         }
-        return super.equals(obj);
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return System.identityHashCode(this);
     }
 }

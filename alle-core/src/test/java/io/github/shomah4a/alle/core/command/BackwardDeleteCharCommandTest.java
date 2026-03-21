@@ -30,7 +30,7 @@ class BackwardDeleteCharCommandTest {
         @Test
         void カーソル前の文字を削除する() {
             var context = createContext("Hello", 1);
-            new BackwardDeleteCharCommand().execute(context);
+            new BackwardDeleteCharCommand().execute(context).join();
             assertEquals("ello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
@@ -38,7 +38,7 @@ class BackwardDeleteCharCommandTest {
         @Test
         void 中間位置でカーソル前の文字を削除する() {
             var context = createContext("Hello", 3);
-            new BackwardDeleteCharCommand().execute(context);
+            new BackwardDeleteCharCommand().execute(context).join();
             assertEquals("Helo", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(2, context.frame().getActiveWindow().getPoint());
         }
@@ -46,7 +46,7 @@ class BackwardDeleteCharCommandTest {
         @Test
         void バッファ先頭では何もしない() {
             var context = createContext("Hello", 0);
-            new BackwardDeleteCharCommand().execute(context);
+            new BackwardDeleteCharCommand().execute(context).join();
             assertEquals("Hello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }

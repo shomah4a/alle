@@ -1,7 +1,6 @@
 package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.Loggable;
-import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
@@ -22,19 +21,13 @@ import org.graalvm.polyglot.Value;
 public class EditorFacade implements Loggable {
 
     private final Frame frame;
-    private final BufferManager bufferManager;
     private final MessageBuffer messageBuffer;
     private final CommandRegistry commandRegistry;
     private final Keymap globalKeymap;
 
     public EditorFacade(
-            Frame frame,
-            BufferManager bufferManager,
-            MessageBuffer messageBuffer,
-            CommandRegistry commandRegistry,
-            Keymap globalKeymap) {
+            Frame frame, MessageBuffer messageBuffer, CommandRegistry commandRegistry, Keymap globalKeymap) {
         this.frame = frame;
-        this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
         this.globalKeymap = globalKeymap;
@@ -74,7 +67,7 @@ public class EditorFacade implements Loggable {
      * キーストロークのリストが複数要素の場合、プレフィックスキーを自動解決する。
      *
      * @param keyStrokes キーストロークのリスト（例: [ctrl('x'), ctrl('f')]）
-     * @param command バインドするコマンド
+     * @param commandValue バインドするコマンド
      */
     public void globalSetKey(List<KeyStroke> keyStrokes, Value commandValue) {
         Command command = commandValue.as(Command.class);

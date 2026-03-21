@@ -69,8 +69,7 @@ public final class Main {
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
-        var editorFacade =
-                new EditorFacade(core.frame(), core.bufferManager(), msg, core.commandRegistry(), core.keymap());
+        var editorFacade = new EditorFacade(core.frame(), msg, core.commandRegistry(), core.keymap());
         var stdoutStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000);
@@ -136,7 +135,7 @@ public final class Main {
                 warnings.message("init.py error: " + failure.message());
                 var sw = new java.io.StringWriter();
                 failure.cause().printStackTrace(new java.io.PrintWriter(sw));
-                for (String line : sw.toString().split("\n")) {
+                for (String line : sw.toString().lines().toList()) {
                     warnings.message(line);
                 }
             } else {

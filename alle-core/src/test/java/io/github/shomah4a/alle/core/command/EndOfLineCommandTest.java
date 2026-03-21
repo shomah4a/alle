@@ -30,28 +30,28 @@ class EndOfLineCommandTest {
         @Test
         void 行頭から行末に移動する() {
             var context = createContext("Hello", 0);
-            new EndOfLineCommand().execute(context);
+            new EndOfLineCommand().execute(context).join();
             assertEquals(5, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 行末にいる場合は移動しない() {
             var context = createContext("Hello", 5);
-            new EndOfLineCommand().execute(context);
+            new EndOfLineCommand().execute(context).join();
             assertEquals(5, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 複数行の1行目で行末に移動する() {
             var context = createContext("Hello\nWorld", 2);
-            new EndOfLineCommand().execute(context);
+            new EndOfLineCommand().execute(context).join();
             assertEquals(5, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 複数行の2行目で行末に移動する() {
             var context = createContext("Hello\nWorld", 6);
-            new EndOfLineCommand().execute(context);
+            new EndOfLineCommand().execute(context).join();
             assertEquals(11, context.frame().getActiveWindow().getPoint());
         }
 
@@ -59,7 +59,7 @@ class EndOfLineCommandTest {
         void 改行文字上から行末に移動すると改行位置に留まる() {
             // 改行文字はその行の末尾として扱われるので、行末=改行位置
             var context = createContext("Hello\nWorld", 5);
-            new EndOfLineCommand().execute(context);
+            new EndOfLineCommand().execute(context).join();
             assertEquals(5, context.frame().getActiveWindow().getPoint());
         }
     }

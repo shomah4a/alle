@@ -28,7 +28,7 @@ class EditorFacadeTest {
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
         messageBuffer = new MessageBuffer("*Messages*", 100);
-        facade = new EditorFacade(frame, bufferManager, messageBuffer, new CommandRegistry(), new Keymap("global"));
+        facade = new EditorFacade(frame, messageBuffer, new CommandRegistry(), new Keymap("global"));
     }
 
     @Test

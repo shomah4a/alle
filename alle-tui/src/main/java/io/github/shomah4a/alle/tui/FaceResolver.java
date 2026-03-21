@@ -5,6 +5,7 @@ import com.googlecode.lanterna.TextColor;
 import io.github.shomah4a.alle.core.highlight.Face;
 import io.github.shomah4a.alle.core.highlight.FaceAttribute;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 
@@ -45,19 +46,10 @@ public class FaceResolver {
     }
 
     /**
-     * FaceAttributeセットをLanternaのSGR配列に変換する。
+     * FaceAttributeセットをLanternaのSGRリストに変換する。
      */
-    public SGR[] resolveSgr(ImmutableSet<FaceAttribute> attributes) {
-        int count = attributes.size();
-        if (count == 0) {
-            return new SGR[0];
-        }
-        SGR[] sgrs = new SGR[count];
-        int i = 0;
-        for (var attr : attributes) {
-            sgrs[i++] = toSgr(attr);
-        }
-        return sgrs;
+    public ImmutableList<SGR> resolveSgr(ImmutableSet<FaceAttribute> attributes) {
+        return attributes.collect(FaceResolver::toSgr).toList().toImmutable();
     }
 
     /**
@@ -79,5 +71,5 @@ public class FaceResolver {
     /**
      * 解決済みのFace情報。
      */
-    public record ResolvedFace(TextColor foreground, TextColor background, SGR[] sgrs) {}
+    public record ResolvedFace(TextColor foreground, TextColor background, ImmutableList<SGR> sgrs) {}
 }

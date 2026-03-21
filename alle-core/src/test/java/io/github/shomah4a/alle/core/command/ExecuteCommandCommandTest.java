@@ -29,7 +29,7 @@ class ExecuteCommandCommandTest {
             context.frame().getActiveWindow().insert("Hello");
             context.frame().getActiveWindow().setPoint(0);
 
-            execCmd.executeByName("forward-char", context);
+            execCmd.executeByName("forward-char", context).join();
 
             assertEquals(1, context.frame().getActiveWindow().getPoint());
         }
@@ -54,9 +54,9 @@ class ExecuteCommandCommandTest {
             context.frame().getActiveWindow().insert("Hello");
             context.frame().getActiveWindow().setPoint(0);
 
-            execCmd.executeByName("forward-char", context);
-            execCmd.executeByName("forward-char", context);
-            execCmd.executeByName("backward-char", context);
+            execCmd.executeByName("forward-char", context).join();
+            execCmd.executeByName("forward-char", context).join();
+            execCmd.executeByName("backward-char", context).join();
 
             assertEquals(1, context.frame().getActiveWindow().getPoint());
         }

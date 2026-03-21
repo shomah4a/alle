@@ -39,7 +39,7 @@ public record CommandContext(
     public void handleError(String message, Throwable ex) {
         messageBuffer.message(message);
         warningBuffer.message(message);
-        for (String line : stackTraceToString(ex).split("\n")) {
+        for (String line : stackTraceToString(ex).lines().toList()) {
             warningBuffer.message(line);
         }
     }

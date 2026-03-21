@@ -1,12 +1,12 @@
 package io.github.shomah4a.alle.tui;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TextColor;
 import io.github.shomah4a.alle.core.highlight.Face;
 import io.github.shomah4a.alle.core.highlight.FaceAttribute;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,25 +48,25 @@ class FaceResolverTest {
         @Test
         void BOLDがSGR_BOLDに変換される() {
             var sgrs = resolver.resolveSgr(Sets.immutable.of(FaceAttribute.BOLD));
-            assertArrayEquals(new SGR[] {SGR.BOLD}, sgrs);
+            assertEquals(Lists.immutable.of(SGR.BOLD), sgrs);
         }
 
         @Test
         void ITALICがSGR_ITALICに変換される() {
             var sgrs = resolver.resolveSgr(Sets.immutable.of(FaceAttribute.ITALIC));
-            assertArrayEquals(new SGR[] {SGR.ITALIC}, sgrs);
+            assertEquals(Lists.immutable.of(SGR.ITALIC), sgrs);
         }
 
         @Test
         void UNDERLINEがSGR_UNDERLINEに変換される() {
             var sgrs = resolver.resolveSgr(Sets.immutable.of(FaceAttribute.UNDERLINE));
-            assertArrayEquals(new SGR[] {SGR.UNDERLINE}, sgrs);
+            assertEquals(Lists.immutable.of(SGR.UNDERLINE), sgrs);
         }
 
         @Test
-        void 空の属性セットで空配列が返される() {
+        void 空の属性セットで空リストが返される() {
             var sgrs = resolver.resolveSgr(Sets.immutable.empty());
-            assertEquals(0, sgrs.length);
+            assertEquals(0, sgrs.size());
         }
     }
 
@@ -78,7 +78,7 @@ class FaceResolverTest {
             var resolved = resolver.resolve(Face.HEADING);
             assertEquals(TextColor.ANSI.YELLOW, resolved.foreground());
             assertEquals(TextColor.ANSI.DEFAULT, resolved.background());
-            assertArrayEquals(new SGR[] {SGR.BOLD}, resolved.sgrs());
+            assertEquals(Lists.immutable.of(SGR.BOLD), resolved.sgrs());
         }
 
         @Test
@@ -86,7 +86,7 @@ class FaceResolverTest {
             var resolved = resolver.resolve(Face.CODE);
             assertEquals(TextColor.ANSI.GREEN, resolved.foreground());
             assertEquals(TextColor.ANSI.DEFAULT, resolved.background());
-            assertEquals(0, resolved.sgrs().length);
+            assertEquals(0, resolved.sgrs().size());
         }
     }
 }

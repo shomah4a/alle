@@ -42,7 +42,7 @@ class CommandTest {
                 }
             };
 
-            insertHello.execute(context);
+            insertHello.execute(context).join();
 
             assertEquals("Hello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(5, context.frame().getActiveWindow().getPoint());

@@ -46,7 +46,7 @@ class KillLineCommandTest {
         @Test
         void 行頭から行末まで削除する() {
             var context = createContext("Hello\nWorld", 0);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals(
                     "\nWorld", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(0, context.frame().getActiveWindow().getPoint());
@@ -55,7 +55,7 @@ class KillLineCommandTest {
         @Test
         void 行中から行末まで削除する() {
             var context = createContext("Hello\nWorld", 2);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals(
                     "He\nWorld", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(2, context.frame().getActiveWindow().getPoint());
@@ -64,7 +64,7 @@ class KillLineCommandTest {
         @Test
         void 改行のない行で行末まで削除する() {
             var context = createContext("Hello", 2);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals("He", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(2, context.frame().getActiveWindow().getPoint());
         }
@@ -76,7 +76,7 @@ class KillLineCommandTest {
         @Test
         void 行末で改行を削除して次の行と結合する() {
             var context = createContext("Hello\nWorld", 5);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals(
                     "HelloWorld", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(5, context.frame().getActiveWindow().getPoint());
@@ -85,7 +85,7 @@ class KillLineCommandTest {
         @Test
         void 空行で改行を削除して次の行と結合する() {
             var context = createContext("Hello\n\nWorld", 6);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals(
                     "Hello\nWorld",
                     context.frame().getActiveWindow().getBuffer().getText());
@@ -99,7 +99,7 @@ class KillLineCommandTest {
         @Test
         void バッファ末尾では何もしない() {
             var context = createContext("Hello", 5);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals("Hello", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(5, context.frame().getActiveWindow().getPoint());
         }
@@ -107,7 +107,7 @@ class KillLineCommandTest {
         @Test
         void 空バッファでは何もしない() {
             var context = createContext("", 0);
-            new KillLineCommand().execute(context);
+            new KillLineCommand().execute(context).join();
             assertEquals("", context.frame().getActiveWindow().getBuffer().getText());
             assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
