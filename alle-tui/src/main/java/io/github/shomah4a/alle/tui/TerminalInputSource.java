@@ -35,19 +35,22 @@ public class TerminalInputSource implements InputSource, ShutdownRequestable, Lo
     public Optional<KeyStroke> readKeyStroke() {
         while (!shutdownRequested) {
             try {
-                var lanternaKeyStroke = screen.readInput();
+                var lanternaKeyStroke = screen.pollInput();
+                if (lanternaKeyStroke == null) {
+                    Thread.sleep(5);
+                    continue;
+                }
                 logger().debug(
                                 "lanterna: keyType={}, character={}, charCode={}, ctrl={}, alt={}, shift={}",
-                                lanternaKeyStroke == null ? "null" : lanternaKeyStroke.getKeyType(),
-                                lanternaKeyStroke == null ? "null" : lanternaKeyStroke.getCharacter(),
-                                lanternaKeyStroke != null && lanternaKeyStroke.getCharacter() != null
+                                lanternaKeyStroke.getKeyType(),
+                                lanternaKeyStroke.getCharacter(),
+                                lanternaKeyStroke.getCharacter() != null
                                         ? Integer.toHexString(lanternaKeyStroke.getCharacter())
                                         : "null",
-                                lanternaKeyStroke == null ? "null" : lanternaKeyStroke.isCtrlDown(),
-                                lanternaKeyStroke == null ? "null" : lanternaKeyStroke.isAltDown(),
-                                lanternaKeyStroke == null ? "null" : lanternaKeyStroke.isShiftDown());
-                if (lanternaKeyStroke == null
-                        || lanternaKeyStroke.getKeyType() == com.googlecode.lanterna.input.KeyType.EOF) {
+                                lanternaKeyStroke.isCtrlDown(),
+                                lanternaKeyStroke.isAltDown(),
+                                lanternaKeyStroke.isShiftDown());
+                if (lanternaKeyStroke.getKeyType() == com.googlecode.lanterna.input.KeyType.EOF) {
                     return Optional.empty();
                 }
                 var converted = KeyStrokeConverter.convert(lanternaKeyStroke);
@@ -63,6 +66,9 @@ public class TerminalInputSource implements InputSource, ShutdownRequestable, Lo
                 // 未対応キーはスキップして次のキーを読む
             } catch (IOException e) {
                 throw new UncheckedIOException("キー入力の読み取りに失敗しました", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Optional.empty();
             }
         }
         return Optional.empty();

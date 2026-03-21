@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.app;
 
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.terminal.ansi.UnixLikeTerminal;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.EditorCore;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
@@ -35,7 +36,8 @@ public final class Main {
         // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
         disableFlowControl();
 
-        var terminal = new UnixTerminal(System.in, System.out, StandardCharsets.UTF_8);
+        var terminal =
+                new UnixTerminal(System.in, System.out, StandardCharsets.UTF_8, UnixLikeTerminal.CtrlCBehaviour.TRAP);
         // ESC単独入力後に次のキーを待つ猶予（4 × 250ms = 1秒）
         // ESC + x で M-x として解釈するために必要
         terminal.getInputDecoder().setTimeoutUnits(4);
