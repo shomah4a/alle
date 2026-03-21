@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import java.util.concurrent.CompletableFuture;
 
@@ -13,9 +14,11 @@ import java.util.concurrent.CompletableFuture;
 public class EvalExpressionCommand implements Command {
 
     private final ScriptEngine scriptEngine;
+    private final InputHistory evalHistory;
 
-    public EvalExpressionCommand(ScriptEngine scriptEngine) {
+    public EvalExpressionCommand(ScriptEngine scriptEngine, InputHistory evalHistory) {
         this.scriptEngine = scriptEngine;
+        this.evalHistory = evalHistory;
     }
 
     @Override
@@ -25,7 +28,7 @@ public class EvalExpressionCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.inputPrompter().prompt("Eval: ").thenCompose(result -> {
+        return context.inputPrompter().prompt("Eval: ", evalHistory).thenCompose(result -> {
             if (result instanceof PromptResult.Confirmed confirmed
                     && !confirmed.value().isEmpty()) {
                 return evaluateAndDisplay(confirmed.value(), context);

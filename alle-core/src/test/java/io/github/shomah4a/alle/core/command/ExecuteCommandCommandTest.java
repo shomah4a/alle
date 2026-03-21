@@ -82,7 +82,7 @@ class ExecuteCommandCommandTest {
             window.setPoint(0);
 
             InputPrompter prompter =
-                    message -> CompletableFuture.completedFuture(new PromptResult.Confirmed("forward-char"));
+                    (message, history) -> CompletableFuture.completedFuture(new PromptResult.Confirmed("forward-char"));
             var context = TestCommandContextFactory.create(frame, bufferManager, prompter);
 
             execCmd.execute(context).join();
@@ -105,7 +105,8 @@ class ExecuteCommandCommandTest {
             window.insert("Hello");
             window.setPoint(0);
 
-            InputPrompter prompter = message -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+            InputPrompter prompter =
+                    (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
             var context = TestCommandContextFactory.create(frame, bufferManager, prompter);
 
             execCmd.execute(context).join();
@@ -142,7 +143,7 @@ class ExecuteCommandCommandTest {
             bufferManager.add(buffer);
 
             InputPrompter prompter =
-                    message -> CompletableFuture.completedFuture(new PromptResult.Confirmed("nonexistent"));
+                    (message, history) -> CompletableFuture.completedFuture(new PromptResult.Confirmed("nonexistent"));
             var context = TestCommandContextFactory.create(frame, bufferManager, prompter);
 
             var future = execCmd.execute(context);

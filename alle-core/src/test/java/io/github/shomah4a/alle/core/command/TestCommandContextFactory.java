@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 final class TestCommandContextFactory {
 
     private static final InputPrompter NOOP_PROMPTER =
-            message -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+            (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
 
     private TestCommandContextFactory() {}
 

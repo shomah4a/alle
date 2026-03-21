@@ -40,7 +40,7 @@ public class KillBufferCommand implements Command {
         var completer = new BufferNameCompleter(context.bufferManager());
 
         return context.inputPrompter()
-                .prompt(promptMessage, "", completer, bufferHistory)
+                .prompt(promptMessage, "", bufferHistory, completer)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         var input = confirmed.value();

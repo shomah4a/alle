@@ -6,6 +6,7 @@ import com.googlecode.lanterna.terminal.ansi.UnixLikeTerminal;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.EditorCore;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.script.EditorFacade;
@@ -84,7 +85,8 @@ public final class Main {
         loadUserInit(scriptEngine, msg, warningBuffer);
 
         // eval-expression コマンド (M-:)
-        core.commandRegistry().register(new EvalExpressionCommand(scriptEngine));
+        var evalHistory = new InputHistory();
+        core.commandRegistry().register(new EvalExpressionCommand(scriptEngine, evalHistory));
         core.keymap()
                 .bind(
                         KeyStroke.meta(':'),

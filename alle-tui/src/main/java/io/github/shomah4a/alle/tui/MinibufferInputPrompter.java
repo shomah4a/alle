@@ -34,28 +34,23 @@ public class MinibufferInputPrompter implements InputPrompter {
     }
 
     @Override
-    public CompletableFuture<PromptResult> prompt(String message) {
-        return promptInternal(message, "", null, null);
+    public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+        return promptInternal(message, "", history, null);
     }
 
     @Override
-    public CompletableFuture<PromptResult> prompt(String message, Completer completer) {
-        return promptInternal(message, "", completer, null);
-    }
-
-    @Override
-    public CompletableFuture<PromptResult> prompt(String message, String initialValue, Completer completer) {
-        return promptInternal(message, initialValue, completer, null);
+    public CompletableFuture<PromptResult> prompt(String message, InputHistory history, Completer completer) {
+        return promptInternal(message, "", history, completer);
     }
 
     @Override
     public CompletableFuture<PromptResult> prompt(
-            String message, String initialValue, Completer completer, InputHistory history) {
-        return promptInternal(message, initialValue, completer, history);
+            String message, String initialValue, InputHistory history, Completer completer) {
+        return promptInternal(message, initialValue, history, completer);
     }
 
     private CompletableFuture<PromptResult> promptInternal(
-            String message, String initialValue, @Nullable Completer completer, @Nullable InputHistory history) {
+            String message, String initialValue, InputHistory history, @Nullable Completer completer) {
         if (activeFuture != null && !activeFuture.isDone()) {
             logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
             return CompletableFuture.completedFuture(new PromptResult.Cancelled());
@@ -82,7 +77,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         }
 
         // ミニバッファ用キーマップを作成
-        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, completer, history);
+        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, history, completer);
         minibuffer.setLocalKeymap(keymap);
 
         // ミニバッファを有効化
@@ -95,8 +90,8 @@ public class MinibufferInputPrompter implements InputPrompter {
             CompletableFuture<PromptResult> future,
             Window previousActiveWindow,
             int promptLength,
-            @Nullable Completer completer,
-            @Nullable InputHistory history) {
+            InputHistory history,
+            @Nullable Completer completer) {
         var keymap = new Keymap("minibuffer");
 
         // 通常文字入力
@@ -114,16 +109,14 @@ public class MinibufferInputPrompter implements InputPrompter {
             keymap.bind(KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength));
         }
 
-        // ヒストリナビゲーション（InputHistoryが提供されている場合のみ）
-        if (history != null) {
-            var navigator = new HistoryNavigator(history, "");
-            var prevCommand = new MinibufferPreviousHistoryCommand(navigator, promptLength);
-            var nextCommand = new MinibufferNextHistoryCommand(navigator, promptLength);
-            keymap.bind(KeyStroke.meta('p'), prevCommand);
-            keymap.bind(KeyStroke.of(KeyStroke.ARROW_UP), prevCommand);
-            keymap.bind(KeyStroke.meta('n'), nextCommand);
-            keymap.bind(KeyStroke.of(KeyStroke.ARROW_DOWN), nextCommand);
-        }
+        // ヒストリナビゲーション
+        var navigator = new HistoryNavigator(history, "");
+        var prevCommand = new MinibufferPreviousHistoryCommand(navigator, promptLength);
+        var nextCommand = new MinibufferNextHistoryCommand(navigator, promptLength);
+        keymap.bind(KeyStroke.meta('p'), prevCommand);
+        keymap.bind(KeyStroke.of(KeyStroke.ARROW_UP), prevCommand);
+        keymap.bind(KeyStroke.meta('n'), nextCommand);
+        keymap.bind(KeyStroke.of(KeyStroke.ARROW_DOWN), nextCommand);
 
         return keymap;
     }
@@ -181,13 +174,13 @@ public class MinibufferInputPrompter implements InputPrompter {
         private final CompletableFuture<PromptResult> future;
         private final Window previousActiveWindow;
         private final int promptLength;
-        private final @Nullable InputHistory history;
+        private final InputHistory history;
 
         MinibufferConfirmCommand(
                 CompletableFuture<PromptResult> future,
                 Window previousActiveWindow,
                 int promptLength,
-                @Nullable InputHistory history) {
+                InputHistory history) {
             this.future = future;
             this.previousActiveWindow = previousActiveWindow;
             this.promptLength = promptLength;
@@ -202,11 +195,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             String userInput = getUserInput(promptLength);
-
-            if (history != null) {
-                history.add(userInput);
-            }
-
+            history.add(userInput);
             cleanup(previousActiveWindow);
             future.complete(new PromptResult.Confirmed(userInput));
             return CompletableFuture.completedFuture(null);

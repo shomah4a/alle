@@ -54,7 +54,7 @@ public class FindFileCommand implements Command {
         var completer = new FilePathCompleter(directoryLister);
         String initialValue = workingDirectory + "/";
         return context.inputPrompter()
-                .prompt("Find file: ", initialValue, completer, filePathHistory)
+                .prompt("Find file: ", initialValue, filePathHistory, completer)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         openFile(context, confirmed.value());

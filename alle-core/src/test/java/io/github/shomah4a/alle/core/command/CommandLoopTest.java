@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 class CommandLoopTest {
 
     private static final InputPrompter NOOP_PROMPTER =
-            message -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+            (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
 
     private static InputSource fromKeyStrokes(ImmutableList<KeyStroke> keyStrokes) {
         Iterator<KeyStroke> iterator = keyStrokes.iterator();

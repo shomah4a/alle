@@ -42,18 +42,18 @@ class SwitchBufferCommandTest {
     }
 
     private InputPrompter confirming(String value) {
-        return message -> CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+        return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
     }
 
     private InputPrompter confirmingAndCapture(String value, AtomicReference<String> capturedMessage) {
-        return message -> {
+        return (message, history) -> {
             capturedMessage.set(message);
             return CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
         };
     }
 
     private InputPrompter cancelling() {
-        return message -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+        return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
     }
 
     @Nested

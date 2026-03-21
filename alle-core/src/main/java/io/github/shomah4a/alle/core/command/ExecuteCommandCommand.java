@@ -42,7 +42,7 @@ public class ExecuteCommandCommand implements Command {
     public CompletableFuture<Void> execute(CommandContext context) {
         var completer = new CommandNameCompleter(registry);
         return context.inputPrompter()
-                .prompt("M-x ", "", completer, commandHistory)
+                .prompt("M-x ", "", commandHistory, completer)
                 .thenCompose(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed
                             && !confirmed.value().isEmpty()) {

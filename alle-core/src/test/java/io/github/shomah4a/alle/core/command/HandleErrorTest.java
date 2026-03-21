@@ -34,7 +34,7 @@ class HandleErrorTest {
                 frame,
                 new BufferManager(),
                 new WindowActor(window),
-                msg -> CompletableFuture.completedFuture(new PromptResult.Cancelled()),
+                (msg, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled()),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),

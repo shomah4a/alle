@@ -48,7 +48,7 @@ public class SaveBufferCommand implements Command {
         // ファイルパス未設定の場合はプロンプトで入力を求める
         var completer = new FilePathCompleter(directoryLister);
         return context.inputPrompter()
-                .prompt("Save file: ", "", completer, filePathHistory)
+                .prompt("Save file: ", "", filePathHistory, completer)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         String pathString = confirmed.value();
