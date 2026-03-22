@@ -1,5 +1,7 @@
 package io.github.shomah4a.alle.core.highlight;
 
+import java.util.Optional;
+import java.util.regex.Matcher;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -7,6 +9,7 @@ import org.eclipse.collections.api.list.MutableList;
 /**
  * HighlightRuleのリストに基づいて行単位でハイライトを行う汎用SyntaxHighlighter実装。
  * ルールは定義順に評価され、先にマッチしたルールが優先される（重複範囲は後のルールが無視される）。
+ * RegionMatchルールにより複数行にまたがるリージョンのハイライトにも対応する。
  */
 public class RegexHighlighter implements SyntaxHighlighter {
 
@@ -18,20 +21,47 @@ public class RegexHighlighter implements SyntaxHighlighter {
 
     @Override
     public ListIterable<StyledSpan> highlight(String lineText) {
+        return highlightLine(lineText, HighlightState.NONE).spans();
+    }
+
+    @Override
+    public HighlightResult highlightLine(String lineText, HighlightState state) {
         if (lineText.isEmpty()) {
-            return Lists.immutable.empty();
+            return new HighlightResult(Lists.immutable.empty(), state);
         }
 
         int codePointCount = (int) lineText.codePoints().count();
         MutableList<StyledSpan> spans = Lists.mutable.empty();
-
-        // 各コードポイント位置が既にスパンでカバーされているか追跡する
         boolean[] covered = new boolean[codePointCount];
 
+        // リージョン継続中の場合、close パターンを探す
+        HighlightState nextState = HighlightState.NONE;
+        int regionEndCharOffset = 0;
+
+        if (state.isInRegion()) {
+            var region = state.activeRegion().get();
+            Matcher closeMatcher = region.close().matcher(lineText);
+            if (closeMatcher.find()) {
+                // close が見つかった: 行頭〜close終了までリージョン Face を適用
+                int closeEndChar = closeMatcher.end();
+                int cpEnd = charOffsetToCodePointOffset(lineText, closeEndChar);
+                addSpanIfNotCovered(spans, covered, 0, cpEnd, region.face());
+                regionEndCharOffset = closeEndChar;
+                nextState = HighlightState.NONE;
+            } else {
+                // close が見つからない: 行全体にリージョン Face を適用し、リージョン継続
+                addSpanIfNotCovered(spans, covered, 0, codePointCount, region.face());
+                spans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
+                return new HighlightResult(spans, state);
+            }
+        }
+
+        // 通常ルール処理（リージョン終了後の残り部分も含む）
         // NOTE: 本来は switch + レコードデコンストラクションで書くべきだが、
         // JDK 22以前の javac バグ (JDK-8332725) により ErrorProne の AlreadyChecked が
         // クラッシュするため、instanceof パターンマッチで代替している。
         // JDK 23以上に移行した際にはswitch式に戻すこと。
+        Optional<HighlightRule.RegionMatch> openedRegion = Optional.empty();
         for (var rule : rules) {
             if (rule instanceof HighlightRule.LineMatch lineMatch) {
                 if (lineMatch.pattern().matcher(lineText).matches()) {
@@ -46,15 +76,71 @@ public class RegexHighlighter implements SyntaxHighlighter {
                     int cpEnd = charOffsetToCodePointOffset(lineText, charEnd);
                     addSpanIfNotCovered(spans, covered, cpStart, cpEnd, patternMatch.face());
                 }
+            } else if (rule instanceof HighlightRule.RegionMatch regionMatch) {
+                var regionResult =
+                        processRegionMatch(lineText, regionMatch, spans, covered, codePointCount, regionEndCharOffset);
+                if (regionResult.isPresent() && openedRegion.isEmpty()) {
+                    openedRegion = regionResult;
+                }
             }
         }
 
+        if (openedRegion.isPresent()) {
+            nextState = new HighlightState(openedRegion);
+        }
+
         spans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
-        return spans;
+        return new HighlightResult(spans, nextState);
     }
 
-    private static void addSpanIfNotCovered(
-            MutableList<StyledSpan> spans, boolean[] covered, int start, int end, Face face) {
+    /**
+     * RegionMatch の open パターンを探し、同一行内で close が見つかればその範囲を適用する。
+     * close が見つからなければ open 位置〜行末を適用し、リージョン継続として返す。
+     *
+     * @return close が見つからなかった場合に、継続する RegionMatch を返す
+     */
+    private Optional<HighlightRule.RegionMatch> processRegionMatch(
+            String lineText,
+            HighlightRule.RegionMatch regionMatch,
+            MutableList<StyledSpan> spans,
+            boolean[] covered,
+            int codePointCount,
+            int searchFromCharOffset) {
+        Matcher openMatcher = regionMatch.open().matcher(lineText);
+        int searchFrom = searchFromCharOffset;
+        Optional<HighlightRule.RegionMatch> pendingRegion = Optional.empty();
+
+        while (openMatcher.find(searchFrom)) {
+            int openStartChar = openMatcher.start();
+            int openStartCp = charOffsetToCodePointOffset(lineText, openStartChar);
+
+            // open位置が既にカバーされていればスキップ
+            if (openStartCp < codePointCount && covered[openStartCp]) {
+                searchFrom = openMatcher.end();
+                continue;
+            }
+
+            // open の後から close を探す
+            int afterOpenChar = openMatcher.end();
+            Matcher closeMatcher = regionMatch.close().matcher(lineText);
+            if (closeMatcher.find(afterOpenChar)) {
+                // 同一行内で close が見つかった
+                int closeEndChar = closeMatcher.end();
+                int closeEndCp = charOffsetToCodePointOffset(lineText, closeEndChar);
+                addSpanIfNotCovered(spans, covered, openStartCp, closeEndCp, regionMatch.face());
+                searchFrom = closeEndChar;
+            } else {
+                // close が見つからない: open 位置〜行末をリージョン Face で適用
+                addSpanIfNotCovered(spans, covered, openStartCp, codePointCount, regionMatch.face());
+                pendingRegion = Optional.of(regionMatch);
+                break;
+            }
+        }
+
+        return pendingRegion;
+    }
+
+    static void addSpanIfNotCovered(MutableList<StyledSpan> spans, boolean[] covered, int start, int end, Face face) {
         // 範囲内に未カバーの部分があるか確認
         boolean hasUncovered = false;
         for (int i = start; i < end; i++) {

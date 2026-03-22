@@ -8,7 +8,9 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.highlight.HighlightState;
 import io.github.shomah4a.alle.core.highlight.StyledSpan;
+import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Separator;
@@ -65,15 +67,35 @@ public class ScreenRenderer {
             int lineCount = buffer.lineCount();
             int displayStart = window.getDisplayStartLine();
             int displayStartColumn = window.getDisplayStartColumn();
-            var highlighter = buffer.getMajorMode().highlighter();
+            var highlighterOpt = buffer.getMajorMode().highlighter();
 
             var visibleLines = Lists.mutable.<RenderSnapshot.LineSnapshot>empty();
-            for (int row = 0; row < bufferRows; row++) {
-                int lineIndex = displayStart + row;
-                if (lineIndex < lineCount) {
-                    String lineText = buffer.lineText(lineIndex);
-                    Optional<ListIterable<StyledSpan>> spans = highlighter.map(h -> h.highlight(lineText));
-                    visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, spans));
+            if (highlighterOpt.isPresent()) {
+                SyntaxHighlighter highlighter = highlighterOpt.get();
+                // displayStart より前の行の状態を計算する
+                HighlightState hlState = highlighter.initialState();
+                for (int i = 0; i < displayStart && i < lineCount; i++) {
+                    hlState = highlighter
+                            .highlightLine(buffer.lineText(i), hlState)
+                            .nextState();
+                }
+                // 可視行のハイライト
+                for (int row = 0; row < bufferRows; row++) {
+                    int lineIndex = displayStart + row;
+                    if (lineIndex < lineCount) {
+                        String lineText = buffer.lineText(lineIndex);
+                        var result = highlighter.highlightLine(lineText, hlState);
+                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(result.spans())));
+                        hlState = result.nextState();
+                    }
+                }
+            } else {
+                for (int row = 0; row < bufferRows; row++) {
+                    int lineIndex = displayStart + row;
+                    if (lineIndex < lineCount) {
+                        String lineText = buffer.lineText(lineIndex);
+                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.empty()));
+                    }
                 }
             }
 

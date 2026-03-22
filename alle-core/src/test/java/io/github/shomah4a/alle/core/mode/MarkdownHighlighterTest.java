@@ -1,9 +1,11 @@
 package io.github.shomah4a.alle.core.mode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.highlight.Face;
+import io.github.shomah4a.alle.core.highlight.HighlightState;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -154,6 +156,256 @@ class MarkdownHighlighterTest {
 
             assertEquals(1, spans.size());
             assertEquals(Face.HEADING, spans.get(0).face());
+        }
+    }
+
+    @Nested
+    class コードブロック {
+
+        @Test
+        void バッククォート3つの行でリージョンが開始される() {
+            var result = highlighter.highlightLine("```java", HighlightState.NONE);
+
+            assertEquals(1, result.spans().size());
+            assertEquals(Face.CODE, result.spans().get(0).face());
+            assertTrue(result.nextState().isInRegion());
+        }
+
+        @Test
+        void コードブロック内の行全体にCODE_Faceが適用される() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("int x = 1;", r1.nextState());
+
+            assertEquals(1, r2.spans().size());
+            assertEquals(0, r2.spans().get(0).start());
+            assertEquals(10, r2.spans().get(0).end());
+            assertEquals(Face.CODE, r2.spans().get(0).face());
+            assertTrue(r2.nextState().isInRegion());
+        }
+
+        @Test
+        void コードブロック終了行でリージョンが終了する() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("code", r1.nextState());
+            var r3 = highlighter.highlightLine("```", r2.nextState());
+
+            assertFalse(r3.nextState().isInRegion());
+        }
+
+        @Test
+        void コードブロック内では他のマークダウン記法が無視される() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("# heading", r1.nextState());
+
+            assertEquals(1, r2.spans().size());
+            assertEquals(Face.CODE, r2.spans().get(0).face());
+        }
+
+        @Test
+        void コードブロック終了後に通常のマークダウン記法が有効になる() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("code", r1.nextState());
+            var r3 = highlighter.highlightLine("```", r2.nextState());
+            var r4 = highlighter.highlightLine("# heading", r3.nextState());
+
+            assertEquals(1, r4.spans().size());
+            assertEquals(Face.HEADING, r4.spans().get(0).face());
+            assertFalse(r4.nextState().isInRegion());
+        }
+
+        @Test
+        void コードブロック内の空行でリージョンが維持される() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("", r1.nextState());
+
+            assertTrue(r2.spans().isEmpty());
+            assertTrue(r2.nextState().isInRegion());
+        }
+
+        @Test
+        void 言語指定付きコードブロック開始行全体にCODE_Faceが適用される() {
+            var result = highlighter.highlightLine("```python", HighlightState.NONE);
+
+            assertEquals(1, result.spans().size());
+            assertEquals(0, result.spans().get(0).start());
+            assertEquals(9, result.spans().get(0).end());
+            assertEquals(Face.CODE, result.spans().get(0).face());
+        }
+
+        @Test
+        void 行中のバッククォート3つはコードブロック開始にならない() {
+            var result = highlighter.highlightLine("text ``` more", HighlightState.NONE);
+
+            assertFalse(result.nextState().isInRegion());
+        }
+
+        @Test
+        void コードブロックの開始と終了を繰り返した場合に状態が正しく遷移する() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            assertTrue(r1.nextState().isInRegion());
+
+            var r2 = highlighter.highlightLine("block1", r1.nextState());
+            assertTrue(r2.nextState().isInRegion());
+
+            var r3 = highlighter.highlightLine("```", r2.nextState());
+            assertFalse(r3.nextState().isInRegion());
+
+            var r4 = highlighter.highlightLine("normal text", r3.nextState());
+            assertFalse(r4.nextState().isInRegion());
+
+            var r5 = highlighter.highlightLine("```", r4.nextState());
+            assertTrue(r5.nextState().isInRegion());
+
+            var r6 = highlighter.highlightLine("block2", r5.nextState());
+            assertTrue(r6.nextState().isInRegion());
+
+            var r7 = highlighter.highlightLine("```", r6.nextState());
+            assertFalse(r7.nextState().isInRegion());
+        }
+
+        @Test
+        void コードブロック内のインラインコードが無視される() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("use `code` here", r1.nextState());
+
+            assertEquals(1, r2.spans().size());
+            assertEquals(0, r2.spans().get(0).start());
+            assertEquals(15, r2.spans().get(0).end());
+            assertEquals(Face.CODE, r2.spans().get(0).face());
+        }
+
+        @Test
+        void コードブロック内のリンクが無視される() {
+            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r2 = highlighter.highlightLine("[link](url)", r1.nextState());
+
+            assertEquals(1, r2.spans().size());
+            assertEquals(Face.CODE, r2.spans().get(0).face());
+        }
+    }
+
+    @Nested
+    class 水平線 {
+
+        @Test
+        void ハイフン3つで水平線が認識される() {
+            var spans = highlighter.highlight("---");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.COMMENT, spans.get(0).face());
+        }
+
+        @Test
+        void アスタリスク3つで水平線が認識される() {
+            var spans = highlighter.highlight("***");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.COMMENT, spans.get(0).face());
+        }
+
+        @Test
+        void アンダースコア3つで水平線が認識される() {
+            var spans = highlighter.highlight("___");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.COMMENT, spans.get(0).face());
+        }
+
+        @Test
+        void スペース付きの水平線が認識される() {
+            var spans = highlighter.highlight("- - -");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.COMMENT, spans.get(0).face());
+        }
+    }
+
+    @Nested
+    class 引用 {
+
+        @Test
+        void 引用行全体にSTRING_Faceが適用される() {
+            var spans = highlighter.highlight("> quoted text");
+
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            assertEquals(13, spans.get(0).end());
+            assertEquals(Face.STRING, spans.get(0).face());
+        }
+
+        @Test
+        void 空引用が認識される() {
+            var spans = highlighter.highlight(">");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.STRING, spans.get(0).face());
+        }
+    }
+
+    @Nested
+    class 画像リンク {
+
+        @Test
+        void 画像リンクにLINK_Faceが適用される() {
+            var spans = highlighter.highlight("See ![alt](image.png) here");
+
+            assertEquals(1, spans.size());
+            assertEquals(4, spans.get(0).start());
+            assertEquals(21, spans.get(0).end());
+            assertEquals(Face.LINK, spans.get(0).face());
+        }
+    }
+
+    @Nested
+    class テーブル {
+
+        @Test
+        void テーブル区切り行全体にTABLE_Faceが適用される() {
+            // "|---|---|" は9文字
+            var spans = highlighter.highlight("|---|---|");
+
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            assertEquals(9, spans.get(0).end());
+            assertEquals(Face.TABLE, spans.get(0).face());
+        }
+
+        @Test
+        void アライメント指定付き区切り行が認識される() {
+            var spans = highlighter.highlight("| :--- | :---: | ---: |");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.TABLE, spans.get(0).face());
+        }
+
+        @Test
+        void パイプなし区切り行が認識される() {
+            var spans = highlighter.highlight("--- | --- | ---");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.TABLE, spans.get(0).face());
+        }
+
+        @Test
+        void テーブルデータ行のパイプ記号にTABLE_Faceが適用される() {
+            var spans = highlighter.highlight("| cell1 | cell2 |");
+
+            // パイプ3つ
+            assertEquals(3, spans.size());
+            for (var span : spans) {
+                assertEquals(Face.TABLE, span.face());
+                assertEquals(1, span.end() - span.start());
+            }
+        }
+
+        @Test
+        void テーブルヘッダ行のパイプ記号にTABLE_Faceが適用される() {
+            var spans = highlighter.highlight("| Header 1 | Header 2 |");
+
+            assertEquals(3, spans.size());
+            for (var span : spans) {
+                assertEquals(Face.TABLE, span.face());
+            }
         }
     }
 
