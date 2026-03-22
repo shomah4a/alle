@@ -20,7 +20,7 @@ public record Face(String foreground, String background, ImmutableSet<FaceAttrib
     public static final Face CODE = new Face("green", "default", Sets.immutable.empty());
     public static final Face LINK = new Face("cyan", "default", Sets.immutable.of(FaceAttribute.UNDERLINE));
     public static final Face LIST_MARKER = new Face("magenta", "default", Sets.immutable.empty());
-    public static final Face COMMENT = new Face("white_bright", "default", Sets.immutable.empty());
+    public static final Face COMMENT = new Face("black_bright", "default", Sets.immutable.empty());
     public static final Face KEYWORD = new Face("blue", "default", Sets.immutable.of(FaceAttribute.BOLD));
     public static final Face STRING = new Face("green", "default", Sets.immutable.empty());
     public static final Face TABLE = new Face("cyan", "default", Sets.immutable.empty());
