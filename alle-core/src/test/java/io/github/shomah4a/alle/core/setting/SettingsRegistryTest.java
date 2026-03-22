@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.setting;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -78,6 +79,91 @@ class SettingsRegistryTest {
             assertEquals(2, keys.size());
             assertTrue(keys.contains("tab-width"));
             assertTrue(keys.contains("truncate-lines"));
+        }
+    }
+
+    @Nested
+    class グローバル値 {
+
+        @Test
+        void グローバル値を設定して取得できる() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+            registry.register(setting);
+            registry.setGlobal(setting, 8);
+
+            var result = registry.getGlobal(setting);
+
+            assertTrue(result.isPresent());
+            assertEquals(8, result.get());
+        }
+
+        @Test
+        void グローバル値が未設定の場合emptyを返す() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+            registry.register(setting);
+
+            var result = registry.getGlobal(setting);
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        void 未登録の設定にグローバル値を設定すると例外を投げる() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+
+            assertThrows(IllegalArgumentException.class, () -> registry.setGlobal(setting, 8));
+        }
+
+        @Test
+        void 未登録の設定のグローバル値取得は例外を投げる() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+
+            assertThrows(IllegalArgumentException.class, () -> registry.getGlobal(setting));
+        }
+
+        @Test
+        void グローバル値を設定するとhasGlobalがtrueを返す() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+            registry.register(setting);
+            registry.setGlobal(setting, 8);
+
+            assertTrue(registry.hasGlobal(setting));
+        }
+
+        @Test
+        void グローバル値が未設定の場合hasGlobalがfalseを返す() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+            registry.register(setting);
+
+            assertFalse(registry.hasGlobal(setting));
+        }
+
+        @Test
+        void グローバル値を解除するとemptyに戻る() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+            registry.register(setting);
+            registry.setGlobal(setting, 8);
+            registry.removeGlobal(setting);
+
+            assertTrue(registry.getGlobal(setting).isEmpty());
+            assertFalse(registry.hasGlobal(setting));
+        }
+
+        @Test
+        void グローバル値はデフォルト値に影響しない() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("tab-width", Integer.class, 4);
+            registry.register(setting);
+            registry.setGlobal(setting, 8);
+
+            assertEquals(4, registry.getDefault(setting));
         }
     }
 }

@@ -12,6 +12,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
 public class SettingsRegistry {
 
     private final MutableMap<String, Setting<?>> definitions = Maps.mutable.empty();
+    private final MutableMap<String, Object> globalValues = Maps.mutable.empty();
 
     /**
      * 設定を登録する。
@@ -50,5 +51,48 @@ public class SettingsRegistry {
             throw new IllegalArgumentException("設定 '" + setting.key() + "' は登録されていません");
         }
         return setting.defaultValue();
+    }
+
+    /**
+     * ユーザーが明示的に設定したグローバル値を設定する。
+     *
+     * @throws IllegalArgumentException 未登録の設定の場合
+     */
+    public <T> void setGlobal(Setting<T> setting, T value) {
+        if (!definitions.containsKey(setting.key())) {
+            throw new IllegalArgumentException("設定 '" + setting.key() + "' は登録されていません");
+        }
+        globalValues.put(setting.key(), value);
+    }
+
+    /**
+     * ユーザーが明示的に設定したグローバル値を取得する。
+     * 設定されていない場合はemptyを返す。フォールバックは含まない。
+     *
+     * @throws IllegalArgumentException 未登録の設定の場合
+     */
+    public <T> Optional<T> getGlobal(Setting<T> setting) {
+        if (!definitions.containsKey(setting.key())) {
+            throw new IllegalArgumentException("設定 '" + setting.key() + "' は登録されていません");
+        }
+        Object value = globalValues.get(setting.key());
+        if (value != null) {
+            return Optional.of(setting.cast(value));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * ユーザーグローバル値が設定されているかを返す。
+     */
+    public boolean hasGlobal(Setting<?> setting) {
+        return globalValues.containsKey(setting.key());
+    }
+
+    /**
+     * ユーザーグローバル値を解除し、Setting.defaultValueにフォールバックするようにする。
+     */
+    public void removeGlobal(Setting<?> setting) {
+        globalValues.remove(setting.key());
     }
 }
