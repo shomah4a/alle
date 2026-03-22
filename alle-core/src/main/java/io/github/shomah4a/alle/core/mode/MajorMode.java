@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.mode;
 
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.setting.ModeSettings;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import java.util.Optional;
 
@@ -27,5 +28,13 @@ public interface MajorMode {
      */
     default Optional<SyntaxStyler> styler() {
         return Optional.empty();
+    }
+
+    /**
+     * モード固有の設定デフォルト値を返す。
+     * カスタムポイントを持たない場合は空のModeSettingsを返す。
+     */
+    default ModeSettings settingDefaults() {
+        return ModeSettings.empty();
     }
 }
