@@ -64,6 +64,12 @@ class FaceResolverTest {
         }
 
         @Test
+        void STRIKETHROUGHがSGR_CROSSED_OUTに変換される() {
+            var sgrs = resolver.resolveSgr(Sets.immutable.of(FaceAttribute.STRIKETHROUGH));
+            assertEquals(Lists.immutable.of(SGR.CROSSED_OUT), sgrs);
+        }
+
+        @Test
         void 空の属性セットで空リストが返される() {
             var sgrs = resolver.resolveSgr(Sets.immutable.empty());
             assertEquals(0, sgrs.size());

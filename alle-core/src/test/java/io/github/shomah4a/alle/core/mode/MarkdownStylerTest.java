@@ -102,6 +102,29 @@ class MarkdownStylerTest {
     }
 
     @Nested
+    class 取り消し線 {
+
+        @Test
+        void チルダ2つで囲まれた部分にSTRIKETHROUGH_Faceが適用される() {
+            var spans = styler.styleLine("This is ~~deleted~~ text");
+
+            assertEquals(1, spans.size());
+            assertEquals(8, spans.get(0).start());
+            assertEquals(19, spans.get(0).end());
+            assertEquals(Face.STRIKETHROUGH_FACE, spans.get(0).face());
+        }
+
+        @Test
+        void 複数の取り消し線が認識される() {
+            var spans = styler.styleLine("~~a~~ and ~~b~~");
+
+            assertEquals(2, spans.size());
+            assertEquals(Face.STRIKETHROUGH_FACE, spans.get(0).face());
+            assertEquals(Face.STRIKETHROUGH_FACE, spans.get(1).face());
+        }
+    }
+
+    @Nested
     class リンク {
 
         @Test

@@ -6,5 +6,6 @@ package io.github.shomah4a.alle.core.styling;
 public enum FaceAttribute {
     BOLD,
     ITALIC,
-    UNDERLINE
+    UNDERLINE,
+    STRIKETHROUGH
 }

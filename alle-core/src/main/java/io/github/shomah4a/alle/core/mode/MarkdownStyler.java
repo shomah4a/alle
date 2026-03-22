@@ -35,6 +35,8 @@ public class MarkdownStyler implements SyntaxStyler {
             // 斜体（*text* または _text_）
             new StylingRule.PatternMatch(
                     Pattern.compile("(?<!\\*)\\*(?!\\*)[^*]+\\*(?!\\*)|(?<!_)_(?!_)[^_]+_(?!_)"), Face.ITALIC_FACE),
+            // 取り消し線（~~text~~）
+            new StylingRule.PatternMatch(Pattern.compile("~~[^~]+~~"), Face.STRIKETHROUGH_FACE),
             // 画像リンク（![alt](url)）
             new StylingRule.PatternMatch(Pattern.compile("!\\[[^]]*]\\([^)]+\\)"), Face.LINK),
             // リンク（[text](url)）

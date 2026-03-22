@@ -65,6 +65,7 @@ public class FaceResolver {
             case BOLD -> SGR.BOLD;
             case ITALIC -> SGR.ITALIC;
             case UNDERLINE -> SGR.UNDERLINE;
+            case STRIKETHROUGH -> SGR.CROSSED_OUT;
         };
     }
 
