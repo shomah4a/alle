@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.tui;
 
 import com.googlecode.lanterna.TerminalPosition;
-import io.github.shomah4a.alle.core.highlight.StyledSpan;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Separator;
 import java.util.Optional;

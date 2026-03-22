@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.highlight;
+package io.github.shomah4a.alle.core.styling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,7 +8,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class RegexHighlighterTest {
+class RegexStylerTest {
 
     @Nested
     class LineMatchルール {
@@ -16,10 +16,10 @@ class RegexHighlighterTest {
         @Test
         void パターンに一致する行全体にFaceが適用される() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
+            var styler = new RegexStyler(rules);
 
-            var spans = highlighter.highlight("# Hello");
+            var spans = styler.styleLine("# Hello");
 
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -30,10 +30,10 @@ class RegexHighlighterTest {
         @Test
         void パターンに一致しない行ではスパンが生成されない() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
+            var styler = new RegexStyler(rules);
 
-            var spans = highlighter.highlight("Hello World");
+            var spans = styler.styleLine("Hello World");
 
             assertTrue(spans.isEmpty());
         }
@@ -45,10 +45,10 @@ class RegexHighlighterTest {
         @Test
         void マッチした部分にFaceが適用される() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+            var styler = new RegexStyler(rules);
 
-            var spans = highlighter.highlight("Hello `code` World");
+            var spans = styler.styleLine("Hello `code` World");
 
             assertEquals(1, spans.size());
             assertEquals(6, spans.get(0).start());
@@ -59,10 +59,10 @@ class RegexHighlighterTest {
         @Test
         void 複数マッチがある場合すべてスパンが生成される() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+            var styler = new RegexStyler(rules);
 
-            var spans = highlighter.highlight("`a` and `b`");
+            var spans = styler.styleLine("`a` and `b`");
 
             assertEquals(2, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -78,12 +78,12 @@ class RegexHighlighterTest {
         @Test
         void 先に定義されたルールが優先される() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING),
-                    (HighlightRule) new HighlightRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING),
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+            var styler = new RegexStyler(rules);
 
             // 見出し行内のコードスパンは見出しFaceで上書きされる
-            var spans = highlighter.highlight("# Hello `code`");
+            var spans = styler.styleLine("# Hello `code`");
 
             assertEquals(1, spans.size());
             assertEquals(Face.HEADING, spans.get(0).face());
@@ -96,19 +96,19 @@ class RegexHighlighterTest {
         @Test
         void 空行ではスパンが生成されない() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
+            var styler = new RegexStyler(rules);
 
-            var spans = highlighter.highlight("");
+            var spans = styler.styleLine("");
 
             assertTrue(spans.isEmpty());
         }
 
         @Test
         void ルールが空の場合スパンが生成されない() {
-            var highlighter = new RegexHighlighter(Lists.immutable.empty());
+            var styler = new RegexStyler(Lists.immutable.empty());
 
-            var spans = highlighter.highlight("Hello World");
+            var spans = styler.styleLine("Hello World");
 
             assertTrue(spans.isEmpty());
         }
@@ -120,11 +120,11 @@ class RegexHighlighterTest {
         @Test
         void 絵文字を含む行で正しいコードポイントオフセットを返す() {
             var rules = Lists.immutable.of(
-                    (HighlightRule) new HighlightRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
-            var highlighter = new RegexHighlighter(rules);
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+            var styler = new RegexStyler(rules);
 
             // 😀はサロゲートペア（char 2個、コードポイント1個）
-            var spans = highlighter.highlight("😀 `code` end");
+            var spans = styler.styleLine("😀 `code` end");
 
             assertEquals(1, spans.size());
             // コードポイント: 😀(idx=0) ' '(idx=1) `(idx=2) c(3) o(4) d(5) e(6) `(7)
@@ -135,9 +135,9 @@ class RegexHighlighterTest {
         @Test
         void charOffsetToCodePointOffsetが正しく変換する() {
             // "😀abc" → 😀はchar 2個
-            assertEquals(0, RegexHighlighter.charOffsetToCodePointOffset("😀abc", 0));
-            assertEquals(1, RegexHighlighter.charOffsetToCodePointOffset("😀abc", 2)); // 😀の後
-            assertEquals(2, RegexHighlighter.charOffsetToCodePointOffset("😀abc", 3)); // aの後
+            assertEquals(0, RegexStyler.charOffsetToCodePointOffset("😀abc", 0));
+            assertEquals(1, RegexStyler.charOffsetToCodePointOffset("😀abc", 2)); // 😀の後
+            assertEquals(2, RegexStyler.charOffsetToCodePointOffset("😀abc", 3)); // aの後
         }
     }
 }

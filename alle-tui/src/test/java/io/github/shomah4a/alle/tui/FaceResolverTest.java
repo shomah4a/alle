@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TextColor;
-import io.github.shomah4a.alle.core.highlight.Face;
-import io.github.shomah4a.alle.core.highlight.FaceAttribute;
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceAttribute;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.junit.jupiter.api.Nested;

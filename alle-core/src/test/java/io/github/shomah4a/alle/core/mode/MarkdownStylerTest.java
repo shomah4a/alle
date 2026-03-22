@@ -4,21 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.highlight.Face;
-import io.github.shomah4a.alle.core.highlight.HighlightState;
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.StylingState;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class MarkdownHighlighterTest {
+class MarkdownStylerTest {
 
-    private final MarkdownHighlighter highlighter = new MarkdownHighlighter();
+    private final MarkdownStyler styler = new MarkdownStyler();
 
     @Nested
     class 見出し {
 
         @Test
         void h1見出し行全体にHEADING_Faceが適用される() {
-            var spans = highlighter.highlight("# Hello");
+            var spans = styler.styleLine("# Hello");
 
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -28,7 +28,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void h3見出しも認識される() {
-            var spans = highlighter.highlight("### Section");
+            var spans = styler.styleLine("### Section");
 
             assertEquals(1, spans.size());
             assertEquals(Face.HEADING, spans.get(0).face());
@@ -36,7 +36,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void シャープの後にスペースがない場合は見出しではない() {
-            var spans = highlighter.highlight("#NoSpace");
+            var spans = styler.styleLine("#NoSpace");
 
             assertTrue(spans.isEmpty());
         }
@@ -47,7 +47,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void バッククォートで囲まれた部分にCODE_Faceが適用される() {
-            var spans = highlighter.highlight("Use `code` here");
+            var spans = styler.styleLine("Use `code` here");
 
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
@@ -57,7 +57,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 複数のインラインコードが認識される() {
-            var spans = highlighter.highlight("`a` and `b`");
+            var spans = styler.styleLine("`a` and `b`");
 
             assertEquals(2, spans.size());
             assertEquals(Face.CODE, spans.get(0).face());
@@ -70,7 +70,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void アスタリスク2つで囲まれた部分にBOLD_Faceが適用される() {
-            var spans = highlighter.highlight("This is **bold** text");
+            var spans = styler.styleLine("This is **bold** text");
 
             assertEquals(1, spans.size());
             assertEquals(8, spans.get(0).start());
@@ -80,7 +80,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void アンダースコア2つでも太字として認識される() {
-            var spans = highlighter.highlight("This is __bold__ text");
+            var spans = styler.styleLine("This is __bold__ text");
 
             assertEquals(1, spans.size());
             assertEquals(Face.BOLD_FACE, spans.get(0).face());
@@ -92,7 +92,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void アスタリスク1つで囲まれた部分にITALIC_Faceが適用される() {
-            var spans = highlighter.highlight("This is *italic* text");
+            var spans = styler.styleLine("This is *italic* text");
 
             assertEquals(1, spans.size());
             assertEquals(8, spans.get(0).start());
@@ -106,7 +106,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void マークダウンリンクにLINK_Faceが適用される() {
-            var spans = highlighter.highlight("See [link](http://example.com) here");
+            var spans = styler.styleLine("See [link](http://example.com) here");
 
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
@@ -120,7 +120,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void ハイフンリストマーカーにLIST_MARKER_Faceが適用される() {
-            var spans = highlighter.highlight("- item");
+            var spans = styler.styleLine("- item");
 
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -130,7 +130,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 番号付きリストマーカーが認識される() {
-            var spans = highlighter.highlight("1. item");
+            var spans = styler.styleLine("1. item");
 
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -140,7 +140,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void インデント付きリストマーカーが認識される() {
-            var spans = highlighter.highlight("  - nested");
+            var spans = styler.styleLine("  - nested");
 
             assertEquals(1, spans.size());
             assertEquals(Face.LIST_MARKER, spans.get(0).face());
@@ -152,7 +152,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 見出し行内のインラインコードは見出しFaceが優先される() {
-            var spans = highlighter.highlight("# Hello `code`");
+            var spans = styler.styleLine("# Hello `code`");
 
             assertEquals(1, spans.size());
             assertEquals(Face.HEADING, spans.get(0).face());
@@ -164,7 +164,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void バッククォート3つの行でリージョンが開始される() {
-            var result = highlighter.highlightLine("```java", HighlightState.NONE);
+            var result = styler.styleLineWithState("```java", StylingState.NONE);
 
             assertEquals(1, result.spans().size());
             assertEquals(Face.CODE, result.spans().get(0).face());
@@ -173,8 +173,8 @@ class MarkdownHighlighterTest {
 
         @Test
         void コードブロック内の行全体にCODE_Faceが適用される() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("int x = 1;", r1.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("int x = 1;", r1.nextState());
 
             assertEquals(1, r2.spans().size());
             assertEquals(0, r2.spans().get(0).start());
@@ -185,17 +185,17 @@ class MarkdownHighlighterTest {
 
         @Test
         void コードブロック終了行でリージョンが終了する() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("code", r1.nextState());
-            var r3 = highlighter.highlightLine("```", r2.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("code", r1.nextState());
+            var r3 = styler.styleLineWithState("```", r2.nextState());
 
             assertFalse(r3.nextState().isInRegion());
         }
 
         @Test
         void コードブロック内では他のマークダウン記法が無視される() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("# heading", r1.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("# heading", r1.nextState());
 
             assertEquals(1, r2.spans().size());
             assertEquals(Face.CODE, r2.spans().get(0).face());
@@ -203,10 +203,10 @@ class MarkdownHighlighterTest {
 
         @Test
         void コードブロック終了後に通常のマークダウン記法が有効になる() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("code", r1.nextState());
-            var r3 = highlighter.highlightLine("```", r2.nextState());
-            var r4 = highlighter.highlightLine("# heading", r3.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("code", r1.nextState());
+            var r3 = styler.styleLineWithState("```", r2.nextState());
+            var r4 = styler.styleLineWithState("# heading", r3.nextState());
 
             assertEquals(1, r4.spans().size());
             assertEquals(Face.HEADING, r4.spans().get(0).face());
@@ -215,8 +215,8 @@ class MarkdownHighlighterTest {
 
         @Test
         void コードブロック内の空行でリージョンが維持される() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("", r1.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("", r1.nextState());
 
             assertTrue(r2.spans().isEmpty());
             assertTrue(r2.nextState().isInRegion());
@@ -224,7 +224,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 言語指定付きコードブロック開始行全体にCODE_Faceが適用される() {
-            var result = highlighter.highlightLine("```python", HighlightState.NONE);
+            var result = styler.styleLineWithState("```python", StylingState.NONE);
 
             assertEquals(1, result.spans().size());
             assertEquals(0, result.spans().get(0).start());
@@ -234,39 +234,39 @@ class MarkdownHighlighterTest {
 
         @Test
         void 行中のバッククォート3つはコードブロック開始にならない() {
-            var result = highlighter.highlightLine("text ``` more", HighlightState.NONE);
+            var result = styler.styleLineWithState("text ``` more", StylingState.NONE);
 
             assertFalse(result.nextState().isInRegion());
         }
 
         @Test
         void コードブロックの開始と終了を繰り返した場合に状態が正しく遷移する() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
             assertTrue(r1.nextState().isInRegion());
 
-            var r2 = highlighter.highlightLine("block1", r1.nextState());
+            var r2 = styler.styleLineWithState("block1", r1.nextState());
             assertTrue(r2.nextState().isInRegion());
 
-            var r3 = highlighter.highlightLine("```", r2.nextState());
+            var r3 = styler.styleLineWithState("```", r2.nextState());
             assertFalse(r3.nextState().isInRegion());
 
-            var r4 = highlighter.highlightLine("normal text", r3.nextState());
+            var r4 = styler.styleLineWithState("normal text", r3.nextState());
             assertFalse(r4.nextState().isInRegion());
 
-            var r5 = highlighter.highlightLine("```", r4.nextState());
+            var r5 = styler.styleLineWithState("```", r4.nextState());
             assertTrue(r5.nextState().isInRegion());
 
-            var r6 = highlighter.highlightLine("block2", r5.nextState());
+            var r6 = styler.styleLineWithState("block2", r5.nextState());
             assertTrue(r6.nextState().isInRegion());
 
-            var r7 = highlighter.highlightLine("```", r6.nextState());
+            var r7 = styler.styleLineWithState("```", r6.nextState());
             assertFalse(r7.nextState().isInRegion());
         }
 
         @Test
         void コードブロック内のインラインコードが無視される() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("use `code` here", r1.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("use `code` here", r1.nextState());
 
             assertEquals(1, r2.spans().size());
             assertEquals(0, r2.spans().get(0).start());
@@ -276,8 +276,8 @@ class MarkdownHighlighterTest {
 
         @Test
         void コードブロック内のリンクが無視される() {
-            var r1 = highlighter.highlightLine("```", HighlightState.NONE);
-            var r2 = highlighter.highlightLine("[link](url)", r1.nextState());
+            var r1 = styler.styleLineWithState("```", StylingState.NONE);
+            var r2 = styler.styleLineWithState("[link](url)", r1.nextState());
 
             assertEquals(1, r2.spans().size());
             assertEquals(Face.CODE, r2.spans().get(0).face());
@@ -289,7 +289,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void ハイフン3つで水平線が認識される() {
-            var spans = highlighter.highlight("---");
+            var spans = styler.styleLine("---");
 
             assertEquals(1, spans.size());
             assertEquals(Face.COMMENT, spans.get(0).face());
@@ -297,7 +297,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void アスタリスク3つで水平線が認識される() {
-            var spans = highlighter.highlight("***");
+            var spans = styler.styleLine("***");
 
             assertEquals(1, spans.size());
             assertEquals(Face.COMMENT, spans.get(0).face());
@@ -305,7 +305,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void アンダースコア3つで水平線が認識される() {
-            var spans = highlighter.highlight("___");
+            var spans = styler.styleLine("___");
 
             assertEquals(1, spans.size());
             assertEquals(Face.COMMENT, spans.get(0).face());
@@ -313,7 +313,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void スペース付きの水平線が認識される() {
-            var spans = highlighter.highlight("- - -");
+            var spans = styler.styleLine("- - -");
 
             assertEquals(1, spans.size());
             assertEquals(Face.COMMENT, spans.get(0).face());
@@ -325,7 +325,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 引用行全体にSTRING_Faceが適用される() {
-            var spans = highlighter.highlight("> quoted text");
+            var spans = styler.styleLine("> quoted text");
 
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -335,7 +335,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 空引用が認識される() {
-            var spans = highlighter.highlight(">");
+            var spans = styler.styleLine(">");
 
             assertEquals(1, spans.size());
             assertEquals(Face.STRING, spans.get(0).face());
@@ -347,7 +347,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void 画像リンクにLINK_Faceが適用される() {
-            var spans = highlighter.highlight("See ![alt](image.png) here");
+            var spans = styler.styleLine("See ![alt](image.png) here");
 
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
@@ -362,7 +362,7 @@ class MarkdownHighlighterTest {
         @Test
         void テーブル区切り行全体にTABLE_Faceが適用される() {
             // "|---|---|" は9文字
-            var spans = highlighter.highlight("|---|---|");
+            var spans = styler.styleLine("|---|---|");
 
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
@@ -372,7 +372,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void アライメント指定付き区切り行が認識される() {
-            var spans = highlighter.highlight("| :--- | :---: | ---: |");
+            var spans = styler.styleLine("| :--- | :---: | ---: |");
 
             assertEquals(1, spans.size());
             assertEquals(Face.TABLE, spans.get(0).face());
@@ -380,7 +380,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void パイプなし区切り行が認識される() {
-            var spans = highlighter.highlight("--- | --- | ---");
+            var spans = styler.styleLine("--- | --- | ---");
 
             assertEquals(1, spans.size());
             assertEquals(Face.TABLE, spans.get(0).face());
@@ -388,7 +388,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void テーブルデータ行のパイプ記号にTABLE_Faceが適用される() {
-            var spans = highlighter.highlight("| cell1 | cell2 |");
+            var spans = styler.styleLine("| cell1 | cell2 |");
 
             // パイプ3つ
             assertEquals(3, spans.size());
@@ -400,7 +400,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void テーブルヘッダ行のパイプ記号にTABLE_Faceが適用される() {
-            var spans = highlighter.highlight("| Header 1 | Header 2 |");
+            var spans = styler.styleLine("| Header 1 | Header 2 |");
 
             assertEquals(3, spans.size());
             for (var span : spans) {
@@ -414,7 +414,7 @@ class MarkdownHighlighterTest {
 
         @Test
         void マークダウン記法を含まない行ではスパンが生成されない() {
-            var spans = highlighter.highlight("Just plain text");
+            var spans = styler.styleLine("Just plain text");
 
             assertTrue(spans.isEmpty());
         }

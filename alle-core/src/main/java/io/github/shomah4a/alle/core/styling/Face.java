@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.highlight;
+package io.github.shomah4a.alle.core.styling;
 
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.ImmutableSet;

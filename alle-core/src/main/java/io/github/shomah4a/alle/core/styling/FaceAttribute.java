@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.highlight;
+package io.github.shomah4a.alle.core.styling;
 
 /**
  * Faceの装飾属性。

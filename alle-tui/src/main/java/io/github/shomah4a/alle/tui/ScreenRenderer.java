@@ -8,9 +8,9 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
-import io.github.shomah4a.alle.core.highlight.HighlightState;
-import io.github.shomah4a.alle.core.highlight.StyledSpan;
-import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
+import io.github.shomah4a.alle.core.styling.StylingState;
+import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Separator;
@@ -67,26 +67,25 @@ public class ScreenRenderer {
             int lineCount = buffer.lineCount();
             int displayStart = window.getDisplayStartLine();
             int displayStartColumn = window.getDisplayStartColumn();
-            var highlighterOpt = buffer.getMajorMode().highlighter();
+            var stylerOpt = buffer.getMajorMode().styler();
 
             var visibleLines = Lists.mutable.<RenderSnapshot.LineSnapshot>empty();
-            if (highlighterOpt.isPresent()) {
-                SyntaxHighlighter highlighter = highlighterOpt.get();
+            if (stylerOpt.isPresent()) {
+                SyntaxStyler styler = stylerOpt.get();
                 // displayStart より前の行の状態を計算する
-                HighlightState hlState = highlighter.initialState();
+                StylingState styleState = styler.initialState();
                 for (int i = 0; i < displayStart && i < lineCount; i++) {
-                    hlState = highlighter
-                            .highlightLine(buffer.lineText(i), hlState)
+                    styleState = styler.styleLineWithState(buffer.lineText(i), styleState)
                             .nextState();
                 }
-                // 可視行のハイライト
+                // 可視行のスタイリング
                 for (int row = 0; row < bufferRows; row++) {
                     int lineIndex = displayStart + row;
                     if (lineIndex < lineCount) {
                         String lineText = buffer.lineText(lineIndex);
-                        var result = highlighter.highlightLine(lineText, hlState);
+                        var result = styler.styleLineWithState(lineText, styleState);
                         visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(result.spans())));
-                        hlState = result.nextState();
+                        styleState = result.nextState();
                     }
                 }
             } else {

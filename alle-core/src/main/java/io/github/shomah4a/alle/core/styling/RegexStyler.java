@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.highlight;
+package io.github.shomah4a.alle.core.styling;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -7,27 +7,27 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 
 /**
- * HighlightRuleのリストに基づいて行単位でハイライトを行う汎用SyntaxHighlighter実装。
+ * StylingRuleのリストに基づいて行単位でスタイリングを行う汎用SyntaxStyler実装。
  * ルールは定義順に評価され、先にマッチしたルールが優先される（重複範囲は後のルールが無視される）。
- * RegionMatchルールにより複数行にまたがるリージョンのハイライトにも対応する。
+ * RegionMatchルールにより複数行にまたがるリージョンのスタイリングにも対応する。
  */
-public class RegexHighlighter implements SyntaxHighlighter {
+public class RegexStyler implements SyntaxStyler {
 
-    private final ListIterable<HighlightRule> rules;
+    private final ListIterable<StylingRule> rules;
 
-    public RegexHighlighter(ListIterable<HighlightRule> rules) {
+    public RegexStyler(ListIterable<StylingRule> rules) {
         this.rules = rules;
     }
 
     @Override
-    public ListIterable<StyledSpan> highlight(String lineText) {
-        return highlightLine(lineText, HighlightState.NONE).spans();
+    public ListIterable<StyledSpan> styleLine(String lineText) {
+        return styleLineWithState(lineText, StylingState.NONE).spans();
     }
 
     @Override
-    public HighlightResult highlightLine(String lineText, HighlightState state) {
+    public StylingResult styleLineWithState(String lineText, StylingState state) {
         if (lineText.isEmpty()) {
-            return new HighlightResult(Lists.immutable.empty(), state);
+            return new StylingResult(Lists.immutable.empty(), state);
         }
 
         int codePointCount = (int) lineText.codePoints().count();
@@ -35,7 +35,7 @@ public class RegexHighlighter implements SyntaxHighlighter {
         boolean[] covered = new boolean[codePointCount];
 
         // リージョン継続中の場合、close パターンを探す
-        HighlightState nextState = HighlightState.NONE;
+        StylingState nextState = StylingState.NONE;
         int regionEndCharOffset = 0;
 
         if (state.isInRegion()) {
@@ -47,12 +47,12 @@ public class RegexHighlighter implements SyntaxHighlighter {
                 int cpEnd = charOffsetToCodePointOffset(lineText, closeEndChar);
                 addSpanIfNotCovered(spans, covered, 0, cpEnd, region.face());
                 regionEndCharOffset = closeEndChar;
-                nextState = HighlightState.NONE;
+                nextState = StylingState.NONE;
             } else {
                 // close が見つからない: 行全体にリージョン Face を適用し、リージョン継続
                 addSpanIfNotCovered(spans, covered, 0, codePointCount, region.face());
                 spans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
-                return new HighlightResult(spans, state);
+                return new StylingResult(spans, state);
             }
         }
 
@@ -61,13 +61,13 @@ public class RegexHighlighter implements SyntaxHighlighter {
         // JDK 22以前の javac バグ (JDK-8332725) により ErrorProne の AlreadyChecked が
         // クラッシュするため、instanceof パターンマッチで代替している。
         // JDK 23以上に移行した際にはswitch式に戻すこと。
-        Optional<HighlightRule.RegionMatch> openedRegion = Optional.empty();
+        Optional<StylingRule.RegionMatch> openedRegion = Optional.empty();
         for (var rule : rules) {
-            if (rule instanceof HighlightRule.LineMatch lineMatch) {
+            if (rule instanceof StylingRule.LineMatch lineMatch) {
                 if (lineMatch.pattern().matcher(lineText).matches()) {
                     addSpanIfNotCovered(spans, covered, 0, codePointCount, lineMatch.face());
                 }
-            } else if (rule instanceof HighlightRule.PatternMatch patternMatch) {
+            } else if (rule instanceof StylingRule.PatternMatch patternMatch) {
                 var matcher = patternMatch.pattern().matcher(lineText);
                 while (matcher.find()) {
                     int charStart = matcher.start();
@@ -76,7 +76,7 @@ public class RegexHighlighter implements SyntaxHighlighter {
                     int cpEnd = charOffsetToCodePointOffset(lineText, charEnd);
                     addSpanIfNotCovered(spans, covered, cpStart, cpEnd, patternMatch.face());
                 }
-            } else if (rule instanceof HighlightRule.RegionMatch regionMatch) {
+            } else if (rule instanceof StylingRule.RegionMatch regionMatch) {
                 var regionResult =
                         processRegionMatch(lineText, regionMatch, spans, covered, codePointCount, regionEndCharOffset);
                 if (regionResult.isPresent() && openedRegion.isEmpty()) {
@@ -86,11 +86,11 @@ public class RegexHighlighter implements SyntaxHighlighter {
         }
 
         if (openedRegion.isPresent()) {
-            nextState = new HighlightState(openedRegion);
+            nextState = new StylingState(openedRegion);
         }
 
         spans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
-        return new HighlightResult(spans, nextState);
+        return new StylingResult(spans, nextState);
     }
 
     /**
@@ -99,16 +99,16 @@ public class RegexHighlighter implements SyntaxHighlighter {
      *
      * @return close が見つからなかった場合に、継続する RegionMatch を返す
      */
-    private Optional<HighlightRule.RegionMatch> processRegionMatch(
+    private Optional<StylingRule.RegionMatch> processRegionMatch(
             String lineText,
-            HighlightRule.RegionMatch regionMatch,
+            StylingRule.RegionMatch regionMatch,
             MutableList<StyledSpan> spans,
             boolean[] covered,
             int codePointCount,
             int searchFromCharOffset) {
         Matcher openMatcher = regionMatch.open().matcher(lineText);
         int searchFrom = searchFromCharOffset;
-        Optional<HighlightRule.RegionMatch> pendingRegion = Optional.empty();
+        Optional<StylingRule.RegionMatch> pendingRegion = Optional.empty();
 
         while (openMatcher.find(searchFrom)) {
             int openStartChar = openMatcher.start();

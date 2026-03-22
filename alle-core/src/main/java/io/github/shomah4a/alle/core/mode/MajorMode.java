@@ -1,12 +1,12 @@
 package io.github.shomah4a.alle.core.mode;
 
-import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import java.util.Optional;
 
 /**
  * メジャーモード。バッファのファイルタイプに応じて1つだけ有効になる。
- * モード固有のキーマップとシンタックスハイライトを提供する。
+ * モード固有のキーマップとシンタックススタイリングを提供する。
  */
 public interface MajorMode {
 
@@ -22,10 +22,10 @@ public interface MajorMode {
     Optional<Keymap> keymap();
 
     /**
-     * シンタックスハイライターを返す。
-     * ハイライト不要の場合はemptyを返す。
+     * シンタックススタイラーを返す。
+     * スタイリング不要の場合はemptyを返す。
      */
-    default Optional<SyntaxHighlighter> highlighter() {
+    default Optional<SyntaxStyler> styler() {
         return Optional.empty();
     }
 }

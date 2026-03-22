@@ -2,8 +2,8 @@ package io.github.shomah4a.alle.tui;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TextColor;
-import io.github.shomah4a.alle.core.highlight.Face;
-import io.github.shomah4a.alle.core.highlight.FaceAttribute;
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceAttribute;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.map.ImmutableMap;

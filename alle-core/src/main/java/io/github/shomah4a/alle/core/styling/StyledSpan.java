@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.highlight;
+package io.github.shomah4a.alle.core.styling;
 
 /**
  * 行内の範囲とスタイルのペア。

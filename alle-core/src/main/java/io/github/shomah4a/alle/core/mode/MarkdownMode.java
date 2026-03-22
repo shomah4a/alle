@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.mode;
 
-import io.github.shomah4a.alle.core.highlight.SyntaxHighlighter;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import java.util.Optional;
 
 /**
@@ -9,7 +9,7 @@ import java.util.Optional;
  */
 public class MarkdownMode implements MajorMode {
 
-    private final MarkdownHighlighter highlighter = new MarkdownHighlighter();
+    private final MarkdownStyler styler = new MarkdownStyler();
 
     @Override
     public String name() {
@@ -22,7 +22,7 @@ public class MarkdownMode implements MajorMode {
     }
 
     @Override
-    public Optional<SyntaxHighlighter> highlighter() {
-        return Optional.of(highlighter);
+    public Optional<SyntaxStyler> styler() {
+        return Optional.of(styler);
     }
 }
