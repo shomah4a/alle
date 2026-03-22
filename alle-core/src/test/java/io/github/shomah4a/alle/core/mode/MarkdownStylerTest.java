@@ -433,6 +433,119 @@ class MarkdownStylerTest {
     }
 
     @Nested
+    class タスクリスト {
+
+        @Test
+        void 未完了タスクリストのチェックボックスにLIST_MARKER_Faceが適用される() {
+            var spans = styler.styleLine("- [ ] todo item");
+
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            // "- [ ] " = 6文字
+            assertEquals(6, spans.get(0).end());
+            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+        }
+
+        @Test
+        void 完了タスクリストのチェックボックスにLIST_MARKER_Faceが適用される() {
+            var spans = styler.styleLine("- [x] done item");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+        }
+
+        @Test
+        void 大文字Xのタスクリストが認識される() {
+            var spans = styler.styleLine("- [X] done item");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+        }
+
+        @Test
+        void アスタリスクのタスクリストが認識される() {
+            var spans = styler.styleLine("* [ ] todo");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+        }
+    }
+
+    @Nested
+    class 参照リンク {
+
+        @Test
+        void 参照リンク定義行全体にLINK_Faceが適用される() {
+            var spans = styler.styleLine("[ref]: https://example.com");
+
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            assertEquals(26, spans.get(0).end());
+            assertEquals(Face.LINK, spans.get(0).face());
+        }
+
+        @Test
+        void インライン参照リンクにLINK_Faceが適用される() {
+            var spans = styler.styleLine("See [link text][ref] here");
+
+            assertEquals(1, spans.size());
+            assertEquals(4, spans.get(0).start());
+            assertEquals(20, spans.get(0).end());
+            assertEquals(Face.LINK, spans.get(0).face());
+        }
+
+        @Test
+        void 空参照リンクが認識される() {
+            var spans = styler.styleLine("See [link text][] here");
+
+            assertEquals(1, spans.size());
+            assertEquals(Face.LINK, spans.get(0).face());
+        }
+    }
+
+    @Nested
+    class HTMLコメント {
+
+        @Test
+        void 同一行のHTMLコメントにCOMMENT_Faceが適用される() {
+            // "text <!-- comment --> more" で <!-- は位置5、--> の末尾は位置21
+            var spans = styler.styleLine("text <!-- comment --> more");
+
+            assertEquals(1, spans.size());
+            assertEquals(5, spans.get(0).start());
+            assertEquals(21, spans.get(0).end());
+            assertEquals(Face.COMMENT, spans.get(0).face());
+        }
+
+        @Test
+        void 複数行HTMLコメントの開始行でリージョンが開始される() {
+            var result = styler.styleLineWithState("<!-- start", StylingState.NONE);
+
+            assertEquals(1, result.spans().size());
+            assertEquals(Face.COMMENT, result.spans().get(0).face());
+            assertTrue(result.nextState().isInRegion());
+        }
+
+        @Test
+        void 複数行HTMLコメント内の行全体にCOMMENT_Faceが適用される() {
+            var r1 = styler.styleLineWithState("<!-- start", StylingState.NONE);
+            var r2 = styler.styleLineWithState("middle", r1.nextState());
+
+            assertEquals(1, r2.spans().size());
+            assertEquals(Face.COMMENT, r2.spans().get(0).face());
+            assertTrue(r2.nextState().isInRegion());
+        }
+
+        @Test
+        void 複数行HTMLコメントの終了行でリージョンが終了する() {
+            var r1 = styler.styleLineWithState("<!-- start", StylingState.NONE);
+            var r2 = styler.styleLineWithState("end -->", r1.nextState());
+
+            assertFalse(r2.nextState().isInRegion());
+        }
+    }
+
+    @Nested
     class 通常テキスト {
 
         @Test

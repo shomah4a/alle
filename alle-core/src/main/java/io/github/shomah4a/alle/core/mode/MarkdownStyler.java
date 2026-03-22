@@ -20,12 +20,16 @@ public class MarkdownStyler implements SyntaxStyler {
     private static final ListIterable<StylingRule> RULES = Lists.immutable.of(
             // コードブロック（``` で囲まれた複数行リージョン）
             new StylingRule.RegionMatch(Pattern.compile("^```"), Pattern.compile("^```"), Face.CODE),
+            // HTMLコメント（<!-- --> 複数行リージョン）
+            new StylingRule.RegionMatch(Pattern.compile("<!--"), Pattern.compile("-->"), Face.COMMENT),
             // 見出し（行全体）
             new StylingRule.LineMatch(Pattern.compile("^#{1,6}\\s.*"), Face.HEADING),
             // 水平線（---, ***, ___）
             new StylingRule.LineMatch(
                     Pattern.compile("^\\s*(-\\s*-\\s*-[\\s-]*|\\*\\s*\\*\\s*\\*[\\s*]*|_\\s*_\\s*_[\\s_]*)$"),
                     Face.COMMENT),
+            // 参照リンク定義（[ref]: url）
+            new StylingRule.LineMatch(Pattern.compile("^\\s*\\[[^]]+]:.*"), Face.LINK),
             // 引用（> で始まる行全体）
             new StylingRule.LineMatch(Pattern.compile("^>\\s?.*"), Face.STRING),
             // インラインコード
@@ -41,6 +45,10 @@ public class MarkdownStyler implements SyntaxStyler {
             new StylingRule.PatternMatch(Pattern.compile("!\\[[^]]*]\\([^)]+\\)"), Face.LINK),
             // リンク（[text](url)）
             new StylingRule.PatternMatch(Pattern.compile("\\[[^]]+]\\([^)]+\\)"), Face.LINK),
+            // 参照リンク（[text][ref]）
+            new StylingRule.PatternMatch(Pattern.compile("\\[[^]]+]\\[[^]]*]"), Face.LINK),
+            // タスクリストチェックボックス（- [ ] または - [x]）
+            new StylingRule.PatternMatch(Pattern.compile("^\\s*[-*+]\\s\\[[ xX]]\\s"), Face.LIST_MARKER),
             // リストマーカー（行頭の - * + または数字.）
             new StylingRule.PatternMatch(Pattern.compile("^\\s*[-*+]\\s|^\\s*\\d+\\.\\s"), Face.LIST_MARKER),
             // テーブル区切り行（|---|---|）
