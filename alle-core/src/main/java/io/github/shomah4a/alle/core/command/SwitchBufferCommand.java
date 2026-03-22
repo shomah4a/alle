@@ -1,8 +1,10 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -47,7 +49,14 @@ public class SwitchBufferCommand implements Command {
         if (bufferName.isEmpty()) {
             return;
         }
-        var buffer = context.bufferManager().findByName(bufferName);
-        buffer.ifPresent(b -> context.frame().getActiveWindow().setBuffer(b));
+        var existing = context.bufferManager().findByName(bufferName);
+        if (existing.isPresent()) {
+            context.frame().getActiveWindow().setBuffer(existing.get());
+        } else {
+            var newBuffer = new EditableBuffer(bufferName, new GapTextModel());
+            context.bufferManager().add(newBuffer);
+            context.frame().getActiveWindow().setBuffer(newBuffer);
+            context.messageBuffer().message("Buffer created: " + bufferName);
+        }
     }
 }

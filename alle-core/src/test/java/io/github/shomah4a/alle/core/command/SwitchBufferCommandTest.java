@@ -142,13 +142,73 @@ class SwitchBufferCommandTest {
     class 存在しないバッファ名 {
 
         @Test
-        void 存在しないバッファ名では何も変わらない() {
+        void 存在しないバッファ名で新規バッファに切り替わる() {
             var cmd = new SwitchBufferCommand(new InputHistory());
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("nonexistent"));
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
 
             cmd.execute(context).join();
 
-            assertEquals("*scratch*", frame.getActiveWindow().getBuffer().getName());
+            assertEquals("newbuf", frame.getActiveWindow().getBuffer().getName());
+        }
+
+        @Test
+        void 新規バッファの内容が空である() {
+            var cmd = new SwitchBufferCommand(new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
+
+            cmd.execute(context).join();
+
+            assertEquals("", frame.getActiveWindow().getBuffer().getText());
+        }
+
+        @Test
+        void 新規バッファにファイルパスが紐づいていない() {
+            var cmd = new SwitchBufferCommand(new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
+
+            cmd.execute(context).join();
+
+            assertTrue(frame.getActiveWindow().getBuffer().getFilePath().isEmpty());
+        }
+
+        @Test
+        void 新規バッファがBufferManagerに追加されている() {
+            var cmd = new SwitchBufferCommand(new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("newbuf").isPresent());
+        }
+
+        @Test
+        void 新規バッファ作成時にメッセージが表示される() {
+            var cmd = new SwitchBufferCommand(new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
+
+            cmd.execute(context).join();
+
+            assertEquals(
+                    "Buffer created: newbuf",
+                    context.messageBuffer().getLastMessage().orElse(""));
+        }
+
+        @Test
+        void 同じ名前で再度切り替えると既存バッファが使われる() {
+            var cmd = new SwitchBufferCommand(new InputHistory());
+            var context1 = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
+            cmd.execute(context1).join();
+
+            var created = bufferManager.findByName("newbuf").orElseThrow();
+            int sizeAfterCreate = bufferManager.size();
+
+            // scratchに戻してから再度newbufに切り替え
+            frame.getActiveWindow().setBuffer(scratchBuffer);
+            var context2 = TestCommandContextFactory.create(frame, bufferManager, confirming("newbuf"));
+            cmd.execute(context2).join();
+
+            assertEquals(sizeAfterCreate, bufferManager.size());
+            assertEquals(created, frame.getActiveWindow().getBuffer());
         }
     }
 
