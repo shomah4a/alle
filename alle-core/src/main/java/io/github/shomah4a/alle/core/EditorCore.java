@@ -110,6 +110,8 @@ public final class EditorCore {
         bufferManager.add(buffer);
         bufferManager.add(messageBuffer);
         bufferManager.add(warningBuffer);
+        bufferManager.add(minibufferBuffer);
+        bufferManager.switchTo("*scratch*");
 
         // モードマップ
         var autoModeMap = new AutoModeMap(TextMode::new);
@@ -128,6 +130,7 @@ public final class EditorCore {
 
         // コマンドループ
         var frameActor = io.github.shomah4a.alle.core.window.FrameActor.create(buffer, minibufferBuffer);
+        frameActor.setBufferManager(bufferManager);
         var inputPrompter = inputPrompterFactory.apply(frameActor);
         var killRing = new KillRing();
         var commandLoop = new CommandLoop(

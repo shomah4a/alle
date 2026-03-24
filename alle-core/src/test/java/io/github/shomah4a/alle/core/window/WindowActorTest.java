@@ -1,7 +1,9 @@
 package io.github.shomah4a.alle.core.window;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
+import io.github.shomah4a.alle.core.buffer.BufferActor;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
@@ -80,6 +82,35 @@ class WindowActorTest {
             actor.setBuffer(newBuffer).join();
             assertEquals("new-buffer", actor.getBuffer().join().getName());
             assertEquals(0, actor.getPoint().join());
+        }
+    }
+
+    @Nested
+    class BufferActor管理 {
+
+        @Test
+        void コンストラクタで渡したBufferActorを取得できる() {
+            var buffer = new EditableBuffer("test", new GapTextModel());
+            var bufferActor = new BufferActor(buffer);
+            var actor = new WindowActor(new Window(buffer), bufferActor);
+            assertSame(bufferActor, actor.getBufferActor());
+        }
+
+        @Test
+        void BufferActorでバッファを差し替えられる() {
+            var actor = createActor();
+            var newBuffer = new EditableBuffer("new-buffer", new GapTextModel());
+            var newActor = new BufferActor(newBuffer);
+            actor.setBuffer(newActor).join();
+            assertSame(newActor, actor.getBufferActor());
+            assertEquals("new-buffer", actor.getBuffer().join().getName());
+        }
+
+        @Test
+        void 引数なしコンストラクタでもBufferActorが生成される() {
+            var buffer = new EditableBuffer("test", new GapTextModel());
+            var actor = new WindowActor(new Window(buffer));
+            assertEquals("test", actor.getBufferActor().getName().join());
         }
     }
 

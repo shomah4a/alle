@@ -43,8 +43,7 @@ public class EditorFacade implements Loggable {
      * アクティブウィンドウのバッファのファサードを返す。
      */
     public BufferFacade currentBuffer() {
-        var buffer = frameActor.getActiveWindowActor().getBuffer().join();
-        return new BufferFacade(buffer);
+        return new BufferFacade(frameActor.getActiveWindowActor().getBufferActor());
     }
 
     /**

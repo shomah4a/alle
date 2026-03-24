@@ -3,8 +3,10 @@ package io.github.shomah4a.alle.core.buffer;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 
 /**
  * 複数のバッファを管理する。
@@ -12,10 +14,12 @@ import org.eclipse.collections.api.list.MutableList;
 public class BufferManager {
 
     private final MutableList<Buffer> buffers;
+    private final MutableMap<Buffer, BufferActor> actorMap;
     private int currentIndex;
 
     public BufferManager() {
         this.buffers = Lists.mutable.empty();
+        this.actorMap = Maps.mutable.empty();
         this.currentIndex = -1;
     }
 
@@ -24,7 +28,21 @@ public class BufferManager {
      */
     public void add(Buffer buffer) {
         buffers.add(buffer);
+        actorMap.put(buffer, new BufferActor(buffer));
         currentIndex = buffers.size() - 1;
+    }
+
+    /**
+     * 指定バッファに対応するBufferActorを返す。
+     *
+     * @throws IllegalArgumentException バッファが管理下にない場合
+     */
+    public BufferActor getActor(Buffer buffer) {
+        var actor = actorMap.get(buffer);
+        if (actor == null) {
+            throw new IllegalArgumentException("管理下にないバッファです: " + buffer.getName());
+        }
+        return actor;
     }
 
     /**
@@ -76,6 +94,7 @@ public class BufferManager {
     public boolean remove(String name) {
         for (int i = 0; i < buffers.size(); i++) {
             if (buffers.get(i).getName().equals(name)) {
+                actorMap.remove(buffers.get(i));
                 buffers.remove(i);
                 if (buffers.isEmpty()) {
                     currentIndex = -1;

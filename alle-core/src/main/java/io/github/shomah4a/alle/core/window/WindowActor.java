@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferActor;
 import io.github.shomah4a.alle.core.buffer.TextChange;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -14,9 +15,19 @@ import java.util.function.Function;
 public class WindowActor {
 
     private final Window window;
+    private BufferActor bufferActor;
 
-    public WindowActor(Window window) {
+    public WindowActor(Window window, BufferActor bufferActor) {
         this.window = window;
+        this.bufferActor = bufferActor;
+    }
+
+    /**
+     * BufferActor未指定のコンストラクタ。
+     * 既存コードとの互換用。BufferActorはWindowのバッファから生成する。
+     */
+    public WindowActor(Window window) {
+        this(window, new BufferActor(window.getBuffer()));
     }
 
     /**
@@ -36,9 +47,28 @@ public class WindowActor {
         return atomicPerform(Window::getBuffer);
     }
 
+    /**
+     * 保持中のBufferActorを返す。
+     */
+    public BufferActor getBufferActor() {
+        return bufferActor;
+    }
+
     public CompletableFuture<Void> setBuffer(Buffer buffer) {
         return atomicPerform(w -> {
             w.setBuffer(buffer);
+            return null;
+        });
+    }
+
+    /**
+     * BufferActorごとバッファを差し替える。
+     * 内部のWindowのバッファも同時に更新する。
+     */
+    public CompletableFuture<Void> setBuffer(BufferActor actor) {
+        return atomicPerform(w -> {
+            this.bufferActor = actor;
+            w.setBuffer(actor.getBuffer());
             return null;
         });
     }

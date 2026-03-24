@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -14,6 +15,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Frameへの操作をCompletableFutureで返すアクター層。
@@ -24,9 +26,18 @@ public class FrameActor {
 
     private final Frame frame;
     private final MutableMap<Window, WindowActor> windowActors = Maps.mutable.empty();
+    private @Nullable BufferManager bufferManager;
 
     public FrameActor(Frame frame) {
         this.frame = frame;
+    }
+
+    /**
+     * BufferManagerを設定する。
+     * WindowActor生成時にBufferActorを紐づけるために使用する。
+     */
+    public void setBufferManager(BufferManager bufferManager) {
+        this.bufferManager = bufferManager;
     }
 
     /**
@@ -51,7 +62,7 @@ public class FrameActor {
      */
     public WindowActor getActiveWindowActor() {
         var window = frame.getActiveWindow();
-        return windowActors.getIfAbsentPut(window, () -> new WindowActor(window));
+        return windowActors.getIfAbsentPut(window, () -> createWindowActor(window));
     }
 
     <T> CompletableFuture<T> atomicPerform(Function<Frame, T> operation) {
@@ -197,7 +208,7 @@ public class FrameActor {
      */
     public WindowActor getMinibufferWindowActor() {
         var window = frame.getMinibufferWindow();
-        return windowActors.getIfAbsentPut(window, () -> new WindowActor(window));
+        return windowActors.getIfAbsentPut(window, () -> createWindowActor(window));
     }
 
     /**
@@ -212,6 +223,14 @@ public class FrameActor {
             }
             return null;
         });
+    }
+
+    private WindowActor createWindowActor(Window window) {
+        if (bufferManager != null) {
+            var actor = bufferManager.getActor(window.getBuffer());
+            return new WindowActor(window, actor);
+        }
+        return new WindowActor(window);
     }
 
     Frame getFrame() {

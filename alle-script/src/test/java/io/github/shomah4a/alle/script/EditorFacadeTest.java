@@ -23,16 +23,17 @@ class EditorFacadeTest {
     void setUp() {
         buffer = new EditableBuffer("test.py", new GapTextModel());
         var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        var minibufferBuffer = new EditableBuffer("*Minibuffer*", new GapTextModel());
+        var minibuffer = new Window(minibufferBuffer);
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
+        bufferManager.add(minibufferBuffer);
+        bufferManager.switchTo("test.py");
         messageBuffer = new MessageBuffer("*Messages*", 100);
-        facade = new EditorFacade(
-                new io.github.shomah4a.alle.core.window.FrameActor(frame),
-                messageBuffer,
-                new CommandRegistry(),
-                new Keymap("global"));
+        var frameActor = new io.github.shomah4a.alle.core.window.FrameActor(frame);
+        frameActor.setBufferManager(bufferManager);
+        facade = new EditorFacade(frameActor, messageBuffer, new CommandRegistry(), new Keymap("global"));
     }
 
     @Test
@@ -44,7 +45,7 @@ class EditorFacadeTest {
     @Test
     void カレントバッファのファサードを取得できる() {
         BufferFacade buf = facade.currentBuffer();
-        assertEquals("test.py", buf.name());
+        assertEquals("test.py", buf.name().join());
     }
 
     @Test
@@ -66,7 +67,7 @@ class EditorFacadeTest {
     void バッファファサード経由で行数を取得できる() {
         buffer.insertText(0, "line1\nline2\nline3");
         BufferFacade buf = facade.currentBuffer();
-        assertEquals(3, buf.lineCount());
+        assertEquals(3, buf.lineCount().join());
     }
 
     @Test
