@@ -61,8 +61,7 @@ class EditorThread implements Runnable, Loggable {
         if (size.getRows() < 3) {
             return;
         }
-        var snapshot = renderer.createSnapshot(frameActor, size);
-        exchanger.publish(snapshot);
+        renderer.createSnapshot(frameActor, size).thenAccept(exchanger::publish).join();
     }
 
     /**

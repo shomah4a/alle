@@ -12,6 +12,7 @@ import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.RenderSnapshot;
 import io.github.shomah4a.alle.core.window.Separator;
+import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -39,10 +40,8 @@ public class ScreenRenderer {
      * Frameの状態からimmutableな描画スナップショットを作成する。
      * Frame.createSnapshot()に委譲する。
      */
-    RenderSnapshot createSnapshot(FrameActor frameActor, TerminalSize size) {
-        return frameActor
-                .createSnapshot(size.getColumns(), size.getRows(), messageBuffer)
-                .join();
+    CompletableFuture<RenderSnapshot> createSnapshot(FrameActor frameActor, TerminalSize size) {
+        return frameActor.createSnapshot(size.getColumns(), size.getRows(), messageBuffer);
     }
 
     /**
