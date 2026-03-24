@@ -14,6 +14,8 @@ import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -133,38 +135,23 @@ public class CommandLoop {
     private Optional<KeymapEntry> resolveKey(KeyStroke keyStroke) {
         var buffer = frame.getActiveWindow().getBuffer();
 
-        // 1. バッファローカルキーマップ（ミニバッファ用）
-        var localKeymapOpt = buffer.getLocalKeymap();
-        if (localKeymapOpt.isPresent()) {
-            var localEntry = localKeymapOpt.get().lookup(keyStroke);
-            if (localEntry.isPresent()) {
-                return localEntry;
-            }
-        }
+        var localKeymap = buffer.getLocalKeymap();
+        var minorModeKeymaps = collectMinorModeKeymaps(buffer);
+        var majorModeKeymap = buffer.getMajorMode().keymap();
 
-        // 2. マイナーモードキーマップ（後から有効にしたものが優先）
+        return keyResolver.resolveWithBuffer(keyStroke, localKeymap, minorModeKeymaps, majorModeKeymap);
+    }
+
+    /**
+     * マイナーモードのキーマップを優先順位順（後から有効にしたものが先頭）で収集する。
+     */
+    private static ListIterable<Keymap> collectMinorModeKeymaps(io.github.shomah4a.alle.core.buffer.Buffer buffer) {
         var minorModes = buffer.getMinorModes();
+        var result = Lists.mutable.<Keymap>empty();
         for (int i = minorModes.size() - 1; i >= 0; i--) {
-            var modeKeymapOpt = minorModes.get(i).keymap();
-            if (modeKeymapOpt.isPresent()) {
-                var entry = modeKeymapOpt.get().lookup(keyStroke);
-                if (entry.isPresent()) {
-                    return entry;
-                }
-            }
+            minorModes.get(i).keymap().ifPresent(result::add);
         }
-
-        // 3. メジャーモードキーマップ
-        var majorKeymapOpt = buffer.getMajorMode().keymap();
-        if (majorKeymapOpt.isPresent()) {
-            var entry = majorKeymapOpt.get().lookup(keyStroke);
-            if (entry.isPresent()) {
-                return entry;
-            }
-        }
-
-        // 4. グローバルキーマップ
-        return keyResolver.resolve(keyStroke);
+        return result;
     }
 
     private void handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {

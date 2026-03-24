@@ -1,11 +1,18 @@
 package io.github.shomah4a.alle.core.window;
 
+import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.styling.StylingState;
+import io.github.shomah4a.alle.core.styling.SyntaxStyler;
+import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
 
 /**
  * エディタのフレーム。
  * ターミナル(TUI)またはOSウィンドウ(GUI)1つに対応する。
  * ウィンドウツリーとミニバッファウィンドウを保持し、ウィンドウの分割・削除・切り替えを管理する。
+ * また、描画用のスナップショット生成の責務を持つ。
  */
 public class Frame {
 
@@ -149,6 +156,159 @@ public class Frame {
         int index = windows.indexOf(activeWindow);
         int nextIndex = (index + 1) % windows.size();
         activeWindow = windows.get(nextIndex);
+    }
+
+    /**
+     * Frameの現在の状態からimmutableな描画スナップショットを生成する。
+     * ensurePointVisible等の副作用を伴う調整もここで行う。
+     *
+     * @param cols 画面カラム数
+     * @param rows 画面行数
+     * @param messageBuffer エコーエリア表示用のメッセージバッファ
+     * @return 描画スナップショット
+     */
+    public RenderSnapshot createSnapshot(int cols, int rows, MessageBuffer messageBuffer) {
+        int windowAreaRows = rows - 1;
+        int minibufferRow = rows - 1;
+
+        var treeArea = new Rect(0, 0, cols, windowAreaRows);
+        var layoutResult = WindowLayout.compute(windowTree, treeArea);
+
+        var windowSnapshots = Lists.mutable.<RenderSnapshot.WindowSnapshot>empty();
+
+        layoutResult.windowRects().forEachKeyValue((window, rect) -> {
+            if (rect.height() < 2) {
+                return;
+            }
+            int bufferRows = rect.height() - 1;
+            window.ensurePointVisible(bufferRows);
+            window.ensurePointHorizontallyVisible(rect.width());
+
+            var buffer = window.getBuffer();
+            int lineCount = buffer.lineCount();
+            int displayStart = window.getDisplayStartLine();
+            int displayStartColumn = window.getDisplayStartColumn();
+            var stylerOpt = buffer.getMajorMode().styler();
+
+            var visibleLines = Lists.mutable.<RenderSnapshot.LineSnapshot>empty();
+            if (stylerOpt.isPresent()) {
+                SyntaxStyler styler = stylerOpt.get();
+                StylingState styleState = styler.initialState();
+                for (int i = 0; i < displayStart && i < lineCount; i++) {
+                    styleState = styler.styleLineWithState(buffer.lineText(i), styleState)
+                            .nextState();
+                }
+                for (int row = 0; row < bufferRows; row++) {
+                    int lineIndex = displayStart + row;
+                    if (lineIndex < lineCount) {
+                        String lineText = buffer.lineText(lineIndex);
+                        var result = styler.styleLineWithState(lineText, styleState);
+                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(result.spans())));
+                        styleState = result.nextState();
+                    }
+                }
+            } else {
+                for (int row = 0; row < bufferRows; row++) {
+                    int lineIndex = displayStart + row;
+                    if (lineIndex < lineCount) {
+                        String lineText = buffer.lineText(lineIndex);
+                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.empty()));
+                    }
+                }
+            }
+
+            String modeLine = buildModeLineText(window);
+            windowSnapshots.add(new RenderSnapshot.WindowSnapshot(rect, visibleLines, displayStartColumn, modeLine));
+        });
+
+        // ミニバッファ / エコーエリア
+        RenderSnapshot.MinibufferSnapshot minibufferSnapshot;
+        if (minibufferActive) {
+            minibufferWindow.ensurePointHorizontallyVisible(cols);
+            var buffer = minibufferWindow.getBuffer();
+            String text = buffer.length() > 0 ? buffer.getText() : "";
+            minibufferSnapshot =
+                    new RenderSnapshot.MinibufferSnapshot(Optional.of(text), minibufferWindow.getDisplayStartColumn());
+        } else if (messageBuffer.isShowingMessage()) {
+            var msg = messageBuffer.getLastMessage();
+            minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(msg, 0);
+        } else {
+            minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(Optional.empty(), 0);
+        }
+
+        // カーソル位置
+        int cursorColumn;
+        int cursorRow;
+        if (minibufferActive) {
+            var mbCursor = computeMinibufferCursorPosition(minibufferWindow, minibufferRow, cols);
+            cursorColumn = mbCursor[0];
+            cursorRow = mbCursor[1];
+        } else {
+            var activeRect = layoutResult.windowRects().get(activeWindow);
+            if (activeRect != null && activeRect.height() >= 2) {
+                var cursor = computeCursorPosition(activeWindow, activeRect);
+                cursorColumn = cursor[0];
+                cursorRow = cursor[1];
+            } else {
+                cursorColumn = 0;
+                cursorRow = 0;
+            }
+        }
+
+        return new RenderSnapshot(
+                cols, rows, windowSnapshots, layoutResult.separators(), minibufferSnapshot, cursorColumn, cursorRow);
+    }
+
+    private static String buildModeLineText(Window window) {
+        var buffer = window.getBuffer();
+        int point = window.getPoint();
+        int lineIndex = buffer.lineIndexForOffset(point);
+        int lineStart = buffer.lineStartOffset(lineIndex);
+        int column = point - lineStart;
+
+        String dirty = buffer.isDirty() ? "**" : "--";
+        String bufferName = buffer.getName();
+        String modeName = buffer.getMajorMode().name();
+        return String.format("--%s  %s    (%d,%d)  (%s)", dirty, bufferName, lineIndex + 1, column, modeName);
+    }
+
+    /**
+     * @return {column, row}
+     */
+    private static int[] computeCursorPosition(Window window, Rect rect) {
+        var buffer = window.getBuffer();
+        int point = window.getPoint();
+        int lineIndex = buffer.lineIndexForOffset(point);
+        int lineStart = buffer.lineStartOffset(lineIndex);
+        int displayStart = window.getDisplayStartLine();
+        int bufferRows = rect.height() - 1;
+
+        int screenRow = lineIndex - displayStart;
+        if (screenRow < 0 || screenRow >= bufferRows) {
+            return new int[] {rect.left(), rect.top()};
+        }
+
+        int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
+        int screenCol = col - window.getDisplayStartColumn();
+        if (screenCol >= 0 && screenCol < rect.width()) {
+            return new int[] {rect.left() + screenCol, rect.top() + screenRow};
+        }
+        return new int[] {rect.left(), rect.top()};
+    }
+
+    /**
+     * @return {column, row}
+     */
+    private static int[] computeMinibufferCursorPosition(Window minibufferWindow, int row, int maxColumns) {
+        var buffer = minibufferWindow.getBuffer();
+        int point = minibufferWindow.getPoint();
+        String text = buffer.getText();
+        int col = DisplayWidthUtil.computeColumnForOffset(text, point);
+        int screenCol = col - minibufferWindow.getDisplayStartColumn();
+        if (screenCol >= 0 && screenCol < maxColumns) {
+            return new int[] {screenCol, row};
+        }
+        return new int[] {0, row};
     }
 
     /**
