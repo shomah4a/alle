@@ -1,9 +1,13 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.MajorMode;
+import io.github.shomah4a.alle.core.mode.MinorMode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * Bufferへの操作をCompletableFutureで返すアクター層。
@@ -98,6 +102,69 @@ public class BufferActor {
 
     public CompletableFuture<String> getText() {
         return atomicPerform(Buffer::getText);
+    }
+
+    // ── 読み取り専用判定 ──
+
+    public CompletableFuture<Boolean> isReadOnly() {
+        return atomicPerform(Buffer::isReadOnly);
+    }
+
+    public CompletableFuture<Boolean> isSystemBuffer() {
+        return atomicPerform(Buffer::isSystemBuffer);
+    }
+
+    // ── モード ──
+
+    public CompletableFuture<MajorMode> getMajorMode() {
+        return atomicPerform(Buffer::getMajorMode);
+    }
+
+    public CompletableFuture<Void> setMajorMode(MajorMode majorMode) {
+        return atomicPerform(b -> {
+            b.setMajorMode(majorMode);
+            return null;
+        });
+    }
+
+    public CompletableFuture<ListIterable<MinorMode>> getMinorModes() {
+        return atomicPerform(Buffer::getMinorModes);
+    }
+
+    // ── キーマップ ──
+
+    public CompletableFuture<Optional<Keymap>> getLocalKeymap() {
+        return atomicPerform(Buffer::getLocalKeymap);
+    }
+
+    public CompletableFuture<Void> setLocalKeymap(Keymap keymap) {
+        return atomicPerform(b -> {
+            b.setLocalKeymap(keymap);
+            return null;
+        });
+    }
+
+    public CompletableFuture<Void> clearLocalKeymap() {
+        return atomicPerform(b -> {
+            b.clearLocalKeymap();
+            return null;
+        });
+    }
+
+    // ── テキストプロパティ ──
+
+    public CompletableFuture<Void> putReadOnly(int start, int end) {
+        return atomicPerform(b -> {
+            b.putReadOnly(start, end);
+            return null;
+        });
+    }
+
+    public CompletableFuture<Void> removeReadOnly(int start, int end) {
+        return atomicPerform(b -> {
+            b.removeReadOnly(start, end);
+            return null;
+        });
     }
 
     /**
