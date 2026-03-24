@@ -16,30 +16,9 @@ public class KillRegionCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            var regionStart = window.getRegionStart();
-            var regionEnd = window.getRegionEnd();
-            if (regionStart.isEmpty() || regionEnd.isEmpty()) {
-                return null;
-            }
-
-            int start = regionStart.get();
-            int end = regionEnd.get();
-            if (start == end) {
-                return null;
-            }
-
-            var buffer = window.getBuffer();
-            int cursorBefore = window.getPoint();
-            String killedText = buffer.substring(start, end);
-            var inverseChange = buffer.deleteText(start, end - start);
-            buffer.getUndoManager().record(inverseChange, cursorBefore);
-            buffer.markDirty();
-            window.setPoint(start);
-            window.clearMark();
-
-            context.killRing().push(killedText);
-            return null;
-        });
+        return context.activeWindowActor()
+                .killRegion()
+                .thenAccept(textOpt ->
+                        textOpt.ifPresent(killedText -> context.killRing().push(killedText)));
     }
 }

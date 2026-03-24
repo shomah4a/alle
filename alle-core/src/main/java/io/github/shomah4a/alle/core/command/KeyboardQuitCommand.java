@@ -15,10 +15,8 @@ public class KeyboardQuitCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            window.clearMark();
-            context.messageBuffer().message("Quit");
-            return null;
-        });
+        return context.activeWindowActor()
+                .clearMark()
+                .thenRun(() -> context.messageBuffer().message("Quit"));
     }
 }

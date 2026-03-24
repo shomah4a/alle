@@ -15,13 +15,6 @@ public class BeginningOfLineCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            var buffer = window.getBuffer();
-            int point = window.getPoint();
-            int lineIndex = buffer.lineIndexForOffset(point);
-            int lineStart = buffer.lineStartOffset(lineIndex);
-            window.setPoint(lineStart);
-            return null;
-        });
+        return context.activeWindowActor().moveToBeginningOfLine();
     }
 }

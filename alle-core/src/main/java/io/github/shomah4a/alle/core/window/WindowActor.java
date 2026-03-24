@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.TextChange;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -90,5 +92,275 @@ public class WindowActor {
      */
     public Window getWindow() {
         return window;
+    }
+
+    // ── カーソル移動 ──
+
+    /**
+     * カーソルを1文字前方に移動する。バッファ末尾では何もしない。
+     */
+    public CompletableFuture<Void> moveForward() {
+        return atomicPerform(w -> {
+            int point = w.getPoint();
+            if (point < w.getBuffer().length()) {
+                w.setPoint(point + 1);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * カーソルを1文字後方に移動する。バッファ先頭では何もしない。
+     */
+    public CompletableFuture<Void> moveBackward() {
+        return atomicPerform(w -> {
+            int point = w.getPoint();
+            if (point > 0) {
+                w.setPoint(point - 1);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * カーソルを次の行に移動する。最終行では何もしない。
+     * 移動先の行が現在のカラム位置より短い場合は行末に移動する。
+     */
+    public CompletableFuture<Void> moveToNextLine() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            int point = w.getPoint();
+            int currentLine = buffer.lineIndexForOffset(point);
+            if (currentLine >= buffer.lineCount() - 1) {
+                return null;
+            }
+            int currentLineStart = buffer.lineStartOffset(currentLine);
+            int column = point - currentLineStart;
+            int nextLineStart = buffer.lineStartOffset(currentLine + 1);
+            int nextLineLength =
+                    (int) buffer.lineText(currentLine + 1).codePoints().count();
+            w.setPoint(nextLineStart + Math.min(column, nextLineLength));
+            return null;
+        });
+    }
+
+    /**
+     * カーソルを前の行に移動する。先頭行では何もしない。
+     * 移動先の行が現在のカラム位置より短い場合は行末に移動する。
+     */
+    public CompletableFuture<Void> moveToPreviousLine() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            int point = w.getPoint();
+            int currentLine = buffer.lineIndexForOffset(point);
+            if (currentLine <= 0) {
+                return null;
+            }
+            int currentLineStart = buffer.lineStartOffset(currentLine);
+            int column = point - currentLineStart;
+            int prevLineStart = buffer.lineStartOffset(currentLine - 1);
+            int prevLineLength =
+                    (int) buffer.lineText(currentLine - 1).codePoints().count();
+            w.setPoint(prevLineStart + Math.min(column, prevLineLength));
+            return null;
+        });
+    }
+
+    /**
+     * カーソルを行頭に移動する。
+     */
+    public CompletableFuture<Void> moveToBeginningOfLine() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            int lineIndex = buffer.lineIndexForOffset(w.getPoint());
+            w.setPoint(buffer.lineStartOffset(lineIndex));
+            return null;
+        });
+    }
+
+    /**
+     * カーソルを行末に移動する。
+     */
+    public CompletableFuture<Void> moveToEndOfLine() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            int lineIndex = buffer.lineIndexForOffset(w.getPoint());
+            int lineStart = buffer.lineStartOffset(lineIndex);
+            int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
+            w.setPoint(lineStart + lineLength);
+            return null;
+        });
+    }
+
+    // ── マーク操作 ──
+
+    /**
+     * 指定位置にmarkを設定する。
+     */
+    public CompletableFuture<Void> setMark(int position) {
+        return atomicPerform(w -> {
+            w.setMark(position);
+            return null;
+        });
+    }
+
+    /**
+     * markをクリアする。
+     */
+    public CompletableFuture<Void> clearMark() {
+        return atomicPerform(w -> {
+            w.clearMark();
+            return null;
+        });
+    }
+
+    /**
+     * markの位置を返す。
+     */
+    public CompletableFuture<Optional<Integer>> getMark() {
+        return atomicPerform(Window::getMark);
+    }
+
+    /**
+     * regionの開始位置を返す。markが未設定の場合はempty。
+     */
+    public CompletableFuture<Optional<Integer>> getRegionStart() {
+        return atomicPerform(Window::getRegionStart);
+    }
+
+    /**
+     * regionの終了位置を返す。markが未設定の場合はempty。
+     */
+    public CompletableFuture<Optional<Integer>> getRegionEnd() {
+        return atomicPerform(Window::getRegionEnd);
+    }
+
+    // ── テキスト編集（ドメイン操作） ──
+
+    /**
+     * カーソルから行末まで削除し、削除テキストを返す。
+     * 行末にいる場合は改行を削除。バッファ末尾では何もしない。
+     */
+    public CompletableFuture<Optional<String>> killLine() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            int point = w.getPoint();
+            int bufferLength = buffer.length();
+            if (point >= bufferLength) {
+                return Optional.empty();
+            }
+            int lineIndex = buffer.lineIndexForOffset(point);
+            int lineStart = buffer.lineStartOffset(lineIndex);
+            int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
+            int lineEnd = lineStart + lineLength;
+
+            int deleteCount = (point < lineEnd) ? lineEnd - point : 1;
+            String killedText = buffer.substring(point, point + deleteCount);
+            w.deleteForward(deleteCount);
+            return Optional.of(killedText);
+        });
+    }
+
+    /**
+     * mark〜point間のテキストを削除し、削除テキストを返す。
+     * markが未設定の場合はempty。undo記録付き。
+     */
+    public CompletableFuture<Optional<String>> killRegion() {
+        return atomicPerform(w -> {
+            var regionStart = w.getRegionStart();
+            var regionEnd = w.getRegionEnd();
+            if (regionStart.isEmpty() || regionEnd.isEmpty()) {
+                return Optional.empty();
+            }
+            int start = regionStart.get();
+            int end = regionEnd.get();
+            if (start == end) {
+                return Optional.empty();
+            }
+            var buffer = w.getBuffer();
+            int cursorBefore = w.getPoint();
+            String killedText = buffer.substring(start, end);
+            var inverseChange = buffer.deleteText(start, end - start);
+            buffer.getUndoManager().record(inverseChange, cursorBefore);
+            buffer.markDirty();
+            w.setPoint(start);
+            w.clearMark();
+            return Optional.of(killedText);
+        });
+    }
+
+    /**
+     * mark〜point間のテキストを返す（削除しない）。markが未設定の場合はempty。
+     */
+    public CompletableFuture<Optional<String>> copyRegion() {
+        return atomicPerform(w -> {
+            var regionStart = w.getRegionStart();
+            var regionEnd = w.getRegionEnd();
+            if (regionStart.isEmpty() || regionEnd.isEmpty()) {
+                return Optional.empty();
+            }
+            int start = regionStart.get();
+            int end = regionEnd.get();
+            if (start == end) {
+                return Optional.empty();
+            }
+            String copiedText = w.getBuffer().substring(start, end);
+            w.clearMark();
+            return Optional.of(copiedText);
+        });
+    }
+
+    // ── Undo / Redo ──
+
+    /**
+     * 直前の変更を取り消す。undoできた場合true。
+     */
+    public CompletableFuture<Boolean> undo() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            var undoManager = buffer.getUndoManager();
+            var entryOpt = undoManager.undo();
+            if (entryOpt.isEmpty()) {
+                return false;
+            }
+            var entry = entryOpt.get();
+            undoManager.suppressRecording();
+            try {
+                buffer.apply(entry.change());
+                w.setPoint(entry.cursorPosition());
+            } finally {
+                undoManager.resumeRecording();
+            }
+            return true;
+        });
+    }
+
+    /**
+     * 直前のundoをやり直す。redoできた場合true。
+     */
+    public CompletableFuture<Boolean> redo() {
+        return atomicPerform(w -> {
+            var buffer = w.getBuffer();
+            var undoManager = buffer.getUndoManager();
+            var entryOpt = undoManager.redo();
+            if (entryOpt.isEmpty()) {
+                return false;
+            }
+            var entry = entryOpt.get();
+            undoManager.suppressRecording();
+            try {
+                buffer.apply(entry.change());
+                var change = entry.change();
+                if (change instanceof TextChange.Insert insert) {
+                    int insertedLen = (int) insert.text().codePoints().count();
+                    w.setPoint(insert.offset() + insertedLen);
+                } else if (change instanceof TextChange.Delete delete) {
+                    w.setPoint(delete.offset());
+                }
+            } finally {
+                undoManager.resumeRecording();
+            }
+            return true;
+        });
     }
 }

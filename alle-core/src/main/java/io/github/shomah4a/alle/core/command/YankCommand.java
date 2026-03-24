@@ -16,13 +16,10 @@ public class YankCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            var textOpt = context.killRing().current();
-            if (textOpt.isEmpty()) {
-                return null;
-            }
-            window.insert(textOpt.get());
-            return null;
-        });
+        var textOpt = context.killRing().current();
+        if (textOpt.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return context.activeWindowActor().insert(textOpt.get());
     }
 }

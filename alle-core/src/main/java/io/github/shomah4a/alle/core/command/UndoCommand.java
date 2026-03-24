@@ -15,22 +15,6 @@ public class UndoCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            var buffer = window.getBuffer();
-            var undoManager = buffer.getUndoManager();
-            var entryOpt = undoManager.undo();
-            if (entryOpt.isEmpty()) {
-                return null;
-            }
-            var entry = entryOpt.get();
-            undoManager.suppressRecording();
-            try {
-                buffer.apply(entry.change());
-                window.setPoint(entry.cursorPosition());
-            } finally {
-                undoManager.resumeRecording();
-            }
-            return null;
-        });
+        return context.activeWindowActor().undo().thenApply(v -> null);
     }
 }

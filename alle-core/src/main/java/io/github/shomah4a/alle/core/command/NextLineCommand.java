@@ -16,27 +16,6 @@ public class NextLineCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var actor = context.activeWindowActor();
-        return actor.atomicPerform(window -> {
-            var buffer = window.getBuffer();
-            int point = window.getPoint();
-            int currentLine = buffer.lineIndexForOffset(point);
-            int lineCount = buffer.lineCount();
-
-            if (currentLine >= lineCount - 1) {
-                return null;
-            }
-
-            int currentLineStart = buffer.lineStartOffset(currentLine);
-            int column = point - currentLineStart;
-
-            int nextLineStart = buffer.lineStartOffset(currentLine + 1);
-            int nextLineLength =
-                    (int) buffer.lineText(currentLine + 1).codePoints().count();
-            int newColumn = Math.min(column, nextLineLength);
-
-            window.setPoint(nextLineStart + newColumn);
-            return null;
-        });
+        return context.activeWindowActor().moveToNextLine();
     }
 }
