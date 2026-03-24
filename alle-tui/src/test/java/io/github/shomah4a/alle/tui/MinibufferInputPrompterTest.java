@@ -219,7 +219,12 @@ class MinibufferInputPrompterTest {
             // CommandLoopを作成してミニバッファのキーマップを使って文字入力
             var resolver = new KeyResolver();
             var bufferManager = new BufferManager();
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, prompter);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(),
+                    resolver,
+                    new io.github.shomah4a.alle.core.window.FrameActor(frame),
+                    bufferManager,
+                    prompter);
 
             // ミニバッファがアクティブな状態でキー入力
             loop.processKey(KeyStroke.of('t'));
@@ -237,7 +242,12 @@ class MinibufferInputPrompterTest {
 
             var resolver = new KeyResolver();
             var bufferManager = new BufferManager();
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, prompter);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(),
+                    resolver,
+                    new io.github.shomah4a.alle.core.window.FrameActor(frame),
+                    bufferManager,
+                    prompter);
 
             loop.processKey(KeyStroke.of('a'));
             loop.processKey(KeyStroke.of('b'));

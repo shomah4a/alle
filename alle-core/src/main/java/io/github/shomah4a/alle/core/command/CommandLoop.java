@@ -9,13 +9,10 @@ import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
-import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.FrameActor;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -33,7 +30,6 @@ public class CommandLoop {
 
     private final InputSource inputSource;
     private final KeyResolver keyResolver;
-    private final Frame frame;
     private final FrameActor frameActor;
     private final BufferManager bufferManager;
     private final InputPrompter inputPrompter;
@@ -51,14 +47,13 @@ public class CommandLoop {
     public CommandLoop(
             InputSource inputSource,
             KeyResolver keyResolver,
-            Frame frame,
+            FrameActor frameActor,
             BufferManager bufferManager,
             InputPrompter inputPrompter) {
         this(
                 inputSource,
                 keyResolver,
-                frame,
-                new FrameActor(frame),
+                frameActor,
                 bufferManager,
                 inputPrompter,
                 new KillRing(),
@@ -69,7 +64,6 @@ public class CommandLoop {
     public CommandLoop(
             InputSource inputSource,
             KeyResolver keyResolver,
-            Frame frame,
             FrameActor frameActor,
             BufferManager bufferManager,
             InputPrompter inputPrompter,
@@ -78,7 +72,6 @@ public class CommandLoop {
             MessageBuffer warningBuffer) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
-        this.frame = frame;
         this.frameActor = frameActor;
         this.bufferManager = bufferManager;
         this.inputPrompter = inputPrompter;
@@ -137,25 +130,7 @@ public class CommandLoop {
     }
 
     private Optional<KeymapEntry> resolveKey(KeyStroke keyStroke) {
-        var buffer = frame.getActiveWindow().getBuffer();
-
-        var localKeymap = buffer.getLocalKeymap();
-        var minorModeKeymaps = collectMinorModeKeymaps(buffer);
-        var majorModeKeymap = buffer.getMajorMode().keymap();
-
-        return keyResolver.resolveWithBuffer(keyStroke, localKeymap, minorModeKeymaps, majorModeKeymap);
-    }
-
-    /**
-     * マイナーモードのキーマップを優先順位順（後から有効にしたものが先頭）で収集する。
-     */
-    private static ListIterable<Keymap> collectMinorModeKeymaps(io.github.shomah4a.alle.core.buffer.Buffer buffer) {
-        var minorModes = buffer.getMinorModes();
-        var result = Lists.mutable.<Keymap>empty();
-        for (int i = minorModes.size() - 1; i >= 0; i--) {
-            minorModes.get(i).keymap().ifPresent(result::add);
-        }
-        return result;
+        return frameActor.resolveKey(keyStroke, keyResolver).join();
     }
 
     private void handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {

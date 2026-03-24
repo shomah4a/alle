@@ -136,7 +136,6 @@ public final class EditorCore {
         var commandLoop = new CommandLoop(
                 inputSource,
                 resolver,
-                frame,
                 frameActor,
                 bufferManager,
                 inputPrompter,

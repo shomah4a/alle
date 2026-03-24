@@ -13,6 +13,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.Iterator;
 import java.util.Optional;
@@ -53,7 +54,7 @@ class CommandLoopTest {
             resolver.addKeymap(keymap);
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('H'), KeyStroke.of('i')));
 
-            var loop = new CommandLoop(input, resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(input, resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.run();
 
             assertEquals("Hi", frame.getActiveWindow().getBuffer().getText());
@@ -69,7 +70,7 @@ class CommandLoopTest {
             resolver.addKeymap(keymap);
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('\u3042'), KeyStroke.of('\u3044')));
 
-            var loop = new CommandLoop(input, resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(input, resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.run();
 
             assertEquals("\u3042\u3044", frame.getActiveWindow().getBuffer().getText());
@@ -82,7 +83,7 @@ class CommandLoopTest {
             var resolver = new KeyResolver();
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.of('H'), KeyStroke.of('i')));
 
-            var loop = new CommandLoop(input, resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(input, resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.run();
 
             assertEquals("", frame.getActiveWindow().getBuffer().getText());
@@ -106,7 +107,7 @@ class CommandLoopTest {
 
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.ctrl('f'), KeyStroke.ctrl('f')));
 
-            var loop = new CommandLoop(input, resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(input, resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.run();
 
             assertEquals(2, frame.getActiveWindow().getPoint());
@@ -132,7 +133,7 @@ class CommandLoopTest {
 
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.ctrl('x'), KeyStroke.ctrl('b')));
 
-            var loop = new CommandLoop(input, resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(input, resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.run();
 
             assertEquals(4, frame.getActiveWindow().getPoint());
@@ -151,7 +152,7 @@ class CommandLoopTest {
 
             var input = fromKeyStrokes(Lists.immutable.of(KeyStroke.ctrl('x'), KeyStroke.ctrl('z')));
 
-            var loop = new CommandLoop(input, resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(input, resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.run();
 
             assertEquals("", frame.getActiveWindow().getBuffer().getText());
@@ -195,7 +196,8 @@ class CommandLoopTest {
             var resolver = new KeyResolver();
             resolver.addKeymap(keymap);
 
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(), resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.processKey(KeyStroke.ctrl('a'));
 
             assertEquals(1, cmd.capturedContexts.size());
@@ -215,7 +217,8 @@ class CommandLoopTest {
             var resolver = new KeyResolver();
             resolver.addKeymap(keymap);
 
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(), resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.processKey(KeyStroke.ctrl('a'));
             loop.processKey(KeyStroke.ctrl('b'));
 
@@ -235,7 +238,8 @@ class CommandLoopTest {
             var resolver = new KeyResolver();
             resolver.addKeymap(keymap);
 
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(), resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.processKey(KeyStroke.ctrl('a'));
             loop.processKey(KeyStroke.ctrl('a'));
 
@@ -257,7 +261,8 @@ class CommandLoopTest {
             var resolver = new KeyResolver();
             resolver.addKeymap(keymap);
 
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(), resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.processKey(KeyStroke.of('A'));
 
             assertEquals("A", frame.getActiveWindow().getBuffer().getText());
@@ -269,7 +274,8 @@ class CommandLoopTest {
             var bufferManager = new BufferManager();
             var resolver = new KeyResolver();
 
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, NOOP_PROMPTER);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(), resolver, new FrameActor(frame), bufferManager, NOOP_PROMPTER);
             loop.processKey(KeyStroke.of('A'));
 
             assertEquals("", frame.getActiveWindow().getBuffer().getText());

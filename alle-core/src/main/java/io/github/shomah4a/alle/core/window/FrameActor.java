@@ -1,9 +1,17 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.keybind.KeyResolver;
+import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.keybind.KeymapEntry;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 
@@ -113,10 +121,83 @@ public class FrameActor {
         return atomicPerform(Frame::getDisplayedBufferNames);
     }
 
+    // ── スナップショット ──
+
     /**
-     * ラップしているFrameを直接取得する。
-     * レンダリング等の同期的なアクセスが必要な場合に使用する。
+     * 描画用スナップショットを生成する。
      */
+    public CompletableFuture<RenderSnapshot> createSnapshot(int cols, int rows, MessageBuffer messageBuffer) {
+        return atomicPerform(f -> f.createSnapshot(cols, rows, messageBuffer));
+    }
+
+    // ── キーマップ解決 ──
+
+    /**
+     * アクティブウィンドウのバッファのキーマップ情報を含めた4階層でキーストロークを解決する。
+     */
+    public CompletableFuture<Optional<KeymapEntry>> resolveKey(KeyStroke keyStroke, KeyResolver keyResolver) {
+        return atomicPerform(f -> {
+            var buffer = f.getActiveWindow().getBuffer();
+            var localKeymap = buffer.getLocalKeymap();
+            var minorModeKeymaps = collectMinorModeKeymaps(buffer);
+            var majorModeKeymap = buffer.getMajorMode().keymap();
+            return keyResolver.resolveWithBuffer(keyStroke, localKeymap, minorModeKeymaps, majorModeKeymap);
+        });
+    }
+
+    private static ListIterable<Keymap> collectMinorModeKeymaps(Buffer buffer) {
+        var minorModes = buffer.getMinorModes();
+        var result = Lists.mutable.<Keymap>empty();
+        for (int i = minorModes.size() - 1; i >= 0; i--) {
+            minorModes.get(i).keymap().ifPresent(result::add);
+        }
+        return result;
+    }
+
+    // ── ミニバッファ ──
+
+    /**
+     * ミニバッファを入力受付状態にする。
+     */
+    public CompletableFuture<Void> activateMinibuffer() {
+        return atomicPerform(f -> {
+            f.activateMinibuffer();
+            return null;
+        });
+    }
+
+    /**
+     * ミニバッファの入力受付状態を解除する。
+     */
+    public CompletableFuture<Void> deactivateMinibuffer() {
+        return atomicPerform(f -> {
+            f.deactivateMinibuffer();
+            return null;
+        });
+    }
+
+    /**
+     * ミニバッファウィンドウのWindowActorを返す。
+     */
+    public WindowActor getMinibufferWindowActor() {
+        var window = frame.getMinibufferWindow();
+        return windowActors.getIfAbsentPut(window, () -> new WindowActor(window));
+    }
+
+    /**
+     * アクティブウィンドウを設定する。WindowActorから内部Windowを解決する。
+     */
+    public CompletableFuture<Void> setActiveWindow(WindowActor actor) {
+        return atomicPerform(f -> {
+            // WindowActor のマッピングから Window を逆引き
+            var window = windowActors.keysView().detect(w -> windowActors.get(w) == actor);
+            if (window != null) {
+                f.setActiveWindow(window);
+            }
+            return null;
+        });
+    }
+
     Frame getFrame() {
         return frame;
     }
