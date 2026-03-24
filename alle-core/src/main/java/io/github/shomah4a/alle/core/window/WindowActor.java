@@ -94,6 +94,22 @@ public class WindowActor {
         return window;
     }
 
+    // ── バッファ切り替え ──
+
+    /**
+     * 直前に表示していたバッファの名前を返す。
+     */
+    public CompletableFuture<Optional<String>> getPreviousBufferName() {
+        return atomicPerform(w -> w.getPreviousBuffer().map(b -> b.getName()));
+    }
+
+    /**
+     * バッファ名を返す。
+     */
+    public CompletableFuture<String> getBufferName() {
+        return atomicPerform(w -> w.getBuffer().getName());
+    }
+
     // ── カーソル移動 ──
 
     /**
