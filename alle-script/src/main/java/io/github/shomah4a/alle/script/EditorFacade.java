@@ -7,8 +7,7 @@ import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
-import io.github.shomah4a.alle.core.window.Frame;
-import io.github.shomah4a.alle.core.window.WindowActor;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import java.util.List;
 import java.util.Optional;
 import org.graalvm.polyglot.Value;
@@ -20,14 +19,14 @@ import org.graalvm.polyglot.Value;
  */
 public class EditorFacade implements Loggable {
 
-    private final Frame frame;
+    private final FrameActor frameActor;
     private final MessageBuffer messageBuffer;
     private final CommandRegistry commandRegistry;
     private final Keymap globalKeymap;
 
     public EditorFacade(
-            Frame frame, MessageBuffer messageBuffer, CommandRegistry commandRegistry, Keymap globalKeymap) {
-        this.frame = frame;
+            FrameActor frameActor, MessageBuffer messageBuffer, CommandRegistry commandRegistry, Keymap globalKeymap) {
+        this.frameActor = frameActor;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
         this.globalKeymap = globalKeymap;
@@ -37,14 +36,15 @@ public class EditorFacade implements Loggable {
      * アクティブウィンドウのファサードを返す。
      */
     public WindowFacade activeWindow() {
-        return new WindowFacade(new WindowActor(frame.getActiveWindow()));
+        return new WindowFacade(frameActor.getActiveWindowActor());
     }
 
     /**
      * アクティブウィンドウのバッファのファサードを返す。
      */
     public BufferFacade currentBuffer() {
-        return new BufferFacade(frame.getActiveWindow().getBuffer());
+        var buffer = frameActor.getActiveWindowActor().getBuffer().join();
+        return new BufferFacade(buffer);
     }
 
     /**

@@ -30,6 +30,22 @@ public class FrameActor {
     }
 
     /**
+     * 初期バッファ名を指定してFrameActorを生成するファクトリ。
+     * 内部でFrame, Window, EditableBufferを構築する。
+     *
+     * @param initialBuffer 初期ウィンドウに表示するバッファ
+     * @param minibufferBuffer ミニバッファのバッファ
+     */
+    public static FrameActor create(
+            io.github.shomah4a.alle.core.buffer.Buffer initialBuffer,
+            io.github.shomah4a.alle.core.buffer.Buffer minibufferBuffer) {
+        var window = new Window(initialBuffer);
+        var minibufferWindow = new Window(minibufferBuffer);
+        var frame = new Frame(window, minibufferWindow);
+        return new FrameActor(frame);
+    }
+
+    /**
      * アクティブウィンドウのWindowActorを返す。
      * 同一Windowに対して常に同じWindowActorインスタンスを返す。
      */

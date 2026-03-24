@@ -49,8 +49,7 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
-import io.github.shomah4a.alle.core.window.Frame;
-import io.github.shomah4a.alle.core.window.Window;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import java.nio.file.Path;
 import java.util.function.Function;
 
@@ -61,7 +60,7 @@ import java.util.function.Function;
  */
 public final class EditorCore {
 
-    private final Frame frame;
+    private final FrameActor frameActor;
     private final BufferManager bufferManager;
     private final MessageBuffer messageBuffer;
     private final CommandRegistry commandRegistry;
@@ -69,13 +68,13 @@ public final class EditorCore {
     private final CommandLoop commandLoop;
 
     private EditorCore(
-            Frame frame,
+            FrameActor frameActor,
             BufferManager bufferManager,
             MessageBuffer messageBuffer,
             CommandRegistry commandRegistry,
             Keymap keymap,
             CommandLoop commandLoop) {
-        this.frame = frame;
+        this.frameActor = frameActor;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
@@ -94,15 +93,13 @@ public final class EditorCore {
      */
     public static EditorCore create(
             InputSource inputSource,
-            Function<Frame, InputPrompter> inputPrompterFactory,
+            Function<io.github.shomah4a.alle.core.window.FrameActor, InputPrompter> inputPrompterFactory,
             BufferIO bufferIO,
             DirectoryLister directoryLister,
             ShutdownRequestable shutdownRequestable) {
-        // バッファ・ウィンドウ・フレーム
+        // バッファ・フレーム
         var buffer = new EditableBuffer("*scratch*", new GapTextModel());
-        var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
-        var frame = new Frame(window, minibuffer);
+        var minibufferBuffer = new EditableBuffer("*Minibuffer*", new GapTextModel());
 
         // メッセージバッファ
         var messageBuffer = new MessageBuffer("*Messages*", 1000);
@@ -130,9 +127,9 @@ public final class EditorCore {
         resolver.addKeymap(keymap);
 
         // コマンドループ
-        var inputPrompter = inputPrompterFactory.apply(frame);
+        var frameActor = io.github.shomah4a.alle.core.window.FrameActor.create(buffer, minibufferBuffer);
+        var inputPrompter = inputPrompterFactory.apply(frameActor);
         var killRing = new KillRing();
-        var frameActor = new io.github.shomah4a.alle.core.window.FrameActor(frame);
         var commandLoop = new CommandLoop(
                 inputSource,
                 resolver,
@@ -143,7 +140,7 @@ public final class EditorCore {
                 messageBuffer,
                 warningBuffer);
 
-        return new EditorCore(frame, bufferManager, messageBuffer, registry, keymap, commandLoop);
+        return new EditorCore(frameActor, bufferManager, messageBuffer, registry, keymap, commandLoop);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -256,8 +253,8 @@ public final class EditorCore {
         return keymap;
     }
 
-    public Frame frame() {
-        return frame;
+    public FrameActor frameActor() {
+        return frameActor;
     }
 
     public BufferManager bufferManager() {

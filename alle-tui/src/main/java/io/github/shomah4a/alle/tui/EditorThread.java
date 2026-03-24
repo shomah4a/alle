@@ -4,7 +4,7 @@ import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
-import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -18,7 +18,7 @@ class EditorThread implements Runnable, Loggable {
     private final Screen screen;
     private final ScreenRenderer renderer;
     private final CommandLoop commandLoop;
-    private final Frame frame;
+    private final FrameActor frameActor;
     private final SnapshotExchanger exchanger;
 
     EditorThread(
@@ -26,13 +26,13 @@ class EditorThread implements Runnable, Loggable {
             Screen screen,
             ScreenRenderer renderer,
             CommandLoop commandLoop,
-            Frame frame,
+            FrameActor frameActor,
             SnapshotExchanger exchanger) {
         this.keyQueue = keyQueue;
         this.screen = screen;
         this.renderer = renderer;
         this.commandLoop = commandLoop;
-        this.frame = frame;
+        this.frameActor = frameActor;
         this.exchanger = exchanger;
     }
 
@@ -61,7 +61,7 @@ class EditorThread implements Runnable, Loggable {
         if (size.getRows() < 3) {
             return;
         }
-        var snapshot = renderer.createSnapshot(frame, size);
+        var snapshot = renderer.createSnapshot(frameActor, size);
         exchanger.publish(snapshot);
     }
 

@@ -28,7 +28,11 @@ class EditorFacadeTest {
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
         messageBuffer = new MessageBuffer("*Messages*", 100);
-        facade = new EditorFacade(frame, messageBuffer, new CommandRegistry(), new Keymap("global"));
+        facade = new EditorFacade(
+                new io.github.shomah4a.alle.core.window.FrameActor(frame),
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"));
     }
 
     @Test

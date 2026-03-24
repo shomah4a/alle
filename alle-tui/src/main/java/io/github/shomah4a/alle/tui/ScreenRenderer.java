@@ -9,7 +9,7 @@ import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
-import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.RenderSnapshot;
 import io.github.shomah4a.alle.core.window.Separator;
 import org.eclipse.collections.api.list.ListIterable;
@@ -39,8 +39,10 @@ public class ScreenRenderer {
      * Frameの状態からimmutableな描画スナップショットを作成する。
      * Frame.createSnapshot()に委譲する。
      */
-    RenderSnapshot createSnapshot(Frame frame, TerminalSize size) {
-        return frame.createSnapshot(size.getColumns(), size.getRows(), messageBuffer);
+    RenderSnapshot createSnapshot(FrameActor frameActor, TerminalSize size) {
+        return frameActor
+                .createSnapshot(size.getColumns(), size.getRows(), messageBuffer)
+                .join();
     }
 
     /**

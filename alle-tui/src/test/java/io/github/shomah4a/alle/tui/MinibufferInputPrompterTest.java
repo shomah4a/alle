@@ -33,7 +33,7 @@ class MinibufferInputPrompterTest {
         mainWindow = new Window(buffer);
         minibufferWindow = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         frame = new Frame(mainWindow, minibufferWindow);
-        prompter = new MinibufferInputPrompter(frame);
+        prompter = new MinibufferInputPrompter(new io.github.shomah4a.alle.core.window.FrameActor(frame));
     }
 
     @Nested

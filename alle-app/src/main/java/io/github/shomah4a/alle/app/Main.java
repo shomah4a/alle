@@ -70,7 +70,7 @@ public final class Main {
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
-        var editorFacade = new EditorFacade(core.frame(), msg, core.commandRegistry(), core.keymap());
+        var editorFacade = new EditorFacade(core.frameActor(), msg, core.commandRegistry(), core.keymap());
         var stdoutStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000);
@@ -93,7 +93,7 @@ public final class Main {
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
 
         var renderer = new ScreenRenderer(screen, core.messageBuffer());
-        var runner = new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame());
+        var runner = new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frameActor());
 
         try {
             runner.run();

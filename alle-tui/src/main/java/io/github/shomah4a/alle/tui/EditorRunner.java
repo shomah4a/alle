@@ -3,7 +3,7 @@ package io.github.shomah4a.alle.tui;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
-import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -19,19 +19,19 @@ public class EditorRunner {
     private final Screen screen;
     private final ScreenRenderer renderer;
     private final CommandLoop commandLoop;
-    private final Frame frame;
+    private final FrameActor frameActor;
 
     public EditorRunner(
             TerminalInputSource inputSource,
             Screen screen,
             ScreenRenderer renderer,
             CommandLoop commandLoop,
-            Frame frame) {
+            FrameActor frameActor) {
         this.inputSource = inputSource;
         this.screen = screen;
         this.renderer = renderer;
         this.commandLoop = commandLoop;
-        this.frame = frame;
+        this.frameActor = frameActor;
     }
 
     /**
@@ -49,8 +49,8 @@ public class EditorRunner {
         renderThreadHandle.setDaemon(true);
         renderThreadHandle.start();
 
-        var logicThread =
-                new Thread(new EditorThread(keyQueue, screen, renderer, commandLoop, frame, exchanger), "editor-logic");
+        var logicThread = new Thread(
+                new EditorThread(keyQueue, screen, renderer, commandLoop, frameActor, exchanger), "editor-logic");
         logicThread.setDaemon(true);
         logicThread.start();
 
