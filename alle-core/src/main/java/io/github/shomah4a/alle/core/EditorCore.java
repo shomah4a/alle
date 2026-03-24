@@ -132,8 +132,17 @@ public final class EditorCore {
         // コマンドループ
         var inputPrompter = inputPrompterFactory.apply(frame);
         var killRing = new KillRing();
+        var frameActor = new io.github.shomah4a.alle.core.window.FrameActor(frame);
         var commandLoop = new CommandLoop(
-                inputSource, resolver, frame, bufferManager, inputPrompter, killRing, messageBuffer, warningBuffer);
+                inputSource,
+                resolver,
+                frame,
+                frameActor,
+                bufferManager,
+                inputPrompter,
+                killRing,
+                messageBuffer,
+                warningBuffer);
 
         return new EditorCore(frame, bufferManager, messageBuffer, registry, keymap, commandLoop);
     }

@@ -11,7 +11,6 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.FrameActor;
-import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,6 +34,7 @@ public class CommandLoop {
     private final InputSource inputSource;
     private final KeyResolver keyResolver;
     private final Frame frame;
+    private final FrameActor frameActor;
     private final BufferManager bufferManager;
     private final InputPrompter inputPrompter;
     private final KillRing killRing;
@@ -58,6 +58,7 @@ public class CommandLoop {
                 inputSource,
                 keyResolver,
                 frame,
+                new FrameActor(frame),
                 bufferManager,
                 inputPrompter,
                 new KillRing(),
@@ -69,6 +70,7 @@ public class CommandLoop {
             InputSource inputSource,
             KeyResolver keyResolver,
             Frame frame,
+            FrameActor frameActor,
             BufferManager bufferManager,
             InputPrompter inputPrompter,
             KillRing killRing,
@@ -77,6 +79,7 @@ public class CommandLoop {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
+        this.frameActor = frameActor;
         this.bufferManager = bufferManager;
         this.inputPrompter = inputPrompter;
         this.killRing = killRing;
@@ -159,12 +162,10 @@ public class CommandLoop {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
-                var windowActor = new WindowActor(frame.getActiveWindow());
-                var frameActor = new FrameActor(frame);
                 var context = new CommandContext(
                         frameActor,
                         bufferManager,
-                        windowActor,
+                        frameActor.getActiveWindowActor(),
                         inputPrompter,
                         Optional.of(keyStroke),
                         thisCommand,
