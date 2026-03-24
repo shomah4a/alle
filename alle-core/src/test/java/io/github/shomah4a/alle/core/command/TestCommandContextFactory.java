@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
@@ -35,8 +36,10 @@ final class TestCommandContextFactory {
      */
     static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
         var windowActor = new WindowActor(frame.getActiveWindow());
+        var frameActor = new FrameActor(frame);
         return new CommandContext(
                 frame,
+                frameActor,
                 bufferManager,
                 windowActor,
                 inputPrompter,
@@ -53,8 +56,10 @@ final class TestCommandContextFactory {
      */
     static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
         var windowActor = new WindowActor(frame.getActiveWindow());
+        var frameActor = new FrameActor(frame);
         return new CommandContext(
                 frame,
+                frameActor,
                 bufferManager,
                 windowActor,
                 NOOP_PROMPTER,
@@ -72,8 +77,10 @@ final class TestCommandContextFactory {
     static CommandContext create(
             Frame frame, BufferManager bufferManager, KillRing killRing, Optional<String> lastCommand) {
         var windowActor = new WindowActor(frame.getActiveWindow());
+        var frameActor = new FrameActor(frame);
         return new CommandContext(
                 frame,
+                frameActor,
                 bufferManager,
                 windowActor,
                 NOOP_PROMPTER,

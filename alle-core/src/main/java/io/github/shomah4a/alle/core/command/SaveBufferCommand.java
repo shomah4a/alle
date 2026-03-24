@@ -38,26 +38,26 @@ public class SaveBufferCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var buffer = context.frame().getActiveWindow().getBuffer();
+        return context.activeWindowActor().getBuffer().thenCompose(buffer -> {
+            if (buffer.getFilePath().isPresent()) {
+                saveBuffer(buffer, context);
+                return CompletableFuture.completedFuture(null);
+            }
 
-        if (buffer.getFilePath().isPresent()) {
-            saveBuffer(buffer, context);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        // ファイルパス未設定の場合はプロンプトで入力を求める
-        var completer = new FilePathCompleter(directoryLister);
-        return context.inputPrompter()
-                .prompt("Save file: ", "", filePathHistory, completer)
-                .thenAccept(result -> {
-                    if (result instanceof PromptResult.Confirmed confirmed) {
-                        String pathString = confirmed.value();
-                        if (!pathString.isEmpty()) {
-                            buffer.setFilePath(Path.of(pathString));
-                            saveBuffer(buffer, context);
+            // ファイルパス未設定の場合はプロンプトで入力を求める
+            var completer = new FilePathCompleter(directoryLister);
+            return context.inputPrompter()
+                    .prompt("Save file: ", "", filePathHistory, completer)
+                    .thenAccept(result -> {
+                        if (result instanceof PromptResult.Confirmed confirmed) {
+                            String pathString = confirmed.value();
+                            if (!pathString.isEmpty()) {
+                                buffer.setFilePath(Path.of(pathString));
+                                saveBuffer(buffer, context);
+                            }
                         }
-                    }
-                });
+                    });
+        });
     }
 
     private void saveBuffer(Buffer buffer, CommandContext context) {

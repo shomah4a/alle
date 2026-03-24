@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -159,8 +160,10 @@ public class CommandLoop {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
                 var windowActor = new WindowActor(frame.getActiveWindow());
+                var frameActor = new FrameActor(frame);
                 var context = new CommandContext(
                         frame,
+                        frameActor,
                         bufferManager,
                         windowActor,
                         inputPrompter,

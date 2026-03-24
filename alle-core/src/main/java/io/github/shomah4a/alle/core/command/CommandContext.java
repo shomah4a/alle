@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -22,6 +23,7 @@ import java.util.Optional;
  */
 public record CommandContext(
         Frame frame,
+        FrameActor frameActor,
         BufferManager bufferManager,
         WindowActor activeWindowActor,
         InputPrompter inputPrompter,

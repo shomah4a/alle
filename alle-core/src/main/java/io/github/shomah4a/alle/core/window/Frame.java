@@ -110,6 +110,28 @@ public class Frame {
     }
 
     /**
+     * アクティブウィンドウを指定方向に分割し、同一バッファを表示する。
+     * アクティブウィンドウは元のウィンドウに留まる。
+     * ミニバッファアクティブ中は何もしない。
+     */
+    public void splitActiveWindowKeepFocus(Direction direction) {
+        var originalWindow = activeWindow;
+        var buffer = originalWindow.getBuffer();
+        splitActiveWindow(direction, buffer);
+        activeWindow = originalWindow;
+    }
+
+    /**
+     * アクティブウィンドウを削除する。
+     * 最後の1つのウィンドウは削除できない。ミニバッファアクティブ中は何もしない。
+     *
+     * @return 削除に成功した場合true
+     */
+    public boolean deleteActiveWindow() {
+        return deleteWindow(activeWindow);
+    }
+
+    /**
      * 指定ウィンドウを削除する。
      * 最後の1つのウィンドウは削除できない。
      * 削除対象がアクティブウィンドウの場合、ツリー内の別のウィンドウをアクティブにする。
@@ -309,6 +331,41 @@ public class Frame {
             return new int[] {screenCol, row};
         }
         return new int[] {0, row};
+    }
+
+    /**
+     * 指定バッファを表示中の全ウィンドウを代替バッファに切り替える。
+     *
+     * @param target      切り替え対象のバッファ
+     * @param replacement 代替バッファ
+     */
+    public void replaceBufferInAllWindows(Buffer target, Buffer replacement) {
+        for (var window : windowTree.windows()) {
+            if (window.getBuffer().equals(target)) {
+                window.setBuffer(replacement);
+            }
+        }
+    }
+
+    /**
+     * 全ウィンドウの直前バッファが指定バッファの場合にクリアする。
+     * バッファ削除時の dangling reference 防止用。
+     */
+    public void clearPreviousBufferInAllWindows(Buffer target) {
+        for (var window : windowTree.windows()) {
+            window.clearPreviousBufferIf(target);
+        }
+    }
+
+    /**
+     * 全ウィンドウで表示中のバッファ名のセットを返す。
+     */
+    public org.eclipse.collections.api.set.ImmutableSet<String> getDisplayedBufferNames() {
+        return windowTree
+                .windows()
+                .collect(w -> w.getBuffer().getName())
+                .toSet()
+                .toImmutable();
     }
 
     /**

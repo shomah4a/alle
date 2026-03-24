@@ -397,8 +397,10 @@ class MinibufferInputPrompterTest {
         var entry = entryOpt.get();
         if (entry instanceof io.github.shomah4a.alle.core.keybind.KeymapEntry.CommandBinding binding) {
             var windowActor = new io.github.shomah4a.alle.core.window.WindowActor(frame.getActiveWindow());
+            var frameActor = new io.github.shomah4a.alle.core.window.FrameActor(frame);
             var context = new CommandContext(
                     frame,
+                    frameActor,
                     new BufferManager(),
                     windowActor,
                     prompter,

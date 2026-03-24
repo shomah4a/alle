@@ -16,14 +16,11 @@ public class SplitWindowRightCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var frame = context.frame();
-        if (frame.isMinibufferActive()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        var originalWindow = frame.getActiveWindow();
-        var buffer = originalWindow.getBuffer();
-        frame.splitActiveWindow(Direction.VERTICAL, buffer);
-        frame.setActiveWindow(originalWindow);
-        return CompletableFuture.completedFuture(null);
+        return context.frameActor().isMinibufferActive().thenCompose(active -> {
+            if (active) {
+                return CompletableFuture.completedFuture(null);
+            }
+            return context.frameActor().splitActiveWindowKeepFocus(Direction.VERTICAL);
+        });
     }
 }
