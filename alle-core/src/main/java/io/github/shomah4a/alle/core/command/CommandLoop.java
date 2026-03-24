@@ -162,7 +162,6 @@ public class CommandLoop {
                 var windowActor = new WindowActor(frame.getActiveWindow());
                 var frameActor = new FrameActor(frame);
                 var context = new CommandContext(
-                        frame,
                         frameActor,
                         bufferManager,
                         windowActor,

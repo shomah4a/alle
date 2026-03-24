@@ -38,7 +38,6 @@ final class TestCommandContextFactory {
         var windowActor = new WindowActor(frame.getActiveWindow());
         var frameActor = new FrameActor(frame);
         return new CommandContext(
-                frame,
                 frameActor,
                 bufferManager,
                 windowActor,
@@ -58,7 +57,6 @@ final class TestCommandContextFactory {
         var windowActor = new WindowActor(frame.getActiveWindow());
         var frameActor = new FrameActor(frame);
         return new CommandContext(
-                frame,
                 frameActor,
                 bufferManager,
                 windowActor,
@@ -79,7 +77,6 @@ final class TestCommandContextFactory {
         var windowActor = new WindowActor(frame.getActiveWindow());
         var frameActor = new FrameActor(frame);
         return new CommandContext(
-                frame,
                 frameActor,
                 bufferManager,
                 windowActor,
@@ -96,12 +93,24 @@ final class TestCommandContextFactory {
      * デフォルトのバッファ・ウィンドウ・フレームでコンテキストを生成する。
      */
     static CommandContext createDefault() {
+        return createDefaultWithFrame().context();
+    }
+
+    /**
+     * フレームとコンテキストのペア。
+     */
+    record CreateResult(Frame frame, CommandContext context) {}
+
+    /**
+     * デフォルトのバッファ・ウィンドウ・フレームでコンテキストを生成し、フレームも一緒に返す。
+     */
+    static CreateResult createDefaultWithFrame() {
         var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
-        return create(frame, bufferManager);
+        return new CreateResult(frame, create(frame, bufferManager));
     }
 }

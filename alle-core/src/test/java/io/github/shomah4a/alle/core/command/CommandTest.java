@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.command.TestCommandContextFactory.CreateResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -13,14 +14,14 @@ import org.junit.jupiter.api.Test;
 
 class CommandTest {
 
-    private CommandContext createContext() {
+    private CreateResult createContext() {
         var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
-        return TestCommandContextFactory.create(frame, bufferManager);
+        return new CreateResult(frame, TestCommandContextFactory.create(frame, bufferManager));
     }
 
     @Nested
@@ -28,7 +29,9 @@ class CommandTest {
 
         @Test
         void コマンドがコンテキスト経由でバッファを操作できる() {
-            var context = createContext();
+            var result = createContext();
+            var context = result.context();
+            var frame = result.frame();
             Command insertHello = new Command() {
                 @Override
                 public String name() {
@@ -37,15 +40,15 @@ class CommandTest {
 
                 @Override
                 public CompletableFuture<Void> execute(CommandContext ctx) {
-                    ctx.frame().getActiveWindow().insert("Hello");
+                    frame.getActiveWindow().insert("Hello");
                     return CompletableFuture.completedFuture(null);
                 }
             };
 
             insertHello.execute(context).join();
 
-            assertEquals("Hello", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(5, context.frame().getActiveWindow().getPoint());
+            assertEquals("Hello", frame.getActiveWindow().getBuffer().getText());
+            assertEquals(5, frame.getActiveWindow().getPoint());
         }
 
         @Test
@@ -71,9 +74,9 @@ class CommandTest {
 
         @Test
         void フレームとバッファマネージャにアクセスできる() {
-            var context = createContext();
-            assertEquals("test", context.frame().getActiveWindow().getBuffer().getName());
-            assertEquals(1, context.bufferManager().size());
+            var result = createContext();
+            assertEquals("test", result.frame().getActiveWindow().getBuffer().getName());
+            assertEquals(1, result.context().bufferManager().size());
         }
     }
 }

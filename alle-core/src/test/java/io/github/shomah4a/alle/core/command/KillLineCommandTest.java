@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.command.TestCommandContextFactory.CreateResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class KillLineCommandTest {
 
-    private CommandContext createContext(String text, int point) {
+    private CreateResult createContext(String text, int point) {
         var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
@@ -23,10 +24,10 @@ class KillLineCommandTest {
             window.insert(text);
         }
         window.setPoint(point);
-        return TestCommandContextFactory.create(frame, new BufferManager());
+        return new CreateResult(frame, TestCommandContextFactory.create(frame, new BufferManager()));
     }
 
-    private CommandContext createContextWithKillRing(
+    private CreateResult createContextWithKillRing(
             String text, int point, KillRing killRing, Optional<String> lastCommand) {
         var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
@@ -37,7 +38,7 @@ class KillLineCommandTest {
             window.insert(text);
         }
         window.setPoint(point);
-        return TestCommandContextFactory.create(frame, bufferManager, killRing, lastCommand);
+        return new CreateResult(frame, TestCommandContextFactory.create(frame, bufferManager, killRing, lastCommand));
     }
 
     @Nested
@@ -45,28 +46,27 @@ class KillLineCommandTest {
 
         @Test
         void 行頭から行末まで削除する() {
-            var context = createContext("Hello\nWorld", 0);
-            new KillLineCommand().execute(context).join();
-            assertEquals(
-                    "\nWorld", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(0, context.frame().getActiveWindow().getPoint());
+            var result = createContext("Hello\nWorld", 0);
+            new KillLineCommand().execute(result.context()).join();
+            assertEquals("\nWorld", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(0, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 行中から行末まで削除する() {
-            var context = createContext("Hello\nWorld", 2);
-            new KillLineCommand().execute(context).join();
+            var result = createContext("Hello\nWorld", 2);
+            new KillLineCommand().execute(result.context()).join();
             assertEquals(
-                    "He\nWorld", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(2, context.frame().getActiveWindow().getPoint());
+                    "He\nWorld", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(2, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 改行のない行で行末まで削除する() {
-            var context = createContext("Hello", 2);
-            new KillLineCommand().execute(context).join();
-            assertEquals("He", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(2, context.frame().getActiveWindow().getPoint());
+            var result = createContext("Hello", 2);
+            new KillLineCommand().execute(result.context()).join();
+            assertEquals("He", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(2, result.frame().getActiveWindow().getPoint());
         }
     }
 
@@ -75,21 +75,20 @@ class KillLineCommandTest {
 
         @Test
         void 行末で改行を削除して次の行と結合する() {
-            var context = createContext("Hello\nWorld", 5);
-            new KillLineCommand().execute(context).join();
+            var result = createContext("Hello\nWorld", 5);
+            new KillLineCommand().execute(result.context()).join();
             assertEquals(
-                    "HelloWorld", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(5, context.frame().getActiveWindow().getPoint());
+                    "HelloWorld", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(5, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 空行で改行を削除して次の行と結合する() {
-            var context = createContext("Hello\n\nWorld", 6);
-            new KillLineCommand().execute(context).join();
+            var result = createContext("Hello\n\nWorld", 6);
+            new KillLineCommand().execute(result.context()).join();
             assertEquals(
-                    "Hello\nWorld",
-                    context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(6, context.frame().getActiveWindow().getPoint());
+                    "Hello\nWorld", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(6, result.frame().getActiveWindow().getPoint());
         }
     }
 
@@ -98,18 +97,18 @@ class KillLineCommandTest {
 
         @Test
         void バッファ末尾では何もしない() {
-            var context = createContext("Hello", 5);
-            new KillLineCommand().execute(context).join();
-            assertEquals("Hello", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(5, context.frame().getActiveWindow().getPoint());
+            var result = createContext("Hello", 5);
+            new KillLineCommand().execute(result.context()).join();
+            assertEquals("Hello", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(5, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 空バッファでは何もしない() {
-            var context = createContext("", 0);
-            new KillLineCommand().execute(context).join();
-            assertEquals("", context.frame().getActiveWindow().getBuffer().getText());
-            assertEquals(0, context.frame().getActiveWindow().getPoint());
+            var result = createContext("", 0);
+            new KillLineCommand().execute(result.context()).join();
+            assertEquals("", result.frame().getActiveWindow().getBuffer().getText());
+            assertEquals(0, result.frame().getActiveWindow().getPoint());
         }
     }
 
@@ -119,8 +118,8 @@ class KillLineCommandTest {
         @Test
         void 削除テキストがkillRingにpushされる() {
             var killRing = new KillRing();
-            var context = createContextWithKillRing("Hello\nWorld", 0, killRing, Optional.empty());
-            new KillLineCommand().execute(context).join();
+            var result = createContextWithKillRing("Hello\nWorld", 0, killRing, Optional.empty());
+            new KillLineCommand().execute(result.context()).join();
             assertEquals("Hello", killRing.current().orElseThrow());
         }
 
@@ -128,21 +127,21 @@ class KillLineCommandTest {
         void 連続killでは前回エントリに追記される() {
             var killRing = new KillRing();
             // 1回目のkill
-            var context1 = createContextWithKillRing("Hello\nWorld", 0, killRing, Optional.empty());
-            new KillLineCommand().execute(context1).join();
+            var result1 = createContextWithKillRing("Hello\nWorld", 0, killRing, Optional.empty());
+            new KillLineCommand().execute(result1.context()).join();
             assertEquals("Hello", killRing.current().orElseThrow());
 
             // 2回目のkill（lastCommandがkill-line）
-            var context2 = createContextWithKillRing("\nWorld", 0, killRing, Optional.of("kill-line"));
-            new KillLineCommand().execute(context2).join();
+            var result2 = createContextWithKillRing("\nWorld", 0, killRing, Optional.of("kill-line"));
+            new KillLineCommand().execute(result2.context()).join();
             assertEquals("Hello\n", killRing.current().orElseThrow());
         }
 
         @Test
         void バッファ末尾ではkillRingに何も追加されない() {
             var killRing = new KillRing();
-            var context = createContextWithKillRing("Hello", 5, killRing, Optional.empty());
-            new KillLineCommand().execute(context).join();
+            var result = createContextWithKillRing("Hello", 5, killRing, Optional.empty());
+            new KillLineCommand().execute(result.context()).join();
             assertTrue(killRing.current().isEmpty());
         }
     }

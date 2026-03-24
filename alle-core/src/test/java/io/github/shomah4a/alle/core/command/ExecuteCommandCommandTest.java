@@ -26,13 +26,15 @@ class ExecuteCommandCommandTest {
             registry.register(new ForwardCharCommand());
             var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
 
-            var context = TestCommandContextFactory.createDefault();
-            context.frame().getActiveWindow().insert("Hello");
-            context.frame().getActiveWindow().setPoint(0);
+            var result = TestCommandContextFactory.createDefaultWithFrame();
+            var context = result.context();
+            var frame = result.frame();
+            frame.getActiveWindow().insert("Hello");
+            frame.getActiveWindow().setPoint(0);
 
             execCmd.executeByName("forward-char", context).join();
 
-            assertEquals(1, context.frame().getActiveWindow().getPoint());
+            assertEquals(1, frame.getActiveWindow().getPoint());
         }
 
         @Test
@@ -51,15 +53,17 @@ class ExecuteCommandCommandTest {
             registry.register(new BackwardCharCommand());
             var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
 
-            var context = TestCommandContextFactory.createDefault();
-            context.frame().getActiveWindow().insert("Hello");
-            context.frame().getActiveWindow().setPoint(0);
+            var result = TestCommandContextFactory.createDefaultWithFrame();
+            var context = result.context();
+            var frame = result.frame();
+            frame.getActiveWindow().insert("Hello");
+            frame.getActiveWindow().setPoint(0);
 
             execCmd.executeByName("forward-char", context).join();
             execCmd.executeByName("forward-char", context).join();
             execCmd.executeByName("backward-char", context).join();
 
-            assertEquals(1, context.frame().getActiveWindow().getPoint());
+            assertEquals(1, frame.getActiveWindow().getPoint());
         }
     }
 
@@ -120,14 +124,16 @@ class ExecuteCommandCommandTest {
             registry.register(new ForwardCharCommand());
             var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
 
-            var context = TestCommandContextFactory.createDefault();
-            context.frame().getActiveWindow().insert("Hello");
-            context.frame().getActiveWindow().setPoint(0);
+            var result = TestCommandContextFactory.createDefaultWithFrame();
+            var context = result.context();
+            var frame = result.frame();
+            frame.getActiveWindow().insert("Hello");
+            frame.getActiveWindow().setPoint(0);
 
             // createDefault uses NOOP_PROMPTER which returns Cancelled
             execCmd.execute(context).join();
 
-            assertEquals(0, context.frame().getActiveWindow().getPoint());
+            assertEquals(0, frame.getActiveWindow().getPoint());
         }
 
         @Test

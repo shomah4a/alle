@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.command.TestCommandContextFactory.CreateResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class CursorCommandTest {
 
-    private CommandContext createContext(String initialText) {
+    private CreateResult createContext(String initialText) {
         var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
         if (!initialText.isEmpty()) {
@@ -23,7 +24,7 @@ class CursorCommandTest {
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);
-        return TestCommandContextFactory.create(frame, bufferManager);
+        return new CreateResult(frame, TestCommandContextFactory.create(frame, bufferManager));
     }
 
     @Nested
@@ -31,60 +32,60 @@ class CursorCommandTest {
 
         @Test
         void カーソルが1文字前方に移動する() {
-            var context = createContext("Hello");
+            var result = createContext("Hello");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(1, context.frame().getActiveWindow().getPoint());
+            assertEquals(1, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 連続実行でカーソルが進む() {
-            var context = createContext("Hello");
+            var result = createContext("Hello");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context).join();
-            cmd.execute(context).join();
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
+            cmd.execute(result.context()).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(3, context.frame().getActiveWindow().getPoint());
+            assertEquals(3, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 末尾ではカーソルが動かない() {
-            var context = createContext("Hi");
+            var result = createContext("Hi");
             var cmd = new ForwardCharCommand();
-            context.frame().getActiveWindow().setPoint(2);
+            result.frame().getActiveWindow().setPoint(2);
 
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(2, context.frame().getActiveWindow().getPoint());
+            assertEquals(2, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 空バッファではカーソルが動かない() {
-            var context = createContext("");
+            var result = createContext("");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(0, context.frame().getActiveWindow().getPoint());
+            assertEquals(0, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 絵文字をコードポイント単位で移動する() {
-            var context = createContext("A😀B");
+            var result = createContext("A😀B");
             var cmd = new ForwardCharCommand();
 
-            cmd.execute(context).join();
-            assertEquals(1, context.frame().getActiveWindow().getPoint());
+            cmd.execute(result.context()).join();
+            assertEquals(1, result.frame().getActiveWindow().getPoint());
 
-            cmd.execute(context).join();
-            assertEquals(2, context.frame().getActiveWindow().getPoint());
+            cmd.execute(result.context()).join();
+            assertEquals(2, result.frame().getActiveWindow().getPoint());
 
-            cmd.execute(context).join();
-            assertEquals(3, context.frame().getActiveWindow().getPoint());
+            cmd.execute(result.context()).join();
+            assertEquals(3, result.frame().getActiveWindow().getPoint());
         }
     }
 
@@ -93,33 +94,33 @@ class CursorCommandTest {
 
         @Test
         void カーソルが1文字後方に移動する() {
-            var context = createContext("Hello");
-            context.frame().getActiveWindow().setPoint(3);
+            var result = createContext("Hello");
+            result.frame().getActiveWindow().setPoint(3);
             var cmd = new BackwardCharCommand();
 
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(2, context.frame().getActiveWindow().getPoint());
+            assertEquals(2, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 先頭ではカーソルが動かない() {
-            var context = createContext("Hello");
+            var result = createContext("Hello");
             var cmd = new BackwardCharCommand();
 
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(0, context.frame().getActiveWindow().getPoint());
+            assertEquals(0, result.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 空バッファではカーソルが動かない() {
-            var context = createContext("");
+            var result = createContext("");
             var cmd = new BackwardCharCommand();
 
-            cmd.execute(context).join();
+            cmd.execute(result.context()).join();
 
-            assertEquals(0, context.frame().getActiveWindow().getPoint());
+            assertEquals(0, result.frame().getActiveWindow().getPoint());
         }
     }
 }

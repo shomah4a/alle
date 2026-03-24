@@ -32,7 +32,6 @@ class HandleErrorTest {
         messageBuffer = new MessageBuffer("*Messages*", 100);
         warningBuffer = new MessageBuffer("*Warnings*", 100);
         context = new CommandContext(
-                frame,
                 new FrameActor(frame),
                 new BufferManager(),
                 new WindowActor(window),

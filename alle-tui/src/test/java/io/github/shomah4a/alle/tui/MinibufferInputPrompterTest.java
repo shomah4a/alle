@@ -399,7 +399,6 @@ class MinibufferInputPrompterTest {
             var windowActor = new io.github.shomah4a.alle.core.window.WindowActor(frame.getActiveWindow());
             var frameActor = new io.github.shomah4a.alle.core.window.FrameActor(frame);
             var context = new CommandContext(
-                    frame,
                     frameActor,
                     new BufferManager(),
                     windowActor,
