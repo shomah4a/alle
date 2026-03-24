@@ -123,10 +123,21 @@ public class FrameActor {
 
     /**
      * 指定バッファを表示中の全ウィンドウを代替バッファに切り替える。
+     * WindowActorのbufferActorフィールドも同期する。
      */
     public CompletableFuture<Void> replaceBufferInAllWindows(Buffer target, Buffer replacement) {
         return atomicPerform(f -> {
             f.replaceBufferInAllWindows(target, replacement);
+            // WindowActorのbufferActorフィールドも同期する
+            if (bufferManager != null) {
+                var replacementActor = bufferManager.getActor(replacement);
+                for (var entry : windowActors.keyValuesView()) {
+                    if (entry.getOne().getBuffer().equals(replacement)
+                            && entry.getTwo().getBufferActor().getBuffer() != replacement) {
+                        entry.getTwo().updateBufferActor(replacementActor);
+                    }
+                }
+            }
             return null;
         });
     }

@@ -54,12 +54,14 @@ public class SwitchBufferCommand implements Command {
         }
         var existing = context.bufferManager().findByName(bufferName);
         if (existing.isPresent()) {
-            return context.activeWindowActor().setBuffer(existing.get());
+            var actor = context.bufferManager().getActor(existing.get());
+            return context.activeWindowActor().setBuffer(actor);
         }
         var newBuffer = new EditableBuffer(bufferName, new GapTextModel());
         context.bufferManager().add(newBuffer);
+        var actor = context.bufferManager().getActor(newBuffer);
         return context.activeWindowActor()
-                .setBuffer(newBuffer)
+                .setBuffer(actor)
                 .thenRun(() -> context.messageBuffer().message("Buffer created: " + bufferName));
     }
 }

@@ -117,6 +117,15 @@ public class WindowActor {
     }
 
     /**
+     * BufferActorフィールドを直接更新する。
+     * FrameActor内部でFrame.replaceBufferInAllWindows後の同期に使用する。
+     * atomicPerformの外から呼ばないこと。
+     */
+    void updateBufferActor(BufferActor actor) {
+        this.bufferActor = actor;
+    }
+
+    /**
      * ラップしているWindowを直接取得する。
      * レンダリング等の同期的なアクセスが必要な場合に使用する。
      */

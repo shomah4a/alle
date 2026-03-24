@@ -98,8 +98,9 @@ public class FindFileCommand implements Command {
     }
 
     private CompletableFuture<Void> switchToBuffer(CommandContext context, Buffer buffer) {
+        var actor = context.bufferManager().getActor(buffer);
         return context.activeWindowActor()
-                .setBuffer(buffer)
+                .setBuffer(actor)
                 .thenCompose(v -> context.activeWindowActor().setPoint(0));
     }
 }
