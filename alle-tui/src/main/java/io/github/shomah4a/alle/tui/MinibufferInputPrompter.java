@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.tui;
 
+import io.github.shomah4a.alle.core.buffer.BufferActor;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
@@ -62,35 +63,46 @@ public class MinibufferInputPrompter implements InputPrompter {
         var bufferActor = minibufferActor.getBufferActor();
         int promptLength = (int) message.codePoints().count();
         int initialValueLength = (int) initialValue.codePoints().count();
+        var keymap = createMinibufferKeymap(future, previousActiveWindowActor, promptLength, history, completer);
 
-        // ミニバッファをクリアしてプロンプト文字列と初期値を挿入
-        return bufferActor
-                .length()
-                .thenCompose(currentLength -> {
-                    if (currentLength > 0) {
-                        return bufferActor.deleteText(0, currentLength).thenApply(c -> null);
-                    }
-                    return CompletableFuture.completedFuture(null);
-                })
-                .thenCompose(v -> bufferActor.insertText(0, message + initialValue))
-                .thenCompose(c -> minibufferActor.setPoint(promptLength + initialValueLength))
-                // プロンプト文字列をread-onlyに設定
-                .thenCompose(v -> {
-                    if (promptLength > 0) {
-                        return bufferActor.putReadOnly(0, promptLength);
-                    }
-                    return CompletableFuture.completedFuture(null);
-                })
-                // ミニバッファ用キーマップを作成・設定
-                .thenCompose(v -> {
-                    var keymap =
-                            createMinibufferKeymap(future, previousActiveWindowActor, promptLength, history, completer);
-                    return bufferActor.setLocalKeymap(keymap);
-                })
-                // ミニバッファを有効化
+        return clearMinibuffer(bufferActor)
+                .thenCompose(v -> setupPromptText(
+                        bufferActor,
+                        minibufferActor,
+                        message + initialValue,
+                        promptLength,
+                        promptLength + initialValueLength))
+                .thenCompose(v -> bufferActor.setLocalKeymap(keymap))
                 .thenCompose(v -> frameActor.activateMinibuffer())
-                // ユーザーの入力完了を待つ
                 .thenCompose(v -> future);
+    }
+
+    /**
+     * ミニバッファの内容を全削除する。
+     */
+    private CompletableFuture<Void> clearMinibuffer(BufferActor bufferActor) {
+        return bufferActor.length().thenCompose(currentLength -> {
+            if (currentLength > 0) {
+                return bufferActor.deleteText(0, currentLength).thenApply(c -> null);
+            }
+            return CompletableFuture.completedFuture(null);
+        });
+    }
+
+    /**
+     * プロンプトテキストを挿入し、プロンプト部分をread-onlyにしてカーソルを配置する。
+     */
+    private CompletableFuture<Void> setupPromptText(
+            BufferActor bufferActor, WindowActor minibufferActor, String text, int readOnlyLength, int cursorPosition) {
+        return bufferActor
+                .insertText(0, text)
+                .thenCompose(c -> minibufferActor.setPoint(cursorPosition))
+                .thenCompose(v -> {
+                    if (readOnlyLength > 0) {
+                        return bufferActor.putReadOnly(0, readOnlyLength);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
     }
 
     private Keymap createMinibufferKeymap(
