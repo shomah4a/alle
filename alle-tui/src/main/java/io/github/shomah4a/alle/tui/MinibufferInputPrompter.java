@@ -59,31 +59,38 @@ public class MinibufferInputPrompter implements InputPrompter {
         activeFuture = future;
         var previousActiveWindowActor = frameActor.getActiveWindowActor();
         var minibufferActor = frameActor.getMinibufferWindowActor();
+        var bufferActor = minibufferActor.getBufferActor();
         int promptLength = (int) message.codePoints().count();
+        int initialValueLength = (int) initialValue.codePoints().count();
 
         // ミニバッファをクリアしてプロンプト文字列と初期値を挿入
-        var minibufferBuffer = minibufferActor.getBuffer().join();
-        int currentLength = minibufferBuffer.length();
-        if (currentLength > 0) {
-            minibufferBuffer.deleteText(0, currentLength);
-        }
-        minibufferBuffer.insertText(0, message + initialValue);
-        int initialValueLength = (int) initialValue.codePoints().count();
-        minibufferActor.setPoint(promptLength + initialValueLength).join();
-
-        // プロンプト文字列をread-onlyに設定
-        if (promptLength > 0) {
-            minibufferBuffer.putReadOnly(0, promptLength);
-        }
-
-        // ミニバッファ用キーマップを作成
-        var keymap = createMinibufferKeymap(future, previousActiveWindowActor, promptLength, history, completer);
-        minibufferBuffer.setLocalKeymap(keymap);
-
-        // ミニバッファを有効化
-        frameActor.activateMinibuffer().join();
-
-        return future;
+        return bufferActor
+                .length()
+                .thenCompose(currentLength -> {
+                    if (currentLength > 0) {
+                        return bufferActor.deleteText(0, currentLength).thenApply(c -> null);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                })
+                .thenCompose(v -> bufferActor.insertText(0, message + initialValue))
+                .thenCompose(c -> minibufferActor.setPoint(promptLength + initialValueLength))
+                // プロンプト文字列をread-onlyに設定
+                .thenCompose(v -> {
+                    if (promptLength > 0) {
+                        return bufferActor.putReadOnly(0, promptLength);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                })
+                // ミニバッファ用キーマップを作成・設定
+                .thenCompose(v -> {
+                    var keymap =
+                            createMinibufferKeymap(future, previousActiveWindowActor, promptLength, history, completer);
+                    return bufferActor.setLocalKeymap(keymap);
+                })
+                // ミニバッファを有効化
+                .thenCompose(v -> frameActor.activateMinibuffer())
+                // ユーザーの入力完了を待つ
+                .thenCompose(v -> future);
     }
 
     private Keymap createMinibufferKeymap(
@@ -122,52 +129,65 @@ public class MinibufferInputPrompter implements InputPrompter {
         return keymap;
     }
 
-    private void cleanup(WindowActor previousActiveWindowActor) {
+    private CompletableFuture<Void> cleanup(WindowActor previousActiveWindowActor) {
         var minibufferActor = frameActor.getMinibufferWindowActor();
-        var minibuffer = minibufferActor.getBuffer().join();
+        var bufferActor = minibufferActor.getBufferActor();
 
         // read-onlyプロパティを解除してからクリア
-        minibuffer.removeReadOnly(0, minibuffer.length());
-        int length = minibuffer.length();
-        if (length > 0) {
-            minibuffer.deleteText(0, length);
-        }
-        minibufferActor.setPoint(0).join();
-
-        // キーマップを解除
-        minibuffer.clearLocalKeymap();
-
-        // ミニバッファを無効化して元のウィンドウに戻す
-        frameActor.deactivateMinibuffer().join();
-        frameActor.setActiveWindow(previousActiveWindowActor).join();
-
-        activeFuture = null;
+        return bufferActor
+                .length()
+                .thenCompose(length -> bufferActor.removeReadOnly(0, length).thenApply(v -> length))
+                .thenCompose(length -> {
+                    if (length > 0) {
+                        return bufferActor.deleteText(0, length).thenApply(c -> null);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                })
+                .thenCompose(v -> minibufferActor.setPoint(0))
+                // キーマップを解除
+                .thenCompose(v -> bufferActor.clearLocalKeymap())
+                // ミニバッファを無効化して元のウィンドウに戻す
+                .thenCompose(v -> frameActor.deactivateMinibuffer())
+                .thenCompose(v -> frameActor.setActiveWindow(previousActiveWindowActor))
+                .thenRun(() -> activeFuture = null);
     }
 
     /**
      * ミニバッファの入力部分（プロンプト以降）を取得する。
      */
-    private String getUserInput(int promptLength) {
-        var minibuffer = frameActor.getMinibufferWindowActor().getBuffer().join();
-        String fullText = minibuffer.getText();
-        int fullLength = (int) fullText.codePoints().count();
-        return fullLength > promptLength ? minibuffer.substring(promptLength, fullLength) : "";
+    private CompletableFuture<String> getUserInput(int promptLength) {
+        var bufferActor = frameActor.getMinibufferWindowActor().getBufferActor();
+        return bufferActor.getText().thenCompose(fullText -> {
+            int fullLength = (int) fullText.codePoints().count();
+            if (fullLength > promptLength) {
+                return bufferActor.substring(promptLength, fullLength);
+            }
+            return CompletableFuture.completedFuture("");
+        });
     }
 
     /**
      * ミニバッファの入力部分（プロンプト以降）を置換する。
      */
-    private void replaceUserInput(int promptLength, String newInput) {
+    private CompletableFuture<Void> replaceUserInput(int promptLength, String newInput) {
         var minibufferActor = frameActor.getMinibufferWindowActor();
-        var minibuffer = minibufferActor.getBuffer().join();
-        String fullText = minibuffer.getText();
-        int fullLength = (int) fullText.codePoints().count();
-        if (fullLength > promptLength) {
-            minibuffer.deleteText(promptLength, fullLength - promptLength);
-        }
-        minibuffer.insertText(promptLength, newInput);
-        int newLength = (int) newInput.codePoints().count();
-        minibufferActor.setPoint(promptLength + newLength).join();
+        var bufferActor = minibufferActor.getBufferActor();
+        return bufferActor
+                .getText()
+                .thenCompose(fullText -> {
+                    int fullLength = (int) fullText.codePoints().count();
+                    if (fullLength > promptLength) {
+                        return bufferActor
+                                .deleteText(promptLength, fullLength - promptLength)
+                                .thenApply(c -> null);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                })
+                .thenCompose(v -> bufferActor.insertText(promptLength, newInput))
+                .thenCompose(c -> {
+                    int newLength = (int) newInput.codePoints().count();
+                    return minibufferActor.setPoint(promptLength + newLength);
+                });
     }
 
     private class MinibufferConfirmCommand implements Command {
@@ -195,11 +215,11 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            String userInput = getUserInput(promptLength);
-            history.add(userInput);
-            cleanup(previousActiveWindowActor);
-            future.complete(new PromptResult.Confirmed(userInput));
-            return CompletableFuture.completedFuture(null);
+            return getUserInput(promptLength).thenCompose(userInput -> {
+                history.add(userInput);
+                return cleanup(previousActiveWindowActor)
+                        .thenRun(() -> future.complete(new PromptResult.Confirmed(userInput)));
+            });
         }
     }
 
@@ -220,16 +240,14 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            String userInput = getUserInput(promptLength);
-
-            var candidates = completer.complete(userInput);
-            String completed = CompletionResult.resolve(userInput, candidates);
-
-            if (!completed.equals(userInput)) {
-                replaceUserInput(promptLength, completed);
-            }
-
-            return CompletableFuture.completedFuture(null);
+            return getUserInput(promptLength).thenCompose(userInput -> {
+                var candidates = completer.complete(userInput);
+                String completed = CompletionResult.resolve(userInput, candidates);
+                if (!completed.equals(userInput)) {
+                    return replaceUserInput(promptLength, completed);
+                }
+                return CompletableFuture.completedFuture(null);
+            });
         }
     }
 
@@ -251,13 +269,22 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
+            CompletableFuture<Void> prepareFuture;
             if (firstNavigation) {
-                String currentInput = getUserInput(promptLength);
-                navigator.updateOriginalInput(currentInput);
-                firstNavigation = false;
+                prepareFuture = getUserInput(promptLength).thenAccept(currentInput -> {
+                    navigator.updateOriginalInput(currentInput);
+                    firstNavigation = false;
+                });
+            } else {
+                prepareFuture = CompletableFuture.completedFuture(null);
             }
-            navigator.previous().ifPresent(entry -> replaceUserInput(promptLength, entry));
-            return CompletableFuture.completedFuture(null);
+            return prepareFuture.thenCompose(v -> {
+                var entryOpt = navigator.previous();
+                if (entryOpt.isPresent()) {
+                    return replaceUserInput(promptLength, entryOpt.get());
+                }
+                return CompletableFuture.completedFuture(null);
+            });
         }
     }
 
@@ -278,7 +305,10 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            navigator.next().ifPresent(entry -> replaceUserInput(promptLength, entry));
+            var entryOpt = navigator.next();
+            if (entryOpt.isPresent()) {
+                return replaceUserInput(promptLength, entryOpt.get());
+            }
             return CompletableFuture.completedFuture(null);
         }
     }
@@ -300,9 +330,7 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            cleanup(previousActiveWindowActor);
-            future.complete(new PromptResult.Cancelled());
-            return CompletableFuture.completedFuture(null);
+            return cleanup(previousActiveWindowActor).thenRun(() -> future.complete(new PromptResult.Cancelled()));
         }
     }
 }
