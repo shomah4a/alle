@@ -28,7 +28,6 @@ public class MinibufferInputPrompter implements InputPrompter {
     private static final Logger logger = Logger.getLogger(MinibufferInputPrompter.class.getName());
 
     private final FrameActor frameActor;
-    private @Nullable CompletableFuture<PromptResult> activeFuture;
 
     public MinibufferInputPrompter(FrameActor frameActor) {
         this.frameActor = frameActor;
@@ -52,12 +51,18 @@ public class MinibufferInputPrompter implements InputPrompter {
 
     private CompletableFuture<PromptResult> promptInternal(
             String message, String initialValue, InputHistory history, @Nullable Completer completer) {
-        if (activeFuture != null && !activeFuture.isDone()) {
-            logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
-            return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-        }
+        return frameActor.isMinibufferActive().thenCompose(active -> {
+            if (active) {
+                logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
+                return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+            }
+            return doPrompt(message, initialValue, history, completer);
+        });
+    }
+
+    private CompletableFuture<PromptResult> doPrompt(
+            String message, String initialValue, InputHistory history, @Nullable Completer completer) {
         var future = new CompletableFuture<PromptResult>();
-        activeFuture = future;
         var previousActiveWindowActor = frameActor.getActiveWindowActor();
         var minibufferActor = frameActor.getMinibufferWindowActor();
         var bufferActor = minibufferActor.getBufferActor();
@@ -160,8 +165,7 @@ public class MinibufferInputPrompter implements InputPrompter {
                 .thenCompose(v -> bufferActor.clearLocalKeymap())
                 // ミニバッファを無効化して元のウィンドウに戻す
                 .thenCompose(v -> frameActor.deactivateMinibuffer())
-                .thenCompose(v -> frameActor.setActiveWindow(previousActiveWindowActor))
-                .thenRun(() -> activeFuture = null);
+                .thenCompose(v -> frameActor.setActiveWindow(previousActiveWindowActor));
     }
 
     /**
