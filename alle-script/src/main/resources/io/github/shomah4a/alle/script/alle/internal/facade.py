@@ -33,6 +33,20 @@ def _wrap_minor_mode(mode: MinorModeBase) -> Any:
     return make_minor_mode(mode)
 
 
+def _make_major_mode_factory(mode_class: type) -> Any:
+    """MajorModeBase サブクラスから、呼び出すと Java MajorMode を返すファクトリ関数を作る。"""
+    def factory():
+        return make_major_mode(mode_class())
+    return factory
+
+
+def _make_minor_mode_factory(mode_class: type) -> Any:
+    """MinorModeBase サブクラスから、呼び出すと Java MinorMode を返すファクトリ関数を作る。"""
+    def factory():
+        return make_minor_mode(mode_class())
+    return factory
+
+
 def _require_facade() -> Any:
     if _editor_facade is None:
         raise RuntimeError("alle module is not initialized")

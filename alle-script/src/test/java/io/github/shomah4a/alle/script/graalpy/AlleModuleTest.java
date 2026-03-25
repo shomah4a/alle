@@ -154,4 +154,55 @@ class AlleModuleTest {
         }
         assertInstanceOf(ScriptResult.Success.class, result);
     }
+
+    @Test
+    void MajorModeBaseでメジャーモードを定義して登録できる() {
+        engine.eval("import alle");
+        engine.eval("from alle.mode import MajorModeBase");
+        engine.eval("""
+                class TestMode(MajorModeBase):
+                    def name(self):
+                        return "TestMode"
+                """);
+        ScriptResult result = engine.eval("alle.register_major_mode(TestMode)");
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("register_major_mode failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+    }
+
+    @Test
+    void MajorModeBaseで拡張子マッピング付きでメジャーモードを登録できる() {
+        engine.eval("import alle");
+        engine.eval("from alle.mode import MajorModeBase");
+        engine.eval("""
+                class PyMode(MajorModeBase):
+                    def name(self):
+                        return "Python"
+                """);
+        ScriptResult result = engine.eval("alle.register_major_mode(PyMode, extensions=['py', 'pyw'])");
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("register_major_mode with extensions failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+    }
+
+    @Test
+    void MinorModeBaseでマイナーモードを定義して登録できる() {
+        engine.eval("import alle");
+        engine.eval("from alle.mode import MinorModeBase");
+        engine.eval("""
+                class TestMinor(MinorModeBase):
+                    def name(self):
+                        return "TestMinor"
+                """);
+        ScriptResult result = engine.eval("alle.register_minor_mode(TestMinor)");
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("register_minor_mode failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+    }
 }

@@ -24,7 +24,14 @@ from typing import Any
 
 from alle.buffer import Buffer
 from alle.command import CommandBase
-from alle.internal.facade import _init, _require_facade, _wrap_command
+from alle.internal.facade import (
+    _init,
+    _make_major_mode_factory,
+    _make_minor_mode_factory,
+    _require_facade,
+    _wrap_command,
+)
+from alle.mode import MajorModeBase, MinorModeBase
 from alle.window import Window
 
 
@@ -60,3 +67,54 @@ def global_set_key(keystrokes: list[Any], command: CommandBase) -> None:
         command: CommandBase のサブクラスのインスタンス
     """
     _require_facade().globalSetKey(keystrokes, _wrap_command(command))
+
+
+def register_major_mode(
+    mode_class: type[MajorModeBase],
+    extensions: list[str] | None = None,
+) -> None:
+    """メジャーモードを登録する。同名のモードが既に存在する場合は上書きする。
+
+    Args:
+        mode_class: MajorModeBase のサブクラス（クラスそのもの）
+        extensions: 関連付けるファイル拡張子のリスト（ドットなし）。
+                    指定した場合、拡張子→モード名のマッピングも自動登録する。
+
+    使用例::
+
+        from alle.mode import MajorModeBase
+
+        class PythonMode(MajorModeBase):
+            def name(self):
+                return "Python"
+
+        alle.register_major_mode(PythonMode, extensions=["py", "pyw"])
+    """
+    facade = _require_facade()
+    factory = _make_major_mode_factory(mode_class)
+    facade.registerMajorMode(factory)
+    if extensions:
+        mode_name = mode_class().name()
+        for ext in extensions:
+            facade.registerAutoMode(ext, mode_name)
+
+
+def register_minor_mode(mode_class: type[MinorModeBase]) -> None:
+    """マイナーモードを登録する。同名のモードが既に存在する場合は上書きする。
+
+    Args:
+        mode_class: MinorModeBase のサブクラス（クラスそのもの）
+
+    使用例::
+
+        from alle.mode import MinorModeBase
+
+        class AutoSaveMode(MinorModeBase):
+            def name(self):
+                return "AutoSave"
+
+        alle.register_minor_mode(AutoSaveMode)
+    """
+    facade = _require_facade()
+    factory = _make_minor_mode_factory(mode_class)
+    facade.registerMinorMode(factory)
