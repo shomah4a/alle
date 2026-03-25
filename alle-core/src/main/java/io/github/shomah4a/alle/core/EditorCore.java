@@ -9,7 +9,10 @@ import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.command.CommentDwimCommand;
+import io.github.shomah4a.alle.core.command.CommentRegionCommand;
 import io.github.shomah4a.alle.core.command.CopyRegionCommand;
+import io.github.shomah4a.alle.core.command.DedentRegionCommand;
 import io.github.shomah4a.alle.core.command.DeleteCharCommand;
 import io.github.shomah4a.alle.core.command.DeleteOtherWindowsCommand;
 import io.github.shomah4a.alle.core.command.DeleteWindowCommand;
@@ -17,6 +20,8 @@ import io.github.shomah4a.alle.core.command.EndOfLineCommand;
 import io.github.shomah4a.alle.core.command.ExecuteCommandCommand;
 import io.github.shomah4a.alle.core.command.FindFileCommand;
 import io.github.shomah4a.alle.core.command.ForwardCharCommand;
+import io.github.shomah4a.alle.core.command.IndentDedentBackspaceCommand;
+import io.github.shomah4a.alle.core.command.IndentRegionCommand;
 import io.github.shomah4a.alle.core.command.KeyboardQuitCommand;
 import io.github.shomah4a.alle.core.command.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.KillLineCommand;
@@ -198,6 +203,11 @@ public final class EditorCore {
         registry.register(new NewlineCommand());
         registry.register(new NextLineCommand());
         registry.register(new PreviousLineCommand());
+        registry.register(new IndentDedentBackspaceCommand());
+        registry.register(new IndentRegionCommand());
+        registry.register(new DedentRegionCommand());
+        registry.register(new CommentDwimCommand());
+        registry.register(new CommentRegionCommand());
         var filePathHistory = new InputHistory();
         registry.register(new FindFileCommand(
                 bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, modeRegistry, filePathHistory));
@@ -237,7 +247,8 @@ public final class EditorCore {
         keymap.bind(KeyStroke.ctrl('p'), registry.lookup("previous-line").orElseThrow());
         keymap.bind(KeyStroke.ctrl('d'), registry.lookup("delete-char").orElseThrow());
         keymap.bind(KeyStroke.ctrl('k'), registry.lookup("kill-line").orElseThrow());
-        keymap.bind(KeyStroke.of(0x7F), registry.lookup("backward-delete-char").orElseThrow());
+        keymap.bind(
+                KeyStroke.of(0x7F), registry.lookup("indent-dedent-backspace").orElseThrow());
         keymap.bind(KeyStroke.of('\n'), registry.lookup("newline").orElseThrow());
 
         // アローキー
@@ -286,6 +297,16 @@ public final class EditorCore {
 
         // M-x
         keymap.bind(KeyStroke.meta('x'), registry.lookup("execute-command").orElseThrow());
+
+        // M-; (comment toggle)
+        keymap.bind(KeyStroke.meta(';'), registry.lookup("comment-dwim").orElseThrow());
+
+        // C-c プレフィックスキーマップ
+        var ctrlCMap = new Keymap("C-c");
+        ctrlCMap.bind(KeyStroke.of('>'), registry.lookup("indent-region").orElseThrow());
+        ctrlCMap.bind(KeyStroke.of('<'), registry.lookup("dedent-region").orElseThrow());
+        ctrlCMap.bind(KeyStroke.of('#'), registry.lookup("comment-region").orElseThrow());
+        keymap.bindPrefix(KeyStroke.ctrl('c'), ctrlCMap);
 
         return keymap;
     }

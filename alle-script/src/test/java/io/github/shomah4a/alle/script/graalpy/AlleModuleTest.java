@@ -491,45 +491,6 @@ class AlleModuleTest {
     }
 
     @Test
-    void Backspaceでインデント単位の削除ができる() {
-        engine.eval("import alle");
-        buffer.insertText(0, "        x = 1");
-        engine.eval("alle.active_window().goto_char(8)"); // インデント末尾
-        ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import dedent_backspace
-                dedent_backspace.run()
-                """);
-        assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("    x = 1", buffer.getText());
-    }
-
-    @Test
-    void コメントトグルでコメントが挿入される() {
-        engine.eval("import alle");
-        buffer.insertText(0, "    x = 1");
-        engine.eval("alle.active_window().goto_char(4)");
-        ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import comment_dwim
-                comment_dwim.run()
-                """);
-        assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("    # x = 1", buffer.getText());
-    }
-
-    @Test
-    void コメントトグルでコメントが解除される() {
-        engine.eval("import alle");
-        buffer.insertText(0, "    # x = 1");
-        engine.eval("alle.active_window().goto_char(6)");
-        ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import comment_dwim
-                comment_dwim.run()
-                """);
-        assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("    x = 1", buffer.getText());
-    }
-
-    @Test
     void newlineAndIndentでpass後にデデントされる() {
         engine.eval("import alle");
         buffer.insertText(0, "        pass");
@@ -540,41 +501,6 @@ class AlleModuleTest {
                 """);
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("        pass\n    ", buffer.getText());
-    }
-
-    @Test
-    void リージョンインデントで選択範囲がインデントされる() {
-        engine.eval("import alle");
-        buffer.insertText(0, "x = 1\ny = 2\nz = 3");
-        // 全行を選択
-        engine.eval("""
-                win = alle.active_window()
-                win.set_mark(0)
-                win.goto_char(17)
-                """);
-        ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import indent_region
-                indent_region.run()
-                """);
-        assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("    x = 1\n    y = 2\n    z = 3", buffer.getText());
-    }
-
-    @Test
-    void リージョンデデントで選択範囲がデデントされる() {
-        engine.eval("import alle");
-        buffer.insertText(0, "    x = 1\n    y = 2");
-        engine.eval("""
-                win = alle.active_window()
-                win.set_mark(0)
-                win.goto_char(19)
-                """);
-        ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import dedent_region
-                dedent_region.run()
-                """);
-        assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("x = 1\ny = 2", buffer.getText());
     }
 
     @Test

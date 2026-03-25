@@ -76,6 +76,16 @@ public class EditorFacade implements Loggable {
     }
 
     /**
+     * 登録済みコマンドを名前で検索する。
+     *
+     * @param name コマンド名
+     * @return コマンドが見つかった場合はそのCommand、見つからない場合はnull
+     */
+    public @org.jspecify.annotations.Nullable Command lookupCommand(String name) {
+        return commandRegistry.lookup(name).orElse(null);
+    }
+
+    /**
      * グローバルキーマップにキーバインドを設定する。
      * キーストロークのリストが複数要素の場合、プレフィックスキーを自動解決する。
      *

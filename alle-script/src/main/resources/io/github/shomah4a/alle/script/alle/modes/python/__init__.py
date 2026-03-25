@@ -7,22 +7,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from alle.keybind import bind_key, bind_prefix, create_keymap, ctrl, key, meta
+from alle.keybind import bind_key, create_keymap, key
 from alle.mode import MajorModeBase
-from alle.modes.python.commands import (
-    comment_dwim,
-    comment_region,
-    dedent_backspace,
-    dedent_region,
-    indent_line,
-    indent_region,
-    newline_and_indent,
-)
+from alle.modes.python.commands import indent_line, newline_and_indent
 from alle.modes.python.styler import create_python_styler
 
 
 def _create_python_keymap() -> Any:
     """Python モード固有のキーマップを生成する。
+
+    Python 固有のコマンドのみバインドする。
+    コアコマンド（comment-dwim, indent-region 等）はグローバルキーマップにバインドされている。
 
     :return: Keymap インスタンス
     :rtype: Keymap
@@ -30,16 +25,6 @@ def _create_python_keymap() -> Any:
     keymap = create_keymap("python-mode")
     bind_key(keymap, key("\n"), newline_and_indent)
     bind_key(keymap, key("\t"), indent_line)
-    bind_key(keymap, key("\x7f"), dedent_backspace)
-    bind_key(keymap, meta(";"), comment_dwim)
-
-    # C-c プレフィックスキー
-    cc_map = create_keymap("C-c")
-    bind_key(cc_map, key(">"), indent_region)
-    bind_key(cc_map, key("<"), dedent_region)
-    bind_key(cc_map, key("#"), comment_region)
-    bind_prefix(keymap, ctrl("c"), cc_map)
-
     return keymap
 
 

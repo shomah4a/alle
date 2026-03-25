@@ -96,3 +96,21 @@ def bind_prefix(keymap: Any, keystroke: Any, prefix_keymap: Any) -> None:
     :type prefix_keymap: Keymap
     """
     keymap.bindPrefix(keystroke, prefix_keymap)
+
+
+def bind_core_command(keymap: Any, keystroke: Any, command_name: str) -> None:
+    """キーマップにコアコマンド（Java側で登録済みのコマンド）をバインドする。
+
+    :param keymap: バインド先のキーマップ
+    :type keymap: Keymap
+    :param keystroke: バインドするキーストローク
+    :type keystroke: KeyStroke
+    :param command_name: コマンド名（例: ``"indent-dedent-backspace"``）
+    :type command_name: str
+    :raises ValueError: コマンドが見つからない場合
+    """
+    from alle.internal.facade import _require_facade
+    command = _require_facade().lookupCommand(command_name)
+    if command is None:
+        raise ValueError(f"コマンド '{command_name}' は登録されていません")
+    keymap.bind(keystroke, command)
