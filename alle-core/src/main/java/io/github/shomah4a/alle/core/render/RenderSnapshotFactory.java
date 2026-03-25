@@ -131,7 +131,12 @@ public final class RenderSnapshotFactory {
         String dirty = buffer.isDirty() ? "**" : "--";
         String bufferName = buffer.getName();
         String modeName = buffer.getMajorMode().name();
-        return String.format("--%s  %s    (%d,%d)  (%s)", dirty, bufferName, lineIndex + 1, column, modeName);
+        var minorModes = buffer.getMinorModes();
+        String minorModesText = minorModes.isEmpty()
+                ? ""
+                : " " + minorModes.collect(m -> m.name()).makeString(" ");
+        return String.format(
+                "--%s  %s    (%d,%d)  (%s%s)", dirty, bufferName, lineIndex + 1, column, modeName, minorModesText);
     }
 
     private static CursorPosition computeCursorPosition(Window window, Rect rect) {

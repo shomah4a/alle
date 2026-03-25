@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -208,6 +210,41 @@ class RenderSnapshotFactoryTest {
             var ws = snapshot.windowSnapshots().get(0);
             var lastLine = ws.visibleLines().get(ws.visibleLines().size() - 1);
             assertEquals("g", lastLine.text());
+        }
+    }
+
+    @Nested
+    class モードライン_マイナーモード表示 {
+
+        @Test
+        void マイナーモードが有効な場合モードラインにマイナーモード名が表示される() {
+            var mainBuffer = createBuffer("main", "hello");
+            mainBuffer.enableMinorMode(new MinorMode() {
+                @Override
+                public String name() {
+                    return "TestMinor";
+                }
+
+                @Override
+                public java.util.Optional<Keymap> keymap() {
+                    return java.util.Optional.empty();
+                }
+            });
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(new Window(mainBuffer), new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+            var modeLine = snapshot.windowSnapshots().get(0).modeLine();
+            assertTrue(modeLine.contains("TestMinor"), "マイナーモード名を含む");
+        }
+
+        @Test
+        void マイナーモードが無効な場合モードラインにマイナーモード名が表示されない() {
+            var frame = createFrame("hello");
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+            var modeLine = snapshot.windowSnapshots().get(0).modeLine();
+            assertFalse(modeLine.contains("TestMinor"), "マイナーモード名を含まない");
+            assertTrue(modeLine.contains("(Text)"), "メジャーモード名のみ表示される");
         }
     }
 
