@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
-import io.github.shomah4a.alle.core.command.TestCommandContextFactory.CreateResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -13,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class BeginningOfLineCommandTest {
 
-    private CreateResult createContext(String text, int point) {
+    private CommandContext createContext(String text, int point) {
         var buffer = new EditableBuffer("test", new GapTextModel());
         var window = new Window(buffer);
         var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
@@ -22,7 +21,7 @@ class BeginningOfLineCommandTest {
             window.insert(text);
         }
         window.setPoint(point);
-        return new CreateResult(frame, TestCommandContextFactory.create(frame, new BufferManager()));
+        return TestCommandContextFactory.create(frame, new BufferManager());
     }
 
     @Nested
@@ -30,30 +29,30 @@ class BeginningOfLineCommandTest {
 
         @Test
         void 行中から行頭に移動する() {
-            var result = createContext("Hello", 3);
-            new BeginningOfLineCommand().execute(result.context()).join();
-            assertEquals(0, result.frame().getActiveWindow().getPoint());
+            var context = createContext("Hello", 3);
+            new BeginningOfLineCommand().execute(context).join();
+            assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 行頭にいる場合は移動しない() {
-            var result = createContext("Hello", 0);
-            new BeginningOfLineCommand().execute(result.context()).join();
-            assertEquals(0, result.frame().getActiveWindow().getPoint());
+            var context = createContext("Hello", 0);
+            new BeginningOfLineCommand().execute(context).join();
+            assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 複数行の2行目で行頭に移動する() {
-            var result = createContext("Hello\nWorld", 8);
-            new BeginningOfLineCommand().execute(result.context()).join();
-            assertEquals(6, result.frame().getActiveWindow().getPoint());
+            var context = createContext("Hello\nWorld", 8);
+            new BeginningOfLineCommand().execute(context).join();
+            assertEquals(6, context.frame().getActiveWindow().getPoint());
         }
 
         @Test
         void 改行文字上から行頭に移動する() {
-            var result = createContext("Hello\nWorld", 5);
-            new BeginningOfLineCommand().execute(result.context()).join();
-            assertEquals(0, result.frame().getActiveWindow().getPoint());
+            var context = createContext("Hello\nWorld", 5);
+            new BeginningOfLineCommand().execute(context).join();
+            assertEquals(0, context.frame().getActiveWindow().getPoint());
         }
     }
 }

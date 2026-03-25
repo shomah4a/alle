@@ -17,9 +17,8 @@ class UndoRedoCommandTest {
 
         @Test
         void 挿入操作を取り消す() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("Hello");
             assertEquals("Hello", window.getBuffer().getText());
 
@@ -31,9 +30,8 @@ class UndoRedoCommandTest {
 
         @Test
         void 削除操作を取り消す() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("Hello");
             window.setPoint(4);
             window.deleteForward(1);
@@ -47,9 +45,8 @@ class UndoRedoCommandTest {
 
         @Test
         void 複数回undoする() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("A");
             window.insert("B");
             assertEquals("AB", window.getBuffer().getText());
@@ -63,9 +60,8 @@ class UndoRedoCommandTest {
 
         @Test
         void undo履歴がない場合は何もしない() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
 
             new UndoCommand().execute(context).join();
 
@@ -75,9 +71,8 @@ class UndoRedoCommandTest {
 
         @Test
         void undo操作自体はundo履歴に記録されない() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("Hello");
 
             new UndoCommand().execute(context).join();
@@ -99,9 +94,8 @@ class UndoRedoCommandTest {
 
         @Test
         void undoした操作をやり直す() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("Hello");
             new UndoCommand().execute(context).join();
             assertEquals("", window.getBuffer().getText());
@@ -114,9 +108,8 @@ class UndoRedoCommandTest {
 
         @Test
         void redo履歴がない場合は何もしない() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("Hello");
 
             new RedoCommand().execute(context).join();
@@ -126,9 +119,8 @@ class UndoRedoCommandTest {
 
         @Test
         void 通常の編集後はredoできない() {
-            var result = TestCommandContextFactory.createDefaultWithFrame();
-            var context = result.context();
-            var window = result.frame().getActiveWindow();
+            var context = TestCommandContextFactory.createDefault();
+            var window = context.frame().getActiveWindow();
             window.insert("Hello");
             new UndoCommand().execute(context).join();
             window.insert("World");

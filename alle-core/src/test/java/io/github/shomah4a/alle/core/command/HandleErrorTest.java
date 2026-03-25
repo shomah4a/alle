@@ -9,7 +9,6 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
-import io.github.shomah4a.alle.core.window.FrameActor;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
@@ -32,7 +31,7 @@ class HandleErrorTest {
         messageBuffer = new MessageBuffer("*Messages*", 100);
         warningBuffer = new MessageBuffer("*Warnings*", 100);
         context = new CommandContext(
-                new FrameActor(frame),
+                frame,
                 new BufferManager(),
                 new WindowActor(window),
                 (msg, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled()),

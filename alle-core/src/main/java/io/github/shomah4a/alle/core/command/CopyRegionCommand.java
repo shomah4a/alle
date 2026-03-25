@@ -16,9 +16,25 @@ public class CopyRegionCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor()
-                .copyRegion()
-                .thenAccept(textOpt ->
-                        textOpt.ifPresent(copiedText -> context.killRing().push(copiedText)));
+        return context.activeWindowActor().atomicPerform(window -> {
+            var regionStart = window.getRegionStart();
+            var regionEnd = window.getRegionEnd();
+            if (regionStart.isEmpty() || regionEnd.isEmpty()) {
+                return null;
+            }
+
+            int start = regionStart.get();
+            int end = regionEnd.get();
+            if (start == end) {
+                return null;
+            }
+
+            var buffer = window.getBuffer();
+            String copiedText = buffer.substring(start, end);
+            window.clearMark();
+
+            context.killRing().push(copiedText);
+            return null;
+        });
     }
 }

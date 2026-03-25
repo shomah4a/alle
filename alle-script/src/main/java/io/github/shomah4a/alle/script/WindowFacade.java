@@ -55,6 +55,6 @@ public class WindowFacade {
      * このウィンドウのバッファのファサードを返す。
      */
     public CompletableFuture<BufferFacade> buffer() {
-        return CompletableFuture.completedFuture(new BufferFacade(actor.getBufferActor()));
+        return actor.getBuffer().thenApply(BufferFacade::new);
     }
 }

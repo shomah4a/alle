@@ -15,6 +15,7 @@ public class OtherWindowCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.frameActor().nextWindow();
+        context.frame().nextWindow();
+        return CompletableFuture.completedFuture(null);
     }
 }

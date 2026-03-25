@@ -4,36 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.concurrent.ActorThread;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class BufferActorTest {
 
-    private final MutableList<BufferActor> createdActors = Lists.mutable.empty();
-
-    @AfterEach
-    void tearDown() {
-        createdActors.forEach(BufferActor::shutdown);
-    }
-
     private BufferActor createActor(String name) {
-        var actor = new BufferActor(new EditableBuffer(name, new GapTextModel()), ActorThread.create("test-" + name));
-        createdActors.add(actor);
-        return actor;
+        return new BufferActor(new EditableBuffer(name, new GapTextModel()));
     }
 
     private BufferActor createActorWithText(String name, String text) {
         var model = new GapTextModel();
         model.insert(0, text);
-        var actor = new BufferActor(new EditableBuffer(name, model), ActorThread.create("test-" + name));
-        createdActors.add(actor);
-        return actor;
+        return new BufferActor(new EditableBuffer(name, model));
     }
 
     @Nested
@@ -132,8 +117,7 @@ class BufferActorTest {
         @Test
         void ラップしているBufferを取得できる() {
             var buffer = new EditableBuffer("test", new GapTextModel());
-            var actor = new BufferActor(buffer, ActorThread.create("test-direct"));
-            createdActors.add(actor);
+            var actor = new BufferActor(buffer);
             assertEquals(buffer, actor.getBuffer());
         }
     }

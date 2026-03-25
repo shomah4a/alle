@@ -14,11 +14,11 @@ public class DeleteOtherWindowsCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.frameActor().isMinibufferActive().thenCompose(active -> {
-            if (active) {
-                return CompletableFuture.completedFuture(null);
-            }
-            return context.frameActor().deleteOtherWindows();
-        });
+        var frame = context.frame();
+        if (frame.isMinibufferActive()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        frame.deleteOtherWindows();
+        return CompletableFuture.completedFuture(null);
     }
 }

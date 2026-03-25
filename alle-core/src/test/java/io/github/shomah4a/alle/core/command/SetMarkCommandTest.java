@@ -14,9 +14,8 @@ class SetMarkCommandTest {
 
     @Test
     void 現在のポイント位置にmarkが設定される() {
-        var result = TestCommandContextFactory.createDefaultWithFrame();
-        var context = result.context();
-        var window = result.frame().getActiveWindow();
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
         window.insert("Hello");
         window.setPoint(3);
 
@@ -27,9 +26,8 @@ class SetMarkCommandTest {
 
     @Test
     void 先頭でmarkを設定できる() {
-        var result = TestCommandContextFactory.createDefaultWithFrame();
-        var context = result.context();
-        var window = result.frame().getActiveWindow();
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
         window.insert("Hello");
         window.setPoint(0);
 
@@ -40,9 +38,8 @@ class SetMarkCommandTest {
 
     @Test
     void 末尾でmarkを設定できる() {
-        var result = TestCommandContextFactory.createDefaultWithFrame();
-        var context = result.context();
-        var window = result.frame().getActiveWindow();
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
         window.insert("Hello");
 
         new SetMarkCommand().execute(context).join();
@@ -52,9 +49,8 @@ class SetMarkCommandTest {
 
     @Test
     void markを再設定すると上書きされる() {
-        var result = TestCommandContextFactory.createDefaultWithFrame();
-        var context = result.context();
-        var window = result.frame().getActiveWindow();
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
         window.insert("Hello");
         window.setPoint(2);
         new SetMarkCommand().execute(context).join();

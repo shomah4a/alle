@@ -2,35 +2,10 @@
 
 ## 未着手タスク
 
-### スレッドセーフ性: MessageBuffer の同期化 (CRITICAL)
-- `showingMessage` フラグと `lines` (RingBuffer) がEditorThread/RenderThread間で無保護
-- synchronized化またはAtomicBoolean + concurrent RingBuffer
-- 詳細: [docs/reports/2026-03-24_thread-safety-audit.md](../reports/2026-03-24_thread-safety-audit.md)
-
-### スレッドセーフ性: KillRing の同期化 (HIGH)
-- `index` と `entries` が非同期コマンド実行から呼ばれうるが同期化されていない
-- synchronized保護が必要
-- 詳細: [docs/reports/2026-03-24_thread-safety-audit.md](../reports/2026-03-24_thread-safety-audit.md)
-
-### スレッドセーフ性: CommandRegistry の同期化 (HIGH)
-- スクリプト側からの concurrent register/lookup が保護されていない
-- ConcurrentHashMapまたはsynchronized
-- 詳細: [docs/reports/2026-03-24_thread-safety-audit.md](../reports/2026-03-24_thread-safety-audit.md)
-
-### スレッドセーフ性: BufferManager の同期化 (HIGH)
-- `currentIndex` のバッファ追加/削除中の不整合リスク
-- synchronizedメソッド化が必要
-- 詳細: [docs/reports/2026-03-24_thread-safety-audit.md](../reports/2026-03-24_thread-safety-audit.md)
-
-### スレッドセーフ性: getBuffer()/getWindow() エスケープハッチの廃止 (HIGH)
-- Actor の排他制御を迂回して内部オブジェクトに直接アクセスできてしまう
-- ADR-0058 方針に従い段階的に廃止する
-- 詳細: [docs/reports/2026-03-24_thread-safety-audit.md](../reports/2026-03-24_thread-safety-audit.md)
-
-### スレッドセーフ性: CommandLoop.resolveKey() の非同期化 (MEDIUM)
-- `frameActor.resolveKey().join()` が将来キュー化時にデッドロック要因
-- 非同期チェーンに変更する
-- 詳細: [docs/reports/2026-03-24_thread-safety-audit.md](../reports/2026-03-24_thread-safety-audit.md)
+### スクリプトエンジン: BufferFacade のスレッド安全性
+- BufferFacade の insertAt/deleteAt が Buffer を直接操作しており WindowActor を経由していない
+- WindowActor が非同期化された場合にレースコンディションの温床になる
+- BufferFacade を読み取り専用にするか、WindowActor 経由に統一する
 
 ### スクリプトエンジン: 初期化の遅延実行
 - スクリプトエンジンの初期化を EditorRunner.run() 開始後に遅延する

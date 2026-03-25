@@ -3,7 +3,6 @@ package io.github.shomah4a.alle.core.command;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.command.TestCommandContextFactory.CreateResult;
 import org.junit.jupiter.api.Test;
 
 class KillRegionCommandTest {
@@ -16,13 +15,13 @@ class KillRegionCommandTest {
     @Test
     void markからpointまでのテキストを削除してkillRingに蓄積する() {
         var killRing = new KillRing();
-        var result = createContext(killRing);
-        var window = result.frame().getActiveWindow();
+        var context = createContext(killRing);
+        var window = context.frame().getActiveWindow();
         window.insert("Hello World");
         window.setMark(5);
         window.setPoint(11);
 
-        new KillRegionCommand().execute(result.context()).join();
+        new KillRegionCommand().execute(context).join();
 
         assertEquals("Hello", window.getBuffer().getText());
         assertEquals(5, window.getPoint());
@@ -33,13 +32,13 @@ class KillRegionCommandTest {
     @Test
     void pointがmarkより前の場合も正しく削除する() {
         var killRing = new KillRing();
-        var result = createContext(killRing);
-        var window = result.frame().getActiveWindow();
+        var context = createContext(killRing);
+        var window = context.frame().getActiveWindow();
         window.insert("Hello World");
         window.setMark(11);
         window.setPoint(5);
 
-        new KillRegionCommand().execute(result.context()).join();
+        new KillRegionCommand().execute(context).join();
 
         assertEquals("Hello", window.getBuffer().getText());
         assertEquals(5, window.getPoint());
@@ -49,11 +48,11 @@ class KillRegionCommandTest {
     @Test
     void markが未設定の場合は何もしない() {
         var killRing = new KillRing();
-        var result = createContext(killRing);
-        var window = result.frame().getActiveWindow();
+        var context = createContext(killRing);
+        var window = context.frame().getActiveWindow();
         window.insert("Hello");
 
-        new KillRegionCommand().execute(result.context()).join();
+        new KillRegionCommand().execute(context).join();
 
         assertEquals("Hello", window.getBuffer().getText());
         assertTrue(killRing.current().isEmpty());
@@ -62,13 +61,13 @@ class KillRegionCommandTest {
     @Test
     void markとpointが同じ位置の場合は何もしない() {
         var killRing = new KillRing();
-        var result = createContext(killRing);
-        var window = result.frame().getActiveWindow();
+        var context = createContext(killRing);
+        var window = context.frame().getActiveWindow();
         window.insert("Hello");
         window.setMark(3);
         window.setPoint(3);
 
-        new KillRegionCommand().execute(result.context()).join();
+        new KillRegionCommand().execute(context).join();
 
         assertEquals("Hello", window.getBuffer().getText());
         assertTrue(killRing.current().isEmpty());
@@ -77,23 +76,22 @@ class KillRegionCommandTest {
     @Test
     void killRegionの削除をundoで復元できる() {
         var killRing = new KillRing();
-        var result = createContext(killRing);
-        var window = result.frame().getActiveWindow();
+        var context = createContext(killRing);
+        var window = context.frame().getActiveWindow();
         window.insert("Hello World");
         window.setMark(5);
         window.setPoint(11);
 
-        new KillRegionCommand().execute(result.context()).join();
+        new KillRegionCommand().execute(context).join();
         assertEquals("Hello", window.getBuffer().getText());
 
-        new UndoCommand().execute(result.context()).join();
+        new UndoCommand().execute(context).join();
         assertEquals("Hello World", window.getBuffer().getText());
     }
 
-    private CreateResult createContext(KillRing killRing) {
-        var defaultResult = TestCommandContextFactory.createDefaultWithFrame();
-        var context = TestCommandContextFactory.create(
-                defaultResult.frame(), defaultResult.context().bufferManager(), killRing, java.util.Optional.empty());
-        return new CreateResult(defaultResult.frame(), context);
+    private CommandContext createContext(KillRing killRing) {
+        var defaultCtx = TestCommandContextFactory.createDefault();
+        return TestCommandContextFactory.create(
+                defaultCtx.frame(), defaultCtx.bufferManager(), killRing, java.util.Optional.empty());
     }
 }

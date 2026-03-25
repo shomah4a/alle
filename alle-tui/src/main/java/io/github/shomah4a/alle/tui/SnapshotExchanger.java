@@ -1,6 +1,5 @@
 package io.github.shomah4a.alle.tui;
 
-import io.github.shomah4a.alle.core.window.RenderSnapshot;
 import org.jspecify.annotations.Nullable;
 
 /**

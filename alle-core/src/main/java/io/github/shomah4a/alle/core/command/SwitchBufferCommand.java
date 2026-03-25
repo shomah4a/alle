@@ -28,40 +28,35 @@ public class SwitchBufferCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var actor = context.activeWindowActor();
-        return actor.getPreviousBufferName().thenCompose(defaultNameOpt -> {
-            var defaultName = defaultNameOpt.orElse("");
-            var promptMessage =
-                    defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
+        var window = context.frame().getActiveWindow();
+        var defaultName = window.getPreviousBuffer().map(b -> b.getName()).orElse("");
+        var promptMessage =
+                defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
 
-            var completer = new BufferNameCompleter(context.bufferManager());
-            return context.inputPrompter()
-                    .prompt(promptMessage, "", bufferHistory, completer)
-                    .thenCompose(result -> {
-                        if (result instanceof PromptResult.Confirmed confirmed) {
-                            var input = confirmed.value();
-                            var bufferName = input.isEmpty() ? defaultName : input;
-                            return switchBuffer(context, bufferName);
-                        }
-                        return CompletableFuture.completedFuture(null);
-                    });
-        });
+        var completer = new BufferNameCompleter(context.bufferManager());
+        return context.inputPrompter()
+                .prompt(promptMessage, "", bufferHistory, completer)
+                .thenAccept(result -> {
+                    if (result instanceof PromptResult.Confirmed confirmed) {
+                        var input = confirmed.value();
+                        var bufferName = input.isEmpty() ? defaultName : input;
+                        switchBuffer(context, bufferName);
+                    }
+                });
     }
 
-    private CompletableFuture<Void> switchBuffer(CommandContext context, String bufferName) {
+    private void switchBuffer(CommandContext context, String bufferName) {
         if (bufferName.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
+            return;
         }
         var existing = context.bufferManager().findByName(bufferName);
         if (existing.isPresent()) {
-            var actor = context.bufferManager().getActor(existing.get());
-            return context.activeWindowActor().setBuffer(actor);
+            context.frame().getActiveWindow().setBuffer(existing.get());
+        } else {
+            var newBuffer = new EditableBuffer(bufferName, new GapTextModel());
+            context.bufferManager().add(newBuffer);
+            context.frame().getActiveWindow().setBuffer(newBuffer);
+            context.messageBuffer().message("Buffer created: " + bufferName);
         }
-        var newBuffer = new EditableBuffer(bufferName, new GapTextModel());
-        context.bufferManager().add(newBuffer);
-        var actor = context.bufferManager().getActor(newBuffer);
-        return context.activeWindowActor()
-                .setBuffer(actor)
-                .thenRun(() -> context.messageBuffer().message("Buffer created: " + bufferName));
     }
 }

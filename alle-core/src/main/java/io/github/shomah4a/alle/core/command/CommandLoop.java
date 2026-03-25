@@ -9,9 +9,9 @@ import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
-import io.github.shomah4a.alle.core.window.FrameActor;
+import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jspecify.annotations.Nullable;
@@ -31,7 +31,7 @@ public class CommandLoop {
 
     private final InputSource inputSource;
     private final KeyResolver keyResolver;
-    private final FrameActor frameActor;
+    private final Frame frame;
     private final BufferManager bufferManager;
     private final InputPrompter inputPrompter;
     private final KillRing killRing;
@@ -48,13 +48,13 @@ public class CommandLoop {
     public CommandLoop(
             InputSource inputSource,
             KeyResolver keyResolver,
-            FrameActor frameActor,
+            Frame frame,
             BufferManager bufferManager,
             InputPrompter inputPrompter) {
         this(
                 inputSource,
                 keyResolver,
-                frameActor,
+                frame,
                 bufferManager,
                 inputPrompter,
                 new KillRing(),
@@ -65,7 +65,7 @@ public class CommandLoop {
     public CommandLoop(
             InputSource inputSource,
             KeyResolver keyResolver,
-            FrameActor frameActor,
+            Frame frame,
             BufferManager bufferManager,
             InputPrompter inputPrompter,
             KillRing killRing,
@@ -73,7 +73,7 @@ public class CommandLoop {
             MessageBuffer warningBuffer) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
-        this.frameActor = frameActor;
+        this.frame = frame;
         this.bufferManager = bufferManager;
         this.inputPrompter = inputPrompter;
         this.killRing = killRing;
@@ -91,61 +91,91 @@ public class CommandLoop {
             if (keyOpt.isEmpty()) {
                 break;
             }
-            var unused = processKey(keyOpt.get());
+            processKey(keyOpt.get());
         }
     }
 
     /**
-     * 1つのキーストロークを処理し、コマンド実行のCompletableFutureを返す。
-     * コマンドが実行された場合はそのfutureを、それ以外は完了済みfutureを返す。
+     * 1つのキーストロークを処理する。テスト用に公開。
+     * 非ブロッキング: 1キーにつき1回の状態遷移で即座にreturnする。
      * プレフィックスキーの場合は内部状態として保持し、次の呼び出しで解決する。
      */
-    public CompletableFuture<Void> processKey(KeyStroke keyStroke) {
+    public void processKey(KeyStroke keyStroke) {
         messageBuffer.clearShowingMessage();
 
         if (pendingPrefix != null) {
-            return processPrefixKey(keyStroke);
+            processPrefixKey(keyStroke);
         } else {
-            return processNormalKey(keyStroke);
+            processNormalKey(keyStroke);
         }
     }
 
-    private static final CompletableFuture<Void> COMPLETED = CompletableFuture.completedFuture(null);
-
-    private CompletableFuture<Void> processNormalKey(KeyStroke keyStroke) {
+    private void processNormalKey(KeyStroke keyStroke) {
         var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
-            return handleEntry(entryOpt.get(), keyStroke, "");
+            handleEntry(entryOpt.get(), keyStroke, "");
         }
-        return COMPLETED;
     }
 
-    private CompletableFuture<Void> processPrefixKey(KeyStroke keyStroke) {
+    private void processPrefixKey(KeyStroke keyStroke) {
         var prefix = pendingPrefix;
         pendingPrefix = null;
         if (prefix == null) {
-            return COMPLETED;
+            return;
         }
 
         var entryOpt = prefix.keymap().lookup(keyStroke);
         if (entryOpt.isPresent()) {
-            return handleEntry(entryOpt.get(), keyStroke, prefix.displayText());
+            handleEntry(entryOpt.get(), keyStroke, prefix.displayText());
         }
-        return COMPLETED;
     }
 
     private Optional<KeymapEntry> resolveKey(KeyStroke keyStroke) {
-        return frameActor.resolveKey(keyStroke, keyResolver).join();
+        var buffer = frame.getActiveWindow().getBuffer();
+
+        // 1. バッファローカルキーマップ（ミニバッファ用）
+        var localKeymapOpt = buffer.getLocalKeymap();
+        if (localKeymapOpt.isPresent()) {
+            var localEntry = localKeymapOpt.get().lookup(keyStroke);
+            if (localEntry.isPresent()) {
+                return localEntry;
+            }
+        }
+
+        // 2. マイナーモードキーマップ（後から有効にしたものが優先）
+        var minorModes = buffer.getMinorModes();
+        for (int i = minorModes.size() - 1; i >= 0; i--) {
+            var modeKeymapOpt = minorModes.get(i).keymap();
+            if (modeKeymapOpt.isPresent()) {
+                var entry = modeKeymapOpt.get().lookup(keyStroke);
+                if (entry.isPresent()) {
+                    return entry;
+                }
+            }
+        }
+
+        // 3. メジャーモードキーマップ
+        var majorKeymapOpt = buffer.getMajorMode().keymap();
+        if (majorKeymapOpt.isPresent()) {
+            var entry = majorKeymapOpt.get().lookup(keyStroke);
+            if (entry.isPresent()) {
+                return entry;
+            }
+        }
+
+        // 4. グローバルキーマップ
+        return keyResolver.resolve(keyStroke);
     }
 
-    private CompletableFuture<Void> handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {
+    private void handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
+                var windowActor = new WindowActor(frame.getActiveWindow());
                 var context = new CommandContext(
-                        frameActor,
+                        frame,
                         bufferManager,
-                        frameActor.getActiveWindowActor(),
+                        windowActor,
                         inputPrompter,
                         Optional.of(keyStroke),
                         thisCommand,
@@ -153,7 +183,7 @@ public class CommandLoop {
                         killRing,
                         messageBuffer,
                         warningBuffer);
-                return command.execute(context)
+                command.execute(context)
                         .thenRun(() -> lastCommand = thisCommand)
                         .exceptionally(ex -> {
                             var cause = ex.getCause() != null ? ex.getCause() : ex;
@@ -171,7 +201,6 @@ public class CommandLoop {
                 var displayText = prefixDisplay + keyStroke.displayString() + " ";
                 pendingPrefix = new PendingPrefix(prefixKeymap, displayText);
                 messageBuffer.message(displayText);
-                return COMPLETED;
             }
         }
     }

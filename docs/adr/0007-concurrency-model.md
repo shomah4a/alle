@@ -2,15 +2,12 @@
 
 ## ステータス
 
-承認済み（BufferActorのスレッド化を実施: [ADR-0060](0060-actor-multithread.md)）
+承認済み（未実装）
 
 ## コンテキスト
 
 Emacsはシングルスレッド設計であり、重い処理（大ファイルの検索、外部プロセス連携等）でUIがブロックされる。
 Alleiではこの問題を解消したい。
-
-→ [ADR-0058](0058-actor-as-public-api.md) で Actor を唯一の公開操作 API とする設計改善を実施。
-→ [ADR-0060](0060-actor-multithread.md) で BufferActor のスレッド化を実施。
 
 ## 検討した選択肢
 

@@ -15,7 +15,9 @@ public class SetMarkCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var actor = context.activeWindowActor();
-        return actor.getPoint().thenCompose(actor::setMark);
+        return context.activeWindowActor().atomicPerform(window -> {
+            window.setMark(window.getPoint());
+            return null;
+        });
     }
 }

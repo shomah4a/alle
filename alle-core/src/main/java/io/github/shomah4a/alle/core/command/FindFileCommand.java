@@ -55,24 +55,24 @@ public class FindFileCommand implements Command {
         String initialValue = workingDirectory + "/";
         return context.inputPrompter()
                 .prompt("Find file: ", initialValue, filePathHistory, completer)
-                .thenCompose(result -> {
+                .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
-                        return openFile(context, confirmed.value());
+                        openFile(context, confirmed.value());
                     }
-                    return CompletableFuture.completedFuture(null);
                 });
     }
 
-    private CompletableFuture<Void> openFile(CommandContext context, String pathString) {
+    private void openFile(CommandContext context, String pathString) {
         if (pathString.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
+            return;
         }
         var path = normalizePath(pathString);
 
         // 同一パスのバッファが既に存在する場合はそのバッファに切り替え
         var existingBuffer = context.bufferManager().findByPath(path);
         if (existingBuffer.isPresent()) {
-            return switchToBuffer(context, existingBuffer.get());
+            switchToBuffer(context, existingBuffer.get());
+            return;
         }
 
         // ファイルを読み込むか、存在しなければ空バッファを作成
@@ -87,7 +87,7 @@ public class FindFileCommand implements Command {
 
         buffer.setMajorMode(autoModeMap.resolve(buffer.getName()));
         context.bufferManager().add(buffer);
-        return switchToBuffer(context, buffer);
+        switchToBuffer(context, buffer);
     }
 
     /**
@@ -97,10 +97,8 @@ public class FindFileCommand implements Command {
         return Path.of(pathString).toAbsolutePath().normalize();
     }
 
-    private CompletableFuture<Void> switchToBuffer(CommandContext context, Buffer buffer) {
-        var actor = context.bufferManager().getActor(buffer);
-        return context.activeWindowActor()
-                .setBuffer(actor)
-                .thenCompose(v -> context.activeWindowActor().setPoint(0));
+    private void switchToBuffer(CommandContext context, Buffer buffer) {
+        context.frame().getActiveWindow().setBuffer(buffer);
+        context.frame().getActiveWindow().setPoint(0);
     }
 }

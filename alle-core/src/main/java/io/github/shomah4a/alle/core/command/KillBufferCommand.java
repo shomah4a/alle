@@ -7,7 +7,9 @@ import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
@@ -33,38 +35,36 @@ public class KillBufferCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().getBufferName().thenCompose(currentBufferName -> {
-            var promptMessage = "Kill buffer (default " + currentBufferName + "): ";
-            var completer = new BufferNameCompleter(context.bufferManager());
+        var currentBufferName = context.frame().getActiveWindow().getBuffer().getName();
+        var promptMessage = "Kill buffer (default " + currentBufferName + "): ";
+        var completer = new BufferNameCompleter(context.bufferManager());
 
-            return context.inputPrompter()
-                    .prompt(promptMessage, "", bufferHistory, completer)
-                    .thenCompose(result -> {
-                        if (result instanceof PromptResult.Confirmed confirmed) {
-                            var input = confirmed.value();
-                            var bufferName = input.isEmpty() ? currentBufferName : input;
-                            return killBuffer(context, bufferName);
-                        }
-                        return CompletableFuture.completedFuture(null);
-                    });
-        });
+        return context.inputPrompter()
+                .prompt(promptMessage, "", bufferHistory, completer)
+                .thenAccept(result -> {
+                    if (result instanceof PromptResult.Confirmed confirmed) {
+                        var input = confirmed.value();
+                        var bufferName = input.isEmpty() ? currentBufferName : input;
+                        killBuffer(context, bufferName);
+                    }
+                });
     }
 
-    private CompletableFuture<Void> killBuffer(CommandContext context, String bufferName) {
+    private void killBuffer(CommandContext context, String bufferName) {
         var bufferManager = context.bufferManager();
         var targetOpt = bufferManager.findByName(bufferName);
         if (targetOpt.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
+            return;
         }
         var target = targetOpt.get();
 
         if (target.isSystemBuffer()) {
             context.messageBuffer().message("Cannot kill system buffer: " + bufferName);
-            return CompletableFuture.completedFuture(null);
+            return;
         }
 
         if (bufferManager.size() <= 1) {
-            return CompletableFuture.completedFuture(null);
+            return;
         }
 
         // 削除実行
@@ -75,21 +75,31 @@ public class KillBufferCommand implements Command {
             bufferManager.add(new EditableBuffer(SCRATCH_BUFFER_NAME, new GapTextModel()));
         }
 
-        // 切り替え先を決定 → 全ウィンドウ差し替え → dangling reference クリア
-        var frameActor = context.frameActor();
-        return frameActor.getDisplayedBufferNames().thenCompose(displayedNames -> {
-            var replacement = findReplacementBuffer(bufferManager, displayedNames, target);
-            return frameActor
-                    .replaceBufferInAllWindows(target, replacement)
-                    .thenCompose(v -> frameActor.clearPreviousBufferInAllWindows(target));
-        });
+        // 切り替え先を決定: 他のウィンドウで表示されていないバッファを優先
+        var allWindows = context.frame().getWindowTree().windows();
+        var replacement = findReplacementBuffer(bufferManager, allWindows, target);
+
+        // 削除対象を表示中の全ウィンドウを切り替え
+        for (var window : allWindows) {
+            if (window.getBuffer().equals(target)) {
+                window.setBuffer(replacement);
+            }
+        }
+
+        // 全ウィンドウの previousBuffer から dangling reference をクリア
+        for (var window : allWindows) {
+            window.clearPreviousBufferIf(target);
+        }
     }
 
     private Buffer findReplacementBuffer(
-            BufferManager bufferManager, ImmutableSet<String> displayedNames, Buffer excluded) {
+            BufferManager bufferManager, ImmutableList<Window> allWindows, Buffer excluded) {
+        // 現在ウィンドウで表示されているバッファのセット（削除対象を除く）
+        ImmutableSet<Buffer> displayedBuffers =
+                allWindows.collect(Window::getBuffer).toSet().toImmutable().newWithout(excluded);
+
         // 他のウィンドウで表示されていないバッファを優先
-        var candidate =
-                bufferManager.getBuffers().detect(b -> !b.equals(excluded) && !displayedNames.contains(b.getName()));
+        var candidate = bufferManager.getBuffers().detect(b -> !b.equals(excluded) && !displayedBuffers.contains(b));
         if (candidate != null) {
             return candidate;
         }

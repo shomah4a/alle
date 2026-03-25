@@ -1,14 +1,10 @@
 package io.github.shomah4a.alle.core.buffer;
 
-import io.github.shomah4a.alle.core.concurrent.ActorThread;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
-import org.jspecify.annotations.Nullable;
 
 /**
  * 複数のバッファを管理する。
@@ -16,25 +12,11 @@ import org.jspecify.annotations.Nullable;
 public class BufferManager {
 
     private final MutableList<Buffer> buffers;
-    private final MutableMap<Buffer, BufferActor> actorMap;
     private int currentIndex;
-    private @Nullable Runnable onActorComplete;
 
     public BufferManager() {
         this.buffers = Lists.mutable.empty();
-        this.actorMap = Maps.mutable.empty();
         this.currentIndex = -1;
-    }
-
-    /**
-     * BufferActorの操作完了時に呼ばれるコールバックを設定する。
-     * 既存のBufferActorにも適用される。
-     */
-    public void setOnActorComplete(@Nullable Runnable callback) {
-        this.onActorComplete = callback;
-        for (var actor : actorMap.valuesView()) {
-            actor.setOnComplete(callback);
-        }
     }
 
     /**
@@ -42,25 +24,7 @@ public class BufferManager {
      */
     public void add(Buffer buffer) {
         buffers.add(buffer);
-        var actorThread = ActorThread.create("buffer-actor-" + buffer.getName());
-        if (onActorComplete != null) {
-            actorThread.setOnComplete(onActorComplete);
-        }
-        actorMap.put(buffer, new BufferActor(buffer, actorThread));
         currentIndex = buffers.size() - 1;
-    }
-
-    /**
-     * 指定バッファに対応するBufferActorを返す。
-     *
-     * @throws IllegalArgumentException バッファが管理下にない場合
-     */
-    public BufferActor getActor(Buffer buffer) {
-        var actor = actorMap.get(buffer);
-        if (actor == null) {
-            throw new IllegalArgumentException("管理下にないバッファです: " + buffer.getName());
-        }
-        return actor;
     }
 
     /**
@@ -112,10 +76,6 @@ public class BufferManager {
     public boolean remove(String name) {
         for (int i = 0; i < buffers.size(); i++) {
             if (buffers.get(i).getName().equals(name)) {
-                var actor = actorMap.remove(buffers.get(i));
-                if (actor != null) {
-                    actor.shutdown();
-                }
                 buffers.remove(i);
                 if (buffers.isEmpty()) {
                     currentIndex = -1;
@@ -142,15 +102,5 @@ public class BufferManager {
      */
     public int size() {
         return buffers.size();
-    }
-
-    /**
-     * 全BufferActorのActorThreadを停止する。
-     * アプリケーション終了時に呼び出す。
-     */
-    public void shutdownAll() {
-        for (var actor : actorMap.valuesView()) {
-            actor.shutdown();
-        }
     }
 }

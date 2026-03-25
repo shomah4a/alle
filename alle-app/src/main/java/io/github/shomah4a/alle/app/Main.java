@@ -34,9 +34,6 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
-        // VirtualThreadのキャリアスレッド数を設定（BufferActorのActorThread用）
-        System.setProperty("jdk.virtualThreadScheduler.parallelism", "2");
-
         // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
         disableFlowControl();
 
@@ -73,7 +70,7 @@ public final class Main {
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
-        var editorFacade = new EditorFacade(core.frameActor(), msg, core.commandRegistry(), core.keymap());
+        var editorFacade = new EditorFacade(core.frame(), msg, core.commandRegistry(), core.keymap());
         var stdoutStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000);
@@ -96,15 +93,13 @@ public final class Main {
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
 
         var renderer = new ScreenRenderer(screen, core.messageBuffer());
-        var runner = new EditorRunner(
-                inputSource, screen, renderer, core.commandLoop(), core.frameActor(), core.bufferManager());
+        var runner = new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame());
 
         try {
             runner.run();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            core.bufferManager().shutdownAll();
             scriptEngine.close();
             scriptEngineFactory.close();
         }

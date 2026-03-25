@@ -127,45 +127,6 @@ class BufferManagerTest {
     }
 
     @Nested
-    class BufferActor管理 {
-
-        @Test
-        void 追加したバッファのBufferActorを取得できる() {
-            var manager = new BufferManager();
-            var buf = createBuffer("buf1");
-            manager.add(buf);
-            var actor = manager.getActor(buf);
-            assertEquals("buf1", actor.getName().join());
-        }
-
-        @Test
-        void 同一バッファに対して常に同一のBufferActorが返される() {
-            var manager = new BufferManager();
-            var buf = createBuffer("buf1");
-            manager.add(buf);
-            var actor1 = manager.getActor(buf);
-            var actor2 = manager.getActor(buf);
-            assertTrue(actor1 == actor2);
-        }
-
-        @Test
-        void 管理下にないバッファでIllegalArgumentExceptionが発生する() {
-            var manager = new BufferManager();
-            var buf = createBuffer("buf1");
-            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> manager.getActor(buf));
-        }
-
-        @Test
-        void バッファ削除でBufferActorも削除される() {
-            var manager = new BufferManager();
-            var buf = createBuffer("buf1");
-            manager.add(buf);
-            manager.remove("buf1");
-            org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> manager.getActor(buf));
-        }
-    }
-
-    @Nested
     class バッファ一覧 {
 
         @Test

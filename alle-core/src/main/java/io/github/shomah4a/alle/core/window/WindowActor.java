@@ -1,10 +1,6 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.Buffer;
-import io.github.shomah4a.alle.core.buffer.BufferActor;
-import io.github.shomah4a.alle.core.buffer.TextChange;
-import io.github.shomah4a.alle.core.concurrent.ActorThread;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -16,23 +12,9 @@ import java.util.function.Function;
 public class WindowActor {
 
     private final Window window;
-    private BufferActor bufferActor;
 
-    public WindowActor(Window window, BufferActor bufferActor) {
-        this.window = window;
-        this.bufferActor = bufferActor;
-    }
-
-    /**
-     * BufferActor未指定のコンストラクタ。
-     * 既存コードとの互換用。BufferActorはWindowのバッファから生成する。
-     */
     public WindowActor(Window window) {
-        this(
-                window,
-                new BufferActor(
-                        window.getBuffer(),
-                        ActorThread.create("buffer-actor-" + window.getBuffer().getName())));
+        this.window = window;
     }
 
     /**
@@ -52,28 +34,9 @@ public class WindowActor {
         return atomicPerform(Window::getBuffer);
     }
 
-    /**
-     * 保持中のBufferActorを返す。
-     */
-    public BufferActor getBufferActor() {
-        return bufferActor;
-    }
-
     public CompletableFuture<Void> setBuffer(Buffer buffer) {
         return atomicPerform(w -> {
             w.setBuffer(buffer);
-            return null;
-        });
-    }
-
-    /**
-     * BufferActorごとバッファを差し替える。
-     * 内部のWindowのバッファも同時に更新する。
-     */
-    public CompletableFuture<Void> setBuffer(BufferActor actor) {
-        return atomicPerform(w -> {
-            this.bufferActor = actor;
-            w.setBuffer(actor.getBuffer());
             return null;
         });
     }
@@ -101,33 +64,24 @@ public class WindowActor {
     }
 
     public CompletableFuture<Void> insert(String text) {
-        return bufferActor.atomicPerform(b -> {
-            window.insert(text);
+        return atomicPerform(w -> {
+            w.insert(text);
             return null;
         });
     }
 
     public CompletableFuture<Void> deleteBackward(int count) {
-        return bufferActor.atomicPerform(b -> {
-            window.deleteBackward(count);
+        return atomicPerform(w -> {
+            w.deleteBackward(count);
             return null;
         });
     }
 
     public CompletableFuture<Void> deleteForward(int count) {
-        return bufferActor.atomicPerform(b -> {
-            window.deleteForward(count);
+        return atomicPerform(w -> {
+            w.deleteForward(count);
             return null;
         });
-    }
-
-    /**
-     * BufferActorフィールドを直接更新する。
-     * FrameActor内部でFrame.replaceBufferInAllWindows後の同期に使用する。
-     * atomicPerformの外から呼ばないこと。
-     */
-    void updateBufferActor(BufferActor actor) {
-        this.bufferActor = actor;
     }
 
     /**
@@ -136,283 +90,5 @@ public class WindowActor {
      */
     public Window getWindow() {
         return window;
-    }
-
-    // ── バッファ切り替え ──
-
-    /**
-     * 直前に表示していたバッファの名前を返す。
-     */
-    public CompletableFuture<Optional<String>> getPreviousBufferName() {
-        return bufferActor.atomicPerform(b -> window.getPreviousBuffer().map(pb -> pb.getName()));
-    }
-
-    /**
-     * バッファ名を返す。
-     */
-    public CompletableFuture<String> getBufferName() {
-        return bufferActor.atomicPerform(b -> window.getBuffer().getName());
-    }
-
-    // ── カーソル移動 ──
-
-    /**
-     * カーソルを1文字前方に移動する。バッファ末尾では何もしない。
-     */
-    public CompletableFuture<Void> moveForward() {
-        return bufferActor.atomicPerform(buffer -> {
-            int point = window.getPoint();
-            if (point < buffer.length()) {
-                window.setPoint(point + 1);
-            }
-            return null;
-        });
-    }
-
-    /**
-     * カーソルを1文字後方に移動する。バッファ先頭では何もしない。
-     */
-    public CompletableFuture<Void> moveBackward() {
-        return bufferActor.atomicPerform(buffer -> {
-            int point = window.getPoint();
-            if (point > 0) {
-                window.setPoint(point - 1);
-            }
-            return null;
-        });
-    }
-
-    /**
-     * カーソルを次の行に移動する。最終行では何もしない。
-     * 移動先の行が現在のカラム位置より短い場合は行末に移動する。
-     */
-    public CompletableFuture<Void> moveToNextLine() {
-        return bufferActor.atomicPerform(buffer -> {
-            int point = window.getPoint();
-            int currentLine = buffer.lineIndexForOffset(point);
-            if (currentLine >= buffer.lineCount() - 1) {
-                return null;
-            }
-            int currentLineStart = buffer.lineStartOffset(currentLine);
-            int column = point - currentLineStart;
-            int nextLineStart = buffer.lineStartOffset(currentLine + 1);
-            int nextLineLength =
-                    (int) buffer.lineText(currentLine + 1).codePoints().count();
-            window.setPoint(nextLineStart + Math.min(column, nextLineLength));
-            return null;
-        });
-    }
-
-    /**
-     * カーソルを前の行に移動する。先頭行では何もしない。
-     * 移動先の行が現在のカラム位置より短い場合は行末に移動する。
-     */
-    public CompletableFuture<Void> moveToPreviousLine() {
-        return bufferActor.atomicPerform(buffer -> {
-            int point = window.getPoint();
-            int currentLine = buffer.lineIndexForOffset(point);
-            if (currentLine <= 0) {
-                return null;
-            }
-            int currentLineStart = buffer.lineStartOffset(currentLine);
-            int column = point - currentLineStart;
-            int prevLineStart = buffer.lineStartOffset(currentLine - 1);
-            int prevLineLength =
-                    (int) buffer.lineText(currentLine - 1).codePoints().count();
-            window.setPoint(prevLineStart + Math.min(column, prevLineLength));
-            return null;
-        });
-    }
-
-    /**
-     * カーソルを行頭に移動する。
-     */
-    public CompletableFuture<Void> moveToBeginningOfLine() {
-        return bufferActor.atomicPerform(buffer -> {
-            int lineIndex = buffer.lineIndexForOffset(window.getPoint());
-            window.setPoint(buffer.lineStartOffset(lineIndex));
-            return null;
-        });
-    }
-
-    /**
-     * カーソルを行末に移動する。
-     */
-    public CompletableFuture<Void> moveToEndOfLine() {
-        return bufferActor.atomicPerform(buffer -> {
-            int lineIndex = buffer.lineIndexForOffset(window.getPoint());
-            int lineStart = buffer.lineStartOffset(lineIndex);
-            int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
-            window.setPoint(lineStart + lineLength);
-            return null;
-        });
-    }
-
-    // ── マーク操作 ──
-
-    /**
-     * 指定位置にmarkを設定する。
-     */
-    public CompletableFuture<Void> setMark(int position) {
-        return atomicPerform(w -> {
-            w.setMark(position);
-            return null;
-        });
-    }
-
-    /**
-     * markをクリアする。
-     */
-    public CompletableFuture<Void> clearMark() {
-        return atomicPerform(w -> {
-            w.clearMark();
-            return null;
-        });
-    }
-
-    /**
-     * markの位置を返す。
-     */
-    public CompletableFuture<Optional<Integer>> getMark() {
-        return atomicPerform(Window::getMark);
-    }
-
-    /**
-     * regionの開始位置を返す。markが未設定の場合はempty。
-     */
-    public CompletableFuture<Optional<Integer>> getRegionStart() {
-        return atomicPerform(Window::getRegionStart);
-    }
-
-    /**
-     * regionの終了位置を返す。markが未設定の場合はempty。
-     */
-    public CompletableFuture<Optional<Integer>> getRegionEnd() {
-        return atomicPerform(Window::getRegionEnd);
-    }
-
-    // ── テキスト編集（ドメイン操作） ──
-
-    /**
-     * カーソルから行末まで削除し、削除テキストを返す。
-     * 行末にいる場合は改行を削除。バッファ末尾では何もしない。
-     */
-    public CompletableFuture<Optional<String>> killLine() {
-        return bufferActor.atomicPerform(buffer -> {
-            int point = window.getPoint();
-            int bufferLength = buffer.length();
-            if (point >= bufferLength) {
-                return Optional.empty();
-            }
-            int lineIndex = buffer.lineIndexForOffset(point);
-            int lineStart = buffer.lineStartOffset(lineIndex);
-            int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
-            int lineEnd = lineStart + lineLength;
-
-            int deleteCount = (point < lineEnd) ? lineEnd - point : 1;
-            String killedText = buffer.substring(point, point + deleteCount);
-            window.deleteForward(deleteCount);
-            return Optional.of(killedText);
-        });
-    }
-
-    /**
-     * mark〜point間のテキストを削除し、削除テキストを返す。
-     * markが未設定の場合はempty。undo記録付き。
-     */
-    public CompletableFuture<Optional<String>> killRegion() {
-        return bufferActor.atomicPerform(buffer -> {
-            var regionStart = window.getRegionStart();
-            var regionEnd = window.getRegionEnd();
-            if (regionStart.isEmpty() || regionEnd.isEmpty()) {
-                return Optional.empty();
-            }
-            int start = regionStart.get();
-            int end = regionEnd.get();
-            if (start == end) {
-                return Optional.empty();
-            }
-            int cursorBefore = window.getPoint();
-            String killedText = buffer.substring(start, end);
-            var inverseChange = buffer.deleteText(start, end - start);
-            buffer.getUndoManager().record(inverseChange, cursorBefore);
-            buffer.markDirty();
-            window.setPoint(start);
-            window.clearMark();
-            return Optional.of(killedText);
-        });
-    }
-
-    /**
-     * mark〜point間のテキストを返す（削除しない）。markが未設定の場合はempty。
-     */
-    public CompletableFuture<Optional<String>> copyRegion() {
-        return bufferActor.atomicPerform(buffer -> {
-            var regionStart = window.getRegionStart();
-            var regionEnd = window.getRegionEnd();
-            if (regionStart.isEmpty() || regionEnd.isEmpty()) {
-                return Optional.empty();
-            }
-            int start = regionStart.get();
-            int end = regionEnd.get();
-            if (start == end) {
-                return Optional.empty();
-            }
-            String copiedText = buffer.substring(start, end);
-            window.clearMark();
-            return Optional.of(copiedText);
-        });
-    }
-
-    // ── Undo / Redo ──
-
-    /**
-     * 直前の変更を取り消す。undoできた場合true。
-     */
-    public CompletableFuture<Boolean> undo() {
-        return bufferActor.atomicPerform(buffer -> {
-            var undoManager = buffer.getUndoManager();
-            var entryOpt = undoManager.undo();
-            if (entryOpt.isEmpty()) {
-                return false;
-            }
-            var entry = entryOpt.get();
-            undoManager.suppressRecording();
-            try {
-                buffer.apply(entry.change());
-                window.setPoint(entry.cursorPosition());
-            } finally {
-                undoManager.resumeRecording();
-            }
-            return true;
-        });
-    }
-
-    /**
-     * 直前のundoをやり直す。redoできた場合true。
-     */
-    public CompletableFuture<Boolean> redo() {
-        return bufferActor.atomicPerform(buffer -> {
-            var undoManager = buffer.getUndoManager();
-            var entryOpt = undoManager.redo();
-            if (entryOpt.isEmpty()) {
-                return false;
-            }
-            var entry = entryOpt.get();
-            undoManager.suppressRecording();
-            try {
-                buffer.apply(entry.change());
-                var change = entry.change();
-                if (change instanceof TextChange.Insert insert) {
-                    int insertedLen = (int) insert.text().codePoints().count();
-                    window.setPoint(insert.offset() + insertedLen);
-                } else if (change instanceof TextChange.Delete delete) {
-                    window.setPoint(delete.offset());
-                }
-            } finally {
-                undoManager.resumeRecording();
-            }
-            return true;
-        });
     }
 }

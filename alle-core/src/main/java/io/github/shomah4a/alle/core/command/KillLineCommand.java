@@ -19,11 +19,31 @@ public class KillLineCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().killLine().thenAccept(textOpt -> {
-            if (textOpt.isEmpty()) {
-                return;
+        return context.activeWindowActor().atomicPerform(window -> {
+            var buffer = window.getBuffer();
+            int point = window.getPoint();
+            int bufferLength = buffer.length();
+
+            if (point >= bufferLength) {
+                return null;
             }
-            String killedText = textOpt.get();
+
+            int lineIndex = buffer.lineIndexForOffset(point);
+            int lineStart = buffer.lineStartOffset(lineIndex);
+            String lineText = buffer.lineText(lineIndex);
+            int lineLength = (int) lineText.codePoints().count();
+            int lineEnd = lineStart + lineLength;
+
+            int deleteCount;
+            if (point < lineEnd) {
+                deleteCount = lineEnd - point;
+            } else {
+                deleteCount = 1;
+            }
+
+            String killedText = buffer.substring(point, point + deleteCount);
+            window.deleteForward(deleteCount);
+
             boolean isConsecutiveKill =
                     context.lastCommand().map(last -> last.equals(name())).orElse(false);
             if (isConsecutiveKill) {
@@ -31,6 +51,7 @@ public class KillLineCommand implements Command {
             } else {
                 context.killRing().push(killedText);
             }
+            return null;
         });
     }
 }

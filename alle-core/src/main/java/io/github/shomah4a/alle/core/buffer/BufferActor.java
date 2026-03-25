@@ -1,37 +1,30 @@
 package io.github.shomah4a.alle.core.buffer;
 
-import io.github.shomah4a.alle.core.concurrent.ActorThread;
-import io.github.shomah4a.alle.core.keybind.Keymap;
-import io.github.shomah4a.alle.core.mode.MajorMode;
-import io.github.shomah4a.alle.core.mode.MinorMode;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import org.eclipse.collections.api.list.ListIterable;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Bufferへの操作をCompletableFutureで返すアクター層。
- * 内部にActorThread（コマンドキュー + VirtualThread）を持ち、
- * 操作を逐次実行する。Bufferへのアクセスは専用VirtualThread上でのみ行われる。
+ * 内部にキューを持ち、操作を逐次実行する構造を提供する。
+ * 現時点では同期的に即時実行し、将来的にキュー+処理スレッドに差し替え可能。
  */
 public class BufferActor {
 
     private final Buffer buffer;
-    private final ActorThread actorThread;
 
-    public BufferActor(Buffer buffer, ActorThread actorThread) {
+    public BufferActor(Buffer buffer) {
         this.buffer = buffer;
-        this.actorThread = actorThread;
     }
 
     /**
      * 複数の操作をアトミックに実行する。
-     * キュー経由で1つのコマンドとしてActorThreadのVirtualThread上で逐次実行される。
+     * 将来的にはキュー経由で1つのメッセージとして逐次実行される。
      */
     public <T> CompletableFuture<T> atomicPerform(Function<Buffer, T> operation) {
-        return actorThread.submit(() -> operation.apply(buffer));
+        T result = operation.apply(buffer);
+        return CompletableFuture.completedFuture(result);
     }
 
     public CompletableFuture<String> getName() {
@@ -107,88 +100,11 @@ public class BufferActor {
         return atomicPerform(Buffer::getText);
     }
 
-    // ── 読み取り専用判定 ──
-
-    public CompletableFuture<Boolean> isReadOnly() {
-        return atomicPerform(Buffer::isReadOnly);
-    }
-
-    public CompletableFuture<Boolean> isSystemBuffer() {
-        return atomicPerform(Buffer::isSystemBuffer);
-    }
-
-    // ── モード ──
-
-    public CompletableFuture<MajorMode> getMajorMode() {
-        return atomicPerform(Buffer::getMajorMode);
-    }
-
-    public CompletableFuture<Void> setMajorMode(MajorMode majorMode) {
-        return atomicPerform(b -> {
-            b.setMajorMode(majorMode);
-            return null;
-        });
-    }
-
-    public CompletableFuture<ListIterable<MinorMode>> getMinorModes() {
-        return atomicPerform(Buffer::getMinorModes);
-    }
-
-    // ── キーマップ ──
-
-    public CompletableFuture<Optional<Keymap>> getLocalKeymap() {
-        return atomicPerform(Buffer::getLocalKeymap);
-    }
-
-    public CompletableFuture<Void> setLocalKeymap(Keymap keymap) {
-        return atomicPerform(b -> {
-            b.setLocalKeymap(keymap);
-            return null;
-        });
-    }
-
-    public CompletableFuture<Void> clearLocalKeymap() {
-        return atomicPerform(b -> {
-            b.clearLocalKeymap();
-            return null;
-        });
-    }
-
-    // ── テキストプロパティ ──
-
-    public CompletableFuture<Void> putReadOnly(int start, int end) {
-        return atomicPerform(b -> {
-            b.putReadOnly(start, end);
-            return null;
-        });
-    }
-
-    public CompletableFuture<Void> removeReadOnly(int start, int end) {
-        return atomicPerform(b -> {
-            b.removeReadOnly(start, end);
-            return null;
-        });
-    }
-
     /**
      * ラップしているBufferを直接取得する。
      * レンダリング等の同期的なアクセスが必要な場合に使用する。
      */
     public Buffer getBuffer() {
         return buffer;
-    }
-
-    /**
-     * ActorThreadの操作完了コールバックを設定する。
-     */
-    public void setOnComplete(@Nullable Runnable callback) {
-        actorThread.setOnComplete(callback);
-    }
-
-    /**
-     * ActorThreadを停止する。
-     */
-    public void shutdown() {
-        actorThread.shutdown();
     }
 }

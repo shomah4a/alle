@@ -33,18 +33,13 @@ class AlleModuleTest {
     void setUp() {
         buffer = new EditableBuffer("test.py", new GapTextModel());
         var window = new Window(buffer);
-        var minibufferBuffer = new EditableBuffer("*Minibuffer*", new GapTextModel());
-        var minibuffer = new Window(minibufferBuffer);
+        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
         var frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(buffer);
-        bufferManager.add(minibufferBuffer);
-        bufferManager.switchTo("test.py");
         messageBuffer = new MessageBuffer("*Messages*", 100);
 
-        var frameActor = new io.github.shomah4a.alle.core.window.FrameActor(frame);
-        frameActor.setBufferManager(bufferManager);
-        var facade = new EditorFacade(frameActor, messageBuffer, new CommandRegistry(), new Keymap("global"));
+        var facade = new EditorFacade(frame, messageBuffer, new CommandRegistry(), new Keymap("global"));
         var stdoutStream = new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(bufferManager, "*Python Log*", 1000);
@@ -76,7 +71,7 @@ class AlleModuleTest {
     @Test
     void alleモジュール経由でバッファ名を取得できる() {
         engine.eval("import alle");
-        ScriptResult result = engine.eval("alle.current_buffer().name().result()");
+        ScriptResult result = engine.eval("alle.current_buffer().name()");
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("test.py", ((ScriptResult.Success) result).value());
     }
