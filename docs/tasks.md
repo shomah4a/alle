@@ -51,8 +51,3 @@
 - 意味論的に異なる概念なので現時点では不要
 - 共通化が必要になった時点で検討
 
-### Python側 MajorModeBase.highlighter() と Java側 MajorMode.styler() の名称不整合
-- Python側 `alle/mode.py` の `MajorModeBase` は `highlighter()` メソッドを定義
-- Java側 `MajorMode` インターフェースの対応メソッドは `styler()`
-- `internal/mode.py` のブリッジで `highlighter()` を実装しているが Java側から呼ばれない
-- Python側 `highlighter` を `styler` にリネームし Java側 `styler()` に接続する修正が必要

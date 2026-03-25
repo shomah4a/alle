@@ -20,7 +20,7 @@ class MajorModeBase(ABC):
     """メジャーモードの基底クラス。
 
     サブクラスは name() を実装する。
-    keymap() / highlighter() はデフォルトで None を返す。
+    keymap() / styler() はデフォルトで None を返す。
     必要に応じてオーバーライドする。
     """
 
@@ -33,8 +33,8 @@ class MajorModeBase(ABC):
         """モード固有のキーマップを返す。不要なら None。"""
         return None
 
-    def highlighter(self) -> Any | None:
-        """シンタックスハイライターを返す。不要なら None。"""
+    def styler(self) -> Any | None:
+        """シンタックススタイラーを返す。不要なら None。"""
         return None
 
 

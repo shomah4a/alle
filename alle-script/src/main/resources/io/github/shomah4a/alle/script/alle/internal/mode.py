@@ -29,7 +29,7 @@ def make_major_mode(base: MajorModeBase) -> Any:
     """
     mode_name = base.name()
     keymap_fn = base.keymap
-    highlighter_fn = base.highlighter
+    styler_fn = base.styler
 
     class _MajorMode(MajorMode):
         def name(self) -> str:
@@ -38,8 +38,8 @@ def make_major_mode(base: MajorModeBase) -> Any:
         def keymap(self) -> Any:
             return _to_optional(keymap_fn())
 
-        def highlighter(self) -> Any:
-            return _to_optional(highlighter_fn())
+        def styler(self) -> Any:
+            return _to_optional(styler_fn())
 
     return _MajorMode()
 
