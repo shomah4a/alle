@@ -181,25 +181,35 @@ public class CommandLoop {
                         killRing,
                         messageBuffer,
                         warningBuffer);
-                command.execute(context)
-                        .thenRun(() -> lastCommand = thisCommand)
-                        .exceptionally(ex -> {
-                            var cause = ex.getCause() != null ? ex.getCause() : ex;
-                            if (cause instanceof ReadOnlyBufferException) {
-                                messageBuffer.message("Text is read-only");
-                            } else {
-                                var message = "コマンド実行中にエラーが発生: " + command.name();
-                                logger.log(Level.WARNING, message, ex);
-                                context.handleError(message, ex);
-                            }
-                            return null;
-                        });
+                try {
+                    command.execute(context)
+                            .thenRun(() -> lastCommand = thisCommand)
+                            .exceptionally(ex -> {
+                                var cause = ex.getCause() != null ? ex.getCause() : ex;
+                                handleCommandError(command, context, cause);
+                                return null;
+                            });
+                } catch (ReadOnlyBufferException ex) {
+                    messageBuffer.message("Text is read-only");
+                } catch (Exception ex) {
+                    handleCommandError(command, context, ex);
+                }
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> {
                 var displayText = prefixDisplay + keyStroke.displayString() + " ";
                 pendingPrefix = new PendingPrefix(prefixKeymap, displayText);
                 messageBuffer.message(displayText);
             }
+        }
+    }
+
+    private void handleCommandError(Command command, CommandContext context, Throwable ex) {
+        if (ex instanceof ReadOnlyBufferException) {
+            messageBuffer.message("Text is read-only");
+        } else {
+            var message = "コマンド実行中にエラーが発生: " + command.name();
+            logger.log(Level.WARNING, message, ex);
+            context.handleError(message, ex);
         }
     }
 }

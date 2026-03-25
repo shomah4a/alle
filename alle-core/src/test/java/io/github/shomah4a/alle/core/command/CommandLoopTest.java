@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -243,6 +244,43 @@ class CommandLoopTest {
             assertEquals(2, cmd.capturedContexts.size());
             assertTrue(cmd.capturedContexts.get(0).lastCommand().isEmpty());
             assertEquals("repeat-cmd", cmd.capturedContexts.get(1).lastCommand().orElseThrow());
+        }
+    }
+
+    @Nested
+    class readOnly領域での編集 {
+
+        @Test
+        void readOnly領域でdeleteBackwardしても例外でスレッドが落ちない() {
+            var frame = createFrame();
+            var bufferFacade = frame.getActiveWindow().getBuffer();
+            frame.getActiveWindow().insert("Find file: ");
+            // プロンプト部分をread-onlyにする
+            bufferFacade.putReadOnly(0, 11);
+            // カーソルをread-only領域の末尾（プロンプト直後）に置く
+            frame.getActiveWindow().setPoint(11);
+            var bufferManager = new BufferManager();
+            var messageBuffer = new MessageBuffer("*Messages*", 100);
+
+            var keymap = new Keymap("global");
+            keymap.bind(KeyStroke.of(0x7F), new BackwardDeleteCharCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = new CommandLoop(
+                    () -> Optional.empty(),
+                    resolver,
+                    frame,
+                    bufferManager,
+                    NOOP_PROMPTER,
+                    new KillRing(),
+                    messageBuffer,
+                    new MessageBuffer("*Warnings*", 100));
+            // 例外でスレッドが落ちずにメッセージが表示されること
+            loop.processKey(KeyStroke.of(0x7F));
+
+            assertEquals("Find file: ", bufferFacade.getText());
+            assertEquals("Text is read-only", messageBuffer.lineText(0));
         }
     }
 
