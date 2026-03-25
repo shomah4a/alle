@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.command.Command;
+import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.styling.Face;
@@ -207,5 +209,63 @@ class PythonJavaInterfaceTest {
         var spans = styler.styleLine("# hello");
         assertFalse(spans.isEmpty());
         assertEquals(Face.COMMENT, spans.get(0).face());
+    }
+
+    @Test
+    void PythonからKeymapを生成してコマンドをバインドできる() {
+        context.eval("python", """
+                import java
+                from java.util.concurrent import CompletableFuture
+                KeyStroke = java.type('io.github.shomah4a.alle.core.keybind.KeyStroke')
+                Keymap = java.type('io.github.shomah4a.alle.core.keybind.Keymap')
+                Command = java.type('io.github.shomah4a.alle.core.command.Command')
+
+                class TestCmd(Command):
+                    def name(self):
+                        return "test-keybind-cmd"
+                    def execute(self, ctx):
+                        return CompletableFuture.completedFuture(None)
+
+                km = Keymap("test")
+                km.bind(KeyStroke.of(ord('a')), TestCmd())
+                """);
+        Value pyKeymap = context.eval("python", "km");
+        Keymap keymap = pyKeymap.as(Keymap.class);
+        var entry = keymap.lookup(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                org.eclipse.collections.api.factory.Sets.immutable.empty(), 'a'));
+        assertTrue(entry.isPresent());
+        assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
+    }
+
+    @Test
+    void PythonからMajorModeのkeymapとしてKeymapを返せる() {
+        context.eval("python", """
+                import java
+                from java.util import Optional
+                from java.util.concurrent import CompletableFuture
+                KeyStroke = java.type('io.github.shomah4a.alle.core.keybind.KeyStroke')
+                Keymap = java.type('io.github.shomah4a.alle.core.keybind.Keymap')
+                Command = java.type('io.github.shomah4a.alle.core.command.Command')
+                MajorMode = java.type('io.github.shomah4a.alle.core.mode.MajorMode')
+
+                class TestCmd(Command):
+                    def name(self):
+                        return "test-mode-cmd"
+                    def execute(self, ctx):
+                        return CompletableFuture.completedFuture(None)
+
+                _km = Keymap("test-mode")
+                _km.bind(KeyStroke.of(10), TestCmd())
+
+                class TestModeWithKeymap(MajorMode):
+                    def name(self):
+                        return "TestWithKeymap"
+                    def keymap(self):
+                        return Optional.of(_km)
+                """);
+        Value pyMode = context.eval("python", "TestModeWithKeymap()");
+        MajorMode mode = pyMode.as(MajorMode.class);
+        assertEquals("TestWithKeymap", mode.name());
+        assertTrue(mode.keymap().isPresent());
     }
 }
