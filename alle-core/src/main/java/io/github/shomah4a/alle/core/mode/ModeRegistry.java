@@ -4,7 +4,11 @@ import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.ModeCommand;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.jspecify.annotations.Nullable;
@@ -12,11 +16,16 @@ import org.jspecify.annotations.Nullable;
 /**
  * メジャーモード・マイナーモードを名前で登録・検索するレジストリ。
  * CommandRegistryが設定されている場合、モード登録時にモード切り替えコマンドも自動登録する。
+ * モード有効化時のフック関数も管理する。
  */
 public class ModeRegistry {
 
+    private static final Logger logger = Logger.getLogger(ModeRegistry.class.getName());
+
     private final MutableMap<String, Supplier<MajorMode>> majorModes = Maps.mutable.empty();
     private final MutableMap<String, Supplier<MinorMode>> minorModes = Maps.mutable.empty();
+    private final MutableMap<String, MutableList<Runnable>> majorModeHooks = Maps.mutable.empty();
+    private final MutableMap<String, MutableList<Runnable>> minorModeHooks = Maps.mutable.empty();
     private @Nullable CommandRegistry commandRegistry;
 
     /**
@@ -98,12 +107,74 @@ public class ModeRegistry {
         return minorModes.keysView().toImmutableSet();
     }
 
+    // ── フック管理 ──
+
+    /**
+     * メジャーモード有効化時のフックを追加する。
+     * モード登録の有無に関係なく呼べる。
+     *
+     * @param modeName フックを紐付けるモード名
+     * @param hook 有効化時に実行される関数
+     */
+    public void addMajorModeHook(String modeName, Runnable hook) {
+        majorModeHooks.getIfAbsentPut(modeName, Lists.mutable::empty).add(hook);
+    }
+
+    /**
+     * マイナーモード有効化時のフックを追加する。
+     * モード登録の有無に関係なく呼べる。
+     *
+     * @param modeName フックを紐付けるモード名
+     * @param hook 有効化時に実行される関数
+     */
+    public void addMinorModeHook(String modeName, Runnable hook) {
+        minorModeHooks.getIfAbsentPut(modeName, Lists.mutable::empty).add(hook);
+    }
+
+    /**
+     * メジャーモード有効化時のフックを実行する。
+     * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
+     *
+     * @param modeName 有効化されたモードの名前
+     */
+    public void runMajorModeHooks(String modeName) {
+        var hooks = majorModeHooks.get(modeName);
+        if (hooks != null) {
+            runHooks(modeName, hooks);
+        }
+    }
+
+    /**
+     * マイナーモード有効化時のフックを実行する。
+     * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
+     *
+     * @param modeName 有効化されたモードの名前
+     */
+    public void runMinorModeHooks(String modeName) {
+        var hooks = minorModeHooks.get(modeName);
+        if (hooks != null) {
+            runHooks(modeName, hooks);
+        }
+    }
+
+    private void runHooks(String modeName, MutableList<Runnable> hooks) {
+        for (var hook : hooks) {
+            try {
+                hook.run();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, modeName + " モードフック実行中にエラー", e);
+            }
+        }
+    }
+
+    // ── コマンド自動登録 ──
+
     private void registerMajorModeCommand(String modeName, Supplier<MajorMode> factory) {
         if (commandRegistry == null) {
             return;
         }
         String commandName = toCommandName(modeName);
-        commandRegistry.registerOrReplace(new ModeCommand.SetMajorMode(commandName, factory));
+        commandRegistry.registerOrReplace(new ModeCommand.SetMajorMode(commandName, factory, this));
     }
 
     private void registerMinorModeCommand(String modeName, Supplier<MinorMode> factory) {
@@ -111,7 +182,7 @@ public class ModeRegistry {
             return;
         }
         String commandName = toCommandName(modeName);
-        commandRegistry.registerOrReplace(new ModeCommand.ToggleMinorMode(commandName, modeName, factory));
+        commandRegistry.registerOrReplace(new ModeCommand.ToggleMinorMode(commandName, modeName, factory, this));
     }
 
     /**

@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ public class FindFileCommand implements Command {
     private final DirectoryLister directoryLister;
     private final Path workingDirectory;
     private final AutoModeMap autoModeMap;
+    private final ModeRegistry modeRegistry;
     private final InputHistory filePathHistory;
 
     public FindFileCommand(
@@ -36,11 +38,13 @@ public class FindFileCommand implements Command {
             DirectoryLister directoryLister,
             Path workingDirectory,
             AutoModeMap autoModeMap,
+            ModeRegistry modeRegistry,
             InputHistory filePathHistory) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.autoModeMap = autoModeMap;
+        this.modeRegistry = modeRegistry;
         this.filePathHistory = filePathHistory;
     }
 
@@ -86,7 +90,9 @@ public class FindFileCommand implements Command {
                     new BufferFacade(new EditableBuffer(path.getFileName().toString(), new GapTextModel(), path));
         }
 
-        bufferFacade.setMajorMode(autoModeMap.resolve(bufferFacade.getName()));
+        var majorMode = autoModeMap.resolve(bufferFacade.getName());
+        bufferFacade.setMajorMode(majorMode);
+        modeRegistry.runMajorModeHooks(majorMode.name());
         context.bufferManager().add(bufferFacade);
         switchToBuffer(context, bufferFacade);
     }

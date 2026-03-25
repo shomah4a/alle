@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -15,15 +16,18 @@ public final class ModeCommand {
 
     /**
      * メジャーモードをアクティブバッファに設定するコマンド。
+     * 設定後にモードフックを実行する。
      */
     public static final class SetMajorMode implements Command {
 
         private final String commandName;
         private final Supplier<MajorMode> factory;
+        private final ModeRegistry modeRegistry;
 
-        public SetMajorMode(String commandName, Supplier<MajorMode> factory) {
+        public SetMajorMode(String commandName, Supplier<MajorMode> factory, ModeRegistry modeRegistry) {
             this.commandName = commandName;
             this.factory = factory;
+            this.modeRegistry = modeRegistry;
         }
 
         @Override
@@ -35,6 +39,7 @@ public final class ModeCommand {
         public CompletableFuture<Void> execute(CommandContext context) {
             var mode = factory.get();
             context.activeWindow().getBuffer().setMajorMode(mode);
+            modeRegistry.runMajorModeHooks(mode.name());
             context.messageBuffer().message(mode.name() + " mode");
             return CompletableFuture.completedFuture(null);
         }
@@ -43,17 +48,21 @@ public final class ModeCommand {
     /**
      * マイナーモードをアクティブバッファでトグルするコマンド。
      * 有効なら無効に、無効なら有効にする。
+     * 有効化時にモードフックを実行する。
      */
     public static final class ToggleMinorMode implements Command {
 
         private final String commandName;
         private final String modeName;
         private final Supplier<MinorMode> factory;
+        private final ModeRegistry modeRegistry;
 
-        public ToggleMinorMode(String commandName, String modeName, Supplier<MinorMode> factory) {
+        public ToggleMinorMode(
+                String commandName, String modeName, Supplier<MinorMode> factory, ModeRegistry modeRegistry) {
             this.commandName = commandName;
             this.modeName = modeName;
             this.factory = factory;
+            this.modeRegistry = modeRegistry;
         }
 
         @Override
@@ -70,6 +79,7 @@ public final class ModeCommand {
                 context.messageBuffer().message(modeName + " mode disabled");
             } else {
                 buffer.enableMinorMode(factory.get());
+                modeRegistry.runMinorModeHooks(modeName);
                 context.messageBuffer().message(modeName + " mode enabled");
             }
             return CompletableFuture.completedFuture(null);

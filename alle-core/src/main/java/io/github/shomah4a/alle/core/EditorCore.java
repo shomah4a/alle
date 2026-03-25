@@ -130,13 +130,15 @@ public final class EditorCore {
         autoModeMap.register("md", MarkdownMode::new);
         autoModeMap.register("markdown", MarkdownMode::new);
 
+        // モードレジストリ
+        var modeRegistry = new ModeRegistry();
+
         // コマンドレジストリ
         var shutdownHandler = new ShutdownHandler();
-        var registry =
-                createCommandRegistry(bufferIO, directoryLister, autoModeMap, shutdownHandler, shutdownRequestable);
+        var registry = createCommandRegistry(
+                bufferIO, directoryLister, autoModeMap, modeRegistry, shutdownHandler, shutdownRequestable);
 
-        // モードレジストリ（コマンド自動登録のためCommandRegistry設定後にモードを登録する）
-        var modeRegistry = new ModeRegistry();
+        // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
         modeRegistry.setCommandRegistry(registry);
         modeRegistry.registerMajorMode("Text", TextMode::new);
         modeRegistry.registerMajorMode("Markdown", MarkdownMode::new);
@@ -168,6 +170,7 @@ public final class EditorCore {
             BufferIO bufferIO,
             DirectoryLister directoryLister,
             AutoModeMap autoModeMap,
+            ModeRegistry modeRegistry,
             ShutdownHandler shutdownHandler,
             ShutdownRequestable shutdownRequestable) {
         var registry = new CommandRegistry();
@@ -184,7 +187,7 @@ public final class EditorCore {
         registry.register(new PreviousLineCommand());
         var filePathHistory = new InputHistory();
         registry.register(new FindFileCommand(
-                bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, filePathHistory));
+                bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, modeRegistry, filePathHistory));
         registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
         var bufferHistory = new InputHistory();
         registry.register(new SwitchBufferCommand(bufferHistory));

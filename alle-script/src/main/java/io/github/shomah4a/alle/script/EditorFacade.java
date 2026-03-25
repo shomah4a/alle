@@ -135,6 +135,26 @@ public class EditorFacade implements Loggable {
     }
 
     /**
+     * メジャーモード有効化時のフックを追加する。
+     *
+     * @param modeName フックを紐付けるモード名
+     * @param hook 有効化時に実行される関数
+     */
+    public void addMajorModeHook(String modeName, Value hook) {
+        modeRegistry.addMajorModeHook(modeName, () -> hook.execute());
+    }
+
+    /**
+     * マイナーモード有効化時のフックを追加する。
+     *
+     * @param modeName フックを紐付けるモード名
+     * @param hook 有効化時に実行される関数
+     */
+    public void addMinorModeHook(String modeName, Value hook) {
+        modeRegistry.addMinorModeHook(modeName, () -> hook.execute());
+    }
+
+    /**
      * 拡張子とメジャーモード名のマッピングを登録する。
      * 指定されたモード名がModeRegistryに登録されていない場合は例外をスローする。
      *

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -193,6 +194,60 @@ class ModeRegistryTest {
             assertEquals("electric-pair-mode", ModeRegistry.toCommandName("ElectricPair"));
             assertEquals("text-mode", ModeRegistry.toCommandName("Text"));
             assertEquals("markdown-mode", ModeRegistry.toCommandName("Markdown"));
+        }
+    }
+
+    @Nested
+    class モードフック {
+
+        @Test
+        void メジャーモードフックが実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeHook("TestMode", () -> executed.add("hook1"));
+            registry.addMajorModeHook("TestMode", () -> executed.add("hook2"));
+
+            registry.runMajorModeHooks("TestMode");
+
+            assertEquals(Lists.mutable.of("hook1", "hook2"), executed);
+        }
+
+        @Test
+        void マイナーモードフックが実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMinorModeHook("TestMinor", () -> executed.add("hook1"));
+
+            registry.runMinorModeHooks("TestMinor");
+
+            assertEquals(Lists.mutable.of("hook1"), executed);
+        }
+
+        @Test
+        void フック未登録のモードではrunHooksが何もしない() {
+            registry.runMajorModeHooks("Nonexistent");
+            // 例外が発生しないことを確認
+        }
+
+        @Test
+        void フック内の例外が他のフックの実行を妨げない() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeHook("TestMode", () -> {
+                throw new RuntimeException("intentional error");
+            });
+            registry.addMajorModeHook("TestMode", () -> executed.add("after-error"));
+
+            registry.runMajorModeHooks("TestMode");
+
+            assertEquals(Lists.mutable.of("after-error"), executed);
+        }
+
+        @Test
+        void モード登録前にフックを追加できる() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeHook("FutureMode", () -> executed.add("pre-registered"));
+
+            registry.runMajorModeHooks("FutureMode");
+
+            assertEquals(Lists.mutable.of("pre-registered"), executed);
         }
     }
 }
