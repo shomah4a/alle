@@ -353,6 +353,128 @@ class AlleModuleTest {
     }
 
     @Test
+    void ElectricPairで開き括弧入力時に閉じ括弧が自動挿入される() {
+        engine.eval("import alle");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import open_paren
+                open_paren.run()
+                """);
+        assertEquals("()", buffer.getText());
+        // カーソルが括弧の間にある
+        ScriptResult result = engine.eval("alle.active_window().point()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("1", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void ElectricPairで閉じ括弧入力時に次の文字が同じならスキップする() {
+        engine.eval("import alle");
+        buffer.insertText(0, "()");
+        // カーソルを括弧の間に置く
+        engine.eval("alle.active_window().goto_char(1)");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import close_paren
+                close_paren.run()
+                """);
+        // テキストは変わらず、カーソルが閉じ括弧の後ろに移動
+        assertEquals("()", buffer.getText());
+        ScriptResult result = engine.eval("alle.active_window().point()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("2", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void ElectricPairでダブルクォート入力時にペアが挿入される() {
+        engine.eval("import alle");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import insert_double_quote
+                insert_double_quote.run()
+                """);
+        assertEquals("\"\"", buffer.getText());
+        ScriptResult result = engine.eval("alle.active_window().point()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("1", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void ElectricPairでダブルクォート入力時に次の文字が同じならスキップする() {
+        engine.eval("import alle");
+        buffer.insertText(0, "\"\"");
+        engine.eval("alle.active_window().goto_char(1)");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import insert_double_quote
+                insert_double_quote.run()
+                """);
+        assertEquals("\"\"", buffer.getText());
+        ScriptResult result = engine.eval("alle.active_window().point()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("2", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void ElectricPairで角括弧のペアが挿入される() {
+        engine.eval("import alle");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import open_bracket
+                open_bracket.run()
+                """);
+        assertEquals("[]", buffer.getText());
+    }
+
+    @Test
+    void ElectricPairで波括弧のペアが挿入される() {
+        engine.eval("import alle");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import open_brace
+                open_brace.run()
+                """);
+        assertEquals("{}", buffer.getText());
+    }
+
+    @Test
+    void ElectricPairでシングルクォートが単語の後ではペア挿入されない() {
+        engine.eval("import alle");
+        buffer.insertText(0, "it");
+        engine.eval("alle.active_window().goto_char(2)");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import insert_single_quote
+                insert_single_quote.run()
+                """);
+        assertEquals("it'", buffer.getText());
+    }
+
+    @Test
+    void ElectricPairで閉じ括弧スキップは未対応の開き括弧がある場合のみ動作する() {
+        engine.eval("import alle");
+        // 未対応の開き括弧がない状態で ) の前にカーソルを置く
+        buffer.insertText(0, "x)");
+        engine.eval("alle.active_window().goto_char(1)");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import close_paren
+                close_paren.run()
+                """);
+        // 未対応の開き括弧がないので ) が挿入される
+        assertEquals("x))", buffer.getText());
+    }
+
+    @Test
+    void ElectricPairで閉じ括弧スキップは未対応の開き括弧がある場合にスキップする() {
+        engine.eval("import alle");
+        // 未対応の開き括弧がある状態
+        buffer.insertText(0, "(x)");
+        engine.eval("alle.active_window().goto_char(2)");
+        engine.eval("""
+                from alle.modes.electric_pair.commands import close_paren
+                close_paren.run()
+                """);
+        // 未対応の開き括弧があるのでスキップ
+        assertEquals("(x)", buffer.getText());
+        ScriptResult result = engine.eval("alle.active_window().point()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("3", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
     void MinorModeBaseでマイナーモードを定義して登録できる() {
         engine.eval("import alle");
         engine.eval("from alle.mode import MinorModeBase");
