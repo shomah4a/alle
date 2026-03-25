@@ -18,6 +18,11 @@ def make_command(base: CommandBase) -> Any:
     GraalPy では Java インターフェース継承クラスに __init__ 引数を渡せず、
     インスタンスへの属性追加もできないため、クロージャで値をキャプチャした
     クラスを都度生成する。
+
+    :param base: 変換元のコマンド
+    :type base: CommandBase
+    :return: Java Command インスタンス
+    :rtype: Command
     """
     cmd_name = base.name()
     run_fn = base.run

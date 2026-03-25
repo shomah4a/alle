@@ -15,18 +15,22 @@ class CommandBase(ABC):
     サブクラスは name() と run() を実装する。
 
     使用例:
-        class MyCommand(CommandBase):
-            def name(self):
-                return "my-command"
-            def run(self):
-                alle.message("hello")
 
-        alle.register_command(MyCommand())
+    >>> class MyCommand(CommandBase):
+    ...     def name(self):
+    ...         return "my-command"
+    ...     def run(self):
+    ...         alle.message("hello")
+    >>> alle.register_command(MyCommand())
     """
 
     @abstractmethod
     def name(self) -> str:
-        """コマンド名を返す。"""
+        """コマンド名を返す。
+
+        :return: コマンドの識別名
+        :rtype: str
+        """
         ...
 
     @abstractmethod
@@ -40,16 +44,19 @@ def command(name: str) -> Callable[[Callable[[], None]], CommandBase]:
 
     デコレータ適用後の変数は関数ではなく CommandBase インスタンスになる。
 
-    使用例::
+    :param name: コマンドの識別名
+    :type name: str
+    :return: 関数を CommandBase インスタンスに変換するデコレータ
+    :rtype: Callable[[Callable[[], None]], CommandBase]
 
-        from alle.command import command
+    使用例:
 
-        @command("my-command")
-        def my_command():
-            alle.message("hello")
-
-        # my_command は CommandBase インスタンス
-        alle.register_command(my_command)
+    >>> from alle.command import command
+    >>> @command("my-command")
+    ... def my_command():
+    ...     alle.message("hello")
+    >>> # my_command は CommandBase インスタンス
+    >>> alle.register_command(my_command)
     """
     def decorator(fn: Callable[[], None]) -> CommandBase:
         cmd_name = name
