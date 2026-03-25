@@ -63,3 +63,35 @@ class Window:
         """
         from alle.buffer import Buffer
         return Buffer(self._win.buffer())
+
+    def region_start(self) -> int:
+        """リージョンの開始位置を返す。mark が未設定の場合は -1 を返す。
+
+        :return: リージョンの開始オフセット、または -1
+        :rtype: int
+        """
+        return self._win.regionStart()
+
+    def region_end(self) -> int:
+        """リージョンの終了位置を返す。mark が未設定の場合は -1 を返す。
+
+        :return: リージョンの終了オフセット、または -1
+        :rtype: int
+        """
+        return self._win.regionEnd()
+
+    def mark(self) -> int:
+        """mark の位置を返す。未設定の場合は -1 を返す。
+
+        :return: mark のオフセット、または -1
+        :rtype: int
+        """
+        return self._win.mark()
+
+    def set_mark(self, position: int) -> None:
+        """mark を設定する。
+
+        :param position: mark のオフセット位置
+        :type position: int
+        """
+        self._win.setMark(position)

@@ -55,4 +55,32 @@ public class WindowFacade {
     public BufferFacade buffer() {
         return new BufferFacade(window.getBuffer());
     }
+
+    /**
+     * リージョンの開始位置を返す。markが未設定の場合は-1を返す。
+     */
+    public int regionStart() {
+        return window.getRegionStart().orElse(-1);
+    }
+
+    /**
+     * リージョンの終了位置を返す。markが未設定の場合は-1を返す。
+     */
+    public int regionEnd() {
+        return window.getRegionEnd().orElse(-1);
+    }
+
+    /**
+     * markの位置を返す。未設定の場合は-1を返す。
+     */
+    public int mark() {
+        return window.getMark().orElse(-1);
+    }
+
+    /**
+     * markを設定する。
+     */
+    public void setMark(int position) {
+        window.setMark(position);
+    }
 }

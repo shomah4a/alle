@@ -83,3 +83,16 @@ def bind_key(keymap: Any, keystroke: Any, command: CommandBase) -> None:
     """
     java_command = make_command(command)
     keymap.bind(keystroke, java_command)
+
+
+def bind_prefix(keymap: Any, keystroke: Any, prefix_keymap: Any) -> None:
+    """キーマップにプレフィックスキーをバインドする。
+
+    :param keymap: バインド先のキーマップ
+    :type keymap: Keymap
+    :param keystroke: プレフィックスとなるキーストローク
+    :type keystroke: KeyStroke
+    :param prefix_keymap: プレフィックスキー用の子キーマップ
+    :type prefix_keymap: Keymap
+    """
+    keymap.bindPrefix(keystroke, prefix_keymap)
