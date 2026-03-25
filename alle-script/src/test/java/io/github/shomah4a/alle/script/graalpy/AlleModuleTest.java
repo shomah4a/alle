@@ -190,6 +190,36 @@ class AlleModuleTest {
     }
 
     @Test
+    void commandデコレータで関数をCommandBaseインスタンスに変換できる() {
+        engine.eval("import alle");
+        engine.eval("from alle import command");
+        engine.eval("""
+                @command.command("decorated-cmd")
+                def decorated_cmd():
+                    alle.message("decorated")
+                """);
+        ScriptResult result = engine.eval("alle.register_command(decorated_cmd)");
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("register_command with decorator failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+    }
+
+    @Test
+    void commandデコレータで生成したコマンドの名前が正しい() {
+        engine.eval("from alle import command");
+        engine.eval("""
+                @command.command("test-name")
+                def test_fn():
+                    pass
+                """);
+        ScriptResult result = engine.eval("test_fn.name()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("test-name", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
     void MinorModeBaseでマイナーモードを定義して登録できる() {
         engine.eval("import alle");
         engine.eval("from alle.mode import MinorModeBase");
