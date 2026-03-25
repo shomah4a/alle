@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.script.graalpy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
@@ -217,6 +218,76 @@ class AlleModuleTest {
         ScriptResult result = engine.eval("test_fn.name()");
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("test-name", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void 初期化時にPythonモードが自動登録される() {
+        engine.eval("import alle");
+        ScriptResult result = engine.eval("""
+                from alle.modes.python import PythonMode
+                mode = PythonMode()
+                mode.name()
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("Python", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void Pythonモードのスタイラーでコメントをハイライトできる() {
+        engine.eval("import alle");
+        engine.eval("""
+                from alle.modes.python import PythonMode
+                mode = PythonMode()
+                styler = mode.styler()
+                spans = styler.styleLine("x = 1  # comment")
+                """);
+        ScriptResult result = engine.eval("spans.size()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        // コメント部分がスタイリングされている
+        int spanCount = Integer.parseInt(((ScriptResult.Success) result).value());
+        assertTrue(spanCount > 0, "コメントに対するスパンが生成されるべき");
+    }
+
+    @Test
+    void Pythonモードのスタイラーでキーワードをハイライトできる() {
+        engine.eval("import alle");
+        engine.eval("""
+                from alle.modes.python import PythonMode
+                mode = PythonMode()
+                styler = mode.styler()
+                spans = styler.styleLine("def hello():")
+                """);
+        ScriptResult result = engine.eval("spans.size()");
+        assertInstanceOf(ScriptResult.Success.class, result);
+        int spanCount = Integer.parseInt(((ScriptResult.Success) result).value());
+        assertTrue(spanCount > 0, "キーワードに対するスパンが生成されるべき");
+    }
+
+    @Test
+    void Pythonモードのスタイラーで三重引用符文字列をハイライトできる() {
+        engine.eval("import alle");
+        ScriptResult evalResult = engine.eval("""
+                from alle.modes.python import PythonMode
+                mode = PythonMode()
+                styler = mode.styler()
+                result = styler.styleLineWithState('x = \"\"\"hello', styler.initialState())
+                spans = result.spans()
+                next_state = result.nextState()
+                in_region = next_state.isInRegion()
+                """);
+        if (evalResult instanceof ScriptResult.Failure f) {
+            System.err.println("triple quote test failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, evalResult);
+        ScriptResult spanResult = engine.eval("spans.size()");
+        assertInstanceOf(ScriptResult.Success.class, spanResult);
+        int spanCount = Integer.parseInt(((ScriptResult.Success) spanResult).value());
+        assertTrue(spanCount > 0, "三重引用符文字列に対するスパンが生成されるべき");
+        // リージョンが継続中であること
+        ScriptResult stateResult = engine.eval("str(in_region)");
+        assertInstanceOf(ScriptResult.Success.class, stateResult);
+        assertEquals("True", ((ScriptResult.Success) stateResult).value());
     }
 
     @Test

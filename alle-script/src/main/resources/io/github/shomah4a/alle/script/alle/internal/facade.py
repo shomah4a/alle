@@ -20,6 +20,7 @@ def _init(editor_facade: Any) -> None:
     """
     global _editor_facade
     _editor_facade = editor_facade
+    _register_builtin_modes()
 
 
 def _wrap_command(command: CommandBase) -> Any:
@@ -79,6 +80,12 @@ def _make_minor_mode_factory(mode_class: type) -> Any:
     def factory():
         return make_minor_mode(mode_class())
     return factory
+
+
+def _register_builtin_modes() -> None:
+    """組み込みモードを登録する。"""
+    from alle.modes import register_modes
+    register_modes()
 
 
 def _require_facade() -> Any:
