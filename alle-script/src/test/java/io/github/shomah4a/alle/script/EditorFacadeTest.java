@@ -8,6 +8,9 @@ import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -30,7 +33,13 @@ class EditorFacadeTest {
         var bufferManager = new BufferManager();
         bufferManager.add(bufferFacade);
         messageBuffer = new MessageBuffer("*Messages*", 100);
-        facade = new EditorFacade(frame, messageBuffer, new CommandRegistry(), new Keymap("global"));
+        facade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new));
     }
 
     @Test

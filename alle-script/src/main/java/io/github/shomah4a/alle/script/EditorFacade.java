@@ -7,15 +7,20 @@ import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.MajorMode;
+import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.graalvm.polyglot.Value;
 
 /**
  * スクリプトに公開するエディタのルートファサード。
  * アクティブウィンドウ・バッファの解決、メッセージ表示、
- * コマンド登録・実行、キーバインド設定を担う。
+ * コマンド登録・実行、キーバインド設定、モード登録を担う。
  */
 public class EditorFacade implements Loggable {
 
@@ -23,13 +28,22 @@ public class EditorFacade implements Loggable {
     private final MessageBuffer messageBuffer;
     private final CommandRegistry commandRegistry;
     private final Keymap globalKeymap;
+    private final ModeRegistry modeRegistry;
+    private final AutoModeMap autoModeMap;
 
     public EditorFacade(
-            Frame frame, MessageBuffer messageBuffer, CommandRegistry commandRegistry, Keymap globalKeymap) {
+            Frame frame,
+            MessageBuffer messageBuffer,
+            CommandRegistry commandRegistry,
+            Keymap globalKeymap,
+            ModeRegistry modeRegistry,
+            AutoModeMap autoModeMap) {
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
         this.globalKeymap = globalKeymap;
+        this.modeRegistry = modeRegistry;
+        this.autoModeMap = autoModeMap;
     }
 
     /**
@@ -91,5 +105,47 @@ public class EditorFacade implements Loggable {
             }
         }
         current.bind(keyStrokes.get(keyStrokes.size() - 1), command);
+    }
+
+    /**
+     * メジャーモードファクトリを登録する。同名のモードが既に存在する場合は上書きする。
+     * Python側からモードファクトリ（呼び出し可能なValue）が渡される。
+     * ファクトリを一度呼び出してモード名を取得し、以降はファクトリとして登録する。
+     *
+     * @param modeFactory 呼び出すとMajorModeインスタンスを返すValue
+     */
+    public void registerMajorMode(Value modeFactory) {
+        MajorMode probe = modeFactory.execute().as(MajorMode.class);
+        String name = probe.name();
+        Supplier<MajorMode> factory = () -> modeFactory.execute().as(MajorMode.class);
+        modeRegistry.registerOrReplaceMajorMode(name, factory);
+    }
+
+    /**
+     * マイナーモードファクトリを登録する。同名のモードが既に存在する場合は上書きする。
+     * Python側からモードファクトリ（呼び出し可能なValue）が渡される。
+     *
+     * @param modeFactory 呼び出すとMinorModeインスタンスを返すValue
+     */
+    public void registerMinorMode(Value modeFactory) {
+        MinorMode probe = modeFactory.execute().as(MinorMode.class);
+        String name = probe.name();
+        Supplier<MinorMode> factory = () -> modeFactory.execute().as(MinorMode.class);
+        modeRegistry.registerOrReplaceMinorMode(name, factory);
+    }
+
+    /**
+     * 拡張子とメジャーモード名のマッピングを登録する。
+     * 指定されたモード名がModeRegistryに登録されていない場合は例外をスローする。
+     *
+     * @param extension 拡張子（ドットなし、例: "py"）
+     * @param modeName モード名
+     * @throws IllegalArgumentException 指定されたモード名が未登録の場合
+     */
+    public void registerAutoMode(String extension, String modeName) {
+        Supplier<MajorMode> factory = modeRegistry
+                .lookupMajorMode(modeName)
+                .orElseThrow(() -> new IllegalArgumentException("メジャーモード '" + modeName + "' は登録されていません"));
+        autoModeMap.register(extension, factory);
     }
 }

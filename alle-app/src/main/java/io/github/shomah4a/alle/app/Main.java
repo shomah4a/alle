@@ -70,7 +70,8 @@ public final class Main {
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
-        var editorFacade = new EditorFacade(core.frame(), msg, core.commandRegistry(), core.keymap());
+        var editorFacade = new EditorFacade(
+                core.frame(), msg, core.commandRegistry(), core.keymap(), core.modeRegistry(), core.autoModeMap());
         var stdoutStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000);
         var stderrStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000);
         var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000);

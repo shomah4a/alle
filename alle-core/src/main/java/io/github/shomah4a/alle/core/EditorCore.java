@@ -48,6 +48,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -69,6 +70,8 @@ public final class EditorCore {
     private final CommandRegistry commandRegistry;
     private final Keymap keymap;
     private final CommandLoop commandLoop;
+    private final ModeRegistry modeRegistry;
+    private final AutoModeMap autoModeMap;
 
     private EditorCore(
             Frame frame,
@@ -77,7 +80,9 @@ public final class EditorCore {
             MessageBuffer warningBuffer,
             CommandRegistry commandRegistry,
             Keymap keymap,
-            CommandLoop commandLoop) {
+            CommandLoop commandLoop,
+            ModeRegistry modeRegistry,
+            AutoModeMap autoModeMap) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -85,6 +90,8 @@ public final class EditorCore {
         this.commandRegistry = commandRegistry;
         this.keymap = keymap;
         this.commandLoop = commandLoop;
+        this.modeRegistry = modeRegistry;
+        this.autoModeMap = autoModeMap;
     }
 
     /**
@@ -118,6 +125,11 @@ public final class EditorCore {
         bufferManager.add(new BufferFacade(messageBuffer));
         bufferManager.add(new BufferFacade(warningBuffer));
 
+        // モードレジストリ
+        var modeRegistry = new ModeRegistry();
+        modeRegistry.registerMajorMode("Text", TextMode::new);
+        modeRegistry.registerMajorMode("Markdown", MarkdownMode::new);
+
         // モードマップ
         var autoModeMap = new AutoModeMap(TextMode::new);
         autoModeMap.register("md", MarkdownMode::new);
@@ -139,7 +151,16 @@ public final class EditorCore {
         var commandLoop = new CommandLoop(
                 inputSource, resolver, frame, bufferManager, inputPrompter, killRing, messageBuffer, warningBuffer);
 
-        return new EditorCore(frame, bufferManager, messageBuffer, warningBuffer, registry, keymap, commandLoop);
+        return new EditorCore(
+                frame,
+                bufferManager,
+                messageBuffer,
+                warningBuffer,
+                registry,
+                keymap,
+                commandLoop,
+                modeRegistry,
+                autoModeMap);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -278,5 +299,13 @@ public final class EditorCore {
 
     public CommandLoop commandLoop() {
         return commandLoop;
+    }
+
+    public ModeRegistry modeRegistry() {
+        return modeRegistry;
+    }
+
+    public AutoModeMap autoModeMap() {
+        return autoModeMap;
     }
 }
