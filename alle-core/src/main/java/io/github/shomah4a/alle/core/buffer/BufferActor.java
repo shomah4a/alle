@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Bufferへの操作をCompletableFutureで返すアクター層。
@@ -175,6 +176,13 @@ public class BufferActor {
      */
     public Buffer getBuffer() {
         return buffer;
+    }
+
+    /**
+     * ActorThreadの操作完了コールバックを設定する。
+     */
+    public void setOnComplete(@Nullable Runnable callback) {
+        actorThread.setOnComplete(callback);
     }
 
     /**

@@ -1,67 +1,44 @@
 package io.github.shomah4a.alle.tui;
 
-import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
-import io.github.shomah4a.alle.core.window.FrameActor;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * コマンド処理・スナップショット作成を担当するロジックスレッド。
- * 入力スレッドからキー入力をBlockingQueueで受け取り、
- * 処理結果のスナップショットをSnapshotExchanger経由で描画スレッドに渡す。
+ * コマンド処理を担当するロジックスレッド。
+ * 入力スレッドからキー入力をBlockingQueueで受け取り、CommandLoopで処理する。
+ * スナップショット作成は独立したSnapshotThreadが担当する。
+ * processKeyの同期的な状態変更（プレフィックスキー表示等）は
+ * refreshCallbackでスナップショットスレッドに通知する。
  */
 class EditorThread implements Runnable, Loggable {
 
     private final BlockingQueue<KeyStroke> keyQueue;
-    private final Screen screen;
-    private final ScreenRenderer renderer;
     private final CommandLoop commandLoop;
-    private final FrameActor frameActor;
-    private final SnapshotExchanger exchanger;
+    private final Runnable refreshCallback;
 
-    EditorThread(
-            BlockingQueue<KeyStroke> keyQueue,
-            Screen screen,
-            ScreenRenderer renderer,
-            CommandLoop commandLoop,
-            FrameActor frameActor,
-            SnapshotExchanger exchanger) {
+    EditorThread(BlockingQueue<KeyStroke> keyQueue, CommandLoop commandLoop, Runnable refreshCallback) {
         this.keyQueue = keyQueue;
-        this.screen = screen;
-        this.renderer = renderer;
         this.commandLoop = commandLoop;
-        this.frameActor = frameActor;
-        this.exchanger = exchanger;
+        this.refreshCallback = refreshCallback;
     }
 
     @Override
     public void run() {
         try {
-            // 初期描画用スナップショット
-            publishSnapshot();
-
             while (true) {
                 var keyStroke = keyQueue.take();
                 if (keyStroke.equals(POISON_PILL)) {
                     break;
                 }
-                commandLoop.processKey(keyStroke);
-                publishSnapshot();
+                var unused = commandLoop.processKey(keyStroke);
+                refreshCallback.run();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger().warn("ロジックスレッドが割り込みで終了しました");
         }
-    }
-
-    private void publishSnapshot() {
-        var size = screen.getTerminalSize();
-        if (size.getRows() < 3) {
-            return;
-        }
-        renderer.createSnapshot(frameActor, size).thenAccept(exchanger::publish).join();
     }
 
     /**

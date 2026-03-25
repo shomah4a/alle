@@ -96,7 +96,8 @@ public final class Main {
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
 
         var renderer = new ScreenRenderer(screen, core.messageBuffer());
-        var runner = new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frameActor());
+        var runner = new EditorRunner(
+                inputSource, screen, renderer, core.commandLoop(), core.frameActor(), core.bufferManager());
 
         try {
             runner.run();

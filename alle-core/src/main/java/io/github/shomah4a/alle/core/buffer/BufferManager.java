@@ -8,6 +8,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.jspecify.annotations.Nullable;
 
 /**
  * 複数のバッファを管理する。
@@ -17,6 +18,7 @@ public class BufferManager {
     private final MutableList<Buffer> buffers;
     private final MutableMap<Buffer, BufferActor> actorMap;
     private int currentIndex;
+    private @Nullable Runnable onActorComplete;
 
     public BufferManager() {
         this.buffers = Lists.mutable.empty();
@@ -25,11 +27,25 @@ public class BufferManager {
     }
 
     /**
+     * BufferActorの操作完了時に呼ばれるコールバックを設定する。
+     * 既存のBufferActorにも適用される。
+     */
+    public void setOnActorComplete(@Nullable Runnable callback) {
+        this.onActorComplete = callback;
+        for (var actor : actorMap.valuesView()) {
+            actor.setOnComplete(callback);
+        }
+    }
+
+    /**
      * バッファを追加し、現在のバッファとして設定する。
      */
     public void add(Buffer buffer) {
         buffers.add(buffer);
         var actorThread = ActorThread.create("buffer-actor-" + buffer.getName());
+        if (onActorComplete != null) {
+            actorThread.setOnComplete(onActorComplete);
+        }
         actorMap.put(buffer, new BufferActor(buffer, actorThread));
         currentIndex = buffers.size() - 1;
     }

@@ -11,6 +11,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.FrameActor;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jspecify.annotations.Nullable;
@@ -90,50 +91,54 @@ public class CommandLoop {
             if (keyOpt.isEmpty()) {
                 break;
             }
-            processKey(keyOpt.get());
+            var unused = processKey(keyOpt.get());
         }
     }
 
     /**
-     * 1つのキーストロークを処理する。テスト用に公開。
-     * 非ブロッキング: 1キーにつき1回の状態遷移で即座にreturnする。
+     * 1つのキーストロークを処理し、コマンド実行のCompletableFutureを返す。
+     * コマンドが実行された場合はそのfutureを、それ以外は完了済みfutureを返す。
      * プレフィックスキーの場合は内部状態として保持し、次の呼び出しで解決する。
      */
-    public void processKey(KeyStroke keyStroke) {
+    public CompletableFuture<Void> processKey(KeyStroke keyStroke) {
         messageBuffer.clearShowingMessage();
 
         if (pendingPrefix != null) {
-            processPrefixKey(keyStroke);
+            return processPrefixKey(keyStroke);
         } else {
-            processNormalKey(keyStroke);
+            return processNormalKey(keyStroke);
         }
     }
 
-    private void processNormalKey(KeyStroke keyStroke) {
+    private static final CompletableFuture<Void> COMPLETED = CompletableFuture.completedFuture(null);
+
+    private CompletableFuture<Void> processNormalKey(KeyStroke keyStroke) {
         var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
-            handleEntry(entryOpt.get(), keyStroke, "");
+            return handleEntry(entryOpt.get(), keyStroke, "");
         }
+        return COMPLETED;
     }
 
-    private void processPrefixKey(KeyStroke keyStroke) {
+    private CompletableFuture<Void> processPrefixKey(KeyStroke keyStroke) {
         var prefix = pendingPrefix;
         pendingPrefix = null;
         if (prefix == null) {
-            return;
+            return COMPLETED;
         }
 
         var entryOpt = prefix.keymap().lookup(keyStroke);
         if (entryOpt.isPresent()) {
-            handleEntry(entryOpt.get(), keyStroke, prefix.displayText());
+            return handleEntry(entryOpt.get(), keyStroke, prefix.displayText());
         }
+        return COMPLETED;
     }
 
     private Optional<KeymapEntry> resolveKey(KeyStroke keyStroke) {
         return frameActor.resolveKey(keyStroke, keyResolver).join();
     }
 
-    private void handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {
+    private CompletableFuture<Void> handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
@@ -148,7 +153,7 @@ public class CommandLoop {
                         killRing,
                         messageBuffer,
                         warningBuffer);
-                command.execute(context)
+                return command.execute(context)
                         .thenRun(() -> lastCommand = thisCommand)
                         .exceptionally(ex -> {
                             var cause = ex.getCause() != null ? ex.getCause() : ex;
@@ -160,13 +165,13 @@ public class CommandLoop {
                                 context.handleError(message, ex);
                             }
                             return null;
-                        })
-                        .join();
+                        });
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> {
                 var displayText = prefixDisplay + keyStroke.displayString() + " ";
                 pendingPrefix = new PendingPrefix(prefixKeymap, displayText);
                 messageBuffer.message(displayText);
+                return COMPLETED;
             }
         }
     }

@@ -252,10 +252,10 @@ class MinibufferInputPrompterTest {
             var loop = new CommandLoop(() -> Optional.empty(), resolver, frameActor, bufferManager, prompter);
 
             // ミニバッファがアクティブな状態でキー入力
-            loop.processKey(KeyStroke.of('t'));
-            loop.processKey(KeyStroke.of('e'));
-            loop.processKey(KeyStroke.of('s'));
-            loop.processKey(KeyStroke.of('t'));
+            var unused1 = loop.processKey(KeyStroke.of('t'));
+            var unused2 = loop.processKey(KeyStroke.of('e'));
+            var unused3 = loop.processKey(KeyStroke.of('s'));
+            loop.processKey(KeyStroke.of('t')).join();
 
             assertEquals("Find file: test", minibufferWindow.getBuffer().getText());
             assertFalse(future.isDone());
@@ -270,9 +270,10 @@ class MinibufferInputPrompterTest {
             var bufferManager = new BufferManager();
             var loop = new CommandLoop(() -> Optional.empty(), resolver, frameActor, bufferManager, prompter);
 
-            loop.processKey(KeyStroke.of('a'));
-            loop.processKey(KeyStroke.of('b'));
-            loop.processKey(KeyStroke.of('\n'));
+            var unused1 = loop.processKey(KeyStroke.of('a'));
+            var unused2 = loop.processKey(KeyStroke.of('b'));
+            var unused3 = loop.processKey(KeyStroke.of('\n'));
+            awaitFutureDone(future);
 
             assertTrue(future.isDone());
             var result = future.join();
@@ -437,6 +438,19 @@ class MinibufferInputPrompterTest {
         while (!frame.isMinibufferActive()) {
             if (System.nanoTime() > deadline) {
                 throw new AssertionError("ミニバッファのセットアップがタイムアウトしました");
+            }
+            Thread.onSpinWait();
+        }
+    }
+
+    /**
+     * CompletableFutureが完了するまでポーリングで待機する。
+     */
+    private void awaitFutureDone(java.util.concurrent.CompletableFuture<?> future) {
+        long deadline = System.nanoTime() + 5_000_000_000L;
+        while (!future.isDone()) {
+            if (System.nanoTime() > deadline) {
+                throw new AssertionError("futureの完了がタイムアウトしました");
             }
             Thread.onSpinWait();
         }

@@ -5,6 +5,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jspecify.annotations.Nullable;
 
 /**
  * アクター用のコマンドキュー + VirtualThread 逐次処理基盤。
@@ -17,6 +18,7 @@ public class ActorThread {
 
     private final LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
     private final Thread thread;
+    private @Nullable Runnable onComplete;
 
     private ActorThread(String name) {
         this.thread = Thread.ofVirtual().name(name).start(this::processLoop);
@@ -31,8 +33,17 @@ public class ActorThread {
     }
 
     /**
+     * 操作完了時に呼ばれるコールバックを設定する。
+     * スナップショット更新の通知など、状態変更トリガーに使用する。
+     */
+    public void setOnComplete(@Nullable Runnable callback) {
+        this.onComplete = callback;
+    }
+
+    /**
      * 操作をキューに投入し、結果を CompletableFuture で返す。
      * 操作は ActorThread の VirtualThread 上で逐次実行される。
+     * 操作完了後、onCompleteコールバックが設定されていれば呼び出す。
      */
     public <T> CompletableFuture<T> submit(Supplier<T> operation) {
         var future = new CompletableFuture<T>();
@@ -42,6 +53,10 @@ public class ActorThread {
                 future.complete(result);
             } catch (Throwable ex) {
                 future.completeExceptionally(ex);
+            }
+            var callback = onComplete;
+            if (callback != null) {
+                callback.run();
             }
         });
         return future;
