@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.tui;
 
 import com.googlecode.lanterna.screen.Screen;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -20,18 +21,21 @@ public class EditorRunner {
     private final ScreenRenderer renderer;
     private final CommandLoop commandLoop;
     private final Frame frame;
+    private final MessageBuffer messageBuffer;
 
     public EditorRunner(
             TerminalInputSource inputSource,
             Screen screen,
             ScreenRenderer renderer,
             CommandLoop commandLoop,
-            Frame frame) {
+            Frame frame,
+            MessageBuffer messageBuffer) {
         this.inputSource = inputSource;
         this.screen = screen;
         this.renderer = renderer;
         this.commandLoop = commandLoop;
         this.frame = frame;
+        this.messageBuffer = messageBuffer;
     }
 
     /**
@@ -49,8 +53,8 @@ public class EditorRunner {
         renderThreadHandle.setDaemon(true);
         renderThreadHandle.start();
 
-        var logicThread =
-                new Thread(new EditorThread(keyQueue, screen, renderer, commandLoop, frame, exchanger), "editor-logic");
+        var logicThread = new Thread(
+                new EditorThread(keyQueue, screen, commandLoop, frame, messageBuffer, exchanger), "editor-logic");
         logicThread.setDaemon(true);
         logicThread.start();
 

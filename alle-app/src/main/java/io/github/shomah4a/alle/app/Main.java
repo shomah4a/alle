@@ -90,8 +90,9 @@ public final class Main {
                         KeyStroke.meta(':'),
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
 
-        var renderer = new ScreenRenderer(screen, core.messageBuffer());
-        var runner = new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame());
+        var renderer = new ScreenRenderer(screen);
+        var runner =
+                new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame(), core.messageBuffer());
 
         try {
             runner.run();
