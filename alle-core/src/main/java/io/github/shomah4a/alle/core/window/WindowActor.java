@@ -101,22 +101,22 @@ public class WindowActor {
     }
 
     public CompletableFuture<Void> insert(String text) {
-        return atomicPerform(w -> {
-            w.insert(text);
+        return bufferActor.atomicPerform(b -> {
+            window.insert(text);
             return null;
         });
     }
 
     public CompletableFuture<Void> deleteBackward(int count) {
-        return atomicPerform(w -> {
-            w.deleteBackward(count);
+        return bufferActor.atomicPerform(b -> {
+            window.deleteBackward(count);
             return null;
         });
     }
 
     public CompletableFuture<Void> deleteForward(int count) {
-        return atomicPerform(w -> {
-            w.deleteForward(count);
+        return bufferActor.atomicPerform(b -> {
+            window.deleteForward(count);
             return null;
         });
     }
@@ -144,14 +144,14 @@ public class WindowActor {
      * 直前に表示していたバッファの名前を返す。
      */
     public CompletableFuture<Optional<String>> getPreviousBufferName() {
-        return atomicPerform(w -> w.getPreviousBuffer().map(b -> b.getName()));
+        return bufferActor.atomicPerform(b -> window.getPreviousBuffer().map(pb -> pb.getName()));
     }
 
     /**
      * バッファ名を返す。
      */
     public CompletableFuture<String> getBufferName() {
-        return atomicPerform(w -> w.getBuffer().getName());
+        return bufferActor.atomicPerform(b -> window.getBuffer().getName());
     }
 
     // ── カーソル移動 ──
@@ -160,10 +160,10 @@ public class WindowActor {
      * カーソルを1文字前方に移動する。バッファ末尾では何もしない。
      */
     public CompletableFuture<Void> moveForward() {
-        return atomicPerform(w -> {
-            int point = w.getPoint();
-            if (point < w.getBuffer().length()) {
-                w.setPoint(point + 1);
+        return bufferActor.atomicPerform(buffer -> {
+            int point = window.getPoint();
+            if (point < buffer.length()) {
+                window.setPoint(point + 1);
             }
             return null;
         });
@@ -173,10 +173,10 @@ public class WindowActor {
      * カーソルを1文字後方に移動する。バッファ先頭では何もしない。
      */
     public CompletableFuture<Void> moveBackward() {
-        return atomicPerform(w -> {
-            int point = w.getPoint();
+        return bufferActor.atomicPerform(buffer -> {
+            int point = window.getPoint();
             if (point > 0) {
-                w.setPoint(point - 1);
+                window.setPoint(point - 1);
             }
             return null;
         });
@@ -187,9 +187,8 @@ public class WindowActor {
      * 移動先の行が現在のカラム位置より短い場合は行末に移動する。
      */
     public CompletableFuture<Void> moveToNextLine() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
-            int point = w.getPoint();
+        return bufferActor.atomicPerform(buffer -> {
+            int point = window.getPoint();
             int currentLine = buffer.lineIndexForOffset(point);
             if (currentLine >= buffer.lineCount() - 1) {
                 return null;
@@ -199,7 +198,7 @@ public class WindowActor {
             int nextLineStart = buffer.lineStartOffset(currentLine + 1);
             int nextLineLength =
                     (int) buffer.lineText(currentLine + 1).codePoints().count();
-            w.setPoint(nextLineStart + Math.min(column, nextLineLength));
+            window.setPoint(nextLineStart + Math.min(column, nextLineLength));
             return null;
         });
     }
@@ -209,9 +208,8 @@ public class WindowActor {
      * 移動先の行が現在のカラム位置より短い場合は行末に移動する。
      */
     public CompletableFuture<Void> moveToPreviousLine() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
-            int point = w.getPoint();
+        return bufferActor.atomicPerform(buffer -> {
+            int point = window.getPoint();
             int currentLine = buffer.lineIndexForOffset(point);
             if (currentLine <= 0) {
                 return null;
@@ -221,7 +219,7 @@ public class WindowActor {
             int prevLineStart = buffer.lineStartOffset(currentLine - 1);
             int prevLineLength =
                     (int) buffer.lineText(currentLine - 1).codePoints().count();
-            w.setPoint(prevLineStart + Math.min(column, prevLineLength));
+            window.setPoint(prevLineStart + Math.min(column, prevLineLength));
             return null;
         });
     }
@@ -230,10 +228,9 @@ public class WindowActor {
      * カーソルを行頭に移動する。
      */
     public CompletableFuture<Void> moveToBeginningOfLine() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
-            int lineIndex = buffer.lineIndexForOffset(w.getPoint());
-            w.setPoint(buffer.lineStartOffset(lineIndex));
+        return bufferActor.atomicPerform(buffer -> {
+            int lineIndex = buffer.lineIndexForOffset(window.getPoint());
+            window.setPoint(buffer.lineStartOffset(lineIndex));
             return null;
         });
     }
@@ -242,12 +239,11 @@ public class WindowActor {
      * カーソルを行末に移動する。
      */
     public CompletableFuture<Void> moveToEndOfLine() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
-            int lineIndex = buffer.lineIndexForOffset(w.getPoint());
+        return bufferActor.atomicPerform(buffer -> {
+            int lineIndex = buffer.lineIndexForOffset(window.getPoint());
             int lineStart = buffer.lineStartOffset(lineIndex);
             int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
-            w.setPoint(lineStart + lineLength);
+            window.setPoint(lineStart + lineLength);
             return null;
         });
     }
@@ -302,9 +298,8 @@ public class WindowActor {
      * 行末にいる場合は改行を削除。バッファ末尾では何もしない。
      */
     public CompletableFuture<Optional<String>> killLine() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
-            int point = w.getPoint();
+        return bufferActor.atomicPerform(buffer -> {
+            int point = window.getPoint();
             int bufferLength = buffer.length();
             if (point >= bufferLength) {
                 return Optional.empty();
@@ -316,7 +311,7 @@ public class WindowActor {
 
             int deleteCount = (point < lineEnd) ? lineEnd - point : 1;
             String killedText = buffer.substring(point, point + deleteCount);
-            w.deleteForward(deleteCount);
+            window.deleteForward(deleteCount);
             return Optional.of(killedText);
         });
     }
@@ -326,9 +321,9 @@ public class WindowActor {
      * markが未設定の場合はempty。undo記録付き。
      */
     public CompletableFuture<Optional<String>> killRegion() {
-        return atomicPerform(w -> {
-            var regionStart = w.getRegionStart();
-            var regionEnd = w.getRegionEnd();
+        return bufferActor.atomicPerform(buffer -> {
+            var regionStart = window.getRegionStart();
+            var regionEnd = window.getRegionEnd();
             if (regionStart.isEmpty() || regionEnd.isEmpty()) {
                 return Optional.empty();
             }
@@ -337,14 +332,13 @@ public class WindowActor {
             if (start == end) {
                 return Optional.empty();
             }
-            var buffer = w.getBuffer();
-            int cursorBefore = w.getPoint();
+            int cursorBefore = window.getPoint();
             String killedText = buffer.substring(start, end);
             var inverseChange = buffer.deleteText(start, end - start);
             buffer.getUndoManager().record(inverseChange, cursorBefore);
             buffer.markDirty();
-            w.setPoint(start);
-            w.clearMark();
+            window.setPoint(start);
+            window.clearMark();
             return Optional.of(killedText);
         });
     }
@@ -353,9 +347,9 @@ public class WindowActor {
      * mark〜point間のテキストを返す（削除しない）。markが未設定の場合はempty。
      */
     public CompletableFuture<Optional<String>> copyRegion() {
-        return atomicPerform(w -> {
-            var regionStart = w.getRegionStart();
-            var regionEnd = w.getRegionEnd();
+        return bufferActor.atomicPerform(buffer -> {
+            var regionStart = window.getRegionStart();
+            var regionEnd = window.getRegionEnd();
             if (regionStart.isEmpty() || regionEnd.isEmpty()) {
                 return Optional.empty();
             }
@@ -364,8 +358,8 @@ public class WindowActor {
             if (start == end) {
                 return Optional.empty();
             }
-            String copiedText = w.getBuffer().substring(start, end);
-            w.clearMark();
+            String copiedText = buffer.substring(start, end);
+            window.clearMark();
             return Optional.of(copiedText);
         });
     }
@@ -376,8 +370,7 @@ public class WindowActor {
      * 直前の変更を取り消す。undoできた場合true。
      */
     public CompletableFuture<Boolean> undo() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
+        return bufferActor.atomicPerform(buffer -> {
             var undoManager = buffer.getUndoManager();
             var entryOpt = undoManager.undo();
             if (entryOpt.isEmpty()) {
@@ -387,7 +380,7 @@ public class WindowActor {
             undoManager.suppressRecording();
             try {
                 buffer.apply(entry.change());
-                w.setPoint(entry.cursorPosition());
+                window.setPoint(entry.cursorPosition());
             } finally {
                 undoManager.resumeRecording();
             }
@@ -399,8 +392,7 @@ public class WindowActor {
      * 直前のundoをやり直す。redoできた場合true。
      */
     public CompletableFuture<Boolean> redo() {
-        return atomicPerform(w -> {
-            var buffer = w.getBuffer();
+        return bufferActor.atomicPerform(buffer -> {
             var undoManager = buffer.getUndoManager();
             var entryOpt = undoManager.redo();
             if (entryOpt.isEmpty()) {
@@ -413,9 +405,9 @@ public class WindowActor {
                 var change = entry.change();
                 if (change instanceof TextChange.Insert insert) {
                     int insertedLen = (int) insert.text().codePoints().count();
-                    w.setPoint(insert.offset() + insertedLen);
+                    window.setPoint(insert.offset() + insertedLen);
                 } else if (change instanceof TextChange.Delete delete) {
-                    w.setPoint(delete.offset());
+                    window.setPoint(delete.offset());
                 }
             } finally {
                 undoManager.resumeRecording();
