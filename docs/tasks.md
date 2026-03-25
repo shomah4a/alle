@@ -20,6 +20,15 @@
 - 現在の JavaFuture.__await__ は完了済み Future のみ対応
 - asyncio イベントループとの統合で未完了 Future を非同期待ちできるようにする
 
+### コア: undo グループ
+- 複数のテキスト操作を1つの undo 単位にまとめる仕組み
+- リージョンインデントやコメントリージョンなど、複数行を操作するコマンドで必要
+- UndoManager に beginGroup / endGroup のようなAPIを追加し、グループ内の操作を一括で undo/redo する
+
+### Pythonモード: 自動dedent
+- `return`/`pass`/`break`/`continue`/`raise` の入力完了後に自動でインデントを減らす
+- newline-and-indent では対応済みだが、入力中のリアルタイム dedent は未実装
+
 ## 将来課題
 
 ### CommandContext のスナップショット化
