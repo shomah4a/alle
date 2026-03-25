@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.concurrent.ActorThread;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
@@ -28,7 +29,8 @@ public class BufferManager {
      */
     public void add(Buffer buffer) {
         buffers.add(buffer);
-        actorMap.put(buffer, new BufferActor(buffer));
+        var actorThread = ActorThread.create("buffer-actor-" + buffer.getName());
+        actorMap.put(buffer, new BufferActor(buffer, actorThread));
         currentIndex = buffers.size() - 1;
     }
 
@@ -94,7 +96,10 @@ public class BufferManager {
     public boolean remove(String name) {
         for (int i = 0; i < buffers.size(); i++) {
             if (buffers.get(i).getName().equals(name)) {
-                actorMap.remove(buffers.get(i));
+                var actor = actorMap.remove(buffers.get(i));
+                if (actor != null) {
+                    actor.shutdown();
+                }
                 buffers.remove(i);
                 if (buffers.isEmpty()) {
                     currentIndex = -1;
@@ -121,5 +126,15 @@ public class BufferManager {
      */
     public int size() {
         return buffers.size();
+    }
+
+    /**
+     * 全BufferActorのActorThreadを停止する。
+     * アプリケーション終了時に呼び出す。
+     */
+    public void shutdownAll() {
+        for (var actor : actorMap.valuesView()) {
+            actor.shutdown();
+        }
     }
 }

@@ -160,7 +160,8 @@ public class CommandLoop {
                                 context.handleError(message, ex);
                             }
                             return null;
-                        });
+                        })
+                        .join();
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> {
                 var displayText = prefixDisplay + keyStroke.displayString() + " ";

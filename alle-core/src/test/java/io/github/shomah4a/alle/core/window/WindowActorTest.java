@@ -5,15 +5,28 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import io.github.shomah4a.alle.core.buffer.BufferActor;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.concurrent.ActorThread;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class WindowActorTest {
 
+    private final MutableList<WindowActor> createdActors = Lists.mutable.empty();
+
+    @AfterEach
+    void tearDown() {
+        createdActors.forEach(a -> a.getBufferActor().shutdown());
+    }
+
     private WindowActor createActor() {
         var buffer = new EditableBuffer("test", new GapTextModel());
-        return new WindowActor(new Window(buffer));
+        var actor = new WindowActor(new Window(buffer));
+        createdActors.add(actor);
+        return actor;
     }
 
     private WindowActor createActorWithText(String text) {
@@ -21,7 +34,9 @@ class WindowActorTest {
         model.insert(0, text);
         var buffer = new EditableBuffer("test", model);
         var window = new Window(buffer);
-        return new WindowActor(window);
+        var actor = new WindowActor(window);
+        createdActors.add(actor);
+        return actor;
     }
 
     @Nested
@@ -91,8 +106,9 @@ class WindowActorTest {
         @Test
         void コンストラクタで渡したBufferActorを取得できる() {
             var buffer = new EditableBuffer("test", new GapTextModel());
-            var bufferActor = new BufferActor(buffer);
+            var bufferActor = new BufferActor(buffer, ActorThread.create("test-buffer"));
             var actor = new WindowActor(new Window(buffer), bufferActor);
+            createdActors.add(actor);
             assertSame(bufferActor, actor.getBufferActor());
         }
 
@@ -100,7 +116,7 @@ class WindowActorTest {
         void BufferActorでバッファを差し替えられる() {
             var actor = createActor();
             var newBuffer = new EditableBuffer("new-buffer", new GapTextModel());
-            var newActor = new BufferActor(newBuffer);
+            var newActor = new BufferActor(newBuffer, ActorThread.create("test-new-buffer"));
             actor.setBuffer(newActor).join();
             assertSame(newActor, actor.getBufferActor());
             assertEquals("new-buffer", actor.getBuffer().join().getName());

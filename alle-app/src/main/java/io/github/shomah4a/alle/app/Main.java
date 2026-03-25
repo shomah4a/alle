@@ -34,6 +34,9 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
+        // VirtualThreadのキャリアスレッド数を設定（BufferActorのActorThread用）
+        System.setProperty("jdk.virtualThreadScheduler.parallelism", "2");
+
         // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
         disableFlowControl();
 
@@ -100,6 +103,7 @@ public final class Main {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
+            core.bufferManager().shutdownAll();
             scriptEngine.close();
             scriptEngineFactory.close();
         }

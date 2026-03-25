@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.concurrent.ActorThread;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
@@ -11,24 +12,25 @@ import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * Bufferへの操作をCompletableFutureで返すアクター層。
- * 内部にキューを持ち、操作を逐次実行する構造を提供する。
- * 現時点では同期的に即時実行し、将来的にキュー+処理スレッドに差し替え可能。
+ * 内部にActorThread（コマンドキュー + VirtualThread）を持ち、
+ * 操作を逐次実行する。Bufferへのアクセスは専用VirtualThread上でのみ行われる。
  */
 public class BufferActor {
 
     private final Buffer buffer;
+    private final ActorThread actorThread;
 
-    public BufferActor(Buffer buffer) {
+    public BufferActor(Buffer buffer, ActorThread actorThread) {
         this.buffer = buffer;
+        this.actorThread = actorThread;
     }
 
     /**
      * 複数の操作をアトミックに実行する。
-     * 将来的にはキュー経由で1つのメッセージとして逐次実行される。
+     * キュー経由で1つのコマンドとしてActorThreadのVirtualThread上で逐次実行される。
      */
     public <T> CompletableFuture<T> atomicPerform(Function<Buffer, T> operation) {
-        T result = operation.apply(buffer);
-        return CompletableFuture.completedFuture(result);
+        return actorThread.submit(() -> operation.apply(buffer));
     }
 
     public CompletableFuture<String> getName() {
@@ -173,5 +175,12 @@ public class BufferActor {
      */
     public Buffer getBuffer() {
         return buffer;
+    }
+
+    /**
+     * ActorThreadを停止する。
+     */
+    public void shutdown() {
+        actorThread.shutdown();
     }
 }

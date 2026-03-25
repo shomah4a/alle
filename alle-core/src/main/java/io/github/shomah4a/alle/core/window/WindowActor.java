@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.window;
 import io.github.shomah4a.alle.core.buffer.Buffer;
 import io.github.shomah4a.alle.core.buffer.BufferActor;
 import io.github.shomah4a.alle.core.buffer.TextChange;
+import io.github.shomah4a.alle.core.concurrent.ActorThread;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -27,7 +28,11 @@ public class WindowActor {
      * 既存コードとの互換用。BufferActorはWindowのバッファから生成する。
      */
     public WindowActor(Window window) {
-        this(window, new BufferActor(window.getBuffer()));
+        this(
+                window,
+                new BufferActor(
+                        window.getBuffer(),
+                        ActorThread.create("buffer-actor-" + window.getBuffer().getName())));
     }
 
     /**
