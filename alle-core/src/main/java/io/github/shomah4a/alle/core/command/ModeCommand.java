@@ -38,8 +38,9 @@ public final class ModeCommand {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             var mode = factory.get();
-            context.activeWindow().getBuffer().setMajorMode(mode);
-            modeRegistry.runMajorModeHooks(mode.name());
+            var buffer = context.activeWindow().getBuffer();
+            buffer.setMajorMode(mode);
+            modeRegistry.runMajorModeHooks(mode.name(), buffer);
             context.messageBuffer().message(mode.name() + " mode");
             return CompletableFuture.completedFuture(null);
         }
@@ -79,7 +80,7 @@ public final class ModeCommand {
                 context.messageBuffer().message(modeName + " mode disabled");
             } else {
                 buffer.enableMinorMode(factory.get());
-                modeRegistry.runMinorModeHooks(modeName);
+                modeRegistry.runMinorModeHooks(modeName, buffer);
                 context.messageBuffer().message(modeName + " mode enabled");
             }
             return CompletableFuture.completedFuture(null);

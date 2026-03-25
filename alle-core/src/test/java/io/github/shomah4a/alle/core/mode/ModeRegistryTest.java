@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
@@ -200,13 +203,29 @@ class ModeRegistryTest {
     @Nested
     class モードフック {
 
-        @Test
-        void メジャーモードフックが実行される() {
-            var executed = Lists.mutable.<String>empty();
-            registry.addMajorModeHook("TestMode", () -> executed.add("hook1"));
-            registry.addMajorModeHook("TestMode", () -> executed.add("hook2"));
+        private BufferFacade dummyBuffer() {
+            return new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+        }
 
-            registry.runMajorModeHooks("TestMode");
+        @Test
+        void メジャーモードフックにバッファとモード名が渡される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeHook("TestMode", (buf, mode) -> {
+                executed.add(buf.getName() + ":" + mode);
+            });
+
+            registry.runMajorModeHooks("TestMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("test:TestMode"), executed);
+        }
+
+        @Test
+        void 複数のフックが登録順に実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeHook("TestMode", (buf, mode) -> executed.add("hook1"));
+            registry.addMajorModeHook("TestMode", (buf, mode) -> executed.add("hook2"));
+
+            registry.runMajorModeHooks("TestMode", dummyBuffer());
 
             assertEquals(Lists.mutable.of("hook1", "hook2"), executed);
         }
@@ -214,28 +233,28 @@ class ModeRegistryTest {
         @Test
         void マイナーモードフックが実行される() {
             var executed = Lists.mutable.<String>empty();
-            registry.addMinorModeHook("TestMinor", () -> executed.add("hook1"));
+            registry.addMinorModeHook("TestMinor", (buf, mode) -> executed.add("hook1"));
 
-            registry.runMinorModeHooks("TestMinor");
+            registry.runMinorModeHooks("TestMinor", dummyBuffer());
 
             assertEquals(Lists.mutable.of("hook1"), executed);
         }
 
         @Test
         void フック未登録のモードではrunHooksが何もしない() {
-            registry.runMajorModeHooks("Nonexistent");
+            registry.runMajorModeHooks("Nonexistent", dummyBuffer());
             // 例外が発生しないことを確認
         }
 
         @Test
         void フック内の例外が他のフックの実行を妨げない() {
             var executed = Lists.mutable.<String>empty();
-            registry.addMajorModeHook("TestMode", () -> {
+            registry.addMajorModeHook("TestMode", (buf, mode) -> {
                 throw new RuntimeException("intentional error");
             });
-            registry.addMajorModeHook("TestMode", () -> executed.add("after-error"));
+            registry.addMajorModeHook("TestMode", (buf, mode) -> executed.add("after-error"));
 
-            registry.runMajorModeHooks("TestMode");
+            registry.runMajorModeHooks("TestMode", dummyBuffer());
 
             assertEquals(Lists.mutable.of("after-error"), executed);
         }
@@ -243,9 +262,9 @@ class ModeRegistryTest {
         @Test
         void モード登録前にフックを追加できる() {
             var executed = Lists.mutable.<String>empty();
-            registry.addMajorModeHook("FutureMode", () -> executed.add("pre-registered"));
+            registry.addMajorModeHook("FutureMode", (buf, mode) -> executed.add("pre-registered"));
 
-            registry.runMajorModeHooks("FutureMode");
+            registry.runMajorModeHooks("FutureMode", dummyBuffer());
 
             assertEquals(Lists.mutable.of("pre-registered"), executed);
         }

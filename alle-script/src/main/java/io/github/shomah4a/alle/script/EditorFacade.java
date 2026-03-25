@@ -141,7 +141,7 @@ public class EditorFacade implements Loggable {
      * @param hook 有効化時に実行される関数
      */
     public void addMajorModeHook(String modeName, Value hook) {
-        modeRegistry.addMajorModeHook(modeName, () -> hook.execute());
+        modeRegistry.addMajorModeHook(modeName, (buffer, mode) -> hook.execute(buffer, mode));
     }
 
     /**
@@ -151,7 +151,7 @@ public class EditorFacade implements Loggable {
      * @param hook 有効化時に実行される関数
      */
     public void addMinorModeHook(String modeName, Value hook) {
-        modeRegistry.addMinorModeHook(modeName, () -> hook.execute());
+        modeRegistry.addMinorModeHook(modeName, (buffer, mode) -> hook.execute(buffer, mode));
     }
 
     /**

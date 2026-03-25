@@ -92,7 +92,7 @@ public class FindFileCommand implements Command {
 
         var majorMode = autoModeMap.resolve(bufferFacade.getName());
         bufferFacade.setMajorMode(majorMode);
-        modeRegistry.runMajorModeHooks(majorMode.name());
+        modeRegistry.runMajorModeHooks(majorMode.name(), bufferFacade);
         context.bufferManager().add(bufferFacade);
         switchToBuffer(context, bufferFacade);
     }

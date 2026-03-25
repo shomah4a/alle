@@ -1,8 +1,10 @@
 package io.github.shomah4a.alle.core.mode;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.ModeCommand;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,8 +26,10 @@ public class ModeRegistry {
 
     private final MutableMap<String, Supplier<MajorMode>> majorModes = Maps.mutable.empty();
     private final MutableMap<String, Supplier<MinorMode>> minorModes = Maps.mutable.empty();
-    private final MutableMap<String, MutableList<Runnable>> majorModeHooks = Maps.mutable.empty();
-    private final MutableMap<String, MutableList<Runnable>> minorModeHooks = Maps.mutable.empty();
+    private final MutableMap<String, MutableList<BiConsumer<BufferFacade, String>>> majorModeHooks =
+            Maps.mutable.empty();
+    private final MutableMap<String, MutableList<BiConsumer<BufferFacade, String>>> minorModeHooks =
+            Maps.mutable.empty();
     private @Nullable CommandRegistry commandRegistry;
 
     /**
@@ -112,22 +116,24 @@ public class ModeRegistry {
     /**
      * メジャーモード有効化時のフックを追加する。
      * モード登録の有無に関係なく呼べる。
+     * フック関数は (BufferFacade buffer, String modeName) を受け取る。
      *
      * @param modeName フックを紐付けるモード名
      * @param hook 有効化時に実行される関数
      */
-    public void addMajorModeHook(String modeName, Runnable hook) {
+    public void addMajorModeHook(String modeName, BiConsumer<BufferFacade, String> hook) {
         majorModeHooks.getIfAbsentPut(modeName, Lists.mutable::empty).add(hook);
     }
 
     /**
      * マイナーモード有効化時のフックを追加する。
      * モード登録の有無に関係なく呼べる。
+     * フック関数は (BufferFacade buffer, String modeName) を受け取る。
      *
      * @param modeName フックを紐付けるモード名
      * @param hook 有効化時に実行される関数
      */
-    public void addMinorModeHook(String modeName, Runnable hook) {
+    public void addMinorModeHook(String modeName, BiConsumer<BufferFacade, String> hook) {
         minorModeHooks.getIfAbsentPut(modeName, Lists.mutable::empty).add(hook);
     }
 
@@ -136,11 +142,12 @@ public class ModeRegistry {
      * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
      *
      * @param modeName 有効化されたモードの名前
+     * @param buffer 対象バッファ
      */
-    public void runMajorModeHooks(String modeName) {
+    public void runMajorModeHooks(String modeName, BufferFacade buffer) {
         var hooks = majorModeHooks.get(modeName);
         if (hooks != null) {
-            runHooks(modeName, hooks);
+            runHooks(modeName, buffer, hooks);
         }
     }
 
@@ -149,18 +156,19 @@ public class ModeRegistry {
      * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
      *
      * @param modeName 有効化されたモードの名前
+     * @param buffer 対象バッファ
      */
-    public void runMinorModeHooks(String modeName) {
+    public void runMinorModeHooks(String modeName, BufferFacade buffer) {
         var hooks = minorModeHooks.get(modeName);
         if (hooks != null) {
-            runHooks(modeName, hooks);
+            runHooks(modeName, buffer, hooks);
         }
     }
 
-    private void runHooks(String modeName, MutableList<Runnable> hooks) {
+    private void runHooks(String modeName, BufferFacade buffer, MutableList<BiConsumer<BufferFacade, String>> hooks) {
         for (var hook : hooks) {
             try {
-                hook.run();
+                hook.accept(buffer, modeName);
             } catch (Exception e) {
                 logger.log(Level.WARNING, modeName + " モードフック実行中にエラー", e);
             }

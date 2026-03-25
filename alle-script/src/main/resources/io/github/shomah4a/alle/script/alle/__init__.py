@@ -132,32 +132,37 @@ def register_minor_mode(mode_class: type[MinorModeBase]) -> None:
 def add_major_mode_hook(mode_name: str, hook: callable) -> None:
     """メジャーモード有効化時のフックを追加する。
 
-    フック関数は引数なしで呼ばれる。フック内で ``active_window()`` 等を使って
-    バッファにアクセスできる。
+    フック関数は ``(buffer, mode_name)`` を引数に取る。
+    ``buffer`` は ``alle.buffer.Buffer`` インスタンス。
 
     :param mode_name: フックを紐付けるモード名（例: ``"Python"``）
     :type mode_name: str
-    :param hook: 有効化時に実行される関数
+    :param hook: 有効化時に実行される関数。引数は ``(buffer, mode_name)``
     :type hook: callable
 
     使用例:
 
-    >>> def setup_python():
-    ...     # electric-pair を自動有効化する等
+    >>> def setup_python(buffer, mode_name):
+    ...     # buffer に対してマイナーモードを有効化する等
     ...     pass
     >>> alle.add_major_mode_hook("Python", setup_python)
     """
-    _require_facade().addMajorModeHook(mode_name, hook)
+    def wrapper(java_buffer, mode):
+        hook(Buffer(java_buffer), mode)
+    _require_facade().addMajorModeHook(mode_name, wrapper)
 
 
 def add_minor_mode_hook(mode_name: str, hook: callable) -> None:
     """マイナーモード有効化時のフックを追加する。
 
-    フック関数は引数なしで呼ばれる。
+    フック関数は ``(buffer, mode_name)`` を引数に取る。
+    ``buffer`` は ``alle.buffer.Buffer`` インスタンス。
 
     :param mode_name: フックを紐付けるモード名（例: ``"ElectricPair"``）
     :type mode_name: str
-    :param hook: 有効化時に実行される関数
+    :param hook: 有効化時に実行される関数。引数は ``(buffer, mode_name)``
     :type hook: callable
     """
-    _require_facade().addMinorModeHook(mode_name, hook)
+    def wrapper(java_buffer, mode):
+        hook(Buffer(java_buffer), mode)
+    _require_facade().addMinorModeHook(mode_name, wrapper)
