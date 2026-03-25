@@ -24,7 +24,6 @@ from typing import Any
 
 from alle.buffer import Buffer
 from alle.command import CommandBase
-from alle.futures import JavaFuture
 from alle.internal.facade import _init, _require_facade, _wrap_command
 from alle.window import Window
 

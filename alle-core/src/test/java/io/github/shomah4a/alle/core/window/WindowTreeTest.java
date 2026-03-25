@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class WindowTreeTest {
 
     private Window createWindow(String name) {
-        return new Window(new EditableBuffer(name, new GapTextModel()));
+        return new Window(new BufferFacade(new EditableBuffer(name, new GapTextModel())));
     }
 
     @Nested

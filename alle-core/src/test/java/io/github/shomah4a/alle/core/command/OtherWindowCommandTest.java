@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -14,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class OtherWindowCommandTest {
 
     private Window createWindow(String name) {
-        return new Window(new EditableBuffer(name, new GapTextModel()));
+        return new Window(new BufferFacade(new EditableBuffer(name, new GapTextModel())));
     }
 
     @Nested
@@ -27,7 +28,7 @@ class OtherWindowCommandTest {
             var frame = new Frame(windowA, minibuffer);
             var bufferManager = new BufferManager();
 
-            var bufferB = new EditableBuffer("b", new GapTextModel());
+            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel()));
             frame.splitActiveWindow(Direction.VERTICAL, bufferB);
             // splitActiveWindow後、activeWindowは新しいウィンドウ(B)になっている
             var windowB = frame.getActiveWindow();
@@ -48,7 +49,7 @@ class OtherWindowCommandTest {
             var frame = new Frame(windowA, minibuffer);
             var bufferManager = new BufferManager();
 
-            var bufferB = new EditableBuffer("b", new GapTextModel());
+            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel()));
             frame.splitActiveWindow(Direction.VERTICAL, bufferB);
             var windowB = frame.getActiveWindow();
             // windowBがアクティブの状態でOtherWindow実行 → windowAに戻る
@@ -90,7 +91,7 @@ class OtherWindowCommandTest {
             var frame = new Frame(windowA, minibuffer);
             var bufferManager = new BufferManager();
 
-            var bufferB = new EditableBuffer("b", new GapTextModel());
+            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel()));
             frame.splitActiveWindow(Direction.VERTICAL, bufferB);
             frame.activateMinibuffer();
             assertSame(minibuffer, frame.getActiveWindow());

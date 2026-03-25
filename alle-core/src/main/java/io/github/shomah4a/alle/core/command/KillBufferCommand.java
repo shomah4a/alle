@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
@@ -72,7 +72,7 @@ public class KillBufferCommand implements Command {
 
         // *scratch* を削除した場合はサイレントに再作成
         if (SCRATCH_BUFFER_NAME.equals(bufferName)) {
-            bufferManager.add(new EditableBuffer(SCRATCH_BUFFER_NAME, new GapTextModel()));
+            bufferManager.add(new BufferFacade(new EditableBuffer(SCRATCH_BUFFER_NAME, new GapTextModel())));
         }
 
         // 切り替え先を決定: 他のウィンドウで表示されていないバッファを優先
@@ -92,10 +92,10 @@ public class KillBufferCommand implements Command {
         }
     }
 
-    private Buffer findReplacementBuffer(
-            BufferManager bufferManager, ImmutableList<Window> allWindows, Buffer excluded) {
+    private BufferFacade findReplacementBuffer(
+            BufferManager bufferManager, ImmutableList<Window> allWindows, BufferFacade excluded) {
         // 現在ウィンドウで表示されているバッファのセット（削除対象を除く）
-        ImmutableSet<Buffer> displayedBuffers =
+        ImmutableSet<BufferFacade> displayedBuffers =
                 allWindows.collect(Window::getBuffer).toSet().toImmutable().newWithout(excluded);
 
         // 他のウィンドウで表示されていないバッファを優先

@@ -41,12 +41,14 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/test.txt"));
 
-            assertEquals("test.txt", result.buffer().getName());
-            assertEquals("Hello\nWorld", result.buffer().getText());
+            assertEquals("test.txt", result.bufferFacade().getName());
+            assertEquals("Hello\nWorld", result.bufferFacade().getText());
             assertEquals(LineEnding.LF, result.lineEnding());
-            assertEquals(LineEnding.LF, result.buffer().getLineEnding());
-            assertFalse(result.buffer().isDirty());
-            assertEquals(Path.of("/tmp/test.txt"), result.buffer().getFilePath().orElseThrow());
+            assertEquals(LineEnding.LF, result.bufferFacade().getLineEnding());
+            assertFalse(result.bufferFacade().isDirty());
+            assertEquals(
+                    Path.of("/tmp/test.txt"),
+                    result.bufferFacade().getFilePath().orElseThrow());
         }
 
         @Test
@@ -55,9 +57,9 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/crlf.txt"));
 
-            assertEquals("Hello\nWorld\n", result.buffer().getText());
+            assertEquals("Hello\nWorld\n", result.bufferFacade().getText());
             assertEquals(LineEnding.CRLF, result.lineEnding());
-            assertEquals(LineEnding.CRLF, result.buffer().getLineEnding());
+            assertEquals(LineEnding.CRLF, result.bufferFacade().getLineEnding());
         }
 
         @Test
@@ -66,8 +68,8 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/empty.txt"));
 
-            assertEquals("", result.buffer().getText());
-            assertEquals(0, result.buffer().length());
+            assertEquals("", result.bufferFacade().getText());
+            assertEquals(0, result.bufferFacade().length());
         }
 
         @Test
@@ -76,7 +78,7 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/emoji.txt"));
 
-            assertEquals("Hello 😀\nWorld 🌍", result.buffer().getText());
+            assertEquals("Hello 😀\nWorld 🌍", result.bufferFacade().getText());
         }
     }
 
@@ -88,7 +90,7 @@ class BufferIOTest {
             storage.put("/tmp/test.txt", "Hello\nWorld");
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/test.txt"));
-            var buffer = result.buffer();
+            var buffer = result.bufferFacade();
 
             buffer.insertText(buffer.length(), "\nFoo");
 
@@ -106,7 +108,7 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var result = io.load(Path.of("/tmp/test.txt"));
 
-            io.save(result.buffer());
+            io.save(result.bufferFacade());
 
             assertEquals(
                     "Hello\r\nWorld",
@@ -117,7 +119,8 @@ class BufferIOTest {
         void ファイルパスが未設定のバッファを保存すると例外が発生する() {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter());
             var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
-            var buffer = new io.github.shomah4a.alle.core.buffer.EditableBuffer("nopath", textModel);
+            var buffer = new io.github.shomah4a.alle.core.buffer.BufferFacade(
+                    new io.github.shomah4a.alle.core.buffer.EditableBuffer("nopath", textModel));
 
             assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }

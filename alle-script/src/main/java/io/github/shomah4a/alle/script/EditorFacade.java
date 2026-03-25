@@ -8,7 +8,6 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.window.Frame;
-import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.List;
 import java.util.Optional;
 import org.graalvm.polyglot.Value;
@@ -37,7 +36,7 @@ public class EditorFacade implements Loggable {
      * アクティブウィンドウのファサードを返す。
      */
     public WindowFacade activeWindow() {
-        return new WindowFacade(new WindowActor(frame.getActiveWindow()));
+        return new WindowFacade(frame.getActiveWindow());
     }
 
     /**

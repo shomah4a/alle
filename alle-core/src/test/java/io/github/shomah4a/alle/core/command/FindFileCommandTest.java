@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.command;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
@@ -41,9 +42,9 @@ class FindFileCommandTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new EditableBuffer("*scratch*", new GapTextModel());
+        var buffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
         var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(buffer);

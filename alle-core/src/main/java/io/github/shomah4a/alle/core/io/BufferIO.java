@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.io;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.io.IOException;
@@ -46,7 +46,8 @@ public class BufferIO {
             buffer.insertText(0, normalizedText);
         }
 
-        return new LoadResult(buffer, lineEnding);
+        var bufferFacade = new BufferFacade(buffer);
+        return new LoadResult(bufferFacade, lineEnding);
     }
 
     /**
@@ -57,7 +58,7 @@ public class BufferIO {
      * @throws IOException 書き込みに失敗した場合
      * @throws IllegalStateException バッファにファイルパスが設定されていない場合
      */
-    public void save(Buffer buffer) throws IOException {
+    public void save(BufferFacade buffer) throws IOException {
         Path filePath = buffer.getFilePath()
                 .orElseThrow(() -> new IllegalStateException("Buffer has no file path: " + buffer.getName()));
 
@@ -84,5 +85,5 @@ public class BufferIO {
     /**
      * ファイル読み込みの結果。
      */
-    public record LoadResult(Buffer buffer, LineEnding lineEnding) {}
+    public record LoadResult(BufferFacade bufferFacade, LineEnding lineEnding) {}
 }

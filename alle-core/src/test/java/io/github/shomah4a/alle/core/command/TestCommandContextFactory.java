@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
@@ -9,7 +10,6 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
-import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -34,11 +34,10 @@ final class TestCommandContextFactory {
      * InputPrompter指定でコンテキストを生成する。triggeringKey・コマンド履歴なし。
      */
     static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
-        var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
                 frame,
                 bufferManager,
-                windowActor,
+                frame.getActiveWindow(),
                 inputPrompter,
                 Optional.empty(),
                 Optional.empty(),
@@ -52,11 +51,10 @@ final class TestCommandContextFactory {
      * triggeringKey付きのコンテキストを生成する。コマンド履歴なし。
      */
     static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
-        var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
                 frame,
                 bufferManager,
-                windowActor,
+                frame.getActiveWindow(),
                 NOOP_PROMPTER,
                 Optional.of(triggeringKey),
                 Optional.empty(),
@@ -71,11 +69,10 @@ final class TestCommandContextFactory {
      */
     static CommandContext create(
             Frame frame, BufferManager bufferManager, KillRing killRing, Optional<String> lastCommand) {
-        var windowActor = new WindowActor(frame.getActiveWindow());
         return new CommandContext(
                 frame,
                 bufferManager,
-                windowActor,
+                frame.getActiveWindow(),
                 NOOP_PROMPTER,
                 Optional.empty(),
                 Optional.empty(),
@@ -89,12 +86,12 @@ final class TestCommandContextFactory {
      * デフォルトのバッファ・ウィンドウ・フレームでコンテキストを生成する。
      */
     static CommandContext createDefault() {
-        var buffer = new EditableBuffer("test", new GapTextModel());
-        var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        var bufferFacade = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+        var window = new Window(bufferFacade);
+        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
-        bufferManager.add(buffer);
+        bufferManager.add(bufferFacade);
         return create(frame, bufferManager);
     }
 }

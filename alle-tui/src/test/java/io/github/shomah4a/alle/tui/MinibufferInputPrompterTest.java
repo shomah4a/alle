@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.CommandContext;
@@ -29,9 +30,9 @@ class MinibufferInputPrompterTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new EditableBuffer("test", new GapTextModel());
+        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
         mainWindow = new Window(buffer);
-        minibufferWindow = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        minibufferWindow = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
         frame = new Frame(mainWindow, minibufferWindow);
         prompter = new MinibufferInputPrompter(frame);
     }
@@ -396,11 +397,10 @@ class MinibufferInputPrompterTest {
         assertTrue(entryOpt.isPresent(), "キー " + keyStroke + " に対するバインドがありません");
         var entry = entryOpt.get();
         if (entry instanceof io.github.shomah4a.alle.core.keybind.KeymapEntry.CommandBinding binding) {
-            var windowActor = new io.github.shomah4a.alle.core.window.WindowActor(frame.getActiveWindow());
             var context = new CommandContext(
                     frame,
                     new BufferManager(),
-                    windowActor,
+                    frame.getActiveWindow(),
                     prompter,
                     Optional.of(keyStroke),
                     Optional.empty(),

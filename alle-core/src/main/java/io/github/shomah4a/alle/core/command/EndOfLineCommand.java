@@ -15,15 +15,14 @@ public class EndOfLineCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            var buffer = window.getBuffer();
-            int point = window.getPoint();
-            int lineIndex = buffer.lineIndexForOffset(point);
-            int lineStart = buffer.lineStartOffset(lineIndex);
-            String lineText = buffer.lineText(lineIndex);
-            int lineLength = (int) lineText.codePoints().count();
-            window.setPoint(lineStart + lineLength);
-            return null;
-        });
+        var window = context.activeWindow();
+        var buffer = window.getBuffer();
+        int point = window.getPoint();
+        int lineIndex = buffer.lineIndexForOffset(point);
+        int lineStart = buffer.lineStartOffset(lineIndex);
+        String lineText = buffer.lineText(lineIndex);
+        int lineLength = (int) lineText.codePoints().count();
+        window.setPoint(lineStart + lineLength);
+        return CompletableFuture.completedFuture(null);
     }
 }

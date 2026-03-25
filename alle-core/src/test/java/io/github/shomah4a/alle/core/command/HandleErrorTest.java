@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.command;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
@@ -10,7 +11,6 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
-import io.github.shomah4a.alle.core.window.WindowActor;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,16 +24,16 @@ class HandleErrorTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new EditableBuffer("test", new GapTextModel());
+        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
         var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
         var frame = new Frame(window, minibuffer);
         messageBuffer = new MessageBuffer("*Messages*", 100);
         warningBuffer = new MessageBuffer("*Warnings*", 100);
         context = new CommandContext(
                 frame,
                 new BufferManager(),
-                new WindowActor(window),
+                window,
                 (msg, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled()),
                 Optional.empty(),
                 Optional.empty(),

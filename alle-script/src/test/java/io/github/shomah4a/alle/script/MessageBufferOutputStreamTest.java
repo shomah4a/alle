@@ -3,8 +3,8 @@ package io.github.shomah4a.alle.script;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +21,8 @@ class MessageBufferOutputStreamTest {
         stream = new MessageBufferOutputStream(bufferManager, "*Test*", 100);
     }
 
-    private MessageBuffer getTestBuffer() {
-        return (MessageBuffer) bufferManager.findByName("*Test*").orElseThrow();
+    private BufferFacade getTestBuffer() {
+        return bufferManager.findByName("*Test*").orElseThrow();
     }
 
     @Test

@@ -15,9 +15,8 @@ public class SetMarkCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().atomicPerform(window -> {
-            window.setMark(window.getPoint());
-            return null;
-        });
+        var window = context.activeWindow();
+        window.setMark(window.getPoint());
+        return CompletableFuture.completedFuture(null);
     }
 }

@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 class BufferManagerTest {
 
-    private Buffer createBuffer(String name) {
-        return new EditableBuffer(name, new GapTextModel());
+    private BufferFacade createBuffer(String name) {
+        return new BufferFacade(new EditableBuffer(name, new GapTextModel()));
     }
 
     @Nested

@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
@@ -76,18 +76,19 @@ public class FindFileCommand implements Command {
         }
 
         // ファイルを読み込むか、存在しなければ空バッファを作成
-        Buffer buffer;
+        BufferFacade bufferFacade;
         try {
             var loadResult = bufferIO.load(path);
-            buffer = loadResult.buffer();
+            bufferFacade = loadResult.bufferFacade();
         } catch (IOException e) {
             logger.log(Level.FINE, "ファイルが存在しないため空バッファを作成: " + path, e);
-            buffer = new EditableBuffer(path.getFileName().toString(), new GapTextModel(), path);
+            bufferFacade =
+                    new BufferFacade(new EditableBuffer(path.getFileName().toString(), new GapTextModel(), path));
         }
 
-        buffer.setMajorMode(autoModeMap.resolve(buffer.getName()));
-        context.bufferManager().add(buffer);
-        switchToBuffer(context, buffer);
+        bufferFacade.setMajorMode(autoModeMap.resolve(bufferFacade.getName()));
+        context.bufferManager().add(bufferFacade);
+        switchToBuffer(context, bufferFacade);
     }
 
     /**
@@ -97,7 +98,7 @@ public class FindFileCommand implements Command {
         return Path.of(pathString).toAbsolutePath().normalize();
     }
 
-    private void switchToBuffer(CommandContext context, Buffer buffer) {
+    private void switchToBuffer(CommandContext context, BufferFacade buffer) {
         context.frame().getActiveWindow().setBuffer(buffer);
         context.frame().getActiveWindow().setPoint(0);
     }

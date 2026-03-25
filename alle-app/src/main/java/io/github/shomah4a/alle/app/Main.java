@@ -80,9 +80,7 @@ public final class Main {
         msg.message("Script engine initialized.");
 
         // ユーザー初期化スクリプトの読み込み
-        var warningBuffer = (io.github.shomah4a.alle.core.buffer.MessageBuffer)
-                core.bufferManager().findByName("*Warnings*").orElseThrow();
-        loadUserInit(scriptEngine, msg, warningBuffer);
+        loadUserInit(scriptEngine, msg, core.warningBuffer());
 
         // eval-expression コマンド (M-:)
         var evalHistory = new InputHistory();

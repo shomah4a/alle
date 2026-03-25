@@ -9,6 +9,9 @@ import io.github.shomah4a.alle.libs.ringbuffer.ArrayRingBuffer;
 import io.github.shomah4a.alle.libs.ringbuffer.RingBuffer;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -17,11 +20,13 @@ import org.eclipse.collections.api.list.ListIterable;
  * RingBuffer&lt;String&gt;をストレージとし、行単位でメッセージを保持する。
  * 読み取り専用バッファとして振る舞い、message()メソッドで行を追加する。
  * エコーエリアに最後のメッセージを表示するための機能も提供する。
+ * 全操作はReentrantLockで保護され、スレッドセーフ。
  */
 public class MessageBuffer implements Buffer {
 
     private final String name;
     private final RingBuffer<String> lines;
+    private final ReentrantLock lock;
     private final UndoManager undoManager;
     private final MajorMode majorMode;
     private boolean showingMessage;
@@ -35,9 +40,28 @@ public class MessageBuffer implements Buffer {
     public MessageBuffer(String name, int maxLines) {
         this.name = name;
         this.lines = new ArrayRingBuffer<>(maxLines);
+        this.lock = new ReentrantLock();
         this.undoManager = new UndoManager();
         this.majorMode = new TextMode();
         this.showingMessage = false;
+    }
+
+    private <T> T locked(Supplier<T> action) {
+        lock.lock();
+        try {
+            return action.get();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void lockedVoid(Runnable action) {
+        lock.lock();
+        try {
+            action.run();
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -45,25 +69,29 @@ public class MessageBuffer implements Buffer {
      * エコーエリア表示フラグもセットする。
      */
     public void message(String text) {
-        lines.add(text);
-        showingMessage = true;
+        lockedVoid(() -> {
+            lines.add(text);
+            showingMessage = true;
+        });
     }
 
     /**
      * 最後のメッセージを返す。
      */
     public Optional<String> getLastMessage() {
-        if (lines.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(lines.get(lines.size() - 1));
+        return locked(() -> {
+            if (lines.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(lines.get(lines.size() - 1));
+        });
     }
 
     /**
      * エコーエリアにメッセージを表示中かどうかを返す。
      */
     public boolean isShowingMessage() {
-        return showingMessage;
+        return locked(() -> showingMessage);
     }
 
     /**
@@ -71,101 +99,116 @@ public class MessageBuffer implements Buffer {
      * 次のキー入力時にCommandLoopから呼ばれる。
      */
     public void clearShowingMessage() {
-        showingMessage = false;
+        lockedVoid(() -> showingMessage = false);
     }
 
     // ── テキスト読み取り ──
 
     @Override
     public int length() {
-        if (lines.isEmpty()) {
-            return 0;
-        }
-        int total = 0;
-        for (int i = 0; i < lines.size(); i++) {
-            total += (int) lines.get(i).codePoints().count();
-        }
-        // 改行文字の分（行数 - 1）
-        total += lines.size() - 1;
-        return total;
+        return locked(() -> {
+            if (lines.isEmpty()) {
+                return 0;
+            }
+            int total = 0;
+            for (int i = 0; i < lines.size(); i++) {
+                total += (int) lines.get(i).codePoints().count();
+            }
+            total += lines.size() - 1;
+            return total;
+        });
     }
 
     @Override
     public int codePointAt(int index) {
-        int remaining = index;
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            int lineLen = (int) line.codePoints().count();
-            if (remaining < lineLen) {
-                return line.codePointAt(line.offsetByCodePoints(0, remaining));
-            }
-            remaining -= lineLen;
-            if (i < lines.size() - 1) {
-                if (remaining == 0) {
-                    return '\n';
+        return locked(() -> {
+            int remaining = index;
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                int lineLen = (int) line.codePoints().count();
+                if (remaining < lineLen) {
+                    return line.codePointAt(line.offsetByCodePoints(0, remaining));
                 }
-                remaining--;
+                remaining -= lineLen;
+                if (i < lines.size() - 1) {
+                    if (remaining == 0) {
+                        return (int) '\n';
+                    }
+                    remaining--;
+                }
             }
-        }
-        throw new IndexOutOfBoundsException("index " + index + " is out of bounds [0, " + length() + ")");
+            throw new IndexOutOfBoundsException("index " + index + " is out of bounds [0, " + length() + ")");
+        });
     }
 
     @Override
     public String substring(int start, int end) {
-        String text = getText();
-        int cpStart = text.offsetByCodePoints(0, start);
-        int cpEnd = text.offsetByCodePoints(0, end);
-        return text.substring(cpStart, cpEnd);
+        return locked(() -> {
+            String text = getTextUnsafe();
+            int cpStart = text.offsetByCodePoints(0, start);
+            int cpEnd = text.offsetByCodePoints(0, end);
+            return text.substring(cpStart, cpEnd);
+        });
     }
 
     @Override
     public int lineCount() {
-        return Math.max(1, lines.size());
+        return locked(() -> Math.max(1, lines.size()));
     }
 
     @Override
     public int lineIndexForOffset(int offset) {
-        if (lines.isEmpty()) {
-            return 0;
-        }
-        int remaining = offset;
-        for (int i = 0; i < lines.size(); i++) {
-            int lineLen = (int) lines.get(i).codePoints().count();
-            if (remaining <= lineLen) {
-                return i;
+        return locked(() -> {
+            if (lines.isEmpty()) {
+                return 0;
             }
-            remaining -= lineLen + 1; // +1 for newline
-        }
-        return lines.size() - 1;
+            int remaining = offset;
+            for (int i = 0; i < lines.size(); i++) {
+                int lineLen = (int) lines.get(i).codePoints().count();
+                if (remaining <= lineLen) {
+                    return i;
+                }
+                remaining -= lineLen + 1;
+            }
+            return lines.size() - 1;
+        });
     }
 
     @Override
     public int lineStartOffset(int lineIndex) {
-        if (lineIndex < 0 || lineIndex >= lineCount()) {
-            throw new IndexOutOfBoundsException(
-                    "lineIndex " + lineIndex + " is out of bounds [0, " + lineCount() + ")");
-        }
-        int offset = 0;
-        for (int i = 0; i < lineIndex; i++) {
-            offset += (int) lines.get(i).codePoints().count() + 1; // +1 for newline
-        }
-        return offset;
+        return locked(() -> {
+            int lc = Math.max(1, lines.size());
+            if (lineIndex < 0 || lineIndex >= lc) {
+                throw new IndexOutOfBoundsException("lineIndex " + lineIndex + " is out of bounds [0, " + lc + ")");
+            }
+            int offset = 0;
+            for (int i = 0; i < lineIndex; i++) {
+                offset += (int) lines.get(i).codePoints().count() + 1;
+            }
+            return offset;
+        });
     }
 
     @Override
     public String lineText(int lineIndex) {
-        if (lines.isEmpty() && lineIndex == 0) {
-            return "";
-        }
-        if (lineIndex < 0 || lineIndex >= lines.size()) {
-            throw new IndexOutOfBoundsException(
-                    "lineIndex " + lineIndex + " is out of bounds [0, " + lines.size() + ")");
-        }
-        return lines.get(lineIndex);
+        return locked(() -> {
+            if (lines.isEmpty() && lineIndex == 0) {
+                return "";
+            }
+            if (lineIndex < 0 || lineIndex >= lines.size()) {
+                throw new IndexOutOfBoundsException(
+                        "lineIndex " + lineIndex + " is out of bounds [0, " + lines.size() + ")");
+            }
+            return lines.get(lineIndex);
+        });
     }
 
     @Override
     public String getText() {
+        return locked(this::getTextUnsafe);
+    }
+
+    private String getTextUnsafe() {
         if (lines.isEmpty()) {
             return "";
         }
@@ -316,17 +359,23 @@ public class MessageBuffer implements Buffer {
         return undoManager;
     }
 
+    // ── アトミック操作 ──
+
+    @Override
+    public <T> T atomicOperation(Function<Buffer, T> handler) {
+        lock.lock();
+        try {
+            return handler.apply(this);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     // ── 同一性 ──
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof BufferFacade) {
-            return obj.equals(this);
-        }
-        return false;
+        return this == obj;
     }
 
     @Override

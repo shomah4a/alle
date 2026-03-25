@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 
 class FrameTest {
 
-    private Buffer createBuffer(String name) {
-        return new EditableBuffer(name, new GapTextModel());
+    private BufferFacade createBuffer(String name) {
+        return new BufferFacade(new EditableBuffer(name, new GapTextModel()));
     }
 
     private Frame createFrame() {

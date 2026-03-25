@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.window;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 
 /**
  * エディタのフレーム。
@@ -91,7 +91,7 @@ public class Frame {
      * @param buffer    新しいウィンドウに表示するバッファ
      * @return 新しく作成されたウィンドウ
      */
-    public Window splitActiveWindow(Direction direction, Buffer buffer) {
+    public Window splitActiveWindow(Direction direction, BufferFacade buffer) {
         var newWindow = new Window(buffer);
         var result = windowTree.split(activeWindow, direction, newWindow);
         if (result.isEmpty()) {

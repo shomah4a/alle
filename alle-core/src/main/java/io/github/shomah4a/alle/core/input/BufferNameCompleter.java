@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.input;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -21,6 +21,6 @@ public class BufferNameCompleter implements Completer {
         return bufferManager
                 .getBuffers()
                 .select(b -> b.getName().startsWith(input))
-                .collect(Buffer::getName);
+                .collect(BufferFacade::getName);
     }
 }

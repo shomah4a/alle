@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
@@ -64,6 +65,7 @@ public final class EditorCore {
     private final Frame frame;
     private final BufferManager bufferManager;
     private final MessageBuffer messageBuffer;
+    private final MessageBuffer warningBuffer;
     private final CommandRegistry commandRegistry;
     private final Keymap keymap;
     private final CommandLoop commandLoop;
@@ -72,12 +74,14 @@ public final class EditorCore {
             Frame frame,
             BufferManager bufferManager,
             MessageBuffer messageBuffer,
+            MessageBuffer warningBuffer,
             CommandRegistry commandRegistry,
             Keymap keymap,
             CommandLoop commandLoop) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
+        this.warningBuffer = warningBuffer;
         this.commandRegistry = commandRegistry;
         this.keymap = keymap;
         this.commandLoop = commandLoop;
@@ -99,9 +103,9 @@ public final class EditorCore {
             DirectoryLister directoryLister,
             ShutdownRequestable shutdownRequestable) {
         // バッファ・ウィンドウ・フレーム
-        var buffer = new EditableBuffer("*scratch*", new GapTextModel());
-        var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        var scratchFacade = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
+        var window = new Window(scratchFacade);
+        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
         var frame = new Frame(window, minibuffer);
 
         // メッセージバッファ
@@ -110,9 +114,9 @@ public final class EditorCore {
 
         // バッファマネージャ
         var bufferManager = new BufferManager();
-        bufferManager.add(buffer);
-        bufferManager.add(messageBuffer);
-        bufferManager.add(warningBuffer);
+        bufferManager.add(scratchFacade);
+        bufferManager.add(new BufferFacade(messageBuffer));
+        bufferManager.add(new BufferFacade(warningBuffer));
 
         // モードマップ
         var autoModeMap = new AutoModeMap(TextMode::new);
@@ -135,7 +139,7 @@ public final class EditorCore {
         var commandLoop = new CommandLoop(
                 inputSource, resolver, frame, bufferManager, inputPrompter, killRing, messageBuffer, warningBuffer);
 
-        return new EditorCore(frame, bufferManager, messageBuffer, registry, keymap, commandLoop);
+        return new EditorCore(frame, bufferManager, messageBuffer, warningBuffer, registry, keymap, commandLoop);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -258,6 +262,10 @@ public final class EditorCore {
 
     public MessageBuffer messageBuffer() {
         return messageBuffer;
+    }
+
+    public MessageBuffer warningBuffer() {
+        return warningBuffer;
     }
 
     public CommandRegistry commandRegistry() {

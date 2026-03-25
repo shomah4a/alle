@@ -1,60 +1,58 @@
 package io.github.shomah4a.alle.script;
 
-import io.github.shomah4a.alle.core.window.WindowActor;
-import java.util.concurrent.CompletableFuture;
+import io.github.shomah4a.alle.core.window.Window;
 
 /**
  * スクリプトに公開するウィンドウ操作のファサード。
- * WindowActor経由で操作し、CompletableFutureを返す。
- * Python側ではJavaFutureラッパーでawait可能。
+ * Window経由で同期的に操作する。
  */
 public class WindowFacade {
 
-    private final WindowActor actor;
+    private final Window window;
 
-    public WindowFacade(WindowActor actor) {
-        this.actor = actor;
+    public WindowFacade(Window window) {
+        this.window = window;
     }
 
     /**
      * カーソル位置を返す。
      */
-    public CompletableFuture<Integer> point() {
-        return actor.getPoint();
+    public int point() {
+        return window.getPoint();
     }
 
     /**
      * カーソルを指定位置に移動する。
      */
-    public CompletableFuture<Void> gotoChar(int position) {
-        return actor.setPoint(position);
+    public void gotoChar(int position) {
+        window.setPoint(position);
     }
 
     /**
      * カーソル位置にテキストを挿入する。
      */
-    public CompletableFuture<Void> insert(String text) {
-        return actor.insert(text);
+    public void insert(String text) {
+        window.insert(text);
     }
 
     /**
      * カーソル位置から前方にcount文字削除する。
      */
-    public CompletableFuture<Void> deleteBackward(int count) {
-        return actor.deleteBackward(count);
+    public void deleteBackward(int count) {
+        window.deleteBackward(count);
     }
 
     /**
      * カーソル位置から後方にcount文字削除する。
      */
-    public CompletableFuture<Void> deleteForward(int count) {
-        return actor.deleteForward(count);
+    public void deleteForward(int count) {
+        window.deleteForward(count);
     }
 
     /**
      * このウィンドウのバッファのファサードを返す。
      */
-    public CompletableFuture<BufferFacade> buffer() {
-        return actor.getBuffer().thenApply(BufferFacade::new);
+    public BufferFacade buffer() {
+        return new BufferFacade(window.getBuffer());
     }
 }

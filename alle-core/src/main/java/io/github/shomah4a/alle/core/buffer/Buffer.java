@@ -6,16 +6,18 @@ import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * エディタのバッファ。
  * テキストデータ、メタデータ、モード情報を統一的に扱うインターフェース。
  * ストレージの実装（GapBuffer、RingBuffer等）に依存しない。
+ * パッケージプライベート: 外部からのアクセスは{@link BufferFacade}経由で行う。
  *
  * @see EditableBuffer GapBufferベースの標準実装
  */
-public interface Buffer {
+interface Buffer {
 
     // ── テキスト読み取り ──
 
@@ -218,4 +220,12 @@ public interface Buffer {
      * UndoManagerを返す。
      */
     UndoManager getUndoManager();
+
+    // ── アトミック操作 ──
+
+    /**
+     * 複合操作をアトミックに実行する。
+     * EditableBufferではReentrantLockで保護される。
+     */
+    <T> T atomicOperation(Function<Buffer, T> handler);
 }

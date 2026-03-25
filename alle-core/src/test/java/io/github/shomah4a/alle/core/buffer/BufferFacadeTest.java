@@ -116,19 +116,6 @@ class BufferFacadeTest {
     }
 
     @Nested
-    class 二重ラップ防止 {
-
-        @Test
-        void BufferFacadeをラップしても二重ラップにならない() {
-            var doubleFacade = new BufferFacade(facade);
-
-            // 二重ラップされていなければ同じバッファを指す
-            assertEquals(facade, doubleFacade);
-            assertEquals(doubleFacade, facade);
-        }
-    }
-
-    @Nested
     class 同一性 {
 
         @Test
@@ -136,12 +123,6 @@ class BufferFacadeTest {
             var facade2 = new BufferFacade(editableBuffer);
 
             assertEquals(facade, facade2);
-        }
-
-        @Test
-        void Facadeとラップされたバッファはequalsがtrueを返す() {
-            assertEquals(facade, editableBuffer);
-            assertEquals(editableBuffer, facade);
         }
 
         @Test

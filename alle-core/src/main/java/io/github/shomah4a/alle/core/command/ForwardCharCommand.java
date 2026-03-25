@@ -15,14 +15,12 @@ public class ForwardCharCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var actor = context.activeWindowActor();
-        return actor.atomicPerform(window -> {
-            int point = window.getPoint();
-            int length = window.getBuffer().length();
-            if (point < length) {
-                window.setPoint(point + 1);
-            }
-            return null;
-        });
+        var window = context.activeWindow();
+        int point = window.getPoint();
+        int length = window.getBuffer().length();
+        if (point < length) {
+            window.setPoint(point + 1);
+        }
+        return CompletableFuture.completedFuture(null);
     }
 }

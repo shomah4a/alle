@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.window;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class WindowLayoutTest {
 
     private Window createWindow() {
-        return new Window(new EditableBuffer("test", new GapTextModel()));
+        return new Window(new BufferFacade(new EditableBuffer("test", new GapTextModel())));
     }
 
     @Nested

@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.script;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import java.io.ByteArrayOutputStream;
@@ -9,15 +9,14 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 /**
  * MessageBufferに出力するOutputStream。
  * 書き込まれたバイト列をUTF-8デコードし、改行ごとにMessageBuffer.message()で追加する。
  * GraalVM Context.Builder の .out() / .err() / .logHandler() で使用する。
  *
- * <p>バッファはBufferManager経由で名前解決する。
- * バッファが存在しない場合は自動的に新規作成してBufferManagerに登録する。
+ * <p>バッファは遅延初期化で作成し、BufferManagerに登録する。
  */
 public class MessageBufferOutputStream extends OutputStream {
 
@@ -26,6 +25,7 @@ public class MessageBufferOutputStream extends OutputStream {
     private final int maxLines;
     private final ByteArrayOutputStream pending;
     private final CharsetDecoder decoder;
+    private @Nullable MessageBuffer messageBuffer;
 
     public MessageBufferOutputStream(BufferManager bufferManager, String bufferName, int maxLines) {
         this.bufferManager = bufferManager;
@@ -66,15 +66,12 @@ public class MessageBufferOutputStream extends OutputStream {
     }
 
     private MessageBuffer getOrCreateBuffer() {
-        Optional<Buffer> existing = bufferManager.findByName(bufferName);
-        if (existing.isPresent() && existing.get() instanceof MessageBuffer mb) {
-            return mb;
+        if (messageBuffer != null && bufferManager.findByName(bufferName).isPresent()) {
+            return messageBuffer;
         }
-        var newBuffer = new MessageBuffer(bufferName, maxLines);
-        bufferManager.add(newBuffer);
-        // add() がカレントバッファを変更するので元に戻す
-        // ただしカレントバッファがない場合（初回）はそのまま
-        return newBuffer;
+        messageBuffer = new MessageBuffer(bufferName, maxLines);
+        bufferManager.add(new BufferFacade(messageBuffer));
+        return messageBuffer;
     }
 
     private void flushLine() {

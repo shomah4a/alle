@@ -11,7 +11,7 @@ import org.eclipse.collections.api.list.MutableList;
  */
 public class BufferManager {
 
-    private final MutableList<Buffer> buffers;
+    private final MutableList<BufferFacade> buffers;
     private int currentIndex;
 
     public BufferManager() {
@@ -22,7 +22,7 @@ public class BufferManager {
     /**
      * バッファを追加し、現在のバッファとして設定する。
      */
-    public void add(Buffer buffer) {
+    public void add(BufferFacade buffer) {
         buffers.add(buffer);
         currentIndex = buffers.size() - 1;
     }
@@ -30,7 +30,7 @@ public class BufferManager {
     /**
      * 現在のバッファを返す。
      */
-    public Optional<Buffer> current() {
+    public Optional<BufferFacade> current() {
         if (currentIndex < 0 || currentIndex >= buffers.size()) {
             return Optional.empty();
         }
@@ -40,14 +40,14 @@ public class BufferManager {
     /**
      * 名前でバッファを検索する。
      */
-    public Optional<Buffer> findByName(String name) {
+    public Optional<BufferFacade> findByName(String name) {
         return Optional.ofNullable(buffers.detect(b -> b.getName().equals(name)));
     }
 
     /**
      * ファイルパスでバッファを検索する。
      */
-    public Optional<Buffer> findByPath(Path path) {
+    public Optional<BufferFacade> findByPath(Path path) {
         return Optional.ofNullable(
                 buffers.detect(b -> b.getFilePath().map(p -> p.equals(path)).orElse(false)));
     }
@@ -93,7 +93,7 @@ public class BufferManager {
     /**
      * 全バッファの読み取り専用リストを返す。
      */
-    public ListIterable<Buffer> getBuffers() {
+    public ListIterable<BufferFacade> getBuffers() {
         return buffers;
     }
 

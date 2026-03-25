@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -60,7 +60,7 @@ public class SaveBufferCommand implements Command {
                 });
     }
 
-    private void saveBuffer(Buffer buffer, CommandContext context) {
+    private void saveBuffer(BufferFacade buffer, CommandContext context) {
         try {
             bufferIO.save(buffer);
             context.messageBuffer().message("Saved: " + buffer.getFilePath().orElseThrow());

@@ -15,6 +15,7 @@ public class NewlineCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        return context.activeWindowActor().insert("\n");
+        context.activeWindow().insert("\n");
+        return CompletableFuture.completedFuture(null);
     }
 }

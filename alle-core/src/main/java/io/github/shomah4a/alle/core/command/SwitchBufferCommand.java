@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -29,7 +30,7 @@ public class SwitchBufferCommand implements Command {
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.frame().getActiveWindow();
-        var defaultName = window.getPreviousBuffer().map(b -> b.getName()).orElse("");
+        var defaultName = window.getPreviousBuffer().map(BufferFacade::getName).orElse("");
         var promptMessage =
                 defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
 
@@ -53,7 +54,7 @@ public class SwitchBufferCommand implements Command {
         if (existing.isPresent()) {
             context.frame().getActiveWindow().setBuffer(existing.get());
         } else {
-            var newBuffer = new EditableBuffer(bufferName, new GapTextModel());
+            var newBuffer = new BufferFacade(new EditableBuffer(bufferName, new GapTextModel()));
             context.bufferManager().add(newBuffer);
             context.frame().getActiveWindow().setBuffer(newBuffer);
             context.messageBuffer().message("Buffer created: " + bufferName);

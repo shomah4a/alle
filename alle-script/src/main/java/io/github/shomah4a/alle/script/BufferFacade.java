@@ -1,16 +1,14 @@
 package io.github.shomah4a.alle.script;
 
-import io.github.shomah4a.alle.core.buffer.Buffer;
-
 /**
  * スクリプトに公開するバッファ操作のファサード。
- * 内部のBufferインターフェースをラップし、スクリプトAPIの安定性を保つ。
+ * 内部のBufferFacadeをラップし、スクリプトAPIの安定性を保つ。
  */
 public class BufferFacade {
 
-    private final Buffer buffer;
+    private final io.github.shomah4a.alle.core.buffer.BufferFacade buffer;
 
-    BufferFacade(Buffer buffer) {
+    BufferFacade(io.github.shomah4a.alle.core.buffer.BufferFacade buffer) {
         this.buffer = buffer;
     }
 

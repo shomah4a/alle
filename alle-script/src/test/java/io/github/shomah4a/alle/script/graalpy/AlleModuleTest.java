@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.script.graalpy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
@@ -32,11 +33,12 @@ class AlleModuleTest {
     @BeforeEach
     void setUp() {
         buffer = new EditableBuffer("test.py", new GapTextModel());
-        var window = new Window(buffer);
-        var minibuffer = new Window(new EditableBuffer("*Minibuffer*", new GapTextModel()));
+        var bufferFacade = new BufferFacade(buffer);
+        var window = new Window(bufferFacade);
+        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
         var frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
-        bufferManager.add(buffer);
+        bufferManager.add(bufferFacade);
         messageBuffer = new MessageBuffer("*Messages*", 100);
 
         var facade = new EditorFacade(frame, messageBuffer, new CommandRegistry(), new Keymap("global"));
@@ -56,7 +58,7 @@ class AlleModuleTest {
     @Test
     void alleモジュールのimportでactive_windowを取得できる() {
         engine.eval("import alle");
-        ScriptResult result = engine.eval("alle.active_window().point().result()");
+        ScriptResult result = engine.eval("alle.active_window().point()");
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("0", ((ScriptResult.Success) result).value());
     }
@@ -64,7 +66,7 @@ class AlleModuleTest {
     @Test
     void alleモジュール経由でテキストを挿入できる() {
         engine.eval("import alle");
-        engine.eval("alle.active_window().insert('hello').result()");
+        engine.eval("alle.active_window().insert('hello')");
         assertEquals("hello", buffer.getText());
     }
 
@@ -84,33 +86,27 @@ class AlleModuleTest {
     }
 
     @Test
-    void asyncio_runでawaitを使ってテキスト挿入できる() {
+    void 同期APIでテキスト挿入とカーソル位置取得ができる() {
         engine.eval("import alle");
-        engine.eval("import asyncio");
         engine.eval("""
-                async def test():
-                    win = alle.active_window()
-                    await win.insert('async hello')
-                    pos = await win.point()
-                    return pos
+                win = alle.active_window()
+                win.insert('sync hello')
+                pos = win.point()
                 """);
-        ScriptResult result = engine.eval("asyncio.run(test())");
+        ScriptResult result = engine.eval("pos");
         assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("async hello", buffer.getText());
+        assertEquals("sync hello", buffer.getText());
     }
 
     @Test
-    void awaitでカーソル位置を取得できる() {
+    void 同期APIでカーソル移動ができる() {
         buffer.insertText(0, "hello world");
         engine.eval("import alle");
-        engine.eval("import asyncio");
         engine.eval("""
-                async def test():
-                    win = alle.active_window()
-                    await win.goto_char(5)
-                    return await win.point()
+                win = alle.active_window()
+                win.goto_char(5)
                 """);
-        ScriptResult result = engine.eval("asyncio.run(test())");
+        ScriptResult result = engine.eval("win.point()");
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("5", ((ScriptResult.Success) result).value());
     }
@@ -118,8 +114,7 @@ class AlleModuleTest {
     @Test
     void printの出力がstdoutバッファに記録される() {
         engine.eval("print('hello from python')");
-        var stdoutBuffer =
-                (MessageBuffer) bufferManager.findByName("*Python Output*").orElseThrow();
+        var stdoutBuffer = bufferManager.findByName("*Python Output*").orElseThrow();
         assertEquals("hello from python", stdoutBuffer.lineText(0));
     }
 
@@ -127,8 +122,7 @@ class AlleModuleTest {
     void 複数回のprintが個別に記録される() {
         engine.eval("print('line1')");
         engine.eval("print('line2')");
-        var stdoutBuffer =
-                (MessageBuffer) bufferManager.findByName("*Python Output*").orElseThrow();
+        var stdoutBuffer = bufferManager.findByName("*Python Output*").orElseThrow();
         assertEquals("line1", stdoutBuffer.lineText(0));
         assertEquals("line2", stdoutBuffer.lineText(1));
     }

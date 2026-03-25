@@ -16,26 +16,23 @@ public class PreviousLineCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var actor = context.activeWindowActor();
-        return actor.atomicPerform(window -> {
-            var buffer = window.getBuffer();
-            int point = window.getPoint();
-            int currentLine = buffer.lineIndexForOffset(point);
+        var window = context.activeWindow();
+        var buffer = window.getBuffer();
+        int point = window.getPoint();
+        int currentLine = buffer.lineIndexForOffset(point);
 
-            if (currentLine <= 0) {
-                return null;
-            }
+        if (currentLine <= 0) {
+            return CompletableFuture.completedFuture(null);
+        }
 
-            int currentLineStart = buffer.lineStartOffset(currentLine);
-            int column = point - currentLineStart;
+        int currentLineStart = buffer.lineStartOffset(currentLine);
+        int column = point - currentLineStart;
 
-            int prevLineStart = buffer.lineStartOffset(currentLine - 1);
-            int prevLineLength =
-                    (int) buffer.lineText(currentLine - 1).codePoints().count();
-            int newColumn = Math.min(column, prevLineLength);
+        int prevLineStart = buffer.lineStartOffset(currentLine - 1);
+        int prevLineLength = (int) buffer.lineText(currentLine - 1).codePoints().count();
+        int newColumn = Math.min(column, prevLineLength);
 
-            window.setPoint(prevLineStart + newColumn);
-            return null;
-        });
+        window.setPoint(prevLineStart + newColumn);
+        return CompletableFuture.completedFuture(null);
     }
 }

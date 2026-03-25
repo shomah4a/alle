@@ -5,14 +5,14 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.window.Frame;
-import io.github.shomah4a.alle.core.window.WindowActor;
+import io.github.shomah4a.alle.core.window.Window;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 
 /**
  * コマンド実行時のコンテキスト。
- * 編集操作はactiveWindowActor経由で行う。
+ * 編集操作はactiveWindow経由で行う。
  * バッファの作成・削除・一覧取得はbufferManagerを通じて行う。
  * ユーザーからの文字列入力はinputPrompter経由で行う。
  * triggeringKeyはコマンドを発動したキーストローク（プログラム的呼び出し時はempty）。
@@ -23,7 +23,7 @@ import java.util.Optional;
 public record CommandContext(
         Frame frame,
         BufferManager bufferManager,
-        WindowActor activeWindowActor,
+        Window activeWindow,
         InputPrompter inputPrompter,
         Optional<KeyStroke> triggeringKey,
         Optional<String> thisCommand,
