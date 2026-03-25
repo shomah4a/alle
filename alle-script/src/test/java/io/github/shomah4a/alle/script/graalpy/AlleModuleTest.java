@@ -291,6 +291,68 @@ class AlleModuleTest {
     }
 
     @Test
+    void Pythonモードがキーマップを持つ() {
+        engine.eval("import alle");
+        ScriptResult result = engine.eval("""
+                from alle.modes.python import PythonMode
+                mode = PythonMode()
+                km = mode.keymap()
+                str(km is not None)
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("True", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void newlineAndIndentで前行のインデントが継承される() {
+        engine.eval("import alle");
+        buffer.insertText(0, "    x = 1");
+        // カーソルを行末に移動
+        engine.eval("alle.active_window().goto_char(9)");
+        // newline-and-indent を実行
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import newline_and_indent
+                newline_and_indent.run()
+                """);
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("newline-and-indent failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("    x = 1\n    ", buffer.getText());
+    }
+
+    @Test
+    void newlineAndIndentでコロン後にインデントが増加する() {
+        engine.eval("import alle");
+        buffer.insertText(0, "def hello():");
+        engine.eval("alle.active_window().goto_char(12)");
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import newline_and_indent
+                newline_and_indent.run()
+                """);
+        if (result instanceof ScriptResult.Failure f) {
+            System.err.println("newline-and-indent colon failed: " + f.message());
+            f.cause().printStackTrace(System.err);
+        }
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("def hello():\n    ", buffer.getText());
+    }
+
+    @Test
+    void newlineAndIndentでコメント内のコロンではインデント増加しない() {
+        engine.eval("import alle");
+        buffer.insertText(0, "x = 1  # Note: something");
+        engine.eval("alle.active_window().goto_char(24)");
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import newline_and_indent
+                newline_and_indent.run()
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("x = 1  # Note: something\n", buffer.getText());
+    }
+
+    @Test
     void MinorModeBaseでマイナーモードを定義して登録できる() {
         engine.eval("import alle");
         engine.eval("from alle.mode import MinorModeBase");
