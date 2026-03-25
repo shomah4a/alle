@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +18,7 @@ class BufferFacadeTest {
 
     @BeforeEach
     void setUp() {
-        editableBuffer = new EditableBuffer("test", new GapTextModel());
+        editableBuffer = new EditableBuffer("test", new GapTextModel(), new SettingsRegistry());
         facade = new BufferFacade(editableBuffer);
     }
 
@@ -83,7 +84,7 @@ class BufferFacadeTest {
 
         @BeforeEach
         void setUp() {
-            messageBuffer = new MessageBuffer("*Messages*", 100);
+            messageBuffer = new MessageBuffer("*Messages*", 100, new SettingsRegistry());
             readOnlyFacade = new BufferFacade(messageBuffer);
         }
 
@@ -127,7 +128,7 @@ class BufferFacadeTest {
 
         @Test
         void 異なるバッファをラップしたFacadeはequalsがfalseを返す() {
-            var otherBuffer = new EditableBuffer("other", new GapTextModel());
+            var otherBuffer = new EditableBuffer("other", new GapTextModel(), new SettingsRegistry());
             var otherFacade = new BufferFacade(otherBuffer);
 
             assertFalse(facade.equals(otherFacade));

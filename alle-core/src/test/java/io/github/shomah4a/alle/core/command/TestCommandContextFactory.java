@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -21,7 +22,16 @@ final class TestCommandContextFactory {
     private static final InputPrompter NOOP_PROMPTER =
             (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
 
+    private static final SettingsRegistry SETTINGS_REGISTRY = new SettingsRegistry();
+
     private TestCommandContextFactory() {}
+
+    /**
+     * テスト用のSettingsRegistryを返す。
+     */
+    static SettingsRegistry settingsRegistry() {
+        return SETTINGS_REGISTRY;
+    }
 
     /**
      * 最小限のコンテキストを生成する。triggeringKey・コマンド履歴なし。
@@ -43,8 +53,9 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
-                new MessageBuffer("*Messages*", 100),
-                new MessageBuffer("*Warnings*", 100));
+                new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
+                new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
+                SETTINGS_REGISTRY);
     }
 
     /**
@@ -60,8 +71,9 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
-                new MessageBuffer("*Messages*", 100),
-                new MessageBuffer("*Warnings*", 100));
+                new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
+                new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
+                SETTINGS_REGISTRY);
     }
 
     /**
@@ -78,17 +90,19 @@ final class TestCommandContextFactory {
                 Optional.empty(),
                 lastCommand,
                 killRing,
-                new MessageBuffer("*Messages*", 100),
-                new MessageBuffer("*Warnings*", 100));
+                new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
+                new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
+                SETTINGS_REGISTRY);
     }
 
     /**
      * デフォルトのバッファ・ウィンドウ・フレームでコンテキストを生成する。
      */
     static CommandContext createDefault() {
-        var bufferFacade = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+        var bufferFacade = new BufferFacade(new EditableBuffer("test", new GapTextModel(), SETTINGS_REGISTRY));
         var window = new Window(bufferFacade);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer =
+                new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), SETTINGS_REGISTRY)));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(bufferFacade);

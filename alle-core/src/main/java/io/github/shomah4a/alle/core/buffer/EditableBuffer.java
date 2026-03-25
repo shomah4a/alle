@@ -5,6 +5,8 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -34,9 +36,10 @@ public class EditableBuffer implements Buffer {
     private final MutableList<MinorMode> minorModes;
     private final UndoManager undoManager;
     private final TextPropertyStore textPropertyStore;
+    private final BufferLocalSettings settings;
     private boolean dirty;
 
-    public EditableBuffer(String name, TextModel textModel) {
+    public EditableBuffer(String name, TextModel textModel, SettingsRegistry settingsRegistry) {
         this.name = name;
         this.textModel = textModel;
         this.lock = new ReentrantLock();
@@ -45,11 +48,12 @@ public class EditableBuffer implements Buffer {
         this.minorModes = Lists.mutable.empty();
         this.undoManager = new UndoManager();
         this.textPropertyStore = new TextPropertyStore();
+        this.settings = new BufferLocalSettings(settingsRegistry, () -> majorMode, () -> minorModes);
         this.dirty = false;
     }
 
-    public EditableBuffer(String name, TextModel textModel, Path filePath) {
-        this(name, textModel);
+    public EditableBuffer(String name, TextModel textModel, SettingsRegistry settingsRegistry, Path filePath) {
+        this(name, textModel, settingsRegistry);
         this.filePath = filePath;
     }
 
@@ -165,6 +169,13 @@ public class EditableBuffer implements Buffer {
     @Override
     public void disableMinorMode(MinorMode mode) {
         lockedVoid(() -> minorModes.removeIf(m -> m.name().equals(mode.name())));
+    }
+
+    // ── 設定 ──
+
+    @Override
+    public BufferLocalSettings getSettings() {
+        return settings;
     }
 
     // ── Undo ──

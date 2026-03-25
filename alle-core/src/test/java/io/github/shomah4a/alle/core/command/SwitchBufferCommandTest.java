@@ -9,6 +9,7 @@ import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -28,15 +29,16 @@ class SwitchBufferCommandTest {
 
     @BeforeEach
     void setUp() {
-        scratchBuffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
+        scratchBuffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
         scratchBuffer.insertText(0, "scratch content");
         var window = new Window(scratchBuffer);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(scratchBuffer);
 
-        otherBuffer = new BufferFacade(new EditableBuffer("other.txt", new GapTextModel()));
+        otherBuffer = new BufferFacade(new EditableBuffer("other.txt", new GapTextModel(), new SettingsRegistry()));
         otherBuffer.insertText(0, "other content");
         bufferManager.add(otherBuffer);
     }

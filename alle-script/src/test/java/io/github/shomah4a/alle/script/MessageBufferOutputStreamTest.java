@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +19,7 @@ class MessageBufferOutputStreamTest {
     @BeforeEach
     void setUp() {
         bufferManager = new BufferManager();
-        stream = new MessageBufferOutputStream(bufferManager, "*Test*", 100);
+        stream = new MessageBufferOutputStream(bufferManager, "*Test*", 100, new SettingsRegistry());
     }
 
     private BufferFacade getTestBuffer() {

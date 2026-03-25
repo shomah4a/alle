@@ -17,6 +17,7 @@ import io.github.shomah4a.alle.core.io.LineEnding;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -43,9 +44,10 @@ class FindFileCommandTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
+        var buffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(buffer);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(buffer);
@@ -57,7 +59,7 @@ class FindFileCommandTest {
             return new StringReader(storage.get(source));
         };
         BufferWriter writer = destination -> new StringWriter();
-        bufferIO = new BufferIO(reader, writer);
+        bufferIO = new BufferIO(reader, writer, new SettingsRegistry());
     }
 
     private InputPrompter confirming(String value) {

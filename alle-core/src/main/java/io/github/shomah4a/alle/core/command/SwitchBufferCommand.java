@@ -54,7 +54,8 @@ public class SwitchBufferCommand implements Command {
         if (existing.isPresent()) {
             context.frame().getActiveWindow().setBuffer(existing.get());
         } else {
-            var newBuffer = new BufferFacade(new EditableBuffer(bufferName, new GapTextModel()));
+            var newBuffer =
+                    new BufferFacade(new EditableBuffer(bufferName, new GapTextModel(), context.settingsRegistry()));
             context.bufferManager().add(newBuffer);
             context.frame().getActiveWindow().setBuffer(newBuffer);
             context.messageBuffer().message("Buffer created: " + bufferName);

@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
@@ -204,7 +205,7 @@ class ModeRegistryTest {
     class モードフック {
 
         private BufferFacade dummyBuffer() {
-            return new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+            return new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
         }
 
         @Test

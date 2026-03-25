@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.io.PrintWriter;
@@ -30,7 +31,8 @@ public record CommandContext(
         Optional<String> lastCommand,
         KillRing killRing,
         MessageBuffer messageBuffer,
-        MessageBuffer warningBuffer) {
+        MessageBuffer warningBuffer,
+        SettingsRegistry settingsRegistry) {
 
     /**
      * エラーをエコーエリアと*Warnings*バッファに通知する。

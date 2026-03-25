@@ -5,6 +5,8 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.libs.ringbuffer.ArrayRingBuffer;
 import io.github.shomah4a.alle.libs.ringbuffer.RingBuffer;
 import java.nio.file.Path;
@@ -29,6 +31,7 @@ public class MessageBuffer implements Buffer {
     private final ReentrantLock lock;
     private final UndoManager undoManager;
     private final MajorMode majorMode;
+    private final BufferLocalSettings settings;
     private boolean showingMessage;
 
     /**
@@ -36,13 +39,16 @@ public class MessageBuffer implements Buffer {
      *
      * @param name バッファ名（通常 "*Messages*"）
      * @param maxLines 保持する最大行数
+     * @param settingsRegistry 設定レジストリ
      */
-    public MessageBuffer(String name, int maxLines) {
+    public MessageBuffer(String name, int maxLines, SettingsRegistry settingsRegistry) {
         this.name = name;
         this.lines = new ArrayRingBuffer<>(maxLines);
         this.lock = new ReentrantLock();
         this.undoManager = new UndoManager();
         this.majorMode = new TextMode();
+        this.settings = new BufferLocalSettings(
+                settingsRegistry, () -> majorMode, org.eclipse.collections.api.factory.Lists.immutable::empty);
         this.showingMessage = false;
     }
 
@@ -350,6 +356,13 @@ public class MessageBuffer implements Buffer {
     @Override
     public boolean isReadOnlyAt(int index) {
         return false;
+    }
+
+    // ── 設定 ──
+
+    @Override
+    public BufferLocalSettings getSettings() {
+        return settings;
     }
 
     // ── Undo ──

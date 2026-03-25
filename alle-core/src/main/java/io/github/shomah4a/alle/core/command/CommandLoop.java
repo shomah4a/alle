@@ -9,6 +9,7 @@ import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -36,6 +37,7 @@ public class CommandLoop {
     private final KillRing killRing;
     private final MessageBuffer messageBuffer;
     private final MessageBuffer warningBuffer;
+    private final SettingsRegistry settingsRegistry;
     private Optional<String> lastCommand = Optional.empty();
     private @Nullable PendingPrefix pendingPrefix;
 
@@ -49,27 +51,11 @@ public class CommandLoop {
             KeyResolver keyResolver,
             Frame frame,
             BufferManager bufferManager,
-            InputPrompter inputPrompter) {
-        this(
-                inputSource,
-                keyResolver,
-                frame,
-                bufferManager,
-                inputPrompter,
-                new KillRing(),
-                new MessageBuffer("*Messages*", 1000),
-                new MessageBuffer("*Warnings*", 1000));
-    }
-
-    public CommandLoop(
-            InputSource inputSource,
-            KeyResolver keyResolver,
-            Frame frame,
-            BufferManager bufferManager,
             InputPrompter inputPrompter,
             KillRing killRing,
             MessageBuffer messageBuffer,
-            MessageBuffer warningBuffer) {
+            MessageBuffer warningBuffer,
+            SettingsRegistry settingsRegistry) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
@@ -78,6 +64,7 @@ public class CommandLoop {
         this.killRing = killRing;
         this.messageBuffer = messageBuffer;
         this.warningBuffer = warningBuffer;
+        this.settingsRegistry = settingsRegistry;
     }
 
     /**
@@ -180,7 +167,8 @@ public class CommandLoop {
                         lastCommand,
                         killRing,
                         messageBuffer,
-                        warningBuffer);
+                        warningBuffer,
+                        settingsRegistry);
                 try {
                     command.execute(context)
                             .thenRun(() -> lastCommand = thisCommand)

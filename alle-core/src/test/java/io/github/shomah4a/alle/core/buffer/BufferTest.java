@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Nested;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class BufferTest {
 
     private Buffer createBuffer() {
-        return new EditableBuffer("test", new GapTextModel());
+        return new EditableBuffer("test", new GapTextModel(), new SettingsRegistry());
     }
 
     @Nested
@@ -37,7 +38,8 @@ class BufferTest {
             var buffer = createBuffer();
             assertTrue(buffer.getFilePath().isEmpty());
 
-            var bufferWithPath = new EditableBuffer("test", new GapTextModel(), Path.of("/tmp/test.txt"));
+            var bufferWithPath =
+                    new EditableBuffer("test", new GapTextModel(), new SettingsRegistry(), Path.of("/tmp/test.txt"));
             assertEquals(Path.of("/tmp/test.txt"), bufferWithPath.getFilePath().orElseThrow());
         }
     }

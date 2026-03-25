@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,10 +19,12 @@ class BufferNameCompleterTest {
     @BeforeEach
     void setUp() {
         bufferManager = new BufferManager();
-        bufferManager.add(new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel())));
-        bufferManager.add(new BufferFacade(new EditableBuffer("foo.txt", new GapTextModel())));
-        bufferManager.add(new BufferFacade(new EditableBuffer("foobar.txt", new GapTextModel())));
-        bufferManager.add(new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel())));
+        bufferManager.add(
+                new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), new SettingsRegistry())));
+        bufferManager.add(new BufferFacade(new EditableBuffer("foo.txt", new GapTextModel(), new SettingsRegistry())));
+        bufferManager.add(
+                new BufferFacade(new EditableBuffer("foobar.txt", new GapTextModel(), new SettingsRegistry())));
+        bufferManager.add(new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel(), new SettingsRegistry())));
         completer = new BufferNameCompleter(bufferManager);
     }
 

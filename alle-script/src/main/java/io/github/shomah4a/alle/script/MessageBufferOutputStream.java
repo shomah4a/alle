@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.script;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -23,14 +24,17 @@ public class MessageBufferOutputStream extends OutputStream {
     private final BufferManager bufferManager;
     private final String bufferName;
     private final int maxLines;
+    private final SettingsRegistry settingsRegistry;
     private final ByteArrayOutputStream pending;
     private final CharsetDecoder decoder;
     private @Nullable MessageBuffer messageBuffer;
 
-    public MessageBufferOutputStream(BufferManager bufferManager, String bufferName, int maxLines) {
+    public MessageBufferOutputStream(
+            BufferManager bufferManager, String bufferName, int maxLines, SettingsRegistry settingsRegistry) {
         this.bufferManager = bufferManager;
         this.bufferName = bufferName;
         this.maxLines = maxLines;
+        this.settingsRegistry = settingsRegistry;
         this.pending = new ByteArrayOutputStream();
         this.decoder = StandardCharsets.UTF_8.newDecoder();
     }
@@ -69,7 +73,7 @@ public class MessageBufferOutputStream extends OutputStream {
         if (messageBuffer != null && bufferManager.findByName(bufferName).isPresent()) {
             return messageBuffer;
         }
-        messageBuffer = new MessageBuffer(bufferName, maxLines);
+        messageBuffer = new MessageBuffer(bufferName, maxLines, settingsRegistry);
         bufferManager.add(new BufferFacade(messageBuffer));
         return messageBuffer;
     }

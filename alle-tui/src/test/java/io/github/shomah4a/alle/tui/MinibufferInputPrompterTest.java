@@ -7,12 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandLoop;
+import io.github.shomah4a.alle.core.command.KillRing;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -30,9 +33,10 @@ class MinibufferInputPrompterTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
         mainWindow = new Window(buffer);
-        minibufferWindow = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        minibufferWindow = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(mainWindow, minibufferWindow);
         prompter = new MinibufferInputPrompter(frame);
     }
@@ -220,7 +224,16 @@ class MinibufferInputPrompterTest {
             // CommandLoopを作成してミニバッファのキーマップを使って文字入力
             var resolver = new KeyResolver();
             var bufferManager = new BufferManager();
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, prompter);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(),
+                    resolver,
+                    frame,
+                    bufferManager,
+                    prompter,
+                    new KillRing(),
+                    new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
+                    new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
+                    new SettingsRegistry());
 
             // ミニバッファがアクティブな状態でキー入力
             loop.processKey(KeyStroke.of('t'));
@@ -238,7 +251,16 @@ class MinibufferInputPrompterTest {
 
             var resolver = new KeyResolver();
             var bufferManager = new BufferManager();
-            var loop = new CommandLoop(() -> Optional.empty(), resolver, frame, bufferManager, prompter);
+            var loop = new CommandLoop(
+                    () -> Optional.empty(),
+                    resolver,
+                    frame,
+                    bufferManager,
+                    prompter,
+                    new KillRing(),
+                    new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
+                    new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
+                    new SettingsRegistry());
 
             loop.processKey(KeyStroke.of('a'));
             loop.processKey(KeyStroke.of('b'));
@@ -406,8 +428,9 @@ class MinibufferInputPrompterTest {
                     Optional.empty(),
                     Optional.empty(),
                     new io.github.shomah4a.alle.core.command.KillRing(),
-                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100),
-                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100));
+                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, new SettingsRegistry()),
+                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
+                    new SettingsRegistry());
             binding.command().execute(context).join();
         }
     }

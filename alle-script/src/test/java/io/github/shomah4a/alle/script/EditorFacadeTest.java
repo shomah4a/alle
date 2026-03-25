@@ -11,6 +11,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -25,14 +26,15 @@ class EditorFacadeTest {
 
     @BeforeEach
     void setUp() {
-        buffer = new EditableBuffer("test.py", new GapTextModel());
+        buffer = new EditableBuffer("test.py", new GapTextModel(), new SettingsRegistry());
         var bufferFacade = new BufferFacade(buffer);
         var window = new Window(bufferFacade);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(bufferFacade);
-        messageBuffer = new MessageBuffer("*Messages*", 100);
+        messageBuffer = new MessageBuffer("*Messages*", 100, new SettingsRegistry());
         facade = new EditorFacade(
                 frame,
                 messageBuffer,

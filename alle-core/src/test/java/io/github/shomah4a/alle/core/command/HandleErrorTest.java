@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -24,12 +25,13 @@ class HandleErrorTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(buffer);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         var frame = new Frame(window, minibuffer);
-        messageBuffer = new MessageBuffer("*Messages*", 100);
-        warningBuffer = new MessageBuffer("*Warnings*", 100);
+        messageBuffer = new MessageBuffer("*Messages*", 100, new SettingsRegistry());
+        warningBuffer = new MessageBuffer("*Warnings*", 100, new SettingsRegistry());
         context = new CommandContext(
                 frame,
                 new BufferManager(),
@@ -40,7 +42,8 @@ class HandleErrorTest {
                 Optional.empty(),
                 new KillRing(),
                 messageBuffer,
-                warningBuffer);
+                warningBuffer,
+                new SettingsRegistry());
     }
 
     @Test

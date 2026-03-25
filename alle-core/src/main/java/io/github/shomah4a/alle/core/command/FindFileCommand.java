@@ -86,8 +86,8 @@ public class FindFileCommand implements Command {
             bufferFacade = loadResult.bufferFacade();
         } catch (IOException e) {
             logger.log(Level.FINE, "ファイルが存在しないため空バッファを作成: " + path, e);
-            bufferFacade =
-                    new BufferFacade(new EditableBuffer(path.getFileName().toString(), new GapTextModel(), path));
+            bufferFacade = new BufferFacade(new EditableBuffer(
+                    path.getFileName().toString(), new GapTextModel(), context.settingsRegistry(), path));
         }
 
         var majorMode = autoModeMap.resolve(bufferFacade.getName());

@@ -9,6 +9,7 @@ import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -19,7 +20,7 @@ class RenderSnapshotFactoryTest {
 
     private BufferFacade createBuffer(String name, String content) {
         var textModel = new GapTextModel();
-        var buffer = new EditableBuffer(name, textModel);
+        var buffer = new EditableBuffer(name, textModel, new SettingsRegistry());
         var facade = new BufferFacade(buffer);
         if (!content.isEmpty()) {
             facade.insertText(0, content);
@@ -34,7 +35,7 @@ class RenderSnapshotFactoryTest {
     }
 
     private MessageBuffer createMessageBuffer() {
-        return new MessageBuffer("*Messages*", 100);
+        return new MessageBuffer("*Messages*", 100, new SettingsRegistry());
     }
 
     @Nested

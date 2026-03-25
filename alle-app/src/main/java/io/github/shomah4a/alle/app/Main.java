@@ -9,6 +9,8 @@ import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.EvalExpressionCommand;
 import io.github.shomah4a.alle.script.MessageBufferOutputStream;
@@ -54,13 +56,18 @@ public final class Main {
 
     private static void run(Screen screen) throws IOException {
         var inputSource = new TerminalInputSource(screen);
+        var settingsRegistry = new SettingsRegistry();
+        settingsRegistry.register(EditorSettings.INDENT_WIDTH);
+        settingsRegistry.register(EditorSettings.COMMENT_STRING);
         var bufferIO = new BufferIO(
                 source -> new BufferedReader(Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8)),
                 destination ->
-                        new BufferedWriter(Files.newBufferedWriter(Path.of(destination), StandardCharsets.UTF_8)));
+                        new BufferedWriter(Files.newBufferedWriter(Path.of(destination), StandardCharsets.UTF_8)),
+                settingsRegistry);
         DirectoryLister directoryLister = Main::listDirectory;
 
-        var core = EditorCore.create(inputSource, MinibufferInputPrompter::new, bufferIO, directoryLister, inputSource);
+        var core = EditorCore.create(
+                inputSource, MinibufferInputPrompter::new, bufferIO, directoryLister, inputSource, settingsRegistry);
 
         // TUI固有コマンドの追加
         core.commandRegistry().register(new QuitCommand(inputSource));
@@ -72,9 +79,11 @@ public final class Main {
         msg.message("Initializing script engine...");
         var editorFacade = new EditorFacade(
                 core.frame(), msg, core.commandRegistry(), core.keymap(), core.modeRegistry(), core.autoModeMap());
-        var stdoutStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000);
-        var stderrStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000);
-        var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000);
+        var stdoutStream =
+                new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
+        var stderrStream =
+                new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000, settingsRegistry);
+        var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000, settingsRegistry);
         msg.message("Creating GraalPy engine...");
         var scriptEngineFactory = new GraalPyEngineFactory(editorFacade, stdoutStream, stderrStream, logStream);
         var scriptEngine = scriptEngineFactory.create();

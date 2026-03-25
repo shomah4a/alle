@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.io.LineEnding;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
@@ -213,6 +214,13 @@ interface Buffer {
      * 指定位置がread-onlyプロパティで保護されているかを返す。
      */
     boolean isReadOnlyAt(int index);
+
+    // ── 設定 ──
+
+    /**
+     * バッファローカル設定を返す。
+     */
+    BufferLocalSettings getSettings();
 
     // ── Undo ──
 

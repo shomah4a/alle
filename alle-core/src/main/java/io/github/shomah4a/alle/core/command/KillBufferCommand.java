@@ -72,7 +72,8 @@ public class KillBufferCommand implements Command {
 
         // *scratch* を削除した場合はサイレントに再作成
         if (SCRATCH_BUFFER_NAME.equals(bufferName)) {
-            bufferManager.add(new BufferFacade(new EditableBuffer(SCRATCH_BUFFER_NAME, new GapTextModel())));
+            bufferManager.add(new BufferFacade(
+                    new EditableBuffer(SCRATCH_BUFFER_NAME, new GapTextModel(), context.settingsRegistry())));
         }
 
         // 切り替え先を決定: 他のウィンドウで表示されていないバッファを優先

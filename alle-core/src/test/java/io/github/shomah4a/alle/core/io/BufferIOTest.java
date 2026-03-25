@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -38,7 +39,7 @@ class BufferIOTest {
         @Test
         void ファイルを読み込んでバッファを生成する() throws IOException {
             storage.put("/tmp/test.txt", "Hello\nWorld");
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var result = io.load(Path.of("/tmp/test.txt"));
 
             assertEquals("test.txt", result.bufferFacade().getName());
@@ -54,7 +55,7 @@ class BufferIOTest {
         @Test
         void CRLFのファイルを読み込むとLFに正規化される() throws IOException {
             storage.put("/tmp/crlf.txt", "Hello\r\nWorld\r\n");
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var result = io.load(Path.of("/tmp/crlf.txt"));
 
             assertEquals("Hello\nWorld\n", result.bufferFacade().getText());
@@ -65,7 +66,7 @@ class BufferIOTest {
         @Test
         void 空ファイルを読み込める() throws IOException {
             storage.put("/tmp/empty.txt", "");
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var result = io.load(Path.of("/tmp/empty.txt"));
 
             assertEquals("", result.bufferFacade().getText());
@@ -75,7 +76,7 @@ class BufferIOTest {
         @Test
         void 絵文字を含むファイルを読み込める() throws IOException {
             storage.put("/tmp/emoji.txt", "Hello 😀\nWorld 🌍");
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var result = io.load(Path.of("/tmp/emoji.txt"));
 
             assertEquals("Hello 😀\nWorld 🌍", result.bufferFacade().getText());
@@ -88,7 +89,7 @@ class BufferIOTest {
         @Test
         void バッファの内容をファイルに保存する() throws IOException {
             storage.put("/tmp/test.txt", "Hello\nWorld");
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var result = io.load(Path.of("/tmp/test.txt"));
             var buffer = result.bufferFacade();
 
@@ -105,7 +106,7 @@ class BufferIOTest {
         @Test
         void CRLF形式で保存できる() throws IOException {
             storage.put("/tmp/test.txt", "Hello\r\nWorld");
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var result = io.load(Path.of("/tmp/test.txt"));
 
             io.save(result.bufferFacade());
@@ -117,10 +118,11 @@ class BufferIOTest {
 
         @Test
         void ファイルパスが未設定のバッファを保存すると例外が発生する() {
-            var io = new BufferIO(inMemoryReader(), inMemoryWriter());
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
             var buffer = new io.github.shomah4a.alle.core.buffer.BufferFacade(
-                    new io.github.shomah4a.alle.core.buffer.EditableBuffer("nopath", textModel));
+                    new io.github.shomah4a.alle.core.buffer.EditableBuffer(
+                            "nopath", textModel, new SettingsRegistry()));
 
             assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }

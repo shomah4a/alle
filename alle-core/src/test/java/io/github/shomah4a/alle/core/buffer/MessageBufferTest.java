@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class MessageBufferTest {
 
     private MessageBuffer createBuffer() {
-        return new MessageBuffer("*Messages*", 100);
+        return new MessageBuffer("*Messages*", 100, new SettingsRegistry());
     }
 
     @Nested
@@ -78,7 +79,7 @@ class MessageBufferTest {
 
         @Test
         void 容量を超えると古いメッセージが消える() {
-            var buffer = new MessageBuffer("*Messages*", 3);
+            var buffer = new MessageBuffer("*Messages*", 3, new SettingsRegistry());
             buffer.message("a");
             buffer.message("b");
             buffer.message("c");

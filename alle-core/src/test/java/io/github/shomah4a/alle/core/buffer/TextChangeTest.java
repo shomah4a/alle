@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.buffer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class TextChangeTest {
 
     private Buffer createBuffer(String initialText) {
-        var buffer = new EditableBuffer("test", new GapTextModel());
+        var buffer = new EditableBuffer("test", new GapTextModel(), new SettingsRegistry());
         if (!initialText.isEmpty()) {
             buffer.insertText(0, initialText);
         }

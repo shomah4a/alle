@@ -50,6 +50,7 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -102,22 +103,26 @@ public final class EditorCore {
      * @param bufferIO ファイル読み書き
      * @param directoryLister ディレクトリ一覧取得
      * @param shutdownRequestable 終了要求インターフェース
+     * @param settingsRegistry 設定レジストリ
      */
     public static EditorCore create(
             InputSource inputSource,
             Function<Frame, InputPrompter> inputPrompterFactory,
             BufferIO bufferIO,
             DirectoryLister directoryLister,
-            ShutdownRequestable shutdownRequestable) {
+            ShutdownRequestable shutdownRequestable,
+            SettingsRegistry settingsRegistry) {
+
         // バッファ・ウィンドウ・フレーム
-        var scratchFacade = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
+        var scratchFacade = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), settingsRegistry));
         var window = new Window(scratchFacade);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer =
+                new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), settingsRegistry)));
         var frame = new Frame(window, minibuffer);
 
         // メッセージバッファ
-        var messageBuffer = new MessageBuffer("*Messages*", 1000);
-        var warningBuffer = new MessageBuffer("*Warnings*", 1000);
+        var messageBuffer = new MessageBuffer("*Messages*", 1000, settingsRegistry);
+        var warningBuffer = new MessageBuffer("*Warnings*", 1000, settingsRegistry);
 
         // バッファマネージャ
         var bufferManager = new BufferManager();
@@ -152,7 +157,15 @@ public final class EditorCore {
         var inputPrompter = inputPrompterFactory.apply(frame);
         var killRing = new KillRing();
         var commandLoop = new CommandLoop(
-                inputSource, resolver, frame, bufferManager, inputPrompter, killRing, messageBuffer, warningBuffer);
+                inputSource,
+                resolver,
+                frame,
+                bufferManager,
+                inputPrompter,
+                killRing,
+                messageBuffer,
+                warningBuffer,
+                settingsRegistry);
 
         return new EditorCore(
                 frame,

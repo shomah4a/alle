@@ -15,6 +15,7 @@ import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.io.BufferReader;
 import io.github.shomah4a.alle.core.io.BufferWriter;
 import io.github.shomah4a.alle.core.io.LineEnding;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -40,9 +41,10 @@ class SaveBufferCommandTest {
 
     @BeforeEach
     void setUp() {
-        var buffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
+        var buffer = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(buffer);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(buffer);
@@ -53,7 +55,7 @@ class SaveBufferCommandTest {
             writerStorage.put(destination, sw);
             return sw;
         };
-        bufferIO = new BufferIO(reader, writer);
+        bufferIO = new BufferIO(reader, writer, new SettingsRegistry());
     }
 
     private InputPrompter confirming(String value) {

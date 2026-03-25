@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -14,13 +15,14 @@ import org.junit.jupiter.api.Test;
 class CursorCommandTest {
 
     private CommandContext createContext(String initialText) {
-        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel()));
+        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(buffer);
         if (!initialText.isEmpty()) {
             window.insert(initialText);
             window.setPoint(0);
         }
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(buffer);

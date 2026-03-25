@@ -12,6 +12,7 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Direction;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -31,10 +32,11 @@ class KillBufferCommandTest {
 
     @BeforeEach
     void setUp() {
-        scratch = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel()));
-        fooBuffer = new BufferFacade(new EditableBuffer("foo.txt", new GapTextModel()));
+        scratch = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
+        fooBuffer = new BufferFacade(new EditableBuffer("foo.txt", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(scratch);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel())));
+        var minibuffer = new Window(
+                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(scratch);
@@ -124,7 +126,7 @@ class KillBufferCommandTest {
         @Test
         void 非アクティブウィンドウが削除対象を表示中の場合も切り替わる() {
             // ウィンドウを分割して両方にfooBufferを表示
-            var barBuffer = new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel()));
+            var barBuffer = new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
             bufferManager.add(barBuffer);
             frame.splitActiveWindow(Direction.VERTICAL, barBuffer);
             // 最初のウィンドウ(scratch)をfooに変更
@@ -142,7 +144,7 @@ class KillBufferCommandTest {
 
         @Test
         void 他のウィンドウで表示されていないバッファに優先的に切り替わる() {
-            var barBuffer = new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel()));
+            var barBuffer = new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
             bufferManager.add(barBuffer);
             // window1: scratch, window2: fooBuffer
             frame.splitActiveWindow(Direction.VERTICAL, fooBuffer);
@@ -197,7 +199,7 @@ class KillBufferCommandTest {
 
         @Test
         void システムバッファは削除できない() {
-            var msgBuffer = new BufferFacade(new MessageBuffer("*Messages*", 100));
+            var msgBuffer = new BufferFacade(new MessageBuffer("*Messages*", 100, new SettingsRegistry()));
             bufferManager.add(msgBuffer);
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("*Messages*"));
 
@@ -209,7 +211,7 @@ class KillBufferCommandTest {
 
         @Test
         void システムバッファの削除拒否時にエコーエリアにメッセージが表示される() {
-            var msgBuffer = new BufferFacade(new MessageBuffer("*Messages*", 100));
+            var msgBuffer = new BufferFacade(new MessageBuffer("*Messages*", 100, new SettingsRegistry()));
             bufferManager.add(msgBuffer);
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("*Messages*"));
 
