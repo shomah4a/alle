@@ -2,7 +2,7 @@
 
 ## ステータス
 
-承認
+承認（RenderSnapshotの配置先について [ADR 0059](0059-core-render-snapshot.md) で判断変更）
 
 ## コンテキスト
 

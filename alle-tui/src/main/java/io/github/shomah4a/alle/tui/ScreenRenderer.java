@@ -8,6 +8,8 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.render.CursorPosition;
+import io.github.shomah4a.alle.core.render.RenderSnapshot;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.styling.StylingState;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
@@ -119,7 +121,7 @@ public class ScreenRenderer {
         }
 
         // カーソル位置
-        TerminalPosition cursorPosition;
+        CursorPosition cursorPosition;
         if (frame.isMinibufferActive()) {
             cursorPosition = computeMinibufferCursorPosition(frame.getMinibufferWindow(), minibufferRow, cols);
         } else {
@@ -128,7 +130,7 @@ public class ScreenRenderer {
             if (activeRect != null && activeRect.height() >= 2) {
                 cursorPosition = computeCursorPosition(activeWindow, activeRect);
             } else {
-                cursorPosition = new TerminalPosition(0, 0);
+                cursorPosition = new CursorPosition(0, 0);
             }
         }
 
@@ -174,7 +176,8 @@ public class ScreenRenderer {
         }
 
         // カーソル位置
-        screen.setCursorPosition(snapshot.cursorPosition());
+        var cursor = snapshot.cursorPosition();
+        screen.setCursorPosition(new TerminalPosition(cursor.column(), cursor.row()));
     }
 
     private void renderWindowSnapshot(RenderSnapshot.WindowSnapshot ws) {
@@ -226,7 +229,7 @@ public class ScreenRenderer {
         }
     }
 
-    private TerminalPosition computeCursorPosition(io.github.shomah4a.alle.core.window.Window window, Rect rect) {
+    private CursorPosition computeCursorPosition(io.github.shomah4a.alle.core.window.Window window, Rect rect) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int lineIndex = buffer.lineIndexForOffset(point);
@@ -236,18 +239,18 @@ public class ScreenRenderer {
 
         int screenRow = lineIndex - displayStart;
         if (screenRow < 0 || screenRow >= bufferRows) {
-            return new TerminalPosition(rect.left(), rect.top());
+            return new CursorPosition(rect.left(), rect.top());
         }
 
         int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
         int screenCol = col - window.getDisplayStartColumn();
         if (screenCol >= 0 && screenCol < rect.width()) {
-            return new TerminalPosition(rect.left() + screenCol, rect.top() + screenRow);
+            return new CursorPosition(rect.left() + screenCol, rect.top() + screenRow);
         }
-        return new TerminalPosition(rect.left(), rect.top());
+        return new CursorPosition(rect.left(), rect.top());
     }
 
-    private TerminalPosition computeMinibufferCursorPosition(
+    private CursorPosition computeMinibufferCursorPosition(
             io.github.shomah4a.alle.core.window.Window minibufferWindow, int row, int maxColumns) {
         var buffer = minibufferWindow.getBuffer();
         int point = minibufferWindow.getPoint();
@@ -255,9 +258,9 @@ public class ScreenRenderer {
         int col = DisplayWidthUtil.computeColumnForOffset(text, point);
         int screenCol = col - minibufferWindow.getDisplayStartColumn();
         if (screenCol >= 0 && screenCol < maxColumns) {
-            return new TerminalPosition(screenCol, row);
+            return new CursorPosition(screenCol, row);
         }
-        return new TerminalPosition(0, row);
+        return new CursorPosition(0, row);
     }
 
     private void renderLineWithHighlight(
