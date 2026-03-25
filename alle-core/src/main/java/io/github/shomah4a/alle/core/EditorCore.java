@@ -125,11 +125,6 @@ public final class EditorCore {
         bufferManager.add(new BufferFacade(messageBuffer));
         bufferManager.add(new BufferFacade(warningBuffer));
 
-        // モードレジストリ
-        var modeRegistry = new ModeRegistry();
-        modeRegistry.registerMajorMode("Text", TextMode::new);
-        modeRegistry.registerMajorMode("Markdown", MarkdownMode::new);
-
         // モードマップ
         var autoModeMap = new AutoModeMap(TextMode::new);
         autoModeMap.register("md", MarkdownMode::new);
@@ -139,6 +134,12 @@ public final class EditorCore {
         var shutdownHandler = new ShutdownHandler();
         var registry =
                 createCommandRegistry(bufferIO, directoryLister, autoModeMap, shutdownHandler, shutdownRequestable);
+
+        // モードレジストリ（コマンド自動登録のためCommandRegistry設定後にモードを登録する）
+        var modeRegistry = new ModeRegistry();
+        modeRegistry.setCommandRegistry(registry);
+        modeRegistry.registerMajorMode("Text", TextMode::new);
+        modeRegistry.registerMajorMode("Markdown", MarkdownMode::new);
 
         // キーマップ
         var keymap = createKeymap(registry);

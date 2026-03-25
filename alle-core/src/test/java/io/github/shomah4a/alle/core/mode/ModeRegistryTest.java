@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -158,6 +159,40 @@ class ModeRegistryTest {
         @Override
         public Optional<Keymap> keymap() {
             return Optional.empty();
+        }
+    }
+
+    @Nested
+    class コマンド自動登録 {
+
+        @Test
+        void メジャーモード登録時にモード切り替えコマンドが自動登録される() {
+            var commandRegistry = new CommandRegistry();
+            registry.setCommandRegistry(commandRegistry);
+            registry.registerMajorMode("Python", StubMajorMode::new);
+            assertTrue(commandRegistry.lookup("python-mode").isPresent());
+        }
+
+        @Test
+        void マイナーモード登録時にトグルコマンドが自動登録される() {
+            var commandRegistry = new CommandRegistry();
+            registry.setCommandRegistry(commandRegistry);
+            registry.registerMinorMode("ElectricPair", StubMinorMode::new);
+            assertTrue(commandRegistry.lookup("electric-pair-mode").isPresent());
+        }
+
+        @Test
+        void CommandRegistry未設定でもモード登録が正常に動作する() {
+            registry.registerMajorMode("Test", StubMajorMode::new);
+            assertTrue(registry.lookupMajorMode("Test").isPresent());
+        }
+
+        @Test
+        void CamelCaseのモード名がkebabCaseのコマンド名に変換される() {
+            assertEquals("python-mode", ModeRegistry.toCommandName("Python"));
+            assertEquals("electric-pair-mode", ModeRegistry.toCommandName("ElectricPair"));
+            assertEquals("text-mode", ModeRegistry.toCommandName("Text"));
+            assertEquals("markdown-mode", ModeRegistry.toCommandName("Markdown"));
         }
     }
 }

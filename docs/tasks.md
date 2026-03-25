@@ -36,11 +36,6 @@
 - Emacs では execute-extended-command ではなく実際のコマンドが last-command になる
 - 現時点では lastCommand 依存機能がないため後回し可
 
-### MinorMode の同一性判定
-- enableMinorMode の重複チェックが equals/hashCode 未定義で曖昧
-- name() ベースの判定か equals/hashCode 定義かを決める
-- 具象実装追加時に対応
-
 ### CommandContext のビルダーパターン
 - フィールド数が多く（9個）、テストコードでの生成が煩雑
 - TestCommandContextFactory が部分的にカバーしているが、本体側にもビルダーが欲しい

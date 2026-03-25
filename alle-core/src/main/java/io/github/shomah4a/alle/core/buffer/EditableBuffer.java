@@ -155,7 +155,8 @@ public class EditableBuffer implements Buffer {
     @Override
     public void enableMinorMode(MinorMode mode) {
         lockedVoid(() -> {
-            if (!minorModes.contains(mode)) {
+            boolean alreadyEnabled = minorModes.anySatisfy(m -> m.name().equals(mode.name()));
+            if (!alreadyEnabled) {
                 minorModes.add(mode);
             }
         });
@@ -163,7 +164,7 @@ public class EditableBuffer implements Buffer {
 
     @Override
     public void disableMinorMode(MinorMode mode) {
-        lockedVoid(() -> minorModes.remove(mode));
+        lockedVoid(() -> minorModes.removeIf(m -> m.name().equals(mode.name())));
     }
 
     // ── Undo ──

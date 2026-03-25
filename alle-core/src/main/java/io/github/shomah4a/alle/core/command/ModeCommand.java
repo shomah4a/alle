@@ -1,0 +1,78 @@
+package io.github.shomah4a.alle.core.command;
+
+import io.github.shomah4a.alle.core.mode.MajorMode;
+import io.github.shomah4a.alle.core.mode.MinorMode;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+/**
+ * モード切り替え用コマンド。
+ * モード登録時に自動生成される。
+ */
+public final class ModeCommand {
+
+    private ModeCommand() {}
+
+    /**
+     * メジャーモードをアクティブバッファに設定するコマンド。
+     */
+    public static final class SetMajorMode implements Command {
+
+        private final String commandName;
+        private final Supplier<MajorMode> factory;
+
+        public SetMajorMode(String commandName, Supplier<MajorMode> factory) {
+            this.commandName = commandName;
+            this.factory = factory;
+        }
+
+        @Override
+        public String name() {
+            return commandName;
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            var mode = factory.get();
+            context.activeWindow().getBuffer().setMajorMode(mode);
+            context.messageBuffer().message(mode.name() + " mode");
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /**
+     * マイナーモードをアクティブバッファでトグルするコマンド。
+     * 有効なら無効に、無効なら有効にする。
+     */
+    public static final class ToggleMinorMode implements Command {
+
+        private final String commandName;
+        private final String modeName;
+        private final Supplier<MinorMode> factory;
+
+        public ToggleMinorMode(String commandName, String modeName, Supplier<MinorMode> factory) {
+            this.commandName = commandName;
+            this.modeName = modeName;
+            this.factory = factory;
+        }
+
+        @Override
+        public String name() {
+            return commandName;
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            var buffer = context.activeWindow().getBuffer();
+            boolean enabled = buffer.getMinorModes().anySatisfy(m -> m.name().equals(modeName));
+            if (enabled) {
+                buffer.disableMinorMode(factory.get());
+                context.messageBuffer().message(modeName + " mode disabled");
+            } else {
+                buffer.enableMinorMode(factory.get());
+                context.messageBuffer().message(modeName + " mode enabled");
+            }
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+}
