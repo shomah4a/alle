@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.styling.StylingState;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.LayoutResult;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowLayout;
@@ -103,22 +104,28 @@ public final class RenderSnapshotFactory {
             minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(Optional.empty(), 0);
         }
 
-        // カーソル位置
-        CursorPosition cursorPosition;
-        if (frame.isMinibufferActive()) {
-            cursorPosition = computeMinibufferCursorPosition(frame.getMinibufferWindow(), minibufferRow, cols);
-        } else {
-            var activeWindow = frame.getActiveWindow();
-            var activeRect = layoutResult.windowRects().get(activeWindow);
-            if (activeRect != null && activeRect.height() >= 2) {
-                cursorPosition = computeCursorPosition(activeWindow, activeRect);
-            } else {
-                cursorPosition = new CursorPosition(0, 0);
-            }
-        }
+        var cursorPosition = computeActiveCursorPosition(frame, layoutResult, minibufferRow, cols);
 
         return new RenderSnapshot(
                 cols, rows, windowSnapshots, layoutResult.separators(), minibufferSnapshot, cursorPosition);
+    }
+
+    /**
+     * アクティブウィンドウに応じたカーソル位置を計算する。
+     * アクティブウィンドウがミニバッファウィンドウであればミニバッファ行に、
+     * そうでなければレイアウト上のウィンドウ矩形内にカーソルを配置する。
+     */
+    static CursorPosition computeActiveCursorPosition(
+            Frame frame, LayoutResult layoutResult, int minibufferRow, int cols) {
+        var activeWindow = frame.getActiveWindow();
+        if (activeWindow == frame.getMinibufferWindow()) {
+            return computeMinibufferCursorPosition(activeWindow, minibufferRow, cols);
+        }
+        var activeRect = layoutResult.windowRects().get(activeWindow);
+        if (activeRect != null && activeRect.height() >= 2) {
+            return computeCursorPosition(activeWindow, activeRect);
+        }
+        return new CursorPosition(0, 0);
     }
 
     private static String buildModeLineText(Window window) {

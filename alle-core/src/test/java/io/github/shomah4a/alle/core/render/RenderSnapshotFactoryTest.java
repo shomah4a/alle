@@ -11,8 +11,11 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import io.github.shomah4a.alle.core.window.Direction;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Window;
+import io.github.shomah4a.alle.core.window.WindowLayout;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -150,6 +153,98 @@ class RenderSnapshotFactoryTest {
             var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
 
             assertEquals(new CursorPosition(3, 0), snapshot.cursorPosition());
+        }
+    }
+
+    @Nested
+    class アクティブカーソル位置決定 {
+
+        @Test
+        void ミニバッファアクティブでアクティブウィンドウがミニバッファのときミニバッファ行にカーソルを置く() {
+            var mainBuffer = createBuffer("main", "hello");
+            var minibufferBuffer = createBuffer("*Minibuffer*", "find: abc");
+            var mainWindow = new Window(mainBuffer);
+            var minibufferWindow = new Window(minibufferBuffer);
+            var frame = new Frame(mainWindow, minibufferWindow);
+            frame.activateMinibuffer();
+            minibufferWindow.setPoint(9); // "find: abc" の末尾
+
+            int cols = 80;
+            int rows = 24;
+            int minibufferRow = rows - 1;
+            var treeArea = new Rect(0, 0, cols, rows - 1);
+            var layoutResult = WindowLayout.compute(frame.getWindowTree(), treeArea);
+
+            var cursor = RenderSnapshotFactory.computeActiveCursorPosition(frame, layoutResult, minibufferRow, cols);
+
+            assertEquals(new CursorPosition(9, 23), cursor);
+        }
+
+        @Test
+        void ミニバッファアクティブでアクティブウィンドウがツリー内ウィンドウのときそのウィンドウにカーソルを置く() {
+            var mainBuffer = createBuffer("main", "hello");
+            var minibufferBuffer = createBuffer("*Minibuffer*", "find: ");
+            var mainWindow = new Window(mainBuffer);
+            mainWindow.setPoint(3); // "hel|lo"
+            var minibufferWindow = new Window(minibufferBuffer);
+            var frame = new Frame(mainWindow, minibufferWindow);
+            frame.activateMinibuffer();
+            frame.setActiveWindow(mainWindow); // other-windowでツリー内に移動した状態
+
+            int cols = 80;
+            int rows = 24;
+            int minibufferRow = rows - 1;
+            var treeArea = new Rect(0, 0, cols, rows - 1);
+            var layoutResult = WindowLayout.compute(frame.getWindowTree(), treeArea);
+
+            var cursor = RenderSnapshotFactory.computeActiveCursorPosition(frame, layoutResult, minibufferRow, cols);
+
+            assertEquals(new CursorPosition(3, 0), cursor);
+        }
+
+        @Test
+        void ミニバッファ非アクティブのときアクティブウィンドウにカーソルを置く() {
+            var mainBuffer = createBuffer("main", "hello\nworld");
+            var mainWindow = new Window(mainBuffer);
+            mainWindow.setPoint(6); // "world"の先頭
+            var minibufferBuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(mainWindow, new Window(minibufferBuffer));
+
+            int cols = 80;
+            int rows = 24;
+            int minibufferRow = rows - 1;
+            var treeArea = new Rect(0, 0, cols, rows - 1);
+            var layoutResult = WindowLayout.compute(frame.getWindowTree(), treeArea);
+
+            var cursor = RenderSnapshotFactory.computeActiveCursorPosition(frame, layoutResult, minibufferRow, cols);
+
+            assertEquals(new CursorPosition(0, 1), cursor);
+        }
+
+        @Test
+        void ウィンドウ分割時にミニバッファからother_windowで移動した先にカーソルを置く() {
+            var mainBuffer = createBuffer("main", "hello");
+            var subBuffer = createBuffer("sub", "world");
+            var mainWindow = new Window(mainBuffer);
+            var minibufferBuffer = createBuffer("*Minibuffer*", "find: ");
+            var minibufferWindow = new Window(minibufferBuffer);
+            var frame = new Frame(mainWindow, minibufferWindow);
+            var subWindow = frame.splitActiveWindow(Direction.VERTICAL, subBuffer);
+            frame.activateMinibuffer();
+            frame.setActiveWindow(subWindow); // other-windowでsubWindowに移動
+
+            int cols = 80;
+            int rows = 24;
+            int minibufferRow = rows - 1;
+            var treeArea = new Rect(0, 0, cols, rows - 1);
+            var layoutResult = WindowLayout.compute(frame.getWindowTree(), treeArea);
+
+            var cursor = RenderSnapshotFactory.computeActiveCursorPosition(frame, layoutResult, minibufferRow, cols);
+
+            // subWindowはツリー内ウィンドウなのでミニバッファ行ではない
+            var subRect = layoutResult.windowRects().get(subWindow);
+            assertEquals(subRect.top(), cursor.row());
+            assertEquals(subRect.left(), cursor.column());
         }
     }
 
