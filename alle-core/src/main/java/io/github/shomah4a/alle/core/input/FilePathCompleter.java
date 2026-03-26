@@ -59,10 +59,27 @@ public class FilePathCompleter implements Completer {
 
     private static ListIterable<CompletionCandidate> toCompletionCandidates(ListIterable<String> entries) {
         return entries.collect(entry -> {
+            String label = extractFileName(entry);
             if (entry.endsWith("/")) {
-                return CompletionCandidate.partial(entry);
+                return CompletionCandidate.partial(entry, label);
             }
-            return CompletionCandidate.terminal(entry);
+            return CompletionCandidate.terminal(entry, label);
         });
+    }
+
+    /**
+     * フルパスからファイル名またはディレクトリ名部分を抽出する。
+     * ディレクトリの場合は末尾の "/" を保持する。
+     */
+    private static String extractFileName(String path) {
+        if (path.endsWith("/")) {
+            // "/tmp/subdir/" → "subdir/"
+            String withoutTrailingSlash = path.substring(0, path.length() - 1);
+            int lastSep = withoutTrailingSlash.lastIndexOf('/');
+            return lastSep >= 0 ? withoutTrailingSlash.substring(lastSep + 1) + "/" : path;
+        }
+        // "/tmp/foo.txt" → "foo.txt"
+        int lastSep = path.lastIndexOf('/');
+        return lastSep >= 0 ? path.substring(lastSep + 1) : path;
     }
 }

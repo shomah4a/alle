@@ -90,7 +90,7 @@ public class CompletionsModel {
             } else {
                 sb.append("  ");
             }
-            sb.append(candidates.get(i).value());
+            sb.append(candidates.get(i).label());
         }
         return sb.toString();
     }

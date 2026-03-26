@@ -71,6 +71,25 @@ class FilePathCompleterTest {
     }
 
     @Test
+    void ファイルのラベルはファイル名のみである() {
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt", "/tmp/bar.txt"));
+        var result = completer.complete("/tmp/");
+
+        assertEquals(
+                "foo.txt", result.detect(c -> c.value().equals("/tmp/foo.txt")).label());
+        assertEquals(
+                "bar.txt", result.detect(c -> c.value().equals("/tmp/bar.txt")).label());
+    }
+
+    @Test
+    void ディレクトリのラベルはディレクトリ名に末尾スラッシュ付きである() {
+        var completer = new FilePathCompleter(stubLister("/tmp/subdir/"));
+        var result = completer.complete("/tmp/sub");
+
+        assertEquals("subdir/", result.get(0).label());
+    }
+
+    @Test
     void 末尾スラッシュの入力ではそのディレクトリの中身を一覧する() {
         var completer = new FilePathCompleter(stubLister("/tmp/subdir/file1.txt", "/tmp/subdir/file2.txt"));
         var result = completer.complete("/tmp/subdir/");
