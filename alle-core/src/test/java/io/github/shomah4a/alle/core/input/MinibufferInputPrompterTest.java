@@ -606,6 +606,59 @@ class MinibufferInputPrompterTest {
         }
     }
 
+    @Nested
+    class 入力変更時の候補更新 {
+
+        @Test
+        void Completions表示中に文字入力すると候補が再計算される() {
+            Completer completer = input -> {
+                var all = Lists.immutable.of("foobar", "foobaz", "fooqux", "zzz");
+                return all.select(s -> s.startsWith(input));
+            };
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), completer);
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+
+            // Completions表示
+            executeMinibufferKey(KeyStroke.of('\t'));
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+
+            // 文字入力: "foo" → "foob"
+            executeMinibufferKey(KeyStroke.of('b'));
+
+            // *Completions* バッファが更新され、"fooqux" と "zzz" が除外されている
+            var completionsText = ((WindowTree.Leaf) ((WindowTree.Split) frame.getWindowTree()).second())
+                    .window()
+                    .getBuffer()
+                    .getText();
+            assertTrue(completionsText.contains("foobar"));
+            assertTrue(completionsText.contains("foobaz"));
+            assertFalse(completionsText.contains("fooqux"));
+            assertFalse(completionsText.contains("zzz"));
+        }
+
+        @Test
+        void 入力で候補が絞り込まれて0件になるとCompletionsが閉じる() {
+            Completer completer = input -> {
+                var all = Lists.immutable.of("foobar", "foobaz");
+                return all.select(s -> s.startsWith(input));
+            };
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), completer);
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+
+            executeMinibufferKey(KeyStroke.of('\t'));
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+            assertInstanceOf(WindowTree.Split.class, frame.getWindowTree());
+
+            // "x" を入力 → "foox" で候補0件
+            executeMinibufferKey(KeyStroke.of('x'));
+
+            // Completionsウィンドウが閉じている
+            assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+        }
+    }
+
     /**
      * ミニバッファのローカルキーマップからコマンドを検索して実行する。
      */

@@ -95,8 +95,12 @@ public class MinibufferInputPrompter implements InputPrompter {
             @Nullable Completer completer) {
         var keymap = new Keymap("minibuffer");
 
-        // 通常文字入力
-        keymap.setDefaultCommand(new SelfInsertCommand());
+        // 通常文字入力（Completer提供時はCompletions更新付き）
+        if (completer != null) {
+            keymap.setDefaultCommand(new MinibufferSelfInsertCommand(completer, promptLength));
+        } else {
+            keymap.setDefaultCommand(new SelfInsertCommand());
+        }
 
         // RET: 入力確定
         keymap.bind(
@@ -443,6 +447,46 @@ public class MinibufferInputPrompter implements InputPrompter {
             if (selected != null) {
                 replaceUserInput(promptLength, selected);
             }
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /**
+     * 文字挿入後にCompletionsバッファを更新するSelfInsertCommandラッパー。
+     * *Completions* 表示中に文字入力が行われると、候補リストを再計算して表示を更新する。
+     */
+    private class MinibufferSelfInsertCommand implements Command {
+
+        private final SelfInsertCommand delegate = new SelfInsertCommand();
+        private final Completer completer;
+        private final int promptLength;
+
+        MinibufferSelfInsertCommand(Completer completer, int promptLength) {
+            this.completer = completer;
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "self-insert-command";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            delegate.execute(context).join();
+
+            if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
+                // *Completions* 表示中: 候補を再計算して更新
+                String userInput = getUserInput(promptLength);
+                var candidates = completer.complete(userInput);
+                if (candidates.isEmpty()) {
+                    closeCompletionsWindow();
+                } else {
+                    completionsModel = new CompletionsModel(candidates);
+                    updateCompletionsDisplay();
+                }
+            }
+
             return CompletableFuture.completedFuture(null);
         }
     }
