@@ -1,10 +1,13 @@
 package io.github.shomah4a.alle.core.input;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
@@ -20,8 +23,12 @@ public class MinibufferInputPrompter implements InputPrompter {
 
     private static final Logger logger = Logger.getLogger(MinibufferInputPrompter.class.getName());
 
+    private static final String COMPLETIONS_BUFFER_NAME = "*Completions*";
+
     private final Frame frame;
     private @Nullable CompletableFuture<PromptResult> activeFuture;
+    private @Nullable Window completionsWindow;
+    private @Nullable CompletionsModel completionsModel;
 
     public MinibufferInputPrompter(Frame frame) {
         this.frame = frame;
@@ -100,7 +107,8 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         // Tab: 補完（Completerが提供されている場合のみ）
         if (completer != null) {
-            keymap.bind(KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength));
+            keymap.bind(
+                    KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength, previousActiveWindow));
         }
 
         // ヒストリナビゲーション
@@ -116,6 +124,9 @@ public class MinibufferInputPrompter implements InputPrompter {
     }
 
     private void cleanup(Window previousActiveWindow) {
+        // *Completions* ウィンドウを閉じる
+        closeCompletionsWindow();
+
         var minibufferWindow = frame.getMinibufferWindow();
         var minibuffer = minibufferWindow.getBuffer();
 
@@ -135,6 +146,17 @@ public class MinibufferInputPrompter implements InputPrompter {
         frame.setActiveWindow(previousActiveWindow);
 
         activeFuture = null;
+    }
+
+    /**
+     * *Completions* ウィンドウを閉じてモデルをクリアする。
+     */
+    private void closeCompletionsWindow() {
+        if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
+            frame.deleteWindow(completionsWindow);
+        }
+        completionsWindow = null;
+        completionsModel = null;
     }
 
     /**
@@ -200,10 +222,12 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         private final Completer completer;
         private final int promptLength;
+        private final Window previousActiveWindow;
 
-        MinibufferCompleteCommand(Completer completer, int promptLength) {
+        MinibufferCompleteCommand(Completer completer, int promptLength, Window previousActiveWindow) {
             this.completer = completer;
             this.promptLength = promptLength;
+            this.previousActiveWindow = previousActiveWindow;
         }
 
         @Override
@@ -214,15 +238,63 @@ public class MinibufferInputPrompter implements InputPrompter {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             String userInput = getUserInput(promptLength);
-
             var candidates = completer.complete(userInput);
-            String completed = CompletionResult.resolve(userInput, candidates);
+            var outcome = CompletionResult.resolveDetailed(userInput, candidates);
 
-            if (!completed.equals(userInput)) {
-                replaceUserInput(promptLength, completed);
+            switch (outcome) {
+                case CompletionOutcome.NoMatch ignored -> {
+                    // 候補なし: 何もしない
+                }
+                case CompletionOutcome.Unique unique -> {
+                    replaceUserInput(promptLength, unique.value());
+                    closeCompletionsWindow();
+                }
+                case CompletionOutcome.Partial partial -> {
+                    if (!partial.commonPrefix().equals(userInput)) {
+                        // 補完が進んだ場合: 入力を更新
+                        replaceUserInput(promptLength, partial.commonPrefix());
+                    } else if (isReTab(context)) {
+                        // 補完が進まず再Tab: *Completions* を表示
+                        showCompletions(partial.candidates(), context);
+                    }
+                }
             }
 
             return CompletableFuture.completedFuture(null);
+        }
+
+        private boolean isReTab(CommandContext context) {
+            return context.lastCommand().map("minibuffer-complete"::equals).orElse(false);
+        }
+
+        private void showCompletions(
+                org.eclipse.collections.api.list.ListIterable<String> candidates, CommandContext context) {
+            completionsModel = new CompletionsModel(candidates);
+            var displayText = completionsModel.formatForDisplay();
+
+            if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
+                // 既存の *Completions* ウィンドウを更新
+                updateCompletionsBuffer(displayText);
+            } else {
+                // 新規に *Completions* ウィンドウを作成
+                var buffer = new BufferFacade(
+                        new EditableBuffer(COMPLETIONS_BUFFER_NAME, new GapTextModel(), context.settingsRegistry()));
+                buffer.insertText(0, displayText);
+                completionsWindow = frame.splitWindowBelow(previousActiveWindow, buffer);
+            }
+        }
+
+        private void updateCompletionsBuffer(String displayText) {
+            if (completionsWindow == null) {
+                return;
+            }
+            var buffer = completionsWindow.getBuffer();
+            int length = buffer.length();
+            if (length > 0) {
+                buffer.deleteText(0, length);
+            }
+            buffer.insertText(0, displayText);
+            completionsWindow.setPoint(0);
         }
     }
 

@@ -2,6 +2,8 @@ package io.github.shomah4a.alle.core.input;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
@@ -17,7 +19,9 @@ import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import io.github.shomah4a.alle.core.window.WindowTree;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -407,10 +411,125 @@ class MinibufferInputPrompterTest {
         }
     }
 
+    @Nested
+    class 補完候補一覧表示 {
+
+        private Completer multiCandidateCompleter;
+
+        @BeforeEach
+        void setUpCompleter() {
+            // "fo" に対して "foobar", "foobaz" を返す Completer
+            multiCandidateCompleter = input -> {
+                var all = Lists.immutable.of("foobar", "foobaz", "fooqux");
+                return all.select(s -> s.startsWith(input));
+            };
+        }
+
+        @Test
+        void 初回Tabで最長共通プレフィックスまで補完する() {
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+            executeMinibufferKey(KeyStroke.of('\t'));
+
+            assertEquals("Input: foo", minibufferWindow.getBuffer().getText());
+            // ウィンドウは分割されていない
+            assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+        }
+
+        @Test
+        void 補完が進まない再TabでCompletionsウィンドウが表示される() {
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+
+            // 1回目Tab: 共通プレフィックス "foo" → 進まない
+            executeMinibufferKey(KeyStroke.of('\t'));
+            // 2回目Tab: lastCommand = "minibuffer-complete"
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+
+            // ウィンドウが分割されている
+            var split = assertInstanceOf(WindowTree.Split.class, frame.getWindowTree());
+            var completionsWindow = ((WindowTree.Leaf) split.second()).window();
+            var completionsText = completionsWindow.getBuffer().getText();
+            assertTrue(completionsText.contains("foobar"));
+            assertTrue(completionsText.contains("foobaz"));
+            assertTrue(completionsText.contains("fooqux"));
+        }
+
+        @Test
+        void 候補が一件ならそのまま補完確定する() {
+            Completer singleCompleter = input -> Lists.immutable.of("foobar").select(s -> s.startsWith(input));
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), singleCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+            executeMinibufferKey(KeyStroke.of('\t'));
+
+            assertEquals("Input: foobar", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void 確定時にCompletionsウィンドウが閉じる() {
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+            executeMinibufferKey(KeyStroke.of('\t'));
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+
+            // *Completions* ウィンドウが存在する
+            assertInstanceOf(WindowTree.Split.class, frame.getWindowTree());
+
+            // RETで確定
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            // *Completions* ウィンドウが閉じている
+            assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+        }
+
+        @Test
+        void キャンセル時にCompletionsウィンドウが閉じる() {
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+            executeMinibufferKey(KeyStroke.of('\t'));
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+
+            // C-gでキャンセル
+            executeMinibufferKey(KeyStroke.ctrl('g'));
+
+            assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+        }
+
+        @Test
+        void activeWindowがミニバッファのまま維持される() {
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+            executeMinibufferKey(KeyStroke.of('\t'));
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+
+            assertSame(minibufferWindow, frame.getActiveWindow());
+        }
+    }
+
     /**
      * ミニバッファのローカルキーマップからコマンドを検索して実行する。
      */
     private void executeMinibufferKey(KeyStroke keyStroke) {
+        executeMinibufferKey(keyStroke, Optional.empty());
+    }
+
+    /**
+     * ミニバッファのローカルキーマップからコマンドを検索して実行する。
+     * lastCommandを指定可能。
+     */
+    private void executeMinibufferKey(KeyStroke keyStroke, Optional<String> lastCommand) {
         var keymapOpt = minibufferWindow.getBuffer().getLocalKeymap();
         assertTrue(keymapOpt.isPresent(), "ミニバッファにローカルキーマップが設定されていません");
         var entryOpt = keymapOpt.get().lookup(keyStroke);
@@ -423,8 +542,8 @@ class MinibufferInputPrompterTest {
                     frame.getActiveWindow(),
                     prompter,
                     Optional.of(keyStroke),
-                    Optional.empty(),
-                    Optional.empty(),
+                    Optional.of(binding.command().name()),
+                    lastCommand,
                     new io.github.shomah4a.alle.core.command.KillRing(),
                     new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
