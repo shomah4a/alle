@@ -19,12 +19,12 @@ import org.eclipse.collections.api.list.MutableList;
 import org.jspecify.annotations.Nullable;
 
 /**
- * GapBuffer (TextModel) ベースの編集可能バッファ。
- * テキストデータ、ファイルパス、変更フラグを管理する。
+ * GapBuffer (TextModel) ベースのバッファ。
+ * テキストデータ、ファイルパス、変更フラグ、read-onlyフラグを管理する。
  * カーソル位置等のビュー固有の状態はWindowが持つ。
  * 全操作はReentrantLockで保護され、スレッドセーフ。
  */
-public class EditableBuffer implements Buffer {
+public class TextBuffer implements Buffer {
 
     private final String name;
     private final TextModel textModel;
@@ -38,8 +38,9 @@ public class EditableBuffer implements Buffer {
     private final TextPropertyStore textPropertyStore;
     private final BufferLocalSettings settings;
     private boolean dirty;
+    private boolean readOnly;
 
-    public EditableBuffer(String name, TextModel textModel, SettingsRegistry settingsRegistry) {
+    public TextBuffer(String name, TextModel textModel, SettingsRegistry settingsRegistry) {
         this.name = name;
         this.textModel = textModel;
         this.lock = new ReentrantLock();
@@ -52,7 +53,7 @@ public class EditableBuffer implements Buffer {
         this.dirty = false;
     }
 
-    public EditableBuffer(String name, TextModel textModel, SettingsRegistry settingsRegistry, Path filePath) {
+    public TextBuffer(String name, TextModel textModel, SettingsRegistry settingsRegistry, Path filePath) {
         this(name, textModel, settingsRegistry);
         this.filePath = filePath;
     }
@@ -119,7 +120,12 @@ public class EditableBuffer implements Buffer {
 
     @Override
     public boolean isReadOnly() {
-        return false;
+        return locked(() -> readOnly);
+    }
+
+    @Override
+    public void setReadOnly(boolean readOnly) {
+        lockedVoid(() -> this.readOnly = readOnly);
     }
 
     // ── キーマップ ──

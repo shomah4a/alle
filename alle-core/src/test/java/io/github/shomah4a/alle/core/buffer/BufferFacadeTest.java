@@ -13,12 +13,12 @@ import org.junit.jupiter.api.Test;
 
 class BufferFacadeTest {
 
-    private EditableBuffer editableBuffer;
+    private TextBuffer editableBuffer;
     private BufferFacade facade;
 
     @BeforeEach
     void setUp() {
-        editableBuffer = new EditableBuffer("test", new GapTextModel(), new SettingsRegistry());
+        editableBuffer = new TextBuffer("test", new GapTextModel(), new SettingsRegistry());
         facade = new BufferFacade(editableBuffer);
     }
 
@@ -117,6 +117,43 @@ class BufferFacadeTest {
     }
 
     @Nested
+    class setReadOnlyフラグ {
+
+        @Test
+        void setReadOnlyでバッファを読み取り専用に設定できる() {
+            assertFalse(facade.isReadOnly());
+
+            facade.setReadOnly(true);
+
+            assertTrue(facade.isReadOnly());
+        }
+
+        @Test
+        void 読み取り専用に設定するとinsertTextがブロックされる() {
+            facade.setReadOnly(true);
+
+            assertThrows(ReadOnlyBufferException.class, () -> facade.insertText(0, "x"));
+        }
+
+        @Test
+        void 読み取り専用に設定するとdeleteTextがブロックされる() {
+            editableBuffer.insertText(0, "hello");
+            facade.setReadOnly(true);
+
+            assertThrows(ReadOnlyBufferException.class, () -> facade.deleteText(0, 1));
+        }
+
+        @Test
+        void setReadOnlyをfalseにすると編集が再び可能になる() {
+            facade.setReadOnly(true);
+            facade.setReadOnly(false);
+
+            facade.insertText(0, "hello");
+            assertEquals("hello", facade.getText());
+        }
+    }
+
+    @Nested
     class 同一性 {
 
         @Test
@@ -128,7 +165,7 @@ class BufferFacadeTest {
 
         @Test
         void 異なるバッファをラップしたFacadeはequalsがfalseを返す() {
-            var otherBuffer = new EditableBuffer("other", new GapTextModel(), new SettingsRegistry());
+            var otherBuffer = new TextBuffer("other", new GapTextModel(), new SettingsRegistry());
             var otherFacade = new BufferFacade(otherBuffer);
 
             assertFalse(facade.equals(otherFacade));

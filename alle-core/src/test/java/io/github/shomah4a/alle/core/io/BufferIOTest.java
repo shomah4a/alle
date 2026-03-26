@@ -121,8 +121,7 @@ class BufferIOTest {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
             var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
             var buffer = new io.github.shomah4a.alle.core.buffer.BufferFacade(
-                    new io.github.shomah4a.alle.core.buffer.EditableBuffer(
-                            "nopath", textModel, new SettingsRegistry()));
+                    new io.github.shomah4a.alle.core.buffer.TextBuffer("nopath", textModel, new SettingsRegistry()));
 
             assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }

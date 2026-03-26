@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -74,10 +74,10 @@ class ExecuteCommandCommandTest {
             registry.register(new ForwardCharCommand());
             var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
 
-            var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
+            var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
             var minibuffer = new Window(
-                    new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+                    new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
             var frame = new Frame(window, minibuffer);
             var bufferManager = new BufferManager();
             bufferManager.add(buffer);
@@ -99,10 +99,10 @@ class ExecuteCommandCommandTest {
             registry.register(new ForwardCharCommand());
             var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
 
-            var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
+            var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
             var minibuffer = new Window(
-                    new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+                    new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
             var frame = new Frame(window, minibuffer);
             var bufferManager = new BufferManager();
             bufferManager.add(buffer);
@@ -139,10 +139,10 @@ class ExecuteCommandCommandTest {
             var registry = new CommandRegistry();
             var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
 
-            var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
+            var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
             var minibuffer = new Window(
-                    new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+                    new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
             var frame = new Frame(window, minibuffer);
             var bufferManager = new BufferManager();
             bufferManager.add(buffer);

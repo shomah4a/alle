@@ -293,6 +293,11 @@ public class MessageBuffer implements Buffer {
     }
 
     @Override
+    public void setReadOnly(boolean readOnly) {
+        // MessageBufferは常にread-only
+    }
+
+    @Override
     public boolean isSystemBuffer() {
         return true;
     }

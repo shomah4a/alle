@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
@@ -23,7 +23,7 @@ class RenderSnapshotFactoryTest {
 
     private BufferFacade createBuffer(String name, String content) {
         var textModel = new GapTextModel();
-        var buffer = new EditableBuffer(name, textModel, new SettingsRegistry());
+        var buffer = new TextBuffer(name, textModel, new SettingsRegistry());
         var facade = new BufferFacade(buffer);
         if (!content.isEmpty()) {
             facade.insertText(0, content);

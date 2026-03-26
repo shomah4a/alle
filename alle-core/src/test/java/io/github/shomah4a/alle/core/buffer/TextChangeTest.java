@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class TextChangeTest {
 
     private Buffer createBuffer(String initialText) {
-        var buffer = new EditableBuffer("test", new GapTextModel(), new SettingsRegistry());
+        var buffer = new TextBuffer("test", new GapTextModel(), new SettingsRegistry());
         if (!initialText.isEmpty()) {
             buffer.insertText(0, initialText);
         }

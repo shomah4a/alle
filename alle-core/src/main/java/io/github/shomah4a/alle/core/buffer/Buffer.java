@@ -16,7 +16,7 @@ import org.eclipse.collections.api.list.ListIterable;
  * ストレージの実装（GapBuffer、RingBuffer等）に依存しない。
  * パッケージプライベート: 外部からのアクセスは{@link BufferFacade}経由で行う。
  *
- * @see EditableBuffer GapBufferベースの標準実装
+ * @see TextBuffer GapBufferベースの標準実装
  */
 interface Buffer {
 
@@ -145,6 +145,11 @@ interface Buffer {
     boolean isReadOnly();
 
     /**
+     * バッファの読み取り専用フラグを設定する。
+     */
+    void setReadOnly(boolean readOnly);
+
+    /**
      * エディタが内部管理するシステムバッファかどうかを返す。
      * システムバッファはkill-bufferで削除できない。
      */
@@ -233,7 +238,7 @@ interface Buffer {
 
     /**
      * 複合操作をアトミックに実行する。
-     * EditableBufferではReentrantLockで保護される。
+     * TextBufferではReentrantLockで保護される。
      */
     <T> T atomicOperation(Function<Buffer, T> handler);
 }

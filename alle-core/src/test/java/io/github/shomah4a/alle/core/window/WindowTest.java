@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import org.junit.jupiter.api.Nested;
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class WindowTest {
 
     private BufferFacade createBuffer() {
-        return new BufferFacade(new EditableBuffer("test", new GapTextModel(), new SettingsRegistry()));
+        return new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
     }
 
     private Window createWindow() {
@@ -259,7 +259,7 @@ class WindowTest {
             window.ensurePointHorizontallyVisible(5);
             assertTrue(window.getDisplayStartColumn() > 0);
 
-            window.setBuffer(new BufferFacade(new EditableBuffer("new", new GapTextModel(), new SettingsRegistry())));
+            window.setBuffer(new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry())));
             assertEquals(0, window.getDisplayStartColumn());
         }
     }
@@ -273,7 +273,7 @@ class WindowTest {
             window.insert("Hello");
             window.setPoint(3);
 
-            var newBuffer = new BufferFacade(new EditableBuffer("other", new GapTextModel(), new SettingsRegistry()));
+            var newBuffer = new BufferFacade(new TextBuffer("other", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
             assertEquals("other", window.getBuffer().getName());
@@ -295,7 +295,7 @@ class WindowTest {
         void バッファ切り替え後に直前バッファが記録される() {
             var window = createWindow();
             var originalBuffer = window.getBuffer();
-            var newBuffer = new BufferFacade(new EditableBuffer("new", new GapTextModel(), new SettingsRegistry()));
+            var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
 
             window.setBuffer(newBuffer);
 
@@ -307,7 +307,7 @@ class WindowTest {
         void 削除対象と一致する直前バッファがクリアされる() {
             var window = createWindow();
             var originalBuffer = window.getBuffer();
-            var newBuffer = new BufferFacade(new EditableBuffer("new", new GapTextModel(), new SettingsRegistry()));
+            var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
             window.clearPreviousBufferIf(originalBuffer);
@@ -319,9 +319,8 @@ class WindowTest {
         void 削除対象と一致しない直前バッファはクリアされない() {
             var window = createWindow();
             var originalBuffer = window.getBuffer();
-            var newBuffer = new BufferFacade(new EditableBuffer("new", new GapTextModel(), new SettingsRegistry()));
-            var unrelated =
-                    new BufferFacade(new EditableBuffer("unrelated", new GapTextModel(), new SettingsRegistry()));
+            var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
+            var unrelated = new BufferFacade(new TextBuffer("unrelated", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
             window.clearPreviousBufferIf(unrelated);
@@ -333,8 +332,8 @@ class WindowTest {
         @Test
         void 複数回切り替えると直近の切り替え元が直前バッファになる() {
             var window = createWindow();
-            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel(), new SettingsRegistry()));
-            var bufferC = new BufferFacade(new EditableBuffer("c", new GapTextModel(), new SettingsRegistry()));
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            var bufferC = new BufferFacade(new TextBuffer("c", new GapTextModel(), new SettingsRegistry()));
 
             window.setBuffer(bufferB);
             window.setBuffer(bufferC);
@@ -382,7 +381,7 @@ class WindowTest {
             var window = createWindow();
             window.insert("Hello");
             window.setMark(2);
-            window.setBuffer(new BufferFacade(new EditableBuffer("other", new GapTextModel(), new SettingsRegistry())));
+            window.setBuffer(new BufferFacade(new TextBuffer("other", new GapTextModel(), new SettingsRegistry())));
             assertTrue(window.getMark().isEmpty());
         }
 

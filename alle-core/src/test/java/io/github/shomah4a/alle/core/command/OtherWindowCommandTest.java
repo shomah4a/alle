@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Direction;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class OtherWindowCommandTest {
 
     private Window createWindow(String name) {
-        return new Window(new BufferFacade(new EditableBuffer(name, new GapTextModel(), new SettingsRegistry())));
+        return new Window(new BufferFacade(new TextBuffer(name, new GapTextModel(), new SettingsRegistry())));
     }
 
     @Nested
@@ -29,7 +29,7 @@ class OtherWindowCommandTest {
             var frame = new Frame(windowA, minibuffer);
             var bufferManager = new BufferManager();
 
-            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
             frame.splitActiveWindow(Direction.VERTICAL, bufferB);
             // splitActiveWindow後、activeWindowは新しいウィンドウ(B)になっている
             var windowB = frame.getActiveWindow();
@@ -50,7 +50,7 @@ class OtherWindowCommandTest {
             var frame = new Frame(windowA, minibuffer);
             var bufferManager = new BufferManager();
 
-            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
             frame.splitActiveWindow(Direction.VERTICAL, bufferB);
             var windowB = frame.getActiveWindow();
             // windowBがアクティブの状態でOtherWindow実行 → windowAに戻る
@@ -92,7 +92,7 @@ class OtherWindowCommandTest {
             var frame = new Frame(windowA, minibuffer);
             var bufferManager = new BufferManager();
 
-            var bufferB = new BufferFacade(new EditableBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
             frame.splitActiveWindow(Direction.VERTICAL, bufferB);
             frame.activateMinibuffer();
             assertSame(minibuffer, frame.getActiveWindow());

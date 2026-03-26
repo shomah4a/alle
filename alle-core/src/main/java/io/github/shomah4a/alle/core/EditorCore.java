@@ -2,8 +2,8 @@ package io.github.shomah4a.alle.core;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
@@ -119,10 +119,10 @@ public final class EditorCore {
             SettingsRegistry settingsRegistry) {
 
         // バッファ・ウィンドウ・フレーム
-        var scratchFacade = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), settingsRegistry));
+        var scratchFacade = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), settingsRegistry));
         var window = new Window(scratchFacade);
         var minibuffer =
-                new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), settingsRegistry)));
+                new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), settingsRegistry)));
         var frame = new Frame(window, minibuffer);
 
         // メッセージバッファ

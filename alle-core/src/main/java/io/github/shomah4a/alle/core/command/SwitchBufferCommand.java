@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -55,7 +55,7 @@ public class SwitchBufferCommand implements Command {
             context.frame().getActiveWindow().setBuffer(existing.get());
         } else {
             var newBuffer =
-                    new BufferFacade(new EditableBuffer(bufferName, new GapTextModel(), context.settingsRegistry()));
+                    new BufferFacade(new TextBuffer(bufferName, new GapTextModel(), context.settingsRegistry()));
             context.bufferManager().add(newBuffer);
             context.frame().getActiveWindow().setBuffer(newBuffer);
             context.messageBuffer().message("Buffer created: " + bufferName);

@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -32,11 +32,11 @@ class KillBufferCommandTest {
 
     @BeforeEach
     void setUp() {
-        scratch = new BufferFacade(new EditableBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
-        fooBuffer = new BufferFacade(new EditableBuffer("foo.txt", new GapTextModel(), new SettingsRegistry()));
+        scratch = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
+        fooBuffer = new BufferFacade(new TextBuffer("foo.txt", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(scratch);
         var minibuffer = new Window(
-                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+                new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(scratch);
@@ -126,7 +126,7 @@ class KillBufferCommandTest {
         @Test
         void 非アクティブウィンドウが削除対象を表示中の場合も切り替わる() {
             // ウィンドウを分割して両方にfooBufferを表示
-            var barBuffer = new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
+            var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
             bufferManager.add(barBuffer);
             frame.splitActiveWindow(Direction.VERTICAL, barBuffer);
             // 最初のウィンドウ(scratch)をfooに変更
@@ -144,7 +144,7 @@ class KillBufferCommandTest {
 
         @Test
         void 他のウィンドウで表示されていないバッファに優先的に切り替わる() {
-            var barBuffer = new BufferFacade(new EditableBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
+            var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
             bufferManager.add(barBuffer);
             // window1: scratch, window2: fooBuffer
             frame.splitActiveWindow(Direction.VERTICAL, fooBuffer);

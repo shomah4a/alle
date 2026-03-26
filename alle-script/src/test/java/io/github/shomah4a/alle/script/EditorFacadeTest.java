@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
@@ -21,16 +21,16 @@ import org.junit.jupiter.api.Test;
 class EditorFacadeTest {
 
     private EditorFacade facade;
-    private EditableBuffer buffer;
+    private TextBuffer buffer;
     private MessageBuffer messageBuffer;
 
     @BeforeEach
     void setUp() {
-        buffer = new EditableBuffer("test.py", new GapTextModel(), new SettingsRegistry());
+        buffer = new TextBuffer("test.py", new GapTextModel(), new SettingsRegistry());
         var bufferFacade = new BufferFacade(buffer);
         var window = new Window(bufferFacade);
         var minibuffer = new Window(
-                new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+                new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(bufferFacade);

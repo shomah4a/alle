@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class BufferTest {
 
     private Buffer createBuffer() {
-        return new EditableBuffer("test", new GapTextModel(), new SettingsRegistry());
+        return new TextBuffer("test", new GapTextModel(), new SettingsRegistry());
     }
 
     @Nested
@@ -39,7 +39,7 @@ class BufferTest {
             assertTrue(buffer.getFilePath().isEmpty());
 
             var bufferWithPath =
-                    new EditableBuffer("test", new GapTextModel(), new SettingsRegistry(), Path.of("/tmp/test.txt"));
+                    new TextBuffer("test", new GapTextModel(), new SettingsRegistry(), Path.of("/tmp/test.txt"));
             assertEquals(Path.of("/tmp/test.txt"), bufferWithPath.getFilePath().orElseThrow());
         }
     }

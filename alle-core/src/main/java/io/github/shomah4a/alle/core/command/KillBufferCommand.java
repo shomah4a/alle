@@ -2,7 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -73,7 +73,7 @@ public class KillBufferCommand implements Command {
         // *scratch* を削除した場合はサイレントに再作成
         if (SCRATCH_BUFFER_NAME.equals(bufferName)) {
             bufferManager.add(new BufferFacade(
-                    new EditableBuffer(SCRATCH_BUFFER_NAME, new GapTextModel(), context.settingsRegistry())));
+                    new TextBuffer(SCRATCH_BUFFER_NAME, new GapTextModel(), context.settingsRegistry())));
         }
 
         // 切り替え先を決定: 他のウィンドウで表示されていないバッファを優先

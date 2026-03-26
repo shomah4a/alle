@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class BufferManagerTest {
 
     private BufferFacade createBuffer(String name) {
-        return new BufferFacade(new EditableBuffer(name, new GapTextModel(), new SettingsRegistry()));
+        return new BufferFacade(new TextBuffer(name, new GapTextModel(), new SettingsRegistry()));
     }
 
     @Nested

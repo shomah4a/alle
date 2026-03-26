@@ -147,6 +147,10 @@ public class BufferFacade {
         return buffer.isReadOnly();
     }
 
+    public void setReadOnly(boolean readOnly) {
+        buffer.setReadOnly(readOnly);
+    }
+
     public boolean isSystemBuffer() {
         return buffer.isSystemBuffer();
     }

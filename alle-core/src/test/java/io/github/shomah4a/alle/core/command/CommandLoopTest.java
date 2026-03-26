@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -39,9 +39,9 @@ class CommandLoopTest {
     private static final SettingsRegistry SETTINGS = new SettingsRegistry();
 
     private Frame createFrame() {
-        var buffer = new BufferFacade(new EditableBuffer("test", new GapTextModel(), SETTINGS));
+        var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), SETTINGS));
         var window = new Window(buffer);
-        var minibuffer = new Window(new BufferFacade(new EditableBuffer("*Minibuffer*", new GapTextModel(), SETTINGS)));
+        var minibuffer = new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), SETTINGS)));
         return new Frame(window, minibuffer);
     }
 

@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
@@ -340,7 +340,7 @@ public class MinibufferInputPrompter implements InputPrompter {
             } else {
                 // 新規に *Completions* ウィンドウを作成
                 var buffer = new BufferFacade(
-                        new EditableBuffer(COMPLETIONS_BUFFER_NAME, new GapTextModel(), context.settingsRegistry()));
+                        new TextBuffer(COMPLETIONS_BUFFER_NAME, new GapTextModel(), context.settingsRegistry()));
                 buffer.insertText(0, displayText);
                 completionsWindow = frame.splitWindowBelow(previousActiveWindow, buffer);
 

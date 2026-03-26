@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.io;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import io.github.shomah4a.alle.core.buffer.EditableBuffer;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class BufferIO {
         String normalizedText = LineEnding.normalize(rawText);
 
         String bufferName = filePath.getFileName().toString();
-        var buffer = new EditableBuffer(bufferName, new GapTextModel(), settingsRegistry, filePath);
+        var buffer = new TextBuffer(bufferName, new GapTextModel(), settingsRegistry, filePath);
         buffer.setLineEnding(lineEnding);
         if (!normalizedText.isEmpty()) {
             buffer.insertText(0, normalizedText);
