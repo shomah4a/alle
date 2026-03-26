@@ -280,7 +280,11 @@ public class MinibufferInputPrompter implements InputPrompter {
                 }
                 case CompletionOutcome.Unique unique -> {
                     replaceUserInput(promptLength, unique.candidate().value());
-                    closeCompletionsWindow();
+                    if (unique.candidate().terminal()) {
+                        // 確定可能な候補: Completionsを閉じる
+                        closeCompletionsWindow();
+                    }
+                    // partial候補: 入力にセットするだけで確定しない（ディレクトリ等）
                 }
                 case CompletionOutcome.Partial partial -> {
                     if (!partial.commonPrefix().equals(userInput)) {
@@ -473,21 +477,19 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
-            delegate.execute(context).join();
-
-            if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
-                // *Completions* 表示中: 候補を再計算して更新
-                String userInput = getUserInput(promptLength);
-                var candidates = completer.complete(userInput);
-                if (candidates.isEmpty()) {
-                    closeCompletionsWindow();
-                } else {
-                    completionsModel = new CompletionsModel(candidates);
-                    updateCompletionsDisplay();
+            return delegate.execute(context).thenRun(() -> {
+                if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
+                    // *Completions* 表示中: 候補を再計算して更新
+                    String userInput = getUserInput(promptLength);
+                    var candidates = completer.complete(userInput);
+                    if (candidates.isEmpty()) {
+                        closeCompletionsWindow();
+                    } else {
+                        completionsModel = new CompletionsModel(candidates);
+                        updateCompletionsDisplay();
+                    }
                 }
-            }
-
-            return CompletableFuture.completedFuture(null);
+            });
         }
     }
 

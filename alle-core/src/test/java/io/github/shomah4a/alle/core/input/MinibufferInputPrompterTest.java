@@ -462,6 +462,23 @@ class MinibufferInputPrompterTest {
         }
 
         @Test
+        void partial候補が一件のときは入力にセットするだけでCompletionsは閉じない() {
+            Completer dirCompleter = input -> Lists.immutable
+                    .of(CompletionCandidate.partial("/tmp/subdir/"))
+                    .select(c -> c.value().startsWith(input));
+            var unused = prompter.prompt("Input: ", "", new InputHistory(), dirCompleter);
+
+            minibufferWindow.getBuffer().insertText(7, "/tmp/sub");
+            minibufferWindow.setPoint(15);
+            executeMinibufferKey(KeyStroke.of('\t'));
+
+            // 入力がディレクトリパスに補完される
+            assertEquals("Input: /tmp/subdir/", minibufferWindow.getBuffer().getText());
+            // プロンプトは確定されていない（futureが未完了）
+            assertTrue(frame.isMinibufferActive());
+        }
+
+        @Test
         void 確定時にCompletionsウィンドウが閉じる() {
             var unused = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
 

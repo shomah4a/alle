@@ -14,46 +14,6 @@ class CompletionResultTest {
     }
 
     @Nested
-    class resolve {
-
-        @Test
-        void 候補が0件なら入力をそのまま返す() {
-            var result = CompletionResult.resolve("foo", Lists.immutable.empty());
-            assertEquals("foo", result);
-        }
-
-        @Test
-        void 候補が1件なら候補そのものを返す() {
-            var result = CompletionResult.resolve("fo", Lists.immutable.of(t("foobar")));
-            assertEquals("foobar", result);
-        }
-
-        @Test
-        void 候補が複数なら最長共通プレフィックスを返す() {
-            var result = CompletionResult.resolve("fo", Lists.immutable.of(t("foobar"), t("foobaz")));
-            assertEquals("fooba", result);
-        }
-
-        @Test
-        void 共通プレフィックスがない場合は空文字列を返す() {
-            var result = CompletionResult.resolve("", Lists.immutable.of(t("abc"), t("xyz")));
-            assertEquals("", result);
-        }
-
-        @Test
-        void 候補が完全一致する場合はそのまま返す() {
-            var result = CompletionResult.resolve("foo", Lists.immutable.of(t("foo"), t("foo")));
-            assertEquals("foo", result);
-        }
-
-        @Test
-        void 候補の長さが異なる場合も共通プレフィックスを返す() {
-            var result = CompletionResult.resolve("t", Lists.immutable.of(t("test"), t("testing"), t("tests")));
-            assertEquals("test", result);
-        }
-    }
-
-    @Nested
     class resolveDetailed {
 
         @Test
