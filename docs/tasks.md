@@ -36,10 +36,6 @@
 - 現在は WindowActor が部分的にこの役割を担っている
 - 非同期コマンドが増えた場合の安全性向上
 
-### Tab補完の候補リスト表示
-- Tab を複数回押した場合に候補リストバッファを開く
-- Emacs の *Completions* バッファ相当
-
 ### M-x 経由の lastCommand 更新
 - M-x で実行されたコマンドの名前を lastCommand に設定すべき
 - Emacs では execute-extended-command ではなく実際のコマンドが last-command になる
