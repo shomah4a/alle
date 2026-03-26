@@ -104,7 +104,8 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         // RET: 入力確定
         keymap.bind(
-                KeyStroke.of('\n'), new MinibufferConfirmCommand(future, previousActiveWindow, promptLength, history));
+                KeyStroke.of('\n'),
+                new MinibufferConfirmCommand(future, previousActiveWindow, promptLength, history, completer));
 
         // C-g: キャンセル
         keymap.bind(KeyStroke.ctrl('g'), new MinibufferCancelCommand(future, previousActiveWindow));
@@ -224,16 +225,19 @@ public class MinibufferInputPrompter implements InputPrompter {
         private final Window previousActiveWindow;
         private final int promptLength;
         private final InputHistory history;
+        private final @Nullable Completer completer;
 
         MinibufferConfirmCommand(
                 CompletableFuture<PromptResult> future,
                 Window previousActiveWindow,
                 int promptLength,
-                InputHistory history) {
+                InputHistory history,
+                @Nullable Completer completer) {
             this.future = future;
             this.previousActiveWindow = previousActiveWindow;
             this.promptLength = promptLength;
             this.history = history;
+            this.completer = completer;
         }
 
         @Override
@@ -243,6 +247,27 @@ public class MinibufferInputPrompter implements InputPrompter {
 
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
+            // Completions表示中に選択候補がpartialなら確定せず補完を継続
+            if (completionsModel != null) {
+                var selected = completionsModel.getSelectedCandidate();
+                if (selected != null && !selected.terminal()) {
+                    replaceUserInput(promptLength, selected.value());
+                    closeCompletionsWindow();
+                    return CompletableFuture.completedFuture(null);
+                }
+            }
+            // Completerが提供されている場合、現在の入力に対する候補を確認
+            if (completer != null) {
+                String userInput = getUserInput(promptLength);
+                var candidates = completer.complete(userInput);
+                // 入力が完全一致する候補が1件でpartialなら確定しない
+                if (candidates.size() == 1
+                        && candidates.get(0).value().equals(userInput)
+                        && !candidates.get(0).terminal()) {
+                    return CompletableFuture.completedFuture(null);
+                }
+            }
+
             String userInput = getUserInput(promptLength);
             history.add(userInput);
             cleanup(previousActiveWindow);

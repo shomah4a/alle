@@ -610,6 +610,35 @@ class MinibufferInputPrompterTest {
             var confirmed = assertInstanceOf(PromptResult.Confirmed.class, result);
             assertEquals("foobar", confirmed.value());
         }
+
+        @Test
+        void partial候補を選択してRETを押すと確定せず入力にセットされる() {
+            // ディレクトリ（partial）とファイル（terminal）を混在させるCompleter
+            Completer mixedCompleter = input -> {
+                var all = Lists.immutable.of(
+                        CompletionCandidate.partial("/tmp/dir/"), CompletionCandidate.terminal("/tmp/file.txt"));
+                return all.select(c -> c.value().startsWith(input));
+            };
+            var future = prompter.prompt("Find: ", "", new InputHistory(), mixedCompleter);
+            minibufferWindow.getBuffer().insertText(6, "/tmp/");
+            minibufferWindow.setPoint(11);
+            // 1回目Tab: 共通プレフィックスは "/tmp/" → 進まない
+            executeMinibufferKey(KeyStroke.of('\t'));
+            // 2回目Tab: Completions表示
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+
+            // C-n で "/tmp/dir/" (partial) を選択
+            executeMinibufferKey(KeyStroke.ctrl('n'));
+            // RETで確定を試みる
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            // partial候補なので確定されない
+            assertFalse(future.isDone());
+            // 入力がディレクトリパスにセットされている
+            assertEquals("Find: /tmp/dir/", minibufferWindow.getBuffer().getText());
+            // Completionsウィンドウが閉じている（新しい入力での再補完を待つ）
+            assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
+        }
     }
 
     @Nested
