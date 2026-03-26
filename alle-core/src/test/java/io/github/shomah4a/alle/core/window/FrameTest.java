@@ -235,8 +235,7 @@ class FrameTest {
             var frame = createFrame();
             var otherWindow = new Window(createBuffer("other"));
 
-            assertThrows(IllegalStateException.class,
-                    () -> frame.splitWindowBelow(otherWindow, createBuffer("buf")));
+            assertThrows(IllegalStateException.class, () -> frame.splitWindowBelow(otherWindow, createBuffer("buf")));
         }
     }
 
