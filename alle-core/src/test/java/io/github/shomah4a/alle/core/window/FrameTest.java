@@ -190,6 +190,57 @@ class FrameTest {
     }
 
     @Nested
+    class splitWindowBelow {
+
+        @Test
+        void 指定ウィンドウを下方向に分割し新ウィンドウを返す() {
+            var frame = createFrame();
+            var originalWindow = frame.getActiveWindow();
+            var newBuffer = createBuffer("completions");
+
+            var newWindow = frame.splitWindowBelow(originalWindow, newBuffer);
+
+            var split = assertInstanceOf(WindowTree.Split.class, frame.getWindowTree());
+            assertEquals(Direction.HORIZONTAL, split.direction());
+            assertSame(originalWindow, ((WindowTree.Leaf) split.first()).window());
+            assertSame(newWindow, ((WindowTree.Leaf) split.second()).window());
+            assertEquals("completions", newWindow.getBuffer().getName());
+        }
+
+        @Test
+        void activeWindowが変更されない() {
+            var frame = createFrame();
+            var originalActive = frame.getActiveWindow();
+
+            frame.splitWindowBelow(originalActive, createBuffer("completions"));
+
+            assertSame(originalActive, frame.getActiveWindow());
+        }
+
+        @Test
+        void ミニバッファアクティブ中でも分割できる() {
+            var frame = createFrame();
+            var originalWindow = frame.getActiveWindow();
+            frame.activateMinibuffer();
+
+            var newWindow = frame.splitWindowBelow(originalWindow, createBuffer("completions"));
+
+            assertSame(frame.getMinibufferWindow(), frame.getActiveWindow());
+            var split = assertInstanceOf(WindowTree.Split.class, frame.getWindowTree());
+            assertSame(newWindow, ((WindowTree.Leaf) split.second()).window());
+        }
+
+        @Test
+        void ツリーに存在しないウィンドウを指定すると例外が発生する() {
+            var frame = createFrame();
+            var otherWindow = new Window(createBuffer("other"));
+
+            assertThrows(IllegalStateException.class,
+                    () -> frame.splitWindowBelow(otherWindow, createBuffer("buf")));
+        }
+    }
+
+    @Nested
     class アクティブウィンドウ設定 {
 
         @Test

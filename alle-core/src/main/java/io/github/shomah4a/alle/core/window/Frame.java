@@ -103,6 +103,26 @@ public class Frame {
     }
 
     /**
+     * 指定ウィンドウを下方向に分割し、新しいウィンドウに指定バッファを表示する。
+     * activeWindowは変更しない。
+     * ミニバッファアクティブ中に補完候補ウィンドウ等を表示するために使用する。
+     *
+     * @param target 分割対象のウィンドウ
+     * @param buffer 新しいウィンドウに表示するバッファ
+     * @return 新しく作成されたウィンドウ
+     * @throws IllegalStateException 対象ウィンドウがツリー内に見つからない場合
+     */
+    public Window splitWindowBelow(Window target, BufferFacade buffer) {
+        var newWindow = new Window(buffer);
+        var result = windowTree.split(target, Direction.HORIZONTAL, newWindow);
+        if (result.isEmpty()) {
+            throw new IllegalStateException("Target window not found in tree");
+        }
+        windowTree = result.get();
+        return newWindow;
+    }
+
+    /**
      * 指定ウィンドウを削除する。
      * 最後の1つのウィンドウは削除できない。
      * 削除対象がアクティブウィンドウの場合、ツリー内の別のウィンドウをアクティブにする。
