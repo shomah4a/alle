@@ -157,6 +157,35 @@ public class MinibufferInputPrompter implements InputPrompter {
         }
         completionsWindow = null;
         completionsModel = null;
+
+        // ナビゲーション用キーバインドを解除
+        unbindCompletionNavigation();
+    }
+
+    /**
+     * ミニバッファキーマップにCompletions候補ナビゲーション用バインドを追加する。
+     */
+    private void bindCompletionNavigation(int promptLength) {
+        var keymapOpt = frame.getMinibufferWindow().getBuffer().getLocalKeymap();
+        if (keymapOpt.isEmpty()) {
+            return;
+        }
+        var keymap = keymapOpt.get();
+        keymap.bind(KeyStroke.ctrl('n'), new CompletionSelectNextCommand(promptLength));
+        keymap.bind(KeyStroke.ctrl('p'), new CompletionSelectPreviousCommand(promptLength));
+    }
+
+    /**
+     * ミニバッファキーマップからCompletions候補ナビゲーション用バインドを解除する。
+     */
+    private void unbindCompletionNavigation() {
+        var keymapOpt = frame.getMinibufferWindow().getBuffer().getLocalKeymap();
+        if (keymapOpt.isEmpty()) {
+            return;
+        }
+        var keymap = keymapOpt.get();
+        keymap.unbind(KeyStroke.ctrl('n'));
+        keymap.unbind(KeyStroke.ctrl('p'));
     }
 
     /**
@@ -274,27 +303,17 @@ public class MinibufferInputPrompter implements InputPrompter {
 
             if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
                 // 既存の *Completions* ウィンドウを更新
-                updateCompletionsBuffer(displayText);
+                updateCompletionsDisplay();
             } else {
                 // 新規に *Completions* ウィンドウを作成
                 var buffer = new BufferFacade(
                         new EditableBuffer(COMPLETIONS_BUFFER_NAME, new GapTextModel(), context.settingsRegistry()));
                 buffer.insertText(0, displayText);
                 completionsWindow = frame.splitWindowBelow(previousActiveWindow, buffer);
-            }
-        }
 
-        private void updateCompletionsBuffer(String displayText) {
-            if (completionsWindow == null) {
-                return;
+                // ナビゲーション用キーバインドを追加
+                bindCompletionNavigation(promptLength);
             }
-            var buffer = completionsWindow.getBuffer();
-            int length = buffer.length();
-            if (length > 0) {
-                buffer.deleteText(0, length);
-            }
-            buffer.insertText(0, displayText);
-            completionsWindow.setPoint(0);
         }
     }
 
@@ -370,5 +389,80 @@ public class MinibufferInputPrompter implements InputPrompter {
             future.complete(new PromptResult.Cancelled());
             return CompletableFuture.completedFuture(null);
         }
+    }
+
+    private class CompletionSelectNextCommand implements Command {
+
+        private final int promptLength;
+
+        CompletionSelectNextCommand(int promptLength) {
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "completion-select-next";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            if (completionsModel == null) {
+                return CompletableFuture.completedFuture(null);
+            }
+            completionsModel.selectNext();
+            updateCompletionsDisplay();
+            var selected = completionsModel.getSelectedCandidate();
+            if (selected != null) {
+                replaceUserInput(promptLength, selected);
+            }
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    private class CompletionSelectPreviousCommand implements Command {
+
+        private final int promptLength;
+
+        CompletionSelectPreviousCommand(int promptLength) {
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "completion-select-previous";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            if (completionsModel == null) {
+                return CompletableFuture.completedFuture(null);
+            }
+            completionsModel.selectPrevious();
+            updateCompletionsDisplay();
+            var selected = completionsModel.getSelectedCandidate();
+            if (selected != null) {
+                replaceUserInput(promptLength, selected);
+            }
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    /**
+     * *Completions* バッファの表示テキストを現在のモデル状態で更新する。
+     */
+    private void updateCompletionsDisplay() {
+        if (completionsWindow == null || completionsModel == null) {
+            return;
+        }
+        if (!frame.getWindowTree().contains(completionsWindow)) {
+            return;
+        }
+        var buffer = completionsWindow.getBuffer();
+        int length = buffer.length();
+        if (length > 0) {
+            buffer.deleteText(0, length);
+        }
+        buffer.insertText(0, completionsModel.formatForDisplay());
+        completionsWindow.setPoint(0);
     }
 }

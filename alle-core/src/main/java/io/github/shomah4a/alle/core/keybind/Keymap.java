@@ -52,6 +52,13 @@ public class Keymap {
     }
 
     /**
+     * 指定キーストロークのバインドを解除する。
+     */
+    public void unbind(KeyStroke keyStroke) {
+        bindings.remove(keyStroke);
+    }
+
+    /**
      * ASCII印字可能文字(0x20~0x7E)に対して指定コマンドを一括バインドする。
      */
     public void bindPrintableAscii(Command command) {

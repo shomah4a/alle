@@ -21,6 +21,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowTree;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -515,6 +516,93 @@ class MinibufferInputPrompterTest {
             executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
 
             assertSame(minibufferWindow, frame.getActiveWindow());
+        }
+    }
+
+    @Nested
+    class 補完候補ナビゲーション {
+
+        private Completer multiCandidateCompleter;
+
+        @BeforeEach
+        void setUpCompleter() {
+            multiCandidateCompleter = input -> {
+                var all = Lists.immutable.of("foobar", "foobaz", "fooqux");
+                return all.select(s -> s.startsWith(input));
+            };
+        }
+
+        private CompletableFuture<PromptResult> openCompletionsWindow() {
+            var future = prompter.prompt("Input: ", "", new InputHistory(), multiCandidateCompleter);
+            minibufferWindow.getBuffer().insertText(7, "foo");
+            minibufferWindow.setPoint(10);
+            // 1回目Tab
+            executeMinibufferKey(KeyStroke.of('\t'));
+            // 2回目Tab → *Completions* 表示
+            executeMinibufferKey(KeyStroke.of('\t'), Optional.of("minibuffer-complete"));
+            return future;
+        }
+
+        @Test
+        void CnでCompletions表示後に次の候補が選択されミニバッファに反映する() {
+            var unused = openCompletionsWindow();
+
+            executeMinibufferKey(KeyStroke.ctrl('n'));
+
+            assertEquals("Input: foobar", minibufferWindow.getBuffer().getText());
+            // *Completions* バッファに選択マーカーが表示される
+            var completionsText = ((WindowTree.Leaf) ((WindowTree.Split) frame.getWindowTree()).second())
+                    .window()
+                    .getBuffer()
+                    .getText();
+            assertTrue(completionsText.startsWith("> foobar"));
+        }
+
+        @Test
+        void Cpで前の候補が選択される() {
+            var unused = openCompletionsWindow();
+
+            executeMinibufferKey(KeyStroke.ctrl('p'));
+
+            // 未選択から前に移動すると末尾（fooqux）が選択される
+            assertEquals("Input: fooqux", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void Cnを連続して候補を巡回する() {
+            var unused = openCompletionsWindow();
+
+            executeMinibufferKey(KeyStroke.ctrl('n')); // foobar
+            executeMinibufferKey(KeyStroke.ctrl('n')); // foobaz
+            executeMinibufferKey(KeyStroke.ctrl('n')); // fooqux
+            executeMinibufferKey(KeyStroke.ctrl('n')); // foobar (wrap)
+
+            assertEquals("Input: foobar", minibufferWindow.getBuffer().getText());
+        }
+
+        @Test
+        void 確定後にナビゲーションキーが解除される() {
+            var unused = openCompletionsWindow();
+
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            // C-n がバインドされていない
+            var keymapOpt = minibufferWindow.getBuffer().getLocalKeymap();
+            // cleanup後はキーマップが解除されている
+            assertTrue(keymapOpt.isEmpty());
+        }
+
+        @Test
+        void Cnで候補選択後にRETで確定すると選択候補が確定値になる() {
+            var future = openCompletionsWindow();
+            executeMinibufferKey(KeyStroke.ctrl('n')); // foobar を選択
+
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            assertTrue(future.isDone());
+            var result = future.join();
+            var confirmed = assertInstanceOf(PromptResult.Confirmed.class, result);
+            assertEquals("foobar", confirmed.value());
         }
     }
 
