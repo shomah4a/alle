@@ -534,6 +534,14 @@ public class MinibufferInputPrompter implements InputPrompter {
             buffer.deleteText(0, length);
         }
         buffer.insertText(0, completionsModel.formatForDisplay());
-        completionsWindow.setPoint(0);
+
+        // 選択行にポイントを移動してスクロール追従させる
+        int selectedIndex = completionsModel.getSelectedIndex();
+        if (selectedIndex >= 0) {
+            int lineStart = buffer.lineStartOffset(selectedIndex);
+            completionsWindow.setPoint(lineStart);
+        } else {
+            completionsWindow.setPoint(0);
+        }
     }
 }
