@@ -89,24 +89,24 @@ class CompletionsModelTest {
     class formatForDisplay {
 
         @Test
-        void 未選択状態ですべてインデント付きで表示する() {
+        void 候補のlabelを改行区切りで連結する() {
             var model = new CompletionsModel(Lists.immutable.of(t("aaa"), t("bbb")));
-            assertEquals("  aaa\n  bbb", model.formatForDisplay());
+            assertEquals("aaa\nbbb", model.formatForDisplay());
         }
 
         @Test
-        void 選択中の候補にマーカーを表示する() {
+        void 選択状態に関わらずテキスト内容は同一() {
             var model = new CompletionsModel(Lists.immutable.of(t("aaa"), t("bbb"), t("ccc")));
             model.selectNext(); // 0
             model.selectNext(); // 1
-            assertEquals("  aaa\n> bbb\n  ccc", model.formatForDisplay());
+            assertEquals("aaa\nbbb\nccc", model.formatForDisplay());
         }
 
         @Test
         void 候補が1件の場合() {
             var model = new CompletionsModel(Lists.immutable.of(t("only")));
             model.selectNext();
-            assertEquals("> only", model.formatForDisplay());
+            assertEquals("only", model.formatForDisplay());
         }
     }
 }

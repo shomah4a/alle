@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowLayout;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.eclipse.collections.api.factory.Lists;
 
 /**
@@ -85,7 +86,16 @@ public final class RenderSnapshotFactory {
             }
 
             String modeLine = buildModeLineText(window);
-            windowSnapshots.add(new RenderSnapshot.WindowSnapshot(rect, visibleLines, displayStartColumn, modeLine));
+            OptionalInt highlightLine = OptionalInt.empty();
+            if (window.isHighlightPointLine()) {
+                int pointLine = buffer.lineIndexForOffset(window.getPoint());
+                int relativeLine = pointLine - displayStart;
+                if (relativeLine >= 0 && relativeLine < visibleLines.size()) {
+                    highlightLine = OptionalInt.of(relativeLine);
+                }
+            }
+            windowSnapshots.add(
+                    new RenderSnapshot.WindowSnapshot(rect, visibleLines, displayStartColumn, modeLine, highlightLine));
         });
 
         // ミニバッファ / エコーエリア

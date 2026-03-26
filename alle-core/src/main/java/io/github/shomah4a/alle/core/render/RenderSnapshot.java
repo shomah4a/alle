@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Separator;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -20,9 +21,15 @@ public record RenderSnapshot(
 
     /**
      * 各ウィンドウの描画データ。
+     *
+     * @param highlightLine ハイライト行（visibleLines内の相対インデックス）。未設定はempty。
      */
     public record WindowSnapshot(
-            Rect rect, ListIterable<LineSnapshot> visibleLines, int displayStartColumn, String modeLine) {}
+            Rect rect,
+            ListIterable<LineSnapshot> visibleLines,
+            int displayStartColumn,
+            String modeLine,
+            OptionalInt highlightLine) {}
 
     /**
      * 1行分の描画データ。

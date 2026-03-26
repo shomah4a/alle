@@ -75,10 +75,12 @@ public class ScreenRenderer {
     private void renderWindowSnapshot(RenderSnapshot.WindowSnapshot ws) {
         var rect = ws.rect();
         int displayStartColumn = ws.displayStartColumn();
+        var highlightLine = ws.highlightLine();
 
         for (int row = 0; row < ws.visibleLines().size(); row++) {
             var line = ws.visibleLines().get(row);
             int screenRow = rect.top() + row;
+            boolean isHighlighted = highlightLine.isPresent() && highlightLine.getAsInt() == row;
             if (line.spans().isPresent()) {
                 renderLineWithHighlight(
                         line.text(),
@@ -89,6 +91,9 @@ public class ScreenRenderer {
                         line.spans().get());
             } else {
                 renderLineAt(line.text(), screenRow, rect.left(), rect.width(), displayStartColumn);
+            }
+            if (isHighlighted) {
+                applyReverse(screenRow, rect.left(), rect.width());
             }
         }
 
@@ -209,6 +214,13 @@ public class ScreenRenderer {
 
         // 行末の余白を空白で埋める
         fillBlank(row, left + screenCol, left + maxColumns);
+    }
+
+    private void applyReverse(int row, int left, int width) {
+        for (int col = left; col < left + width; col++) {
+            var tc = screen.getBackCharacter(new TerminalPosition(col, row));
+            screen.setCharacter(col, row, tc.withModifier(SGR.REVERSE));
+        }
     }
 
     private void fillBlank(int row, int fromCol, int toCol) {

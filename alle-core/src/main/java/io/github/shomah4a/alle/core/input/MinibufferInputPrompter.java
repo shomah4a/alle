@@ -335,14 +335,14 @@ public class MinibufferInputPrompter implements InputPrompter {
             var displayText = completionsModel.formatForDisplay();
 
             if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
-                // 既存の *Completions* ウィンドウを更新
-                updateCompletionsDisplay();
+                // 既存の *Completions* ウィンドウのバッファを差し替え
+                var buffer = createReadOnlyCompletionsBuffer(displayText, context);
+                completionsWindow.setBuffer(buffer);
             } else {
                 // 新規に *Completions* ウィンドウを作成
-                var buffer = new BufferFacade(
-                        new TextBuffer(COMPLETIONS_BUFFER_NAME, new GapTextModel(), context.settingsRegistry()));
-                buffer.insertText(0, displayText);
+                var buffer = createReadOnlyCompletionsBuffer(displayText, context);
                 completionsWindow = frame.splitWindowBelow(previousActiveWindow, buffer);
+                completionsWindow.setHighlightPointLine(true);
 
                 // ナビゲーション用キーバインドを追加
                 bindCompletionNavigation(promptLength);
@@ -443,7 +443,7 @@ public class MinibufferInputPrompter implements InputPrompter {
                 return CompletableFuture.completedFuture(null);
             }
             completionsModel.selectNext();
-            updateCompletionsDisplay();
+            moveCompletionsPoint();
             var selected = completionsModel.getSelectedCandidate();
             if (selected != null) {
                 replaceUserInput(promptLength, selected.value());
@@ -471,7 +471,7 @@ public class MinibufferInputPrompter implements InputPrompter {
                 return CompletableFuture.completedFuture(null);
             }
             completionsModel.selectPrevious();
-            updateCompletionsDisplay();
+            moveCompletionsPoint();
             var selected = completionsModel.getSelectedCandidate();
             if (selected != null) {
                 replaceUserInput(promptLength, selected.value());
@@ -511,7 +511,7 @@ public class MinibufferInputPrompter implements InputPrompter {
                         closeCompletionsWindow();
                     } else {
                         completionsModel = new CompletionsModel(candidates);
-                        updateCompletionsDisplay();
+                        replaceCompletionsBuffer(context);
                     }
                 }
             });
@@ -519,9 +519,10 @@ public class MinibufferInputPrompter implements InputPrompter {
     }
 
     /**
-     * *Completions* バッファの表示テキストを現在のモデル状態で更新する。
+     * 選択行にポイントを移動してスクロール追従させる。
+     * バッファの内容は変更しない（read-onlyバッファのためポイント移動のみ）。
      */
-    private void updateCompletionsDisplay() {
+    private void moveCompletionsPoint() {
         if (completionsWindow == null || completionsModel == null) {
             return;
         }
@@ -529,13 +530,6 @@ public class MinibufferInputPrompter implements InputPrompter {
             return;
         }
         var buffer = completionsWindow.getBuffer();
-        int length = buffer.length();
-        if (length > 0) {
-            buffer.deleteText(0, length);
-        }
-        buffer.insertText(0, completionsModel.formatForDisplay());
-
-        // 選択行にポイントを移動してスクロール追従させる
         int selectedIndex = completionsModel.getSelectedIndex();
         if (selectedIndex >= 0) {
             int lineStart = buffer.lineStartOffset(selectedIndex);
@@ -543,5 +537,28 @@ public class MinibufferInputPrompter implements InputPrompter {
         } else {
             completionsWindow.setPoint(0);
         }
+    }
+
+    private BufferFacade createReadOnlyCompletionsBuffer(String displayText, CommandContext context) {
+        var buffer = new BufferFacade(
+                new TextBuffer(COMPLETIONS_BUFFER_NAME, new GapTextModel(), context.settingsRegistry()));
+        buffer.insertText(0, displayText);
+        buffer.setReadOnly(true);
+        return buffer;
+    }
+
+    /**
+     * *Completions* バッファを新しい候補リストで差し替える。
+     * read-onlyバッファのため、内容更新ではなくバッファごと差し替える。
+     */
+    private void replaceCompletionsBuffer(CommandContext context) {
+        if (completionsWindow == null || completionsModel == null) {
+            return;
+        }
+        if (!frame.getWindowTree().contains(completionsWindow)) {
+            return;
+        }
+        var buffer = createReadOnlyCompletionsBuffer(completionsModel.formatForDisplay(), context);
+        completionsWindow.setBuffer(buffer);
     }
 }

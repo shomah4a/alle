@@ -19,6 +19,7 @@ public class Window {
     private int displayStartLine;
     private int displayStartColumn;
     private @Nullable Integer mark;
+    private boolean highlightPointLine;
 
     public Window(BufferFacade buffer) {
         this.bufferFacade = buffer;
@@ -245,5 +246,20 @@ public class Window {
      */
     public Optional<Integer> getRegionEnd() {
         return getMark().map(m -> Math.max(m, getPoint()));
+    }
+
+    /**
+     * ポイント行ハイライトが有効かどうかを返す。
+     * 有効な場合、ポイントが存在する行を反転表示でハイライトする。
+     */
+    public boolean isHighlightPointLine() {
+        return highlightPointLine;
+    }
+
+    /**
+     * ポイント行ハイライトの有効/無効を設定する。
+     */
+    public void setHighlightPointLine(boolean highlightPointLine) {
+        this.highlightPointLine = highlightPointLine;
     }
 }

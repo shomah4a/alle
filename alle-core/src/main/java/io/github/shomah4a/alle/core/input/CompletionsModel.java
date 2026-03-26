@@ -77,18 +77,13 @@ public class CompletionsModel {
 
     /**
      * 候補リストを表示用テキストに整形する。
-     * 選択中の候補には先頭に ">" マークを付与する。
+     * 各候補のlabelを改行区切りで連結する。
      */
     public String formatForDisplay() {
         var sb = new StringBuilder();
         for (int i = 0; i < candidates.size(); i++) {
             if (i > 0) {
                 sb.append('\n');
-            }
-            if (i == selectedIndex) {
-                sb.append("> ");
-            } else {
-                sb.append("  ");
             }
             sb.append(candidates.get(i).label());
         }

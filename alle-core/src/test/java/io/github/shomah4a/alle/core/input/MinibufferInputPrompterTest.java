@@ -556,12 +556,11 @@ class MinibufferInputPrompterTest {
             executeMinibufferKey(KeyStroke.ctrl('n'));
 
             assertEquals("Input: foobar", minibufferWindow.getBuffer().getText());
-            // *Completions* バッファに選択マーカーが表示される
-            var completionsText = ((WindowTree.Leaf) ((WindowTree.Split) frame.getWindowTree()).second())
-                    .window()
-                    .getBuffer()
-                    .getText();
-            assertTrue(completionsText.startsWith("> foobar"));
+            // *Completions* ウィンドウのポイントが選択行の先頭に移動する
+            var completionsWindow = ((WindowTree.Leaf) ((WindowTree.Split) frame.getWindowTree()).second()).window();
+            var buffer = completionsWindow.getBuffer();
+            int expectedLineStart = buffer.lineStartOffset(0);
+            assertEquals(expectedLineStart, completionsWindow.getPoint());
         }
 
         @Test
