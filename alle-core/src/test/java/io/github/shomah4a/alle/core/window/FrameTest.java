@@ -240,6 +240,98 @@ class FrameTest {
     }
 
     @Nested
+    class ウィンドウ巡回 {
+
+        @Test
+        void ウィンドウ1つでミニバッファ非アクティブのとき何もしない() {
+            var frame = createFrame();
+            var originalWindow = frame.getActiveWindow();
+
+            frame.nextWindow();
+
+            assertSame(originalWindow, frame.getActiveWindow());
+        }
+
+        @Test
+        void ウィンドウ1つでミニバッファアクティブのときミニバッファからツリーウィンドウに移動する() {
+            var frame = createFrame();
+            var originalWindow = frame.getActiveWindow();
+            frame.activateMinibuffer();
+
+            frame.nextWindow();
+
+            assertSame(originalWindow, frame.getActiveWindow());
+        }
+
+        @Test
+        void ウィンドウ1つでミニバッファアクティブのときツリーウィンドウからミニバッファに移動する() {
+            var frame = createFrame();
+            frame.activateMinibuffer();
+            frame.setActiveWindow(frame.getActiveWindow());
+            // activateMinibufferでミニバッファがアクティブウィンドウになるので、
+            // ツリーウィンドウに戻してからnextWindowを呼ぶ
+            var treeWindow = ((WindowTree.Leaf) frame.getWindowTree()).window();
+            frame.setActiveWindow(treeWindow);
+
+            frame.nextWindow();
+
+            assertSame(frame.getMinibufferWindow(), frame.getActiveWindow());
+        }
+
+        @Test
+        void 複数ウィンドウでミニバッファ非アクティブのときツリー内を巡回する() {
+            var frame = createFrame();
+            var firstWindow = frame.getActiveWindow();
+            var secondWindow = frame.splitActiveWindow(Direction.VERTICAL, createBuffer("b"));
+            frame.setActiveWindow(firstWindow);
+
+            frame.nextWindow();
+            assertSame(secondWindow, frame.getActiveWindow());
+
+            frame.nextWindow();
+            assertSame(firstWindow, frame.getActiveWindow());
+        }
+
+        @Test
+        void 複数ウィンドウでミニバッファアクティブのときミニバッファからツリー最初のウィンドウに移動する() {
+            var frame = createFrame();
+            var firstWindow = frame.getActiveWindow();
+            frame.splitActiveWindow(Direction.VERTICAL, createBuffer("b"));
+            frame.activateMinibuffer();
+
+            frame.nextWindow();
+
+            assertSame(firstWindow, frame.getActiveWindow());
+        }
+
+        @Test
+        void 複数ウィンドウでミニバッファアクティブのときツリー末尾からミニバッファに移動する() {
+            var frame = createFrame();
+            frame.splitActiveWindow(Direction.VERTICAL, createBuffer("b"));
+            var secondWindow = frame.getActiveWindow();
+            frame.activateMinibuffer();
+            frame.setActiveWindow(secondWindow);
+
+            frame.nextWindow();
+
+            assertSame(frame.getMinibufferWindow(), frame.getActiveWindow());
+        }
+
+        @Test
+        void 複数ウィンドウでミニバッファアクティブのときツリー中間では次のツリーウィンドウに移動する() {
+            var frame = createFrame();
+            var firstWindow = frame.getActiveWindow();
+            var secondWindow = frame.splitActiveWindow(Direction.VERTICAL, createBuffer("b"));
+            frame.activateMinibuffer();
+            frame.setActiveWindow(firstWindow);
+
+            frame.nextWindow();
+
+            assertSame(secondWindow, frame.getActiveWindow());
+        }
+    }
+
+    @Nested
     class アクティブウィンドウ設定 {
 
         @Test

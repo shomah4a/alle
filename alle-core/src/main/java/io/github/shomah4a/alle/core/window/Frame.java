@@ -152,23 +152,17 @@ public class Frame {
     /**
      * アクティブウィンドウを次のウィンドウに切り替える。
      * ウィンドウツリーの深さ優先順で循環する。
-     * ミニバッファアクティブ中でもツリー内のウィンドウに移動する。
-     * ウィンドウが1つしかない場合は何もしない。
+     * ミニバッファアクティブ中はミニバッファウィンドウも巡回対象に含める(末尾に配置)。
+     * 巡回対象が1つしかない場合は何もしない。
      */
     public void nextWindow() {
-        var windows = windowTree.windows();
-        if (windows.size() <= 1) {
+        var candidates = minibufferActive ? windowTree.windows().newWith(minibufferWindow) : windowTree.windows();
+        if (candidates.size() <= 1) {
             return;
         }
-        // ミニバッファアクティブ中はactiveWindowがミニバッファなので、
-        // ツリーの最初のウィンドウに移動する
-        if (activeWindow == minibufferWindow) {
-            activeWindow = windows.get(0);
-            return;
-        }
-        int index = windows.indexOf(activeWindow);
-        int nextIndex = (index + 1) % windows.size();
-        activeWindow = windows.get(nextIndex);
+        int index = candidates.indexOf(activeWindow);
+        int nextIndex = (index + 1) % candidates.size();
+        activeWindow = candidates.get(nextIndex);
     }
 
     /**
