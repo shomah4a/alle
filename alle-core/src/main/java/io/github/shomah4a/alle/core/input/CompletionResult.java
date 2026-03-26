@@ -30,6 +30,24 @@ public final class CompletionResult {
     }
 
     /**
+     * 候補リストから補完結果の詳細を算出する。
+     * 候補の有無・数に応じて{@link CompletionOutcome}のバリアントを返す。
+     *
+     * @param input      現在の入力文字列
+     * @param candidates 補完候補
+     * @return 補完結果の詳細
+     */
+    public static CompletionOutcome resolveDetailed(String input, ListIterable<String> candidates) {
+        if (candidates.isEmpty()) {
+            return new CompletionOutcome.NoMatch();
+        }
+        if (candidates.size() == 1) {
+            return new CompletionOutcome.Unique(candidates.get(0));
+        }
+        return new CompletionOutcome.Partial(longestCommonPrefix(candidates), candidates);
+    }
+
+    /**
      * 文字列リストの最長共通プレフィックスを返す。
      */
     static String longestCommonPrefix(ListIterable<String> strings) {
