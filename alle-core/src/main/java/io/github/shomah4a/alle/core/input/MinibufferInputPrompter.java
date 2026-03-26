@@ -1,14 +1,8 @@
-package io.github.shomah4a.alle.tui;
+package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
-import io.github.shomah4a.alle.core.input.Completer;
-import io.github.shomah4a.alle.core.input.CompletionResult;
-import io.github.shomah4a.alle.core.input.HistoryNavigator;
-import io.github.shomah4a.alle.core.input.InputHistory;
-import io.github.shomah4a.alle.core.input.InputPrompter;
-import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.window.Frame;
