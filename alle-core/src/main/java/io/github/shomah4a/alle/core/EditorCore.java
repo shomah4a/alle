@@ -31,6 +31,7 @@ import io.github.shomah4a.alle.core.command.NewlineCommand;
 import io.github.shomah4a.alle.core.command.NextLineCommand;
 import io.github.shomah4a.alle.core.command.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.PreviousLineCommand;
+import io.github.shomah4a.alle.core.command.ProcessQuitCommand;
 import io.github.shomah4a.alle.core.command.RedoCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SaveBuffersKillAlleCommand;
@@ -65,7 +66,6 @@ import java.util.function.Function;
 /**
  * エディタのコア初期化を一括で行うファクトリ。
  * Buffer, Frame, CommandRegistry, Keymap, CommandLoop等のcore層オブジェクトを構築する。
- * TUI固有のコマンド・キーバインドはapp層で追加する。
  */
 public final class EditorCore {
 
@@ -230,6 +230,7 @@ public final class EditorCore {
         registry.register(new DeleteOtherWindowsCommand());
         registry.register(new KeyboardQuitCommand());
         registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, shutdownRequestable));
+        registry.register(new ProcessQuitCommand(shutdownRequestable));
         return registry;
     }
 
@@ -263,6 +264,9 @@ public final class EditorCore {
         keymap.bind(
                 KeyStroke.of(KeyStroke.ARROW_UP),
                 registry.lookup("previous-line").orElseThrow());
+
+        // C-q (即時終了)
+        keymap.bind(KeyStroke.ctrl('q'), registry.lookup("quit").orElseThrow());
 
         // C-x プレフィックスキーマップ
         var ctrlXMap = new Keymap("C-x");

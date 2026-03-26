@@ -17,7 +17,6 @@ import io.github.shomah4a.alle.script.MessageBufferOutputStream;
 import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.MinibufferInputPrompter;
-import io.github.shomah4a.alle.tui.QuitCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
 import java.io.BufferedReader;
@@ -68,11 +67,6 @@ public final class Main {
 
         var core = EditorCore.create(
                 inputSource, MinibufferInputPrompter::new, bufferIO, directoryLister, inputSource, settingsRegistry);
-
-        // TUI固有コマンドの追加
-        core.commandRegistry().register(new QuitCommand(inputSource));
-        core.keymap()
-                .bind(KeyStroke.ctrl('q'), core.commandRegistry().lookup("quit").orElseThrow());
 
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
