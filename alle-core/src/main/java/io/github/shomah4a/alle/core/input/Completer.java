@@ -15,5 +15,5 @@ public interface Completer {
      * @param input 現在の入力文字列
      * @return 補完候補のリスト
      */
-    ListIterable<String> complete(String input);
+    ListIterable<CompletionCandidate> complete(String input);
 }

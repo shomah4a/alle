@@ -279,7 +279,7 @@ public class MinibufferInputPrompter implements InputPrompter {
                     // 候補なし: 何もしない
                 }
                 case CompletionOutcome.Unique unique -> {
-                    replaceUserInput(promptLength, unique.value());
+                    replaceUserInput(promptLength, unique.candidate().value());
                     closeCompletionsWindow();
                 }
                 case CompletionOutcome.Partial partial -> {
@@ -301,7 +301,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         }
 
         private void showCompletions(
-                org.eclipse.collections.api.list.ListIterable<String> candidates, CommandContext context) {
+                org.eclipse.collections.api.list.ListIterable<CompletionCandidate> candidates, CommandContext context) {
             completionsModel = new CompletionsModel(candidates);
             var displayText = completionsModel.formatForDisplay();
 
@@ -417,7 +417,7 @@ public class MinibufferInputPrompter implements InputPrompter {
             updateCompletionsDisplay();
             var selected = completionsModel.getSelectedCandidate();
             if (selected != null) {
-                replaceUserInput(promptLength, selected);
+                replaceUserInput(promptLength, selected.value());
             }
             return CompletableFuture.completedFuture(null);
         }
@@ -445,7 +445,7 @@ public class MinibufferInputPrompter implements InputPrompter {
             updateCompletionsDisplay();
             var selected = completionsModel.getSelectedCandidate();
             if (selected != null) {
-                replaceUserInput(promptLength, selected);
+                replaceUserInput(promptLength, selected.value());
             }
             return CompletableFuture.completedFuture(null);
         }

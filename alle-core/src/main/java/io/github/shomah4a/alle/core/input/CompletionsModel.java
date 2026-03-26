@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
  */
 public class CompletionsModel {
 
-    private final ListIterable<String> candidates;
+    private final ListIterable<CompletionCandidate> candidates;
     private int selectedIndex;
 
     /**
@@ -19,7 +19,7 @@ public class CompletionsModel {
      * @param candidates 補完候補リスト（1件以上）
      * @throws IllegalArgumentException 候補が空の場合
      */
-    public CompletionsModel(ListIterable<String> candidates) {
+    public CompletionsModel(ListIterable<CompletionCandidate> candidates) {
         if (candidates.isEmpty()) {
             throw new IllegalArgumentException("candidates must not be empty");
         }
@@ -30,7 +30,7 @@ public class CompletionsModel {
     /**
      * 補完候補リストを返す。
      */
-    public ListIterable<String> getCandidates() {
+    public ListIterable<CompletionCandidate> getCandidates() {
         return candidates;
     }
 
@@ -68,7 +68,7 @@ public class CompletionsModel {
      * 選択中の候補を返す。
      * 未選択の場合は null。
      */
-    public @Nullable String getSelectedCandidate() {
+    public @Nullable CompletionCandidate getSelectedCandidate() {
         if (selectedIndex < 0) {
             return null;
         }
@@ -90,7 +90,7 @@ public class CompletionsModel {
             } else {
                 sb.append("  ");
             }
-            sb.append(candidates.get(i));
+            sb.append(candidates.get(i).value());
         }
         return sb.toString();
     }

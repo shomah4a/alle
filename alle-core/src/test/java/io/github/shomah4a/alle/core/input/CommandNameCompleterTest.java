@@ -29,8 +29,8 @@ class CommandNameCompleterTest {
     void 前方一致する候補を返す() {
         var result = completer.complete("forward");
         assertEquals(2, result.size());
-        assertTrue(result.contains("forward-char"));
-        assertTrue(result.contains("forward-word"));
+        assertTrue(result.anySatisfy(c -> c.value().equals("forward-char")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("forward-word")));
     }
 
     @Test
@@ -48,9 +48,15 @@ class CommandNameCompleterTest {
     @Test
     void 候補がソートされて返る() {
         var result = completer.complete("f");
-        assertEquals("find-file", result.get(0));
-        assertEquals("forward-char", result.get(1));
-        assertEquals("forward-word", result.get(2));
+        assertEquals("find-file", result.get(0).value());
+        assertEquals("forward-char", result.get(1).value());
+        assertEquals("forward-word", result.get(2).value());
+    }
+
+    @Test
+    void 候補はすべてterminalである() {
+        var result = completer.complete("f");
+        assertTrue(result.allSatisfy(CompletionCandidate::terminal));
     }
 
     private static Command stubCommand(String name) {

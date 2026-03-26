@@ -11,9 +11,9 @@ public sealed interface CompletionOutcome {
     /**
      * 候補が1件で一意に確定した。
      *
-     * @param value 確定した補完文字列
+     * @param candidate 確定した補完候補
      */
-    record Unique(String value) implements CompletionOutcome {}
+    record Unique(CompletionCandidate candidate) implements CompletionOutcome {}
 
     /**
      * 候補が複数あり、最長共通プレフィックスまで部分補完した。
@@ -21,7 +21,7 @@ public sealed interface CompletionOutcome {
      * @param commonPrefix 最長共通プレフィックス
      * @param candidates   補完候補のリスト
      */
-    record Partial(String commonPrefix, ListIterable<String> candidates) implements CompletionOutcome {}
+    record Partial(String commonPrefix, ListIterable<CompletionCandidate> candidates) implements CompletionOutcome {}
 
     /**
      * 候補が0件で補完できなかった。

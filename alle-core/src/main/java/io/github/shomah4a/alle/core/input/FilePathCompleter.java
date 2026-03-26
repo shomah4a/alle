@@ -10,6 +10,7 @@ import org.eclipse.collections.api.list.ListIterable;
 /**
  * ファイルパスの補完を提供する。
  * 入力パスの親ディレクトリ内のエントリから前方一致で候補を返す。
+ * ディレクトリ候補は継続補完（partial）、ファイル候補は確定可能（terminal）として返す。
  */
 public class FilePathCompleter implements Completer {
 
@@ -22,7 +23,7 @@ public class FilePathCompleter implements Completer {
     }
 
     @Override
-    public ListIterable<String> complete(String input) {
+    public ListIterable<CompletionCandidate> complete(String input) {
         if (input.isEmpty()) {
             return Lists.immutable.empty();
         }
@@ -31,7 +32,7 @@ public class FilePathCompleter implements Completer {
         if (input.endsWith("/")) {
             Path directory = Path.of(input);
             try {
-                return directoryLister.list(directory);
+                return toCompletionCandidates(directoryLister.list(directory));
             } catch (IOException e) {
                 logger.log(Level.FINE, "ディレクトリ一覧の取得に失敗: " + directory, e);
                 return Lists.immutable.empty();
@@ -53,6 +54,15 @@ public class FilePathCompleter implements Completer {
         }
 
         String inputStr = inputPath.toString();
-        return entries.select(name -> name.startsWith(inputStr));
+        return toCompletionCandidates(entries.select(name -> name.startsWith(inputStr)));
+    }
+
+    private static ListIterable<CompletionCandidate> toCompletionCandidates(ListIterable<String> entries) {
+        return entries.collect(entry -> {
+            if (entry.endsWith("/")) {
+                return CompletionCandidate.partial(entry);
+            }
+            return CompletionCandidate.terminal(entry);
+        });
     }
 }

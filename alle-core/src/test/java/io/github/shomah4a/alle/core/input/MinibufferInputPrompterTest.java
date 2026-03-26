@@ -29,6 +29,10 @@ import org.junit.jupiter.api.Test;
 
 class MinibufferInputPrompterTest {
 
+    private static CompletionCandidate t(String value) {
+        return CompletionCandidate.terminal(value);
+    }
+
     private Frame frame;
     private Window mainWindow;
     private Window minibufferWindow;
@@ -291,8 +295,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void Mpで最新の履歴がミニバッファに表示される() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
 
@@ -301,8 +304,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void Mpを複数回押すと古い履歴に遡る() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -312,8 +314,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ArrowUpでMpと同じ動作をする() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.of(KeyStroke.ARROW_UP));
 
@@ -322,8 +323,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void MnでMpの後に次の履歴に進む() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -334,8 +334,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ArrowDownでMnと同じ動作をする() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
             executeMinibufferKey(KeyStroke.meta('p'));
@@ -346,11 +345,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void Mnで末尾を超えると元入力に戻る() {
-            var unused = prompter.prompt(
-                    "Find file: ",
-                    "original",
-                    history,
-                    input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "original", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
             executeMinibufferKey(KeyStroke.meta('n'));
@@ -361,11 +356,7 @@ class MinibufferInputPrompterTest {
         @Test
         void 履歴が空の場合Mpで入力が変わらない() {
             var emptyHistory = new InputHistory();
-            var unused = prompter.prompt(
-                    "Find file: ",
-                    "test",
-                    emptyHistory,
-                    input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "test", emptyHistory, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
 
@@ -374,8 +365,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 確定時に履歴に入力が追加される() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             minibufferWindow.getBuffer().insertText(11, "/home/new.txt");
             minibufferWindow.setPoint(24);
@@ -387,8 +377,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ヒストリナビゲーション後に入力を編集して確定できる() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p')); // /home/c.txt
 
@@ -402,8 +391,7 @@ class MinibufferInputPrompterTest {
 
         @Test
         void ポイントが履歴テキストの末尾に移動する() {
-            var unused = prompter.prompt(
-                    "Find file: ", "", history, input -> org.eclipse.collections.api.factory.Lists.immutable.empty());
+            var unused = prompter.prompt("Find file: ", "", history, input -> Lists.immutable.empty());
 
             executeMinibufferKey(KeyStroke.meta('p'));
 
@@ -421,8 +409,8 @@ class MinibufferInputPrompterTest {
         void setUpCompleter() {
             // "fo" に対して "foobar", "foobaz" を返す Completer
             multiCandidateCompleter = input -> {
-                var all = Lists.immutable.of("foobar", "foobaz", "fooqux");
-                return all.select(s -> s.startsWith(input));
+                var all = Lists.immutable.of(t("foobar"), t("foobaz"), t("fooqux"));
+                return all.select(c -> c.value().startsWith(input));
             };
         }
 
@@ -462,7 +450,8 @@ class MinibufferInputPrompterTest {
 
         @Test
         void 候補が一件ならそのまま補完確定する() {
-            Completer singleCompleter = input -> Lists.immutable.of("foobar").select(s -> s.startsWith(input));
+            Completer singleCompleter = input ->
+                    Lists.immutable.of(t("foobar")).select(c -> c.value().startsWith(input));
             var unused = prompter.prompt("Input: ", "", new InputHistory(), singleCompleter);
 
             minibufferWindow.getBuffer().insertText(7, "foo");
@@ -527,8 +516,8 @@ class MinibufferInputPrompterTest {
         @BeforeEach
         void setUpCompleter() {
             multiCandidateCompleter = input -> {
-                var all = Lists.immutable.of("foobar", "foobaz", "fooqux");
-                return all.select(s -> s.startsWith(input));
+                var all = Lists.immutable.of(t("foobar"), t("foobaz"), t("fooqux"));
+                return all.select(c -> c.value().startsWith(input));
             };
         }
 
@@ -612,8 +601,8 @@ class MinibufferInputPrompterTest {
         @Test
         void Completions表示中に文字入力すると候補が再計算される() {
             Completer completer = input -> {
-                var all = Lists.immutable.of("foobar", "foobaz", "fooqux", "zzz");
-                return all.select(s -> s.startsWith(input));
+                var all = Lists.immutable.of(t("foobar"), t("foobaz"), t("fooqux"), t("zzz"));
+                return all.select(c -> c.value().startsWith(input));
             };
             var unused = prompter.prompt("Input: ", "", new InputHistory(), completer);
             minibufferWindow.getBuffer().insertText(7, "foo");
@@ -640,8 +629,8 @@ class MinibufferInputPrompterTest {
         @Test
         void 入力で候補が絞り込まれて0件になるとCompletionsが閉じる() {
             Completer completer = input -> {
-                var all = Lists.immutable.of("foobar", "foobaz");
-                return all.select(s -> s.startsWith(input));
+                var all = Lists.immutable.of(t("foobar"), t("foobaz"));
+                return all.select(c -> c.value().startsWith(input));
             };
             var unused = prompter.prompt("Input: ", "", new InputHistory(), completer);
             minibufferWindow.getBuffer().insertText(7, "foo");

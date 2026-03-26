@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.input;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -19,8 +20,8 @@ class FilePathCompleterTest {
         var result = completer.complete("/tmp/foo");
 
         assertEquals(2, result.size());
-        assertTrue(result.contains("/tmp/foo.txt"));
-        assertTrue(result.contains("/tmp/foobar.txt"));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/tmp/foo.txt")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/tmp/foobar.txt")));
     }
 
     @Test
@@ -51,12 +52,22 @@ class FilePathCompleterTest {
     }
 
     @Test
-    void ディレクトリエントリの末尾スラッシュが保持される() {
+    void ディレクトリエントリの末尾スラッシュが保持されpartialとして返る() {
         var completer = new FilePathCompleter(stubLister("/tmp/subdir/"));
         var result = completer.complete("/tmp/sub");
 
         assertEquals(1, result.size());
-        assertEquals("/tmp/subdir/", result.get(0));
+        assertEquals("/tmp/subdir/", result.get(0).value());
+        assertFalse(result.get(0).terminal());
+    }
+
+    @Test
+    void ファイルエントリはterminalとして返る() {
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt"));
+        var result = completer.complete("/tmp/foo");
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).terminal());
     }
 
     @Test
@@ -65,8 +76,8 @@ class FilePathCompleterTest {
         var result = completer.complete("/tmp/subdir/");
 
         assertEquals(2, result.size());
-        assertTrue(result.contains("/tmp/subdir/file1.txt"));
-        assertTrue(result.contains("/tmp/subdir/file2.txt"));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/tmp/subdir/file1.txt")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/tmp/subdir/file2.txt")));
     }
 
     @Test
@@ -75,8 +86,8 @@ class FilePathCompleterTest {
         var result = completer.complete("/");
 
         assertEquals(2, result.size());
-        assertTrue(result.contains("/tmp/"));
-        assertTrue(result.contains("/home/"));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/tmp/")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/home/")));
     }
 
     @Test

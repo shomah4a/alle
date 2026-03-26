@@ -32,8 +32,8 @@ class BufferNameCompleterTest {
     void 前方一致する候補を返す() {
         var result = completer.complete("foo");
         assertEquals(2, result.size());
-        assertTrue(result.contains("foo.txt"));
-        assertTrue(result.contains("foobar.txt"));
+        assertTrue(result.anySatisfy(c -> c.value().equals("foo.txt")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("foobar.txt")));
     }
 
     @Test
@@ -52,6 +52,12 @@ class BufferNameCompleterTest {
     void 完全一致する候補を返す() {
         var result = completer.complete("foo.txt");
         assertEquals(1, result.size());
-        assertEquals("foo.txt", result.get(0));
+        assertEquals("foo.txt", result.get(0).value());
+    }
+
+    @Test
+    void 候補はすべてterminalである() {
+        var result = completer.complete("foo");
+        assertTrue(result.allSatisfy(CompletionCandidate::terminal));
     }
 }

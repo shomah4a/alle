@@ -1,12 +1,12 @@
 package io.github.shomah4a.alle.core.input;
 
-import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * バッファ名による補完を提供する。
  * BufferManagerに登録されたバッファ名から前方一致で候補を返す。
+ * バッファ名は確定可能（terminal）な候補として返す。
  */
 public class BufferNameCompleter implements Completer {
 
@@ -17,10 +17,10 @@ public class BufferNameCompleter implements Completer {
     }
 
     @Override
-    public ListIterable<String> complete(String input) {
+    public ListIterable<CompletionCandidate> complete(String input) {
         return bufferManager
                 .getBuffers()
                 .select(b -> b.getName().startsWith(input))
-                .collect(BufferFacade::getName);
+                .collect(b -> CompletionCandidate.terminal(b.getName()));
     }
 }

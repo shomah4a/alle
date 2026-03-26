@@ -19,14 +19,14 @@ public final class CompletionResult {
      * @param candidates 補完候補
      * @return 補完後の文字列
      */
-    public static String resolve(String input, ListIterable<String> candidates) {
+    public static String resolve(String input, ListIterable<CompletionCandidate> candidates) {
         if (candidates.isEmpty()) {
             return input;
         }
         if (candidates.size() == 1) {
-            return candidates.get(0);
+            return candidates.get(0).value();
         }
-        return longestCommonPrefix(candidates);
+        return longestCommonPrefix(candidates.collect(CompletionCandidate::value));
     }
 
     /**
@@ -37,14 +37,15 @@ public final class CompletionResult {
      * @param candidates 補完候補
      * @return 補完結果の詳細
      */
-    public static CompletionOutcome resolveDetailed(String input, ListIterable<String> candidates) {
+    public static CompletionOutcome resolveDetailed(String input, ListIterable<CompletionCandidate> candidates) {
         if (candidates.isEmpty()) {
             return new CompletionOutcome.NoMatch();
         }
         if (candidates.size() == 1) {
             return new CompletionOutcome.Unique(candidates.get(0));
         }
-        return new CompletionOutcome.Partial(longestCommonPrefix(candidates), candidates);
+        var values = candidates.collect(CompletionCandidate::value);
+        return new CompletionOutcome.Partial(longestCommonPrefix(values), candidates);
     }
 
     /**

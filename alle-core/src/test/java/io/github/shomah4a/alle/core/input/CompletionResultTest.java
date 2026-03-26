@@ -9,6 +9,10 @@ import org.junit.jupiter.api.Test;
 
 class CompletionResultTest {
 
+    private static CompletionCandidate t(String value) {
+        return CompletionCandidate.terminal(value);
+    }
+
     @Nested
     class resolve {
 
@@ -20,31 +24,31 @@ class CompletionResultTest {
 
         @Test
         void 候補が1件なら候補そのものを返す() {
-            var result = CompletionResult.resolve("fo", Lists.immutable.of("foobar"));
+            var result = CompletionResult.resolve("fo", Lists.immutable.of(t("foobar")));
             assertEquals("foobar", result);
         }
 
         @Test
         void 候補が複数なら最長共通プレフィックスを返す() {
-            var result = CompletionResult.resolve("fo", Lists.immutable.of("foobar", "foobaz"));
+            var result = CompletionResult.resolve("fo", Lists.immutable.of(t("foobar"), t("foobaz")));
             assertEquals("fooba", result);
         }
 
         @Test
         void 共通プレフィックスがない場合は空文字列を返す() {
-            var result = CompletionResult.resolve("", Lists.immutable.of("abc", "xyz"));
+            var result = CompletionResult.resolve("", Lists.immutable.of(t("abc"), t("xyz")));
             assertEquals("", result);
         }
 
         @Test
         void 候補が完全一致する場合はそのまま返す() {
-            var result = CompletionResult.resolve("foo", Lists.immutable.of("foo", "foo"));
+            var result = CompletionResult.resolve("foo", Lists.immutable.of(t("foo"), t("foo")));
             assertEquals("foo", result);
         }
 
         @Test
         void 候補の長さが異なる場合も共通プレフィックスを返す() {
-            var result = CompletionResult.resolve("t", Lists.immutable.of("test", "testing", "tests"));
+            var result = CompletionResult.resolve("t", Lists.immutable.of(t("test"), t("testing"), t("tests")));
             assertEquals("test", result);
         }
     }
@@ -60,14 +64,14 @@ class CompletionResultTest {
 
         @Test
         void 候補が1件ならUniqueを返す() {
-            var result = CompletionResult.resolveDetailed("fo", Lists.immutable.of("foobar"));
+            var result = CompletionResult.resolveDetailed("fo", Lists.immutable.of(t("foobar")));
             var unique = assertInstanceOf(CompletionOutcome.Unique.class, result);
-            assertEquals("foobar", unique.value());
+            assertEquals("foobar", unique.candidate().value());
         }
 
         @Test
         void 候補が複数ならPartialを返す() {
-            var candidates = Lists.immutable.of("foobar", "foobaz");
+            var candidates = Lists.immutable.of(t("foobar"), t("foobaz"));
             var result = CompletionResult.resolveDetailed("fo", candidates);
             var partial = assertInstanceOf(CompletionOutcome.Partial.class, result);
             assertEquals("fooba", partial.commonPrefix());
@@ -76,7 +80,7 @@ class CompletionResultTest {
 
         @Test
         void 候補が複数で共通プレフィックスが入力と同じ場合もPartialを返す() {
-            var candidates = Lists.immutable.of("abc", "axyz");
+            var candidates = Lists.immutable.of(t("abc"), t("axyz"));
             var result = CompletionResult.resolveDetailed("a", candidates);
             var partial = assertInstanceOf(CompletionOutcome.Partial.class, result);
             assertEquals("a", partial.commonPrefix());
