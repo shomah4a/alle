@@ -19,6 +19,19 @@
 - `return`/`pass`/`break`/`continue`/`raise` の入力完了後に自動でインデントを減らす
 - newline-and-indent では対応済みだが、入力中のリアルタイム dedent は未実装
 
+### Face の設計改善と RangeList のオーバーラップ合成対応
+- Face のセマンティック定数（KEYWORD, COMMENT 等）と修飾定数（BOLD_FACE, ITALIC_FACE 等）が同じ型で同列に並んでいるのを整理する
+  - セマンティック: 色名を持ち、構文上の意味を表す（KEYWORD → blue+BOLD）
+  - 修飾: 装飾属性のみを持ち、既存の face に重ね掛けする（ITALIC_FACE → ITALIC のみ）
+  - 案: Face を semantic color + Set\<Decoration\> のような構造にする
+- RangeList のオーバーラップ時に値を合成（merge）する仕組みを入れる
+  - `Mergeable<T>` インターフェース導入済み（alle-core パッケージ直下）
+  - `RangeList<V extends Mergeable<V>>` の型制約を追加
+  - put 時にオーバーラップ部分で `existing.merge(new)` を呼び、属性を合成する
+  - Flag（readOnly, pointGuard）は自明な merge（常に自身を返す）
+  - Face の merge: attributes は和集合、foreground/background は "default" でなければ後入り優先
+- Face のセマンティック/修飾の分離を先に行い、その上で merge のセマンティクスを定義するのが望ましい
+
 ## 将来課題
 
 ### CommandContext のスナップショット化
