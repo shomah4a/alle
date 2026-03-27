@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.buffer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Nested;
@@ -110,6 +112,103 @@ class UndoManagerTest {
             }
             manager.record(new TextChange.Delete(0, "a"));
             assertEquals(1, manager.undoSize());
+        }
+    }
+
+    @Nested
+    class トランザクション {
+
+        @Test
+        void トランザクション内の複数recordが1つのCompoundにまとまる() {
+            var manager = new UndoManager();
+            manager.withTransaction(() -> {
+                manager.record(new TextChange.Delete(0, "a"));
+                manager.record(new TextChange.Delete(1, "b"));
+                manager.record(new TextChange.Delete(2, "c"));
+            });
+
+            assertEquals(1, manager.undoSize());
+            var change = manager.undo().orElseThrow();
+            var compound = assertInstanceOf(TextChange.Compound.class, change);
+            assertEquals(3, compound.changes().size());
+        }
+
+        @Test
+        void トランザクション内でrecordがなければundoスタックに積まれない() {
+            var manager = new UndoManager();
+            manager.withTransaction(() -> {
+                // 何もしない
+            });
+            assertEquals(0, manager.undoSize());
+        }
+
+        @Test
+        void トランザクション完了時にredoスタックがクリアされる() {
+            var manager = new UndoManager();
+            manager.record(new TextChange.Delete(0, "x"));
+            manager.undo();
+            assertEquals(1, manager.redoSize());
+
+            manager.withTransaction(() -> {
+                manager.record(new TextChange.Delete(0, "a"));
+            });
+
+            assertEquals(0, manager.redoSize());
+        }
+
+        @Test
+        void ネストされたトランザクションはIllegalStateExceptionをスローする() {
+            var manager = new UndoManager();
+            assertThrows(IllegalStateException.class, () -> {
+                manager.withTransaction(() -> {
+                    manager.withTransaction(() -> {
+                        // ネスト
+                    });
+                });
+            });
+        }
+
+        @Test
+        void トランザクション内で例外が発生するとバッファが破棄される() {
+            var manager = new UndoManager();
+            try {
+                manager.withTransaction(() -> {
+                    manager.record(new TextChange.Delete(0, "a"));
+                    throw new RuntimeException("test");
+                });
+            } catch (RuntimeException ignored) {
+                // expected
+            }
+            assertEquals(0, manager.undoSize());
+        }
+
+        @Test
+        void トランザクション内で例外が発生してもトランザクション状態がリセットされる() {
+            var manager = new UndoManager();
+            try {
+                manager.withTransaction(() -> {
+                    throw new RuntimeException("test");
+                });
+            } catch (RuntimeException ignored) {
+                // expected
+            }
+            // 通常のrecordが動作する
+            manager.record(new TextChange.Delete(0, "a"));
+            assertEquals(1, manager.undoSize());
+        }
+
+        @Test
+        void Compoundのundo後にredoすると元のCompound操作が復元される() {
+            var manager = new UndoManager();
+            manager.withTransaction(() -> {
+                manager.record(new TextChange.Delete(0, "a"));
+                manager.record(new TextChange.Delete(1, "b"));
+            });
+
+            manager.undo();
+            var redoChange = manager.redo().orElseThrow();
+            var compound = assertInstanceOf(TextChange.Compound.class, redoChange);
+            assertEquals(2, compound.changes().size());
         }
     }
 }
