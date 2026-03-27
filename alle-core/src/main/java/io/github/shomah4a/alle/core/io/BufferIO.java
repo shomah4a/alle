@@ -77,6 +77,46 @@ public class BufferIO {
         buffer.markClean();
     }
 
+    /**
+     * 既存バッファの内容をファイルから再読み込みする。
+     * バッファのテキストを全て置換し、undo/redo履歴をクリアし、dirtyフラグをリセットする。
+     * ファイル読み込みはロック外で行い、バッファ操作はatomicOperationで保護する。
+     *
+     * @param buffer 再読み込み対象のバッファ（ファイルパスが設定されていること）
+     * @throws IOException 読み込みに失敗した場合
+     * @throws IllegalStateException バッファにファイルパスが設定されていない場合
+     */
+    public void reload(BufferFacade buffer) throws IOException {
+        Path filePath = buffer.getFilePath()
+                .orElseThrow(() -> new IllegalStateException("Buffer has no file path: " + buffer.getName()));
+
+        // ファイル読み込みはロック外で行う
+        String rawText;
+        try (Reader reader = bufferReader.open(filePath.toString())) {
+            rawText = readAll(reader);
+        }
+
+        LineEnding lineEnding = LineEnding.detect(rawText);
+        String normalizedText = LineEnding.normalize(rawText);
+
+        // バッファ操作はアトミックに行う
+        buffer.atomicOperation(bf -> {
+            bf.getUndoManager().withoutRecording(() -> {
+                int currentLength = bf.length();
+                if (currentLength > 0) {
+                    bf.deleteText(0, currentLength);
+                }
+                if (!normalizedText.isEmpty()) {
+                    bf.insertText(0, normalizedText);
+                }
+            });
+            bf.setLineEnding(lineEnding);
+            bf.getUndoManager().clear();
+            bf.markClean();
+            return null;
+        });
+    }
+
     private static String readAll(Reader reader) throws IOException {
         var sb = new StringBuilder();
         char[] buf = new char[8192];

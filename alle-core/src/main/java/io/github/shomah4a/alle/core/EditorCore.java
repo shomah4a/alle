@@ -33,6 +33,7 @@ import io.github.shomah4a.alle.core.command.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.ProcessQuitCommand;
 import io.github.shomah4a.alle.core.command.RedoCommand;
+import io.github.shomah4a.alle.core.command.RevertBufferCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SaveBuffersKillAlleCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
@@ -212,6 +213,7 @@ public final class EditorCore {
         registry.register(new FindFileCommand(
                 bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, modeRegistry, filePathHistory));
         registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
+        registry.register(new RevertBufferCommand(bufferIO));
         var bufferHistory = new InputHistory();
         registry.register(new SwitchBufferCommand(bufferHistory));
         registry.register(new OtherWindowCommand());

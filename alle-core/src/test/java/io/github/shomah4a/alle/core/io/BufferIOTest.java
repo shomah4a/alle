@@ -126,4 +126,71 @@ class BufferIOTest {
             assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }
     }
+
+    @Nested
+    class reload {
+
+        @Test
+        void バッファの内容がファイルから再読み込みされる() throws IOException {
+            storage.put("/tmp/test.txt", "Hello\nWorld");
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
+            var result = io.load(Path.of("/tmp/test.txt"));
+            var buffer = result.bufferFacade();
+
+            // バッファを編集
+            buffer.insertText(buffer.length(), "\nFoo");
+            buffer.markDirty();
+
+            // ファイルの内容を更新
+            storage.put("/tmp/test.txt", "Updated content");
+
+            io.reload(buffer);
+
+            assertEquals("Updated content", buffer.getText());
+            assertFalse(buffer.isDirty());
+        }
+
+        @Test
+        void reload後にundo履歴がクリアされる() throws IOException {
+            storage.put("/tmp/test.txt", "Hello");
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
+            var result = io.load(Path.of("/tmp/test.txt"));
+            var buffer = result.bufferFacade();
+
+            buffer.insertText(buffer.length(), " World");
+            assertEquals(1, buffer.getUndoManager().undoSize());
+
+            storage.put("/tmp/test.txt", "Reloaded");
+            io.reload(buffer);
+
+            assertEquals(0, buffer.getUndoManager().undoSize());
+            assertEquals(0, buffer.getUndoManager().redoSize());
+        }
+
+        @Test
+        void reload後に改行コードが更新される() throws IOException {
+            storage.put("/tmp/test.txt", "Hello\nWorld");
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
+            var result = io.load(Path.of("/tmp/test.txt"));
+            var buffer = result.bufferFacade();
+            assertEquals(LineEnding.LF, buffer.getLineEnding());
+
+            // ファイルの改行コードが変わった
+            storage.put("/tmp/test.txt", "Hello\r\nWorld");
+            io.reload(buffer);
+
+            assertEquals(LineEnding.CRLF, buffer.getLineEnding());
+            assertEquals("Hello\nWorld", buffer.getText());
+        }
+
+        @Test
+        void ファイルパスが未設定のバッファをreloadすると例外が発生する() {
+            var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
+            var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
+            var buffer = new io.github.shomah4a.alle.core.buffer.BufferFacade(
+                    new io.github.shomah4a.alle.core.buffer.TextBuffer("nopath", textModel, new SettingsRegistry()));
+
+            assertThrows(IllegalStateException.class, () -> io.reload(buffer));
+        }
+    }
 }

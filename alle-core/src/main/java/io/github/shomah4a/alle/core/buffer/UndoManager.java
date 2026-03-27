@@ -108,6 +108,16 @@ public class UndoManager {
     }
 
     /**
+     * undo/redoスタックをすべてクリアする。
+     * バッファの内容がファイルから再読み込みされた場合など、
+     * 履歴が無効になった際に使用する。
+     */
+    public void clear() {
+        undoStack.clear();
+        redoStack.clear();
+    }
+
+    /**
      * undoスタックのサイズを返す。
      */
     public int undoSize() {

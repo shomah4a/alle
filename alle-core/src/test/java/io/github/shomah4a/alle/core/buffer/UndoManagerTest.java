@@ -116,6 +116,28 @@ class UndoManagerTest {
     }
 
     @Nested
+    class クリア {
+
+        @Test
+        void clearでundoスタックとredoスタックが空になる() {
+            var manager = new UndoManager();
+            manager.record(new TextChange.Delete(0, "a"));
+            manager.record(new TextChange.Delete(1, "b"));
+            manager.undo();
+
+            assertEquals(1, manager.undoSize());
+            assertEquals(1, manager.redoSize());
+
+            manager.clear();
+
+            assertEquals(0, manager.undoSize());
+            assertEquals(0, manager.redoSize());
+            assertTrue(manager.undo().isEmpty());
+            assertTrue(manager.redo().isEmpty());
+        }
+    }
+
+    @Nested
     class トランザクション {
 
         @Test
