@@ -217,7 +217,7 @@ public final class EditorCore {
         var bufferHistory = new InputHistory();
         registry.register(new SwitchBufferCommand(bufferHistory));
         registry.register(new OtherWindowCommand());
-        registry.register(new KillBufferCommand(bufferHistory));
+        registry.register(new KillBufferCommand(bufferHistory, bufferIO));
         var commandHistory = new InputHistory();
         registry.register(new ExecuteCommandCommand(registry, commandHistory));
         registry.register(new SetMarkCommand());

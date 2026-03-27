@@ -4,11 +4,18 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
+import io.github.shomah4a.alle.core.input.Completer;
+import io.github.shomah4a.alle.core.input.CompletionCandidate;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Window;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
 
@@ -20,12 +27,23 @@ import org.eclipse.collections.api.set.ImmutableSet;
  */
 public class KillBufferCommand implements Command {
 
+    private static final Logger logger = Logger.getLogger(KillBufferCommand.class.getName());
+
     private static final String SCRATCH_BUFFER_NAME = "*scratch*";
 
-    private final InputHistory bufferHistory;
+    private static final Completer KILL_CONFIRM_COMPLETER = input -> Lists.immutable
+            .of("yes", "no", "save and kill")
+            .select(s -> s.startsWith(input))
+            .collect(CompletionCandidate::terminal);
 
-    public KillBufferCommand(InputHistory bufferHistory) {
+    private final InputHistory bufferHistory;
+    private final BufferIO bufferIO;
+    private final InputHistory confirmHistory;
+
+    public KillBufferCommand(InputHistory bufferHistory, BufferIO bufferIO) {
         this.bufferHistory = bufferHistory;
+        this.bufferIO = bufferIO;
+        this.confirmHistory = new InputHistory();
     }
 
     @Override
@@ -41,33 +59,77 @@ public class KillBufferCommand implements Command {
 
         return context.inputPrompter()
                 .prompt(promptMessage, "", bufferHistory, completer)
-                .thenAccept(result -> {
+                .thenCompose(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         var input = confirmed.value();
                         var bufferName = input.isEmpty() ? currentBufferName : input;
-                        killBuffer(context, bufferName);
+                        return killBuffer(context, bufferName);
                     }
+                    return CompletableFuture.completedFuture(null);
                 });
     }
 
-    private void killBuffer(CommandContext context, String bufferName) {
+    private CompletableFuture<Void> killBuffer(CommandContext context, String bufferName) {
         var bufferManager = context.bufferManager();
         var targetOpt = bufferManager.findByName(bufferName);
         if (targetOpt.isEmpty()) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         var target = targetOpt.get();
 
         if (target.isSystemBuffer()) {
             context.messageBuffer().message("Cannot kill system buffer: " + bufferName);
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
         if (bufferManager.size() <= 1) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
-        // 削除実行
+        if (target.isDirty()) {
+            var prompt = "Buffer " + bufferName + " modified; kill anyway? (yes, no, save and kill) ";
+            return context.inputPrompter()
+                    .prompt(prompt, "", confirmHistory, KILL_CONFIRM_COMPLETER)
+                    .thenCompose(confirmResult -> {
+                        if (confirmResult instanceof PromptResult.Confirmed confirmed) {
+                            return switch (confirmed.value()) {
+                                case "yes" -> {
+                                    doKill(context, bufferManager, bufferName, target);
+                                    yield CompletableFuture.completedFuture(null);
+                                }
+                                case "save and kill" -> {
+                                    yield saveAndKill(context, bufferManager, bufferName, target);
+                                }
+                                default -> CompletableFuture.completedFuture(null);
+                            };
+                        }
+                        return CompletableFuture.completedFuture(null);
+                    });
+        }
+
+        doKill(context, bufferManager, bufferName, target);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private CompletableFuture<Void> saveAndKill(
+            CommandContext context, BufferManager bufferManager, String bufferName, BufferFacade target) {
+        if (target.getFilePath().isEmpty()) {
+            context.messageBuffer().message("Buffer has no file path; use save-buffer first: " + bufferName);
+            return CompletableFuture.completedFuture(null);
+        }
+        try {
+            bufferIO.save(target);
+        } catch (IOException e) {
+            var message = "バッファの保存に失敗: " + bufferName;
+            logger.log(Level.WARNING, message, e);
+            context.handleError(message, e);
+            return CompletableFuture.completedFuture(null);
+        }
+        doKill(context, bufferManager, bufferName, target);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private void doKill(CommandContext context, BufferManager bufferManager, String bufferName, BufferFacade target) {
         bufferManager.remove(bufferName);
 
         // *scratch* を削除した場合はサイレントに再作成

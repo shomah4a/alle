@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,12 +13,20 @@ import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Direction;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.file.Path;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +37,9 @@ class KillBufferCommandTest {
     private BufferFacade fooBuffer;
     private Frame frame;
     private BufferManager bufferManager;
-    private final KillBufferCommand cmd = new KillBufferCommand(new InputHistory());
+    private final MutableMap<String, StringWriter> writerStorage = Maps.mutable.empty();
+    private BufferIO bufferIO;
+    private KillBufferCommand cmd;
 
     @BeforeEach
     void setUp() {
@@ -41,6 +52,16 @@ class KillBufferCommandTest {
         bufferManager = new BufferManager();
         bufferManager.add(scratch);
         bufferManager.add(fooBuffer);
+
+        bufferIO = new BufferIO(
+                source -> new StringReader(""),
+                destination -> {
+                    var sw = new StringWriter();
+                    writerStorage.put(destination, sw);
+                    return sw;
+                },
+                new SettingsRegistry());
+        cmd = new KillBufferCommand(new InputHistory(), bufferIO);
     }
 
     private InputPrompter confirming(String value) {
@@ -49,6 +70,18 @@ class KillBufferCommandTest {
 
     private InputPrompter cancelling() {
         return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+    }
+
+    /**
+     * 呼び出し順に異なる値を返すプロンプター。
+     * 1回目のプロンプトにはfirstValue、2回目にはsecondValueを返す。
+     */
+    private InputPrompter sequentialPrompter(String firstValue, String secondValue) {
+        var callCount = new AtomicInteger(0);
+        return (message, history) -> {
+            var value = callCount.getAndIncrement() == 0 ? firstValue : secondValue;
+            return CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+        };
     }
 
     @Nested
@@ -218,6 +251,79 @@ class KillBufferCommandTest {
             cmd.execute(context).join();
 
             assertTrue(context.messageBuffer().isShowingMessage());
+        }
+    }
+
+    @Nested
+    class dirtyバッファの確認 {
+
+        @Test
+        void dirtyバッファでyesを選ぶと保存せず削除される() {
+            fooBuffer.setFilePath(Path.of("/tmp/foo.txt"));
+            fooBuffer.insertText(0, "unsaved");
+            fooBuffer.markDirty();
+
+            var context = TestCommandContextFactory.create(frame, bufferManager, sequentialPrompter("foo.txt", "yes"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("foo.txt").isEmpty());
+            assertTrue(writerStorage.isEmpty());
+        }
+
+        @Test
+        void dirtyバッファでnoを選ぶと削除されない() {
+            fooBuffer.insertText(0, "unsaved");
+            fooBuffer.markDirty();
+
+            var context = TestCommandContextFactory.create(frame, bufferManager, sequentialPrompter("foo.txt", "no"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("foo.txt").isPresent());
+        }
+
+        @Test
+        void dirtyバッファでsave_and_killを選ぶと保存してから削除される() {
+            fooBuffer.setFilePath(Path.of("/tmp/foo.txt"));
+            fooBuffer.insertText(0, "content to save");
+            fooBuffer.markDirty();
+
+            var context = TestCommandContextFactory.create(
+                    frame, bufferManager, sequentialPrompter("foo.txt", "save and kill"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("foo.txt").isEmpty());
+            assertEquals(
+                    "content to save",
+                    Objects.requireNonNull(writerStorage.get("/tmp/foo.txt")).toString());
+        }
+
+        @Test
+        void dirtyバッファでsave_and_killを選んだがファイルパス未設定の場合はメッセージ表示して中止() {
+            fooBuffer.insertText(0, "unsaved");
+            fooBuffer.markDirty();
+
+            var context = TestCommandContextFactory.create(
+                    frame, bufferManager, sequentialPrompter("foo.txt", "save and kill"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("foo.txt").isPresent());
+            assertEquals(
+                    "Buffer has no file path; use save-buffer first: foo.txt",
+                    context.messageBuffer().getLastMessage().orElseThrow());
+        }
+
+        @Test
+        void dirtyでないバッファは確認なしで削除される() {
+            assertFalse(fooBuffer.isDirty());
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
+
+            cmd.execute(context).join();
+
+            assertTrue(bufferManager.findByName("foo.txt").isEmpty());
         }
     }
 
