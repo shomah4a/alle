@@ -14,15 +14,15 @@ import org.eclipse.collections.api.list.ListIterable;
  */
 class TextPropertyStore {
 
-    private final RangeList readOnlyRanges = new RangeList();
-    private final RangeList pointGuardRanges = new RangeList();
-    private final FaceRangeList faceRanges = new FaceRangeList();
+    private final RangeList<RangeList.Flag> readOnlyRanges = new RangeList<>();
+    private final RangeList<RangeList.Flag> pointGuardRanges = new RangeList<>();
+    private final RangeList<Face> faceRanges = new RangeList<>();
 
     /**
      * 指定範囲にread-onlyを設定する。
      */
     void putReadOnly(int start, int end) {
-        readOnlyRanges.put(start, end);
+        readOnlyRanges.put(start, end, RangeList.Flag.ON);
     }
 
     /**
@@ -53,7 +53,7 @@ class TextPropertyStore {
      * 指定範囲にpointGuard（カーソル進入禁止）を設定する。
      */
     void putPointGuard(int start, int end) {
-        pointGuardRanges.put(start, end);
+        pointGuardRanges.put(start, end, RangeList.Flag.ON);
     }
 
     /**
@@ -117,7 +117,7 @@ class TextPropertyStore {
      * 指定範囲 [start, end) 内のface範囲をStyledSpanリストとして返す。
      */
     ListIterable<StyledSpan> getFaceSpans(int start, int end) {
-        return faceRanges.getFaceSpans(start, end);
+        return faceRanges.getEntries(start, end).collect(e -> new StyledSpan(e.start(), e.end(), e.value()));
     }
 
     /**
