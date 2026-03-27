@@ -2,11 +2,6 @@
 
 ## 未着手タスク
 
-### スクリプトエンジン: BufferFacade のスレッド安全性
-- BufferFacade の insertAt/deleteAt が Buffer を直接操作しており WindowActor を経由していない
-- WindowActor が非同期化された場合にレースコンディションの温床になる
-- BufferFacade を読み取り専用にするか、WindowActor 経由に統一する
-
 ### スクリプトエンジン: 初期化の遅延実行
 - スクリプトエンジンの初期化を EditorRunner.run() 開始後に遅延する
 - 現在は描画スレッド起動前に初期化しているため、初期化中のメッセージが画面に表示されない
