@@ -211,6 +211,22 @@ public class BufferFacade {
         return buffer.isReadOnlyAt(index);
     }
 
+    public void putPointGuard(int start, int end) {
+        buffer.putPointGuard(start, end);
+    }
+
+    public void removePointGuard(int start, int end) {
+        buffer.removePointGuard(start, end);
+    }
+
+    public boolean isPointGuardAt(int index) {
+        return buffer.isPointGuardAt(index);
+    }
+
+    public int resolvePointGuard(int index, boolean forward) {
+        return buffer.resolvePointGuard(index, forward);
+    }
+
     // ── Undo ──
 
     public UndoManager getUndoManager() {

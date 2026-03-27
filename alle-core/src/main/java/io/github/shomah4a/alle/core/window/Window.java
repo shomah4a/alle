@@ -68,26 +68,38 @@ public class Window {
     /**
      * カーソル位置(point)をコードポイント単位で返す。
      * バッファの長さを超過している場合は末尾にclampする。
+     * pointGuard範囲内にある場合はガード範囲のend位置にクランプする。
      */
     public int getPoint() {
         int length = bufferFacade.length();
         if (point > length) {
             point = length;
         }
+        int resolved = bufferFacade.resolvePointGuard(point, true);
+        if (resolved != point && resolved <= length) {
+            point = resolved;
+        }
         return point;
     }
 
     /**
      * カーソル位置(point)をコードポイント単位で設定する。
+     * pointGuard範囲内の場合、侵入方向と逆方向に押し戻す。
      *
-     * @throws IndexOutOfBoundsException pointが範囲外の場合
+     * @throws IndexOutOfBoundsException pointが負の値またはバッファ長を超える場合
      */
     public void setPoint(int point) {
         int length = bufferFacade.length();
         if (point < 0 || point > length) {
             throw new IndexOutOfBoundsException("point " + point + " is out of bounds [0, " + length + "]");
         }
-        this.point = point;
+        boolean forward = point >= this.point;
+        int resolved = bufferFacade.resolvePointGuard(point, forward);
+        if (resolved >= 0 && resolved <= length) {
+            this.point = resolved;
+        } else {
+            this.point = point;
+        }
     }
 
     /**
@@ -122,28 +134,39 @@ public class Window {
 
     /**
      * カーソルの手前からcount文字を削除する(バックスペース相当)。
+     * pointGuard範囲に食い込む場合、ガード範囲のend位置まで削除範囲を制限する。
      */
     public void deleteBackward(int count) {
-        int deleteCount = Math.min(count, point);
-        if (deleteCount == 0) {
+        int effectivePoint = getPoint();
+        int rawStart = effectivePoint - Math.min(count, effectivePoint);
+        int resolvedStart = bufferFacade.resolvePointGuard(rawStart, true);
+        int deleteCount = effectivePoint - resolvedStart;
+        if (deleteCount <= 0) {
             return;
         }
-        int deleteStart = point - deleteCount;
-        bufferFacade.deleteText(deleteStart, deleteCount);
-        point = deleteStart;
+        bufferFacade.deleteText(resolvedStart, deleteCount);
+        point = resolvedStart;
         bufferFacade.markDirty();
     }
 
     /**
      * カーソルの後ろからcount文字を削除する(Delete相当)。
+     * 削除範囲内にpointGuard範囲がある場合、最初のガード位置の手前まで制限する。
      */
     public void deleteForward(int count) {
-        int remaining = bufferFacade.length() - point;
+        int effectivePoint = getPoint();
+        int remaining = bufferFacade.length() - effectivePoint;
         int deleteCount = Math.min(count, remaining);
+        for (int i = 0; i < deleteCount; i++) {
+            if (bufferFacade.isPointGuardAt(effectivePoint + i)) {
+                deleteCount = i;
+                break;
+            }
+        }
         if (deleteCount == 0) {
             return;
         }
-        bufferFacade.deleteText(point, deleteCount);
+        bufferFacade.deleteText(effectivePoint, deleteCount);
         bufferFacade.markDirty();
     }
 

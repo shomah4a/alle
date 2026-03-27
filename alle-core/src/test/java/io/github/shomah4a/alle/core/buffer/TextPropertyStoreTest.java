@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -169,6 +170,180 @@ class TextPropertyStoreTest {
     }
 
     @Nested
+    class pointGuardの設定と取得 {
+
+        @Test
+        void 設定した範囲内の位置がpointGuardになる() {
+            store.putPointGuard(0, 5);
+
+            assertTrue(store.isPointGuard(0));
+            assertTrue(store.isPointGuard(4));
+        }
+
+        @Test
+        void 半開区間のend位置はpointGuardにならない() {
+            store.putPointGuard(0, 5);
+
+            assertFalse(store.isPointGuard(5));
+        }
+
+        @Test
+        void 範囲外の位置はpointGuardにならない() {
+            store.putPointGuard(5, 10);
+
+            assertFalse(store.isPointGuard(4));
+            assertFalse(store.isPointGuard(10));
+        }
+    }
+
+    @Nested
+    class pointGuardの解除 {
+
+        @Test
+        void 完全一致する範囲のpointGuardを解除できる() {
+            store.putPointGuard(0, 5);
+            store.removePointGuard(0, 5);
+
+            assertFalse(store.isPointGuard(2));
+        }
+
+        @Test
+        void 部分的に重なる範囲の解除でエントリが縮小される() {
+            store.putPointGuard(0, 10);
+            store.removePointGuard(3, 7);
+
+            assertTrue(store.isPointGuard(2));
+            assertFalse(store.isPointGuard(5));
+            assertTrue(store.isPointGuard(8));
+        }
+    }
+
+    @Nested
+    class pointGuardとreadOnlyの独立性 {
+
+        @Test
+        void readOnlyの設定がpointGuardに影響しない() {
+            store.putPointGuard(0, 5);
+            store.putReadOnly(0, 5);
+            store.removeReadOnly(0, 5);
+
+            assertTrue(store.isPointGuard(2));
+        }
+
+        @Test
+        void pointGuardの設定がreadOnlyに影響しない() {
+            store.putReadOnly(0, 5);
+            store.putPointGuard(0, 5);
+            store.removePointGuard(0, 5);
+
+            assertTrue(store.isReadOnly(2));
+        }
+    }
+
+    @Nested
+    class pointGuardのテキスト挿入時の範囲調整 {
+
+        @Test
+        void 範囲より前への挿入で範囲全体がシフトする() {
+            store.putPointGuard(5, 10);
+            store.adjustForInsert(0, 3);
+
+            assertFalse(store.isPointGuard(5));
+            assertTrue(store.isPointGuard(8));
+            assertTrue(store.isPointGuard(12));
+            assertFalse(store.isPointGuard(13));
+        }
+
+        @Test
+        void rearNonstickyで範囲末尾への挿入では範囲が拡大しない() {
+            store.putPointGuard(0, 5);
+            store.adjustForInsert(5, 3);
+
+            assertTrue(store.isPointGuard(4));
+            assertFalse(store.isPointGuard(5));
+        }
+    }
+
+    @Nested
+    class pointGuardのテキスト削除時の範囲調整 {
+
+        @Test
+        void 範囲を完全に含む削除でエントリが除去される() {
+            store.putPointGuard(3, 7);
+            store.adjustForDelete(0, 10);
+
+            assertFalse(store.isPointGuard(0));
+        }
+
+        @Test
+        void 範囲内部の削除で範囲が縮小する() {
+            store.putPointGuard(0, 10);
+            store.adjustForDelete(3, 4);
+
+            assertTrue(store.isPointGuard(0));
+            assertTrue(store.isPointGuard(5));
+            assertFalse(store.isPointGuard(6));
+        }
+    }
+
+    @Nested
+    class resolvePointGuard {
+
+        @Test
+        void ガード範囲外の位置は元の位置をそのまま返す() {
+            store.putPointGuard(3, 8);
+
+            assertEquals(10, store.resolvePointGuard(10, true));
+            assertEquals(10, store.resolvePointGuard(10, false));
+            assertEquals(1, store.resolvePointGuard(1, true));
+            assertEquals(1, store.resolvePointGuard(1, false));
+        }
+
+        @Test
+        void 前方移動でガード範囲に入るとend位置を返す() {
+            store.putPointGuard(3, 8);
+
+            assertEquals(8, store.resolvePointGuard(5, true));
+            assertEquals(8, store.resolvePointGuard(3, true));
+            assertEquals(8, store.resolvePointGuard(7, true));
+        }
+
+        @Test
+        void 後方移動でガード範囲に入るとガードの手前の位置を返す() {
+            store.putPointGuard(3, 8);
+
+            // start=3なのでstart-1=2に押し戻す
+            assertEquals(2, store.resolvePointGuard(5, false));
+        }
+
+        @Test
+        void 後方移動で先頭から始まるガードに入るとend位置を返す() {
+            store.putPointGuard(0, 8);
+
+            // start=0でstart-1=-1は無効なのでend=8に押し出す
+            assertEquals(8, store.resolvePointGuard(5, false));
+        }
+
+        @Test
+        void 後方移動で押し戻し先が別のガード範囲内の場合はend位置を返す() {
+            store.putPointGuard(0, 3);
+            store.putPointGuard(3, 8);
+
+            // ガード[3,8)のstart-1=2だが、2は[0,3)内 → end=8に押し出す
+            assertEquals(8, store.resolvePointGuard(5, false));
+        }
+
+        @Test
+        void ガードのend位置はガード外として扱われる() {
+            store.putPointGuard(3, 8);
+
+            // 半開区間[3,8)なのでend=8はガード外
+            assertEquals(8, store.resolvePointGuard(8, true));
+            assertEquals(8, store.resolvePointGuard(8, false));
+        }
+    }
+
+    @Nested
     class clear {
 
         @Test
@@ -179,6 +354,16 @@ class TextPropertyStoreTest {
 
             assertFalse(store.isReadOnly(2));
             assertFalse(store.isReadOnly(15));
+        }
+
+        @Test
+        void clearでpointGuardも除去される() {
+            store.putPointGuard(0, 5);
+            store.putPointGuard(10, 20);
+            store.clear();
+
+            assertFalse(store.isPointGuard(2));
+            assertFalse(store.isPointGuard(15));
         }
     }
 }

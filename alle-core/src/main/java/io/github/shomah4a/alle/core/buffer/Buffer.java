@@ -221,6 +221,33 @@ interface Buffer {
      */
     boolean isReadOnlyAt(int index);
 
+    /**
+     * 指定範囲にpointGuard（カーソル進入禁止）プロパティを設定する。
+     * 半開区間 [start, end) で管理される。
+     */
+    void putPointGuard(int start, int end);
+
+    /**
+     * 指定範囲のpointGuardプロパティを解除する。
+     */
+    void removePointGuard(int start, int end);
+
+    /**
+     * 指定位置がpointGuard（カーソル進入禁止）で保護されているかを返す。
+     */
+    boolean isPointGuardAt(int index);
+
+    /**
+     * 指定位置がpointGuard範囲内の場合、侵入方向と逆方向に押し戻した位置を返す。
+     * forward（前方移動）でガードに入った場合はガードのend位置に、
+     * backward（後方移動）でガードに入った場合はガードのstart位置に押し戻す。
+     * 範囲外の場合は元の位置をそのまま返す。
+     *
+     * @param index 解決対象の位置
+     * @param forward trueなら前方移動、falseなら後方移動
+     */
+    int resolvePointGuard(int index, boolean forward);
+
     // ── 設定 ──
 
     /**

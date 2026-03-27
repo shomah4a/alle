@@ -307,6 +307,26 @@ public class TextBuffer implements Buffer {
         return locked(() -> textPropertyStore.isReadOnly(index));
     }
 
+    @Override
+    public void putPointGuard(int start, int end) {
+        lockedVoid(() -> textPropertyStore.putPointGuard(start, end));
+    }
+
+    @Override
+    public void removePointGuard(int start, int end) {
+        lockedVoid(() -> textPropertyStore.removePointGuard(start, end));
+    }
+
+    @Override
+    public boolean isPointGuardAt(int index) {
+        return locked(() -> textPropertyStore.isPointGuard(index));
+    }
+
+    @Override
+    public int resolvePointGuard(int index, boolean forward) {
+        return locked(() -> textPropertyStore.resolvePointGuard(index, forward));
+    }
+
     // ── アトミック操作 ──
 
     @Override

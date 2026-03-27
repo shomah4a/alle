@@ -363,6 +363,26 @@ public class MessageBuffer implements Buffer {
         return false;
     }
 
+    @Override
+    public void putPointGuard(int start, int end) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
+    public void removePointGuard(int start, int end) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
+    public boolean isPointGuardAt(int index) {
+        return false;
+    }
+
+    @Override
+    public int resolvePointGuard(int index, boolean forward) {
+        return index;
+    }
+
     // ── 設定 ──
 
     @Override

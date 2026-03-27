@@ -432,6 +432,107 @@ class WindowTest {
     }
 
     @Nested
+    class pointGuardによるカーソル進入禁止 {
+
+        @Test
+        void 後方移動でガード範囲に入ると手前に押し戻される() {
+            // ガード[3,8)、point=10からsetPoint(5) → 後方移動 → start-1=2に押し戻す
+            var window = createWindow();
+            window.insert("AB Prompt Hello");
+            window.getBuffer().putPointGuard(3, 10);
+            window.setPoint(12);
+            window.setPoint(5);
+            assertEquals(2, window.getPoint());
+        }
+
+        @Test
+        void 先頭から始まるガード範囲への後方移動はend位置に押し出される() {
+            // ガード[0,8)、後方移動で入るとstart-1が負 → end=8に押し出す
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            window.getBuffer().putPointGuard(0, 8);
+            window.setPoint(10);
+            window.setPoint(5);
+            assertEquals(8, window.getPoint());
+        }
+
+        @Test
+        void 前方移動でガード範囲に入るとend位置に押し出される() {
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            window.getBuffer().putPointGuard(0, 8);
+            // point=0 → setPoint(5)で前方移動 → ガード[0,8)内 → end=8に押し出す
+            window.setPoint(5);
+            assertEquals(8, window.getPoint());
+        }
+
+        @Test
+        void ガード範囲外への移動は影響を受けない() {
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            window.getBuffer().putPointGuard(0, 8);
+            window.setPoint(10);
+            assertEquals(10, window.getPoint());
+        }
+
+        @Test
+        void ガードのend位置にカーソルを設定できる() {
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            window.getBuffer().putPointGuard(0, 8);
+            window.setPoint(8);
+            assertEquals(8, window.getPoint());
+        }
+
+        @Test
+        void getPointでガード範囲内のpointがend位置にクランプされる() {
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            // pointを5に設定してからガードを設定
+            window.setPoint(5);
+            window.getBuffer().putPointGuard(0, 8);
+            // getPointがガード範囲外に押し出す
+            assertEquals(8, window.getPoint());
+        }
+
+        @Test
+        void deleteBackwardでガード範囲内の文字は削除されない() {
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            window.getBuffer().putPointGuard(0, 8);
+            window.setPoint(10);
+            // 10文字削除しようとしても、ガード境界(8)までの2文字しか削除されない
+            window.deleteBackward(10);
+            assertEquals("Prompt: llo", window.getBuffer().getText());
+            assertEquals(8, window.getPoint());
+        }
+
+        @Test
+        void deleteForwardでガード範囲内の文字は削除されない() {
+            var window = createWindow();
+            window.insert("AB GUARD CD");
+            // ガードをread-onlyなしで設定（pointGuard単独で動作を確認）
+            window.getBuffer().putPointGuard(3, 8);
+            window.setPoint(1);
+            // 10文字削除しようとしても、ガード開始位置(3)までの2文字("B ")しか削除されない
+            // 削除後ガード範囲は[1,6)にシフトし、point=1はガード内のためend=6に押し出される
+            window.deleteForward(10);
+            assertEquals("AGUARD CD", window.getBuffer().getText());
+            assertEquals(6, window.getPoint());
+        }
+
+        @Test
+        void ガード解除後はカーソルが自由に移動できる() {
+            var window = createWindow();
+            window.insert("Prompt: Hello");
+            window.getBuffer().putPointGuard(0, 8);
+            window.getBuffer().removePointGuard(0, 8);
+            window.setPoint(5);
+            assertEquals(5, window.getPoint());
+        }
+    }
+
+    @Nested
     class 同一バッファの複数ウィンドウ {
 
         @Test
