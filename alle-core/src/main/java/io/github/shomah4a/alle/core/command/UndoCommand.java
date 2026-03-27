@@ -18,15 +18,15 @@ public class UndoCommand implements Command {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         var undoManager = buffer.getUndoManager();
-        var entryOpt = undoManager.undo();
-        if (entryOpt.isEmpty()) {
+        var changeOpt = undoManager.undo();
+        if (changeOpt.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
-        var entry = entryOpt.get();
+        var change = changeOpt.get();
         undoManager.suppressRecording();
         try {
-            buffer.apply(entry.change());
-            window.setPoint(entry.cursorPosition());
+            buffer.apply(change);
+            window.setPoint(change.offset());
         } finally {
             undoManager.resumeRecording();
         }

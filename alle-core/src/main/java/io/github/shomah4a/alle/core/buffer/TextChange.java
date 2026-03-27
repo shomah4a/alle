@@ -46,13 +46,27 @@ public sealed interface TextChange {
 
     /**
      * 変更の先頭オフセットを返す。
-     * undo/redo後のカーソル位置算出に使用する。
+     * undo後のカーソル位置算出に使用する。
      */
     default int offset() {
         return switch (this) {
             case Insert(var o, var t) -> o;
             case Delete(var o, var t) -> o;
             case Compound(var changes) -> changes.getFirst().offset();
+        };
+    }
+
+    /**
+     * 変更適用後のカーソル位置を返す。
+     * redo後のカーソル位置算出に使用する。
+     * Insertの場合はoffset + テキスト長、Deleteの場合はoffset。
+     * Compoundの場合は最後のchangeの適用後位置。
+     */
+    default int cursorAfterApply() {
+        return switch (this) {
+            case Insert(var o, var t) -> o + (int) t.codePoints().count();
+            case Delete(var o, var t) -> o;
+            case Compound(var changes) -> changes.getLast().cursorAfterApply();
         };
     }
 }

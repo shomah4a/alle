@@ -32,23 +32,21 @@ class UndoManagerTest {
         @Test
         void 記録された逆操作がそのまま返る() {
             var manager = new UndoManager();
-            // Window.insertはBuffer.insertTextの返り値（Delete）を記録する
             var inverseChange = new TextChange.Delete(0, "Hello");
-            manager.record(inverseChange, 0);
+            manager.record(inverseChange);
 
-            var undoEntry = manager.undo().orElseThrow();
-            assertEquals(inverseChange, undoEntry.change());
-            assertEquals(0, undoEntry.cursorPosition());
+            var undoChange = manager.undo().orElseThrow();
+            assertEquals(inverseChange, undoChange);
         }
 
         @Test
         void 複数回の記録は後入れ先出し() {
             var manager = new UndoManager();
-            manager.record(new TextChange.Delete(0, "a"), 0);
-            manager.record(new TextChange.Delete(1, "b"), 1);
+            manager.record(new TextChange.Delete(0, "a"));
+            manager.record(new TextChange.Delete(1, "b"));
 
-            var entry = manager.undo().orElseThrow();
-            assertEquals(new TextChange.Delete(1, "b"), entry.change());
+            var change = manager.undo().orElseThrow();
+            assertEquals(new TextChange.Delete(1, "b"), change);
         }
     }
 
@@ -58,24 +56,22 @@ class UndoManagerTest {
         @Test
         void undo後にredoすると逆操作のさらに逆で元の操作が返る() {
             var manager = new UndoManager();
-            // Window.insertが記録する逆操作（Delete）
             var inverseChange = new TextChange.Delete(0, "Hello");
-            manager.record(inverseChange, 0);
+            manager.record(inverseChange);
             manager.undo();
 
-            var redoEntry = manager.redo().orElseThrow();
-            // Delete の inverse は Insert なので、再挿入される
-            assertEquals(new TextChange.Insert(0, "Hello"), redoEntry.change());
+            var redoChange = manager.redo().orElseThrow();
+            assertEquals(new TextChange.Insert(0, "Hello"), redoChange);
         }
 
         @Test
         void 通常の編集操作でredoスタックがクリアされる() {
             var manager = new UndoManager();
-            manager.record(new TextChange.Delete(0, "a"), 0);
+            manager.record(new TextChange.Delete(0, "a"));
             manager.undo();
             assertEquals(1, manager.redoSize());
 
-            manager.record(new TextChange.Delete(0, "b"), 0);
+            manager.record(new TextChange.Delete(0, "b"));
             assertEquals(0, manager.redoSize());
         }
     }
@@ -87,7 +83,7 @@ class UndoManagerTest {
         void 抑制中はrecordが無視される() {
             var manager = new UndoManager();
             manager.suppressRecording();
-            manager.record(new TextChange.Delete(0, "a"), 0);
+            manager.record(new TextChange.Delete(0, "a"));
             assertEquals(0, manager.undoSize());
         }
 
@@ -95,9 +91,9 @@ class UndoManagerTest {
         void 抑制解除後はrecordが有効になる() {
             var manager = new UndoManager();
             manager.suppressRecording();
-            manager.record(new TextChange.Delete(0, "a"), 0);
+            manager.record(new TextChange.Delete(0, "a"));
             manager.resumeRecording();
-            manager.record(new TextChange.Delete(0, "b"), 0);
+            manager.record(new TextChange.Delete(0, "b"));
             assertEquals(1, manager.undoSize());
         }
     }

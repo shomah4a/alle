@@ -6,12 +6,12 @@ import org.eclipse.collections.api.list.MutableList;
 
 /**
  * バッファのundo/redo履歴を管理する。
- * テキスト変更とカーソル位置をペアで記録し、逆操作を提供する。
+ * テキスト変更の逆操作をスタックに記録し、undo/redoを提供する。
  */
 public class UndoManager {
 
-    private final MutableList<UndoEntry> undoStack;
-    private final MutableList<UndoEntry> redoStack;
+    private final MutableList<TextChange> undoStack;
+    private final MutableList<TextChange> redoStack;
     private boolean recording;
 
     public UndoManager() {
@@ -24,43 +24,38 @@ public class UndoManager {
      * テキスト変更を記録する。記録抑制中は何もしない。
      * 通常の編集操作ではredoスタックをクリアする。
      */
-    public void record(TextChange change, int cursorPosition) {
+    public void record(TextChange change) {
         if (!recording) {
             return;
         }
-        undoStack.add(new UndoEntry(change, cursorPosition));
+        undoStack.add(change);
         redoStack.clear();
     }
 
     /**
-     * 最新の変更を取り消す。記録された逆操作とカーソル復元位置を返す。
-     * Windowが記録するのは既に逆操作（insertText→Delete, deleteText→Insert）なので、
-     * そのままBuffer.applyに渡すことで元に戻る。
+     * 最新の変更を取り消す。記録された逆操作を返す。
      * undoスタックが空の場合はemptyを返す。
      */
-    public Optional<UndoEntry> undo() {
+    public Optional<TextChange> undo() {
         if (undoStack.isEmpty()) {
             return Optional.empty();
         }
-        var entry = undoStack.removeLast();
-        redoStack.add(entry);
-        return Optional.of(entry);
+        var change = undoStack.removeLast();
+        redoStack.add(change);
+        return Optional.of(change);
     }
 
     /**
-     * 直前のundoをやり直す。記録された逆操作のさらに逆操作を返す。
-     * undo時に記録されたDelete→inverse→Insertで再挿入、
-     * Insert→inverse→Deleteで再削除する。
+     * 直前のundoをやり直す。逆操作のさらに逆操作を返す。
      * redoスタックが空の場合はemptyを返す。
      */
-    public Optional<UndoEntry> redo() {
+    public Optional<TextChange> redo() {
         if (redoStack.isEmpty()) {
             return Optional.empty();
         }
-        var entry = redoStack.removeLast();
-        undoStack.add(entry);
-        var redoChange = entry.change().inverse();
-        return Optional.of(new UndoEntry(redoChange, entry.cursorPosition()));
+        var change = redoStack.removeLast();
+        undoStack.add(change);
+        return Optional.of(change.inverse());
     }
 
     /**

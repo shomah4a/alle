@@ -1,6 +1,5 @@
 package io.github.shomah4a.alle.core.command;
 
-import io.github.shomah4a.alle.core.buffer.TextChange;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -19,22 +18,15 @@ public class RedoCommand implements Command {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         var undoManager = buffer.getUndoManager();
-        var entryOpt = undoManager.redo();
-        if (entryOpt.isEmpty()) {
+        var changeOpt = undoManager.redo();
+        if (changeOpt.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
-        var entry = entryOpt.get();
+        var change = changeOpt.get();
         undoManager.suppressRecording();
         try {
-            buffer.apply(entry.change());
-            // redo後のカーソル位置は操作適用後の位置
-            var change = entry.change();
-            if (change instanceof TextChange.Insert insert) {
-                int insertedLen = (int) insert.text().codePoints().count();
-                window.setPoint(insert.offset() + insertedLen);
-            } else if (change instanceof TextChange.Delete delete) {
-                window.setPoint(delete.offset());
-            }
+            buffer.apply(change);
+            window.setPoint(change.cursorAfterApply());
         } finally {
             undoManager.resumeRecording();
         }
