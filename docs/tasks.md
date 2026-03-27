@@ -15,11 +15,6 @@
 - 現在の JavaFuture.__await__ は完了済み Future のみ対応
 - asyncio イベントループとの統合で未完了 Future を非同期待ちできるようにする
 
-### TextPropertyStoreにface属性を追加してプロンプトハイライトを実現する
-- TextPropertyStoreに汎用的なface（表示スタイル）属性を追加する
-- ミニバッファのプロンプト部分にfaceを設定してハイライト描画する
-- ADR 0070で分離した次タスク
-
 ### Pythonモード: 自動dedent
 - `return`/`pass`/`break`/`continue`/`raise` の入力完了後に自動でインデントを減らす
 - newline-and-indent では対応済みだが、入力中のリアルタイム dedent は未実装

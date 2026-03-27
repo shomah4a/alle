@@ -1,17 +1,22 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
+import org.eclipse.collections.api.list.ListIterable;
+
 /**
  * テキストプロパティの範囲管理を行う。
  * 各プロパティは半開区間 [start, end) で管理される。
  * rear-nonsticky: 範囲末尾位置への挿入はプロパティに含まれない。
  *
- * <p>属性種別ごとに独立したRangeListで管理するため、
+ * <p>属性種別ごとに独立したリストで管理するため、
  * 異なる属性の操作が互いに干渉しない。
  */
 class TextPropertyStore {
 
     private final RangeList readOnlyRanges = new RangeList();
     private final RangeList pointGuardRanges = new RangeList();
+    private final FaceRangeList faceRanges = new FaceRangeList();
 
     /**
      * 指定範囲にread-onlyを設定する。
@@ -95,12 +100,34 @@ class TextPropertyStore {
     }
 
     /**
+     * 指定範囲にface（表示スタイル）を設定する。
+     */
+    void putFace(int start, int end, Face face) {
+        faceRanges.put(start, end, face);
+    }
+
+    /**
+     * 指定範囲のfaceを除去する。
+     */
+    void removeFace(int start, int end) {
+        faceRanges.remove(start, end);
+    }
+
+    /**
+     * 指定範囲 [start, end) 内のface範囲をStyledSpanリストとして返す。
+     */
+    ListIterable<StyledSpan> getFaceSpans(int start, int end) {
+        return faceRanges.getFaceSpans(start, end);
+    }
+
+    /**
      * テキスト挿入時の範囲調整。
      * 挿入位置より後の範囲をシフトする。
      */
     void adjustForInsert(int index, int length) {
         readOnlyRanges.adjustForInsert(index, length);
         pointGuardRanges.adjustForInsert(index, length);
+        faceRanges.adjustForInsert(index, length);
     }
 
     /**
@@ -110,6 +137,7 @@ class TextPropertyStore {
     void adjustForDelete(int index, int count) {
         readOnlyRanges.adjustForDelete(index, count);
         pointGuardRanges.adjustForDelete(index, count);
+        faceRanges.adjustForDelete(index, count);
     }
 
     /**
@@ -118,5 +146,6 @@ class TextPropertyStore {
     void clear() {
         readOnlyRanges.clear();
         pointGuardRanges.clear();
+        faceRanges.clear();
     }
 }

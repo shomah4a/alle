@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.styling.Face;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Direction;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -356,6 +357,98 @@ class RenderSnapshotFactoryTest {
             for (var line : ws.visibleLines()) {
                 assertFalse(line.spans().isPresent(), "TextModeにはスタイラーがないためスパンは空");
             }
+        }
+    }
+
+    @Nested
+    class テキストプロパティface {
+
+        @Test
+        void スタイラーなしのバッファにfaceを設定するとLineSnapshotにスパンが付与される() {
+            var mainBuffer = createBuffer("main", "hello world");
+            mainBuffer.putFace(0, 5, Face.BOLD_FACE);
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(new Window(mainBuffer), new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            var line = ws.visibleLines().get(0);
+            assertTrue(line.spans().isPresent());
+            var spans = line.spans().get();
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            assertEquals(5, spans.get(0).end());
+            assertEquals(Face.BOLD_FACE, spans.get(0).face());
+        }
+
+        @Test
+        void face未設定のバッファではスタイラーなし時にスパンが付与されない() {
+            var frame = createFrame("hello world");
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            var line = ws.visibleLines().get(0);
+            assertFalse(line.spans().isPresent());
+        }
+
+        @Test
+        void 別の行にfaceを設定すると行ローカル座標に変換される() {
+            var mainBuffer = createBuffer("main", "hello\nworld");
+            // "world"はバッファオフセット6-11だが、行ローカルでは0-5
+            mainBuffer.putFace(6, 11, Face.KEYWORD);
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(new Window(mainBuffer), new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            // 1行目にはスパンなし
+            assertFalse(ws.visibleLines().get(0).spans().isPresent());
+            // 2行目にfaceスパンが行ローカル座標で付与される
+            var line2 = ws.visibleLines().get(1);
+            assertTrue(line2.spans().isPresent());
+            var spans = line2.spans().get();
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            assertEquals(5, spans.get(0).end());
+            assertEquals(Face.KEYWORD, spans.get(0).face());
+        }
+
+        @Test
+        void ミニバッファにfaceを設定するとMinibufferSnapshotにスパンが付与される() {
+            var mainBuffer = createBuffer("main", "hello");
+            var minibufferBuffer = createBuffer("*Minibuffer*", "");
+            var minibufferWindow = new Window(minibufferBuffer);
+            var frame = new Frame(new Window(mainBuffer), minibufferWindow);
+            frame.activateMinibuffer();
+            minibufferWindow.insert("Find file: /path");
+            minibufferBuffer.putFace(0, 11, Face.MINIBUFFER_PROMPT);
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var mb = snapshot.minibuffer();
+            assertTrue(mb.spans().isPresent());
+            var spans = mb.spans().get();
+            assertEquals(1, spans.size());
+            assertEquals(0, spans.get(0).start());
+            assertEquals(11, spans.get(0).end());
+            assertEquals(Face.MINIBUFFER_PROMPT, spans.get(0).face());
+        }
+
+        @Test
+        void ミニバッファにface未設定のときMinibufferSnapshotにスパンが付与されない() {
+            var mainBuffer = createBuffer("main", "hello");
+            var minibufferBuffer = createBuffer("*Minibuffer*", "");
+            var minibufferWindow = new Window(minibufferBuffer);
+            var frame = new Frame(new Window(mainBuffer), minibufferWindow);
+            frame.activateMinibuffer();
+            minibufferWindow.insert("Find file: /path");
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            assertFalse(snapshot.minibuffer().spans().isPresent());
         }
     }
 }

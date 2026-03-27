@@ -7,6 +7,8 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -320,6 +322,21 @@ public class TextBuffer implements Buffer {
     @Override
     public boolean isPointGuardAt(int index) {
         return locked(() -> textPropertyStore.isPointGuard(index));
+    }
+
+    @Override
+    public void putFace(int start, int end, Face face) {
+        lockedVoid(() -> textPropertyStore.putFace(start, end, face));
+    }
+
+    @Override
+    public void removeFace(int start, int end) {
+        lockedVoid(() -> textPropertyStore.removeFace(start, end));
+    }
+
+    @Override
+    public ListIterable<StyledSpan> getFaceSpans(int start, int end) {
+        return locked(() -> textPropertyStore.getFaceSpans(start, end));
     }
 
     @Override

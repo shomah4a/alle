@@ -227,6 +227,19 @@ public class BufferFacade {
         return buffer.resolvePointGuard(index, forward);
     }
 
+    public void putFace(int start, int end, io.github.shomah4a.alle.core.styling.Face face) {
+        buffer.putFace(start, end, face);
+    }
+
+    public void removeFace(int start, int end) {
+        buffer.removeFace(start, end);
+    }
+
+    public org.eclipse.collections.api.list.ListIterable<io.github.shomah4a.alle.core.styling.StyledSpan> getFaceSpans(
+            int start, int end) {
+        return buffer.getFaceSpans(start, end);
+    }
+
     // ── Undo ──
 
     public UndoManager getUndoManager() {

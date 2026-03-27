@@ -62,7 +62,17 @@ public class ScreenRenderer {
         // ミニバッファ行
         var mb = snapshot.minibuffer();
         if (mb.text().isPresent()) {
-            renderLineAt(mb.text().get(), minibufferRow, 0, cols, mb.displayStartColumn());
+            if (mb.spans().isPresent()) {
+                renderLineWithHighlight(
+                        mb.text().get(),
+                        minibufferRow,
+                        0,
+                        cols,
+                        mb.displayStartColumn(),
+                        mb.spans().get());
+            } else {
+                renderLineAt(mb.text().get(), minibufferRow, 0, cols, mb.displayStartColumn());
+            }
         } else {
             fillBlank(minibufferRow, 0, cols);
         }

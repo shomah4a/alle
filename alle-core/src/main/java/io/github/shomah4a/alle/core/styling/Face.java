@@ -26,6 +26,7 @@ public record Face(String foreground, String background, ImmutableSet<FaceAttrib
     public static final Face TABLE = new Face("cyan", "default", Sets.immutable.empty());
     public static final Face STRIKETHROUGH_FACE =
             new Face("default", "default", Sets.immutable.of(FaceAttribute.STRIKETHROUGH));
+    public static final Face MINIBUFFER_PROMPT = new Face("default", "default", Sets.immutable.of(FaceAttribute.BOLD));
 
     /**
      * 前景色のみ指定してFaceを生成する。

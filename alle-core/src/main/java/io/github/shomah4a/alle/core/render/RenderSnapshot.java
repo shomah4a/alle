@@ -38,6 +38,9 @@ public record RenderSnapshot(
 
     /**
      * ミニバッファ / エコーエリアの描画データ。
+     *
+     * @param spans テキストプロパティfaceによるスタイル情報。未設定はempty。
      */
-    public record MinibufferSnapshot(Optional<String> text, int displayStartColumn) {}
+    public record MinibufferSnapshot(
+            Optional<String> text, int displayStartColumn, Optional<ListIterable<StyledSpan>> spans) {}
 }

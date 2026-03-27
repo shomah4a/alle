@@ -5,6 +5,8 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
@@ -236,6 +238,22 @@ interface Buffer {
      * 指定位置がpointGuard（カーソル進入禁止）で保護されているかを返す。
      */
     boolean isPointGuardAt(int index);
+
+    /**
+     * 指定範囲にface（表示スタイル）プロパティを設定する。
+     * 半開区間 [start, end) で管理される。
+     */
+    void putFace(int start, int end, Face face);
+
+    /**
+     * 指定範囲のfaceプロパティを除去する。
+     */
+    void removeFace(int start, int end);
+
+    /**
+     * 指定範囲 [start, end) 内のface範囲をStyledSpanリストとして返す。
+     */
+    ListIterable<StyledSpan> getFaceSpans(int start, int end);
 
     /**
      * 指定位置がpointGuard範囲内の場合、侵入方向と逆方向に押し戻した位置を返す。

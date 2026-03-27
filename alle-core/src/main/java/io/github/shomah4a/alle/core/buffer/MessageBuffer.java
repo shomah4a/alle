@@ -7,6 +7,8 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.libs.ringbuffer.ArrayRingBuffer;
 import io.github.shomah4a.alle.libs.ringbuffer.RingBuffer;
 import java.nio.file.Path;
@@ -381,6 +383,21 @@ public class MessageBuffer implements Buffer {
     @Override
     public int resolvePointGuard(int index, boolean forward) {
         return index;
+    }
+
+    @Override
+    public void putFace(int start, int end, Face face) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
+    public void removeFace(int start, int end) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
+    public ListIterable<StyledSpan> getFaceSpans(int start, int end) {
+        return Lists.immutable.empty();
     }
 
     // ── 設定 ──
