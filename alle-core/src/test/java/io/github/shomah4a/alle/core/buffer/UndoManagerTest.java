@@ -80,20 +80,35 @@ class UndoManagerTest {
     class 記録抑制 {
 
         @Test
-        void 抑制中はrecordが無視される() {
+        void withoutRecording内ではrecordが無視される() {
             var manager = new UndoManager();
-            manager.suppressRecording();
-            manager.record(new TextChange.Delete(0, "a"));
+            manager.withoutRecording(() -> {
+                manager.record(new TextChange.Delete(0, "a"));
+            });
             assertEquals(0, manager.undoSize());
         }
 
         @Test
-        void 抑制解除後はrecordが有効になる() {
+        void withoutRecording終了後はrecordが有効になる() {
             var manager = new UndoManager();
-            manager.suppressRecording();
-            manager.record(new TextChange.Delete(0, "a"));
-            manager.resumeRecording();
+            manager.withoutRecording(() -> {
+                manager.record(new TextChange.Delete(0, "a"));
+            });
             manager.record(new TextChange.Delete(0, "b"));
+            assertEquals(1, manager.undoSize());
+        }
+
+        @Test
+        void withoutRecording内で例外が発生しても記録状態が復元される() {
+            var manager = new UndoManager();
+            try {
+                manager.withoutRecording(() -> {
+                    throw new RuntimeException("test");
+                });
+            } catch (RuntimeException ignored) {
+                // expected
+            }
+            manager.record(new TextChange.Delete(0, "a"));
             assertEquals(1, manager.undoSize());
         }
     }

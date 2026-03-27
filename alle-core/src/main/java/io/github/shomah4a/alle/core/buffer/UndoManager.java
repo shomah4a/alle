@@ -59,17 +59,18 @@ public class UndoManager {
     }
 
     /**
-     * 記録を抑制する。undo/redo操作の適用中に使用する。
+     * 記録を抑制した状態でactionを実行する。
+     * undo/redo操作の適用時など、バッファ編集がundoスタックに積まれるべきでない場面で使用する。
+     * action内で例外が発生しても記録状態は必ず復元される。
      */
-    public void suppressRecording() {
+    public void withoutRecording(Runnable action) {
+        boolean wasRecording = this.recording;
         this.recording = false;
-    }
-
-    /**
-     * 記録の抑制を解除する。
-     */
-    public void resumeRecording() {
-        this.recording = true;
+        try {
+            action.run();
+        } finally {
+            this.recording = wasRecording;
+        }
     }
 
     /**
