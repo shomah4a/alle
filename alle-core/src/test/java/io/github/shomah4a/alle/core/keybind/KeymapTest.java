@@ -1,14 +1,19 @@
 package io.github.shomah4a.alle.core.keybind;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class KeymapTest {
 
@@ -205,6 +210,51 @@ class KeymapTest {
         void Keymap名を取得できる() {
             var keymap = new Keymap("global");
             assertEquals("global", keymap.getName());
+        }
+    }
+
+    @Nested
+    class isPrintable {
+
+        @Test
+        void ASCII印字可能文字はprintableである() {
+            assertTrue(Keymap.isPrintable(KeyStroke.of('a')));
+            assertTrue(Keymap.isPrintable(KeyStroke.of('Z')));
+            assertTrue(Keymap.isPrintable(KeyStroke.of(' ')));
+            assertTrue(Keymap.isPrintable(KeyStroke.of('~')));
+        }
+
+        @Test
+        void 日本語文字はprintableである() {
+            assertTrue(Keymap.isPrintable(KeyStroke.of('\u3042')));
+        }
+
+        @Test
+        void 修飾キー付きはprintableでない() {
+            assertFalse(Keymap.isPrintable(KeyStroke.ctrl('a')));
+            assertFalse(Keymap.isPrintable(KeyStroke.meta('a')));
+        }
+
+        @Test
+        void 制御文字はprintableでない() {
+            assertFalse(Keymap.isPrintable(KeyStroke.of(0x01)));
+            assertFalse(Keymap.isPrintable(KeyStroke.of(0x7F)));
+        }
+
+        static Stream<Arguments> privateUseAreaのコードポイント() {
+            return Stream.of(
+                    Arguments.of("ARROW_UP", KeyStroke.ARROW_UP),
+                    Arguments.of("ARROW_DOWN", KeyStroke.ARROW_DOWN),
+                    Arguments.of("ARROW_LEFT", KeyStroke.ARROW_LEFT),
+                    Arguments.of("ARROW_RIGHT", KeyStroke.ARROW_RIGHT),
+                    Arguments.of("Private Use Area先頭(U+E000)", 0xE000),
+                    Arguments.of("Private Use Area末尾(U+F8FF)", 0xF8FF));
+        }
+
+        @ParameterizedTest(name = "Private Use Area({0})はprintableでない")
+        @MethodSource("privateUseAreaのコードポイント")
+        void PrivateUseAreaのコードポイントはprintableでない(String label, int codePoint) {
+            assertFalse(Keymap.isPrintable(KeyStroke.of(codePoint)));
         }
     }
 }

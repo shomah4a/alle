@@ -94,11 +94,13 @@ public class Keymap {
         return Optional.empty();
     }
 
-    private static boolean isPrintable(KeyStroke keyStroke) {
+    static boolean isPrintable(KeyStroke keyStroke) {
         if (!keyStroke.modifiers().isEmpty()) {
             return false;
         }
         int codePoint = keyStroke.keyCode();
-        return Character.isValidCodePoint(codePoint) && Character.getType(codePoint) != Character.CONTROL;
+        return Character.isValidCodePoint(codePoint)
+                && Character.getType(codePoint) != Character.CONTROL
+                && Character.getType(codePoint) != Character.PRIVATE_USE;
     }
 }
