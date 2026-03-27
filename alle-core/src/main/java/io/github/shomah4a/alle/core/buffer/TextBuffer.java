@@ -244,7 +244,9 @@ public class TextBuffer implements Buffer {
             int length = (int) text.codePoints().count();
             textModel.insert(index, text);
             textPropertyStore.adjustForInsert(index, length);
-            return new TextChange.Delete(index, text);
+            var inverseChange = new TextChange.Delete(index, text);
+            undoManager.record(inverseChange);
+            return inverseChange;
         });
     }
 
@@ -257,7 +259,9 @@ public class TextBuffer implements Buffer {
             String deleted = textModel.substring(index, index + count);
             textModel.delete(index, count);
             textPropertyStore.adjustForDelete(index, count);
-            return new TextChange.Insert(index, deleted);
+            var inverseChange = new TextChange.Insert(index, deleted);
+            undoManager.record(inverseChange);
+            return inverseChange;
         });
     }
 

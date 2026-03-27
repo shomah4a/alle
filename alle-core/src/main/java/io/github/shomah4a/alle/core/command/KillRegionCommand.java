@@ -31,8 +31,7 @@ public class KillRegionCommand implements Command {
 
         var buffer = window.getBuffer();
         String killedText = buffer.substring(start, end);
-        var inverseChange = buffer.deleteText(start, end - start);
-        buffer.getUndoManager().record(inverseChange);
+        buffer.deleteText(start, end - start);
         buffer.markDirty();
         window.setPoint(start);
         window.clearMark();

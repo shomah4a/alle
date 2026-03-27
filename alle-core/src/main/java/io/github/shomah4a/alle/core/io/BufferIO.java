@@ -45,9 +45,11 @@ public class BufferIO {
         String bufferName = filePath.getFileName().toString();
         var buffer = new TextBuffer(bufferName, new GapTextModel(), settingsRegistry, filePath);
         buffer.setLineEnding(lineEnding);
-        if (!normalizedText.isEmpty()) {
-            buffer.insertText(0, normalizedText);
-        }
+        buffer.getUndoManager().withoutRecording(() -> {
+            if (!normalizedText.isEmpty()) {
+                buffer.insertText(0, normalizedText);
+            }
+        });
 
         var bufferFacade = new BufferFacade(buffer);
         return new LoadResult(bufferFacade, lineEnding);

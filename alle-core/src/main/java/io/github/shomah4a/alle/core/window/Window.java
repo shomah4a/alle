@@ -114,10 +114,9 @@ public class Window {
      * カーソル位置に文字列を挿入し、カーソルを挿入文字列の後ろに移動する。
      */
     public void insert(String text) {
-        var inverseChange = bufferFacade.insertText(point, text);
+        bufferFacade.insertText(point, text);
         int insertedCodePoints = (int) text.codePoints().count();
         point += insertedCodePoints;
-        bufferFacade.getUndoManager().record(inverseChange);
         bufferFacade.markDirty();
     }
 
@@ -130,9 +129,8 @@ public class Window {
             return;
         }
         int deleteStart = point - deleteCount;
-        var inverseChange = bufferFacade.deleteText(deleteStart, deleteCount);
+        bufferFacade.deleteText(deleteStart, deleteCount);
         point = deleteStart;
-        bufferFacade.getUndoManager().record(inverseChange);
         bufferFacade.markDirty();
     }
 
@@ -145,8 +143,7 @@ public class Window {
         if (deleteCount == 0) {
             return;
         }
-        var inverseChange = bufferFacade.deleteText(point, deleteCount);
-        bufferFacade.getUndoManager().record(inverseChange);
+        bufferFacade.deleteText(point, deleteCount);
         bufferFacade.markDirty();
     }
 
