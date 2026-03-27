@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -130,6 +131,62 @@ class TextChangeTest {
 
             buffer.apply(change);
             assertEquals("A", buffer.getText());
+        }
+    }
+
+    @Nested
+    class Compound {
+
+        @Test
+        void Compoundのinverseは各changeのinverseが逆順になる() {
+            var compound = new TextChange.Compound(
+                    Lists.immutable.of(new TextChange.Insert(0, "aa"), new TextChange.Insert(5, "bb")));
+
+            var inverse = assertInstanceOf(TextChange.Compound.class, compound.inverse());
+            assertEquals(2, inverse.changes().size());
+            assertEquals(new TextChange.Delete(5, "bb"), inverse.changes().get(0));
+            assertEquals(new TextChange.Delete(0, "aa"), inverse.changes().get(1));
+        }
+
+        @Test
+        void Compoundのinverseのinverseは元の操作と等しい() {
+            var compound = new TextChange.Compound(
+                    Lists.immutable.of(new TextChange.Insert(0, "aa"), new TextChange.Delete(3, "cc")));
+
+            assertEquals(compound, compound.inverse().inverse());
+        }
+
+        @Test
+        void Compoundのoffsetは先頭のchangeのoffsetを返す() {
+            var compound = new TextChange.Compound(
+                    Lists.immutable.of(new TextChange.Insert(10, "aa"), new TextChange.Insert(5, "bb")));
+
+            assertEquals(10, compound.offset());
+        }
+
+        @Test
+        void Compound変更を適用すると全changeが順番に適用される() {
+            var buffer = createBuffer("Hello World");
+            // Insert(5, "!!"): "Hello!! World" → Insert(0, ">>"): ">>Hello!! World"
+            var compound = new TextChange.Compound(
+                    Lists.immutable.of(new TextChange.Insert(5, "!!"), new TextChange.Insert(0, ">>")));
+
+            buffer.apply(compound);
+
+            assertEquals(">>Hello!! World", buffer.getText());
+        }
+
+        @Test
+        void Compoundの逆操作を適用すると元に戻る() {
+            var buffer = createBuffer("Hello World");
+            var compound = new TextChange.Compound(
+                    Lists.immutable.of(new TextChange.Insert(5, "!!"), new TextChange.Insert(0, ">>")));
+
+            var inverse = buffer.apply(compound);
+            assertEquals(">>Hello!! World", buffer.getText());
+
+            buffer.apply(inverse);
+            assertEquals("Hello World", buffer.getText());
         }
     }
 }

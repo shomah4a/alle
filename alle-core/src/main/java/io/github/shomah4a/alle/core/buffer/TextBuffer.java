@@ -269,6 +269,13 @@ public class TextBuffer implements Buffer {
                 int count = (int) text.codePoints().count();
                 yield deleteText(offset, count);
             }
+            case TextChange.Compound(var changes) -> {
+                MutableList<TextChange> inverses = Lists.mutable.withInitialCapacity(changes.size());
+                for (TextChange c : changes) {
+                    inverses.add(apply(c));
+                }
+                yield new TextChange.Compound(inverses.toReversed());
+            }
         });
     }
 
