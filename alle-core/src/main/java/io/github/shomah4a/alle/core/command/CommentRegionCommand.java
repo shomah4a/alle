@@ -30,22 +30,16 @@ public class CommentRegionCommand implements Command {
         int startLine = buffer.lineIndexForOffset(regionStart.get());
         int endLine = buffer.lineIndexForOffset(regionEnd.get());
 
-        // 全行がコメント済みかチェック
-        boolean allCommented = true;
-        for (int li = startLine; li <= endLine; li++) {
-            String lineText = buffer.lineText(li);
-            String stripped = lineText.stripLeading();
-            if (!stripped.isEmpty() && !stripped.startsWith(String.valueOf(commentString.charAt(0)))) {
-                allCommented = false;
-                break;
-            }
-        }
+        boolean shouldUncomment = isAllCommented(buffer, startLine, endLine, commentString);
 
-        if (allCommented) {
-            uncommentRegion(buffer, startLine, endLine, commentString);
-        } else {
-            commentRegion(buffer, startLine, endLine, commentString);
-        }
+        buffer.getUndoManager().withTransaction(() -> {
+            if (shouldUncomment) {
+                uncommentRegion(buffer, startLine, endLine, commentString);
+            } else {
+                commentRegion(buffer, startLine, endLine, commentString);
+            }
+        });
+        buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }
 
@@ -73,6 +67,18 @@ public class CommentRegionCommand implements Command {
                 buffer.deleteText(contentStart, 1);
             }
         }
+    }
+
+    private static boolean isAllCommented(
+            io.github.shomah4a.alle.core.buffer.BufferFacade buffer, int startLine, int endLine, String commentString) {
+        for (int li = startLine; li <= endLine; li++) {
+            String lineText = buffer.lineText(li);
+            String stripped = lineText.stripLeading();
+            if (!stripped.isEmpty() && !stripped.startsWith(String.valueOf(commentString.charAt(0)))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static int countLeadingWhitespace(String text) {
