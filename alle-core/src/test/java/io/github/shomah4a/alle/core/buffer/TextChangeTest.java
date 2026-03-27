@@ -14,7 +14,7 @@ class TextChangeTest {
     private Buffer createBuffer(String initialText) {
         var buffer = new TextBuffer("test", new GapTextModel(), new SettingsRegistry());
         if (!initialText.isEmpty()) {
-            buffer.insertText(0, initialText);
+            buffer.getUndoManager().withoutRecording(() -> buffer.insertText(0, initialText));
         }
         return buffer;
     }
@@ -187,6 +187,79 @@ class TextChangeTest {
 
             buffer.apply(inverse);
             assertEquals("Hello World", buffer.getText());
+        }
+    }
+
+    @Nested
+    class トランザクションとバッファの統合 {
+
+        @Test
+        void 末尾行から挿入するトランザクションをundoで元に戻せる() {
+            // comment-regionと同等のパターン: 末尾行から"// "を挿入
+            var buffer = createBuffer("aaa\nbbb\nccc\n");
+            var undoManager = ((TextBuffer) buffer).getUndoManager();
+
+            undoManager.withTransaction(() -> {
+                // 末尾行から処理（offset降順）
+                buffer.insertText(8, "// "); // "ccc" の先頭
+                buffer.insertText(4, "// "); // "bbb" の先頭
+                buffer.insertText(0, "// "); // "aaa" の先頭
+            });
+
+            assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
+            assertEquals(1, undoManager.undoSize());
+
+            // undo
+            var change = undoManager.undo().orElseThrow();
+            undoManager.withoutRecording(() -> buffer.apply(change));
+
+            assertEquals("aaa\nbbb\nccc\n", buffer.getText());
+        }
+
+        @Test
+        void 末尾行から削除するトランザクションをundoで元に戻せる() {
+            // uncomment-regionと同等のパターン: 末尾行から"// "を削除
+            var buffer = createBuffer("// aaa\n// bbb\n// ccc\n");
+            var undoManager = ((TextBuffer) buffer).getUndoManager();
+
+            undoManager.withTransaction(() -> {
+                buffer.deleteText(14, 3); // 3行目の"// "
+                buffer.deleteText(7, 3); // 2行目の"// "
+                buffer.deleteText(0, 3); // 1行目の"// "
+            });
+
+            assertEquals("aaa\nbbb\nccc\n", buffer.getText());
+            assertEquals(1, undoManager.undoSize());
+
+            // undo
+            var change = undoManager.undo().orElseThrow();
+            undoManager.withoutRecording(() -> buffer.apply(change));
+
+            assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
+        }
+
+        @Test
+        void トランザクションのundo後にredoで再適用できる() {
+            var buffer = createBuffer("aaa\nbbb\nccc\n");
+            var undoManager = ((TextBuffer) buffer).getUndoManager();
+
+            undoManager.withTransaction(() -> {
+                buffer.insertText(8, "// ");
+                buffer.insertText(4, "// ");
+                buffer.insertText(0, "// ");
+            });
+
+            assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
+
+            // undo
+            var undoChange = undoManager.undo().orElseThrow();
+            undoManager.withoutRecording(() -> buffer.apply(undoChange));
+            assertEquals("aaa\nbbb\nccc\n", buffer.getText());
+
+            // redo
+            var redoChange = undoManager.redo().orElseThrow();
+            undoManager.withoutRecording(() -> buffer.apply(redoChange));
+            assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
         }
     }
 }

@@ -97,7 +97,8 @@ public class UndoManager {
         try {
             action.run();
             if (!transactionBuffer.isEmpty()) {
-                var compound = new TextChange.Compound(transactionBuffer.toImmutable());
+                var compound =
+                        new TextChange.Compound(transactionBuffer.toReversed().toImmutable());
                 undoStack.add(compound);
                 redoStack.clear();
             }

@@ -30,10 +30,13 @@ public class IndentRegionCommand implements Command {
         int endLine = buffer.lineIndexForOffset(regionEnd.get());
 
         // 末尾行から処理してオフセットのずれを防ぐ
-        for (int li = endLine; li >= startLine; li--) {
-            int lineStart = buffer.lineStartOffset(li);
-            buffer.insertText(lineStart, indentStr);
-        }
+        buffer.getUndoManager().withTransaction(() -> {
+            for (int li = endLine; li >= startLine; li--) {
+                int lineStart = buffer.lineStartOffset(li);
+                buffer.insertText(lineStart, indentStr);
+            }
+        });
+        buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }
 }
