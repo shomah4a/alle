@@ -211,7 +211,7 @@ class TextChangeTest {
 
             // undo
             var change = undoManager.undo().orElseThrow();
-            undoManager.withoutRecording(() -> buffer.apply(change));
+            buffer.apply(change);
 
             assertEquals("aaa\nbbb\nccc\n", buffer.getText());
         }
@@ -233,7 +233,7 @@ class TextChangeTest {
 
             // undo
             var change = undoManager.undo().orElseThrow();
-            undoManager.withoutRecording(() -> buffer.apply(change));
+            buffer.apply(change);
 
             assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
         }
@@ -253,12 +253,12 @@ class TextChangeTest {
 
             // undo
             var undoChange = undoManager.undo().orElseThrow();
-            undoManager.withoutRecording(() -> buffer.apply(undoChange));
+            buffer.apply(undoChange);
             assertEquals("aaa\nbbb\nccc\n", buffer.getText());
 
             // redo
             var redoChange = undoManager.redo().orElseThrow();
-            undoManager.withoutRecording(() -> buffer.apply(redoChange));
+            buffer.apply(redoChange);
             assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
         }
     }

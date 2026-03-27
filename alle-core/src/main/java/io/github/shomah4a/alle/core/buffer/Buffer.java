@@ -92,6 +92,7 @@ interface Buffer {
 
     /**
      * TextChangeを適用し、逆操作を返す。
+     * undo/redo等の履歴適用に使用する。適用中のundo記録は自動的に抑制される。
      *
      * @throws ReadOnlyBufferException バッファが読み取り専用の場合
      */

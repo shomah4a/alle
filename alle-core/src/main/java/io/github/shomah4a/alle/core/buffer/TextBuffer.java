@@ -267,19 +267,26 @@ public class TextBuffer implements Buffer {
 
     @Override
     public TextChange apply(TextChange change) {
-        return locked(() -> switch (change) {
-            case TextChange.Insert(var offset, var text) -> insertText(offset, text);
-            case TextChange.Delete(var offset, var text) -> {
-                int count = (int) text.codePoints().count();
-                yield deleteText(offset, count);
-            }
-            case TextChange.Compound(var changes) -> {
-                MutableList<TextChange> inverses = Lists.mutable.withInitialCapacity(changes.size());
-                for (TextChange c : changes) {
-                    inverses.add(apply(c));
-                }
-                yield new TextChange.Compound(inverses.toReversed());
-            }
+        return locked(() -> {
+            // applyは履歴の適用（undo/redo）に使用されるため、記録を抑制する
+            var result = new TextChange[1];
+            undoManager.withoutRecording(() -> {
+                result[0] = switch (change) {
+                    case TextChange.Insert(var offset, var text) -> insertText(offset, text);
+                    case TextChange.Delete(var offset, var text) -> {
+                        int count = (int) text.codePoints().count();
+                        yield deleteText(offset, count);
+                    }
+                    case TextChange.Compound(var changes) -> {
+                        MutableList<TextChange> inverses = Lists.mutable.withInitialCapacity(changes.size());
+                        for (TextChange c : changes) {
+                            inverses.add(apply(c));
+                        }
+                        yield new TextChange.Compound(inverses.toReversed());
+                    }
+                };
+            });
+            return result[0];
         });
     }
 

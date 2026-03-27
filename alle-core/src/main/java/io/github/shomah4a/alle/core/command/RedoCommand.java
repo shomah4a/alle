@@ -23,10 +23,8 @@ public class RedoCommand implements Command {
             return CompletableFuture.completedFuture(null);
         }
         var change = changeOpt.get();
-        undoManager.withoutRecording(() -> {
-            buffer.apply(change);
-            window.setPoint(change.cursorAfterApply());
-        });
+        buffer.apply(change);
+        window.setPoint(change.cursorAfterApply());
         return CompletableFuture.completedFuture(null);
     }
 }

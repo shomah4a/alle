@@ -23,10 +23,8 @@ public class UndoCommand implements Command {
             return CompletableFuture.completedFuture(null);
         }
         var change = changeOpt.get();
-        undoManager.withoutRecording(() -> {
-            buffer.apply(change);
-            window.setPoint(change.offset());
-        });
+        buffer.apply(change);
+        window.setPoint(change.offset());
         return CompletableFuture.completedFuture(null);
     }
 }
