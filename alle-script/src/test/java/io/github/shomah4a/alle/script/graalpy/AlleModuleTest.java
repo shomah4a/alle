@@ -53,7 +53,8 @@ class AlleModuleTest {
                 new CommandRegistry(),
                 new Keymap("global"),
                 new ModeRegistry(),
-                new AutoModeMap(TextMode::new));
+                new AutoModeMap(TextMode::new),
+                io.github.shomah4a.alle.core.styling.ParserStylerRegistry.createWithBuiltins());
         var stdoutStream =
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000, new SettingsRegistry());
@@ -269,28 +270,31 @@ class AlleModuleTest {
     @Test
     void Pythonモードのスタイラーで三重引用符文字列をハイライトできる() {
         engine.eval("import alle");
+        engine.eval("import java");
         ScriptResult evalResult = engine.eval("""
                 from alle.modes.python import PythonMode
+                Lists = java.type('org.eclipse.collections.api.factory.Lists')
                 mode = PythonMode()
                 styler = mode.styler()
-                result = styler.styleLineWithState('x = \"\"\"hello', styler.initialState())
-                spans = result.spans()
-                next_state = result.nextState()
-                in_region = next_state.isInRegion()
+                lines = Lists.immutable.of('x = \"\"\"hello', 'world', '\"\"\"')
+                doc_result = styler.styleDocument(lines)
+                # 各行にスパンがあるか確認
+                span_count_line0 = doc_result.get(0).size()
+                span_count_line1 = doc_result.get(1).size()
+                span_count_line2 = doc_result.get(2).size()
                 """);
         if (evalResult instanceof ScriptResult.Failure f) {
             System.err.println("triple quote test failed: " + f.message());
             f.cause().printStackTrace(System.err);
         }
         assertInstanceOf(ScriptResult.Success.class, evalResult);
-        ScriptResult spanResult = engine.eval("spans.size()");
-        assertInstanceOf(ScriptResult.Success.class, spanResult);
-        int spanCount = Integer.parseInt(((ScriptResult.Success) spanResult).value());
-        assertTrue(spanCount > 0, "三重引用符文字列に対するスパンが生成されるべき");
-        // リージョンが継続中であること
-        ScriptResult stateResult = engine.eval("str(in_region)");
-        assertInstanceOf(ScriptResult.Success.class, stateResult);
-        assertEquals("True", ((ScriptResult.Success) stateResult).value());
+        // 各行に文字列スパンが存在すること
+        ScriptResult line0Result = engine.eval("str(span_count_line0)");
+        assertInstanceOf(ScriptResult.Success.class, line0Result);
+        assertTrue(Integer.parseInt(((ScriptResult.Success) line0Result).value()) > 0, "1行目に三重引用符文字列のスパンが生成されるべき");
+        ScriptResult line1Result = engine.eval("str(span_count_line1)");
+        assertInstanceOf(ScriptResult.Success.class, line1Result);
+        assertTrue(Integer.parseInt(((ScriptResult.Success) line1Result).value()) > 0, "2行目（文字列内部）にスパンが生成されるべき");
     }
 
     @Test

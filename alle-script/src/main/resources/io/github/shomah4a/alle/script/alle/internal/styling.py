@@ -92,3 +92,22 @@ def regex_styler(rules: list[Any]) -> Any:
     for rule in rules:
         mutable_list.add(rule)
     return _RegexStyler(mutable_list)
+
+
+def parser_styler(language: str) -> Any:
+    """パーサーベースのスタイラーを取得する。
+
+    指定された言語名に対応するパーサーベースのスタイラーを返す。
+    内部でどのパーサーライブラリを使用しているかはこの関数の利用者には見えない。
+
+    :param language: 言語名（例: "python"）
+    :type language: str
+    :return: SyntaxStyler インスタンス
+    :rtype: SyntaxStyler
+    :raises ValueError: 未対応の言語が指定された場合
+    """
+    from alle.internal.facade import _require_facade
+    styler = _require_facade().createParserStyler(language)
+    if styler is None:
+        raise ValueError(f"未対応の言語です: {language}")
+    return styler

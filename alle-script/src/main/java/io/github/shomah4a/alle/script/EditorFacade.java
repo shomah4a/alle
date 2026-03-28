@@ -11,6 +11,8 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.styling.ParserStylerRegistry;
+import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,7 @@ public class EditorFacade implements Loggable {
     private final Keymap globalKeymap;
     private final ModeRegistry modeRegistry;
     private final AutoModeMap autoModeMap;
+    private final ParserStylerRegistry parserStylerRegistry;
 
     public EditorFacade(
             Frame frame,
@@ -37,13 +40,15 @@ public class EditorFacade implements Loggable {
             CommandRegistry commandRegistry,
             Keymap globalKeymap,
             ModeRegistry modeRegistry,
-            AutoModeMap autoModeMap) {
+            AutoModeMap autoModeMap,
+            ParserStylerRegistry parserStylerRegistry) {
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
         this.globalKeymap = globalKeymap;
         this.modeRegistry = modeRegistry;
         this.autoModeMap = autoModeMap;
+        this.parserStylerRegistry = parserStylerRegistry;
     }
 
     /**
@@ -177,5 +182,16 @@ public class EditorFacade implements Loggable {
                 .lookupMajorMode(modeName)
                 .orElseThrow(() -> new IllegalArgumentException("メジャーモード '" + modeName + "' は登録されていません"));
         autoModeMap.register(extension, factory);
+    }
+
+    /**
+     * 指定言語のパーサーベーススタイラーを生成する。
+     * 未対応の言語の場合はnullを返す。
+     *
+     * @param language 言語名（例: "python"）
+     * @return スタイラー、または未対応の場合null
+     */
+    public @org.jspecify.annotations.Nullable SyntaxStyler createParserStyler(String language) {
+        return parserStylerRegistry.create(language).orElse(null);
     }
 }
