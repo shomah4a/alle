@@ -108,7 +108,12 @@ def _get_bracket_indent(syntax_analyzer, buf, line_index: int, column: int) -> i
     # 子ノードから最初のコンテンツ（開き括弧トークン以外）の位置を判定
     first_content = _find_first_content_child(node)
     if first_content is not None and first_content.startLine() == bracket_start_line:
-        # 開き括弧と同じ行にコンテンツがある場合、その位置に揃える
+        # カーソルがコンテンツより後ろにある場合、コンテンツ位置に揃える
+        # カーソルが開きカッコ直後（コンテンツより前）にある場合は indent + INDENT_UNIT
+        if line_index == bracket_start_line and column <= first_content.startColumn():
+            bracket_line_text = buf.line_text(bracket_start_line)
+            bracket_line_indent = len(_get_indent(bracket_line_text))
+            return bracket_line_indent + _INDENT_UNIT
         return first_content.startColumn()
     # 開き括弧直後に改行がある場合、行のインデント + INDENT_UNIT
     bracket_line_text = buf.line_text(bracket_start_line)
