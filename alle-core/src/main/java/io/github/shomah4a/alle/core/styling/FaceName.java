@@ -60,6 +60,11 @@ public final class FaceName {
     public static final FaceName NUMBER = new FaceName("number", "数値リテラル");
     public static final FaceName ANNOTATION = new FaceName("annotation", "アノテーション・デコレータ");
     public static final FaceName LIST_MARKER = new FaceName("list-marker", "リストマーカー");
+    public static final FaceName TYPE = new FaceName("type", "型名");
+    public static final FaceName FUNCTION_NAME = new FaceName("function-name", "関数・メソッド名");
+    public static final FaceName VARIABLE = new FaceName("variable", "変数名");
+    public static final FaceName OPERATOR = new FaceName("operator", "演算子");
+    public static final FaceName BUILTIN = new FaceName("builtin", "組み込み関数・定数");
 
     // インライン修飾（セマンティクス）
     public static final FaceName STRONG = new FaceName("strong", "強調テキスト（Markdownの**太字**等）");

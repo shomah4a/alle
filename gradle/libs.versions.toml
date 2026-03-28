@@ -12,6 +12,8 @@ errorprone-gradle = "4.2.0"
 nullaway-gradle = "2.3.0"
 shadow = "9.3.2"
 graalvm-polyglot = "25.0.2"
+tree-sitter = "0.26.6"
+tree-sitter-python = "0.25.0"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -26,6 +28,8 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 lanterna = { module = "com.googlecode.lanterna:lanterna", version.ref = "lanterna" }
 graalvm-polyglot = { module = "org.graalvm.polyglot:polyglot", version.ref = "graalvm-polyglot" }
 graalvm-python = { module = "org.graalvm.polyglot:python", version.ref = "graalvm-polyglot" }
+tree-sitter = { module = "io.github.bonede:tree-sitter", version.ref = "tree-sitter" }
+tree-sitter-python = { module = "io.github.bonede:tree-sitter-python", version.ref = "tree-sitter-python" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
