@@ -31,6 +31,14 @@
 - DefaultFaceTheme に Python モード固有の FaceName マッピングがハードコードされている問題を解消する
 
 
+### 構文解析: toSyntaxNodeの遅延変換
+- rootNode()呼び出しで全構文木がJavaオブジェクトにコピーされる
+- 子ノードの遅延変換でパフォーマンスを改善する
+
+### electric_pairコマンドのctx経由化
+- 現在はalle.active_window()を直接呼んでいる
+- ctx経由でウィンドウ・バッファにアクセスするよう変更する
+
 ## 将来課題
 
 ### CommandContext のスナップショット化

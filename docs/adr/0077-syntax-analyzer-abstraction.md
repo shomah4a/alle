@@ -77,13 +77,18 @@ public interface SyntaxAnalyzer {
 `enclosingBracket` で検索するノードタイプは言語ごとに異なる（Pythonでは `argument_list`, `list`, `dictionary` 等）。
 この定義はSyntaxAnalyzerRegistryの言語登録時に指定する。
 
-TreeSitterStylerとのパース共有は行わず、独立して管理する。
-統合は後続タスクとする。
+### TreeSitterSession
+
+TSTreeのパースとキャッシュ管理を一元化するセッション。
+TreeSitterStylerとTreeSitterAnalyzerが同一セッションを共有し、同一テキストの2重パースを回避する。
+インクリメンタルパース対応。
 
 ### SyntaxAnalyzerRegistry
 
-言語名からSyntaxAnalyzerを生成するレジストリ。
-ParserStylerRegistryと同構造。言語ごとの括弧系ノードタイプ定義もここで管理する。
+言語名からSyntaxAnalyzerとSyntaxStylerをペアで生成するレジストリ。
+ParserStylerRegistryを統合し廃止した。
+TreeSitterLanguageConfigで言語ごとの設定（括弧系ノードタイプ、ハイライトクエリ等）を保持する。
+LanguageSupportレコードでAnalyzerとStylerの組を提供する。
 
 ### MajorMode インターフェイスの拡張
 
@@ -125,6 +130,18 @@ PythonModeのインスタンスメンバとして保持される。
 
 SyntaxTreeを利用してカッコ内にいるかを判定し、カッコの開始位置に基づいたインデントを提供する。
 SyntaxAnalyzerが利用不可の場合は既存の正規表現ロジックにフォールバックする。
+
+インデントの決定ロジック：
+- 開きカッコ直後で改行 → 行インデント + INDENT_UNIT（不完全構文では正規表現フォールバック）
+- カッコ内でコンテンツの後に改行 → コンテンツのカラム位置に揃える
+- コロン終了 → indent + INDENT_UNIT
+- dedentキーワード終了 → indent - INDENT_UNIT
+
+### コマンド実行のundoトランザクション
+
+CommandLoopでコマンド実行を一律withTransactionで囲み、1コマンド=1undo単位とした。
+トランザクション内で変更がなければundoスタックに積まない（既存のwithTransaction仕様）。
+各コマンド内の個別withTransaction呼び出しは削除した。
 
 ## 根拠
 
