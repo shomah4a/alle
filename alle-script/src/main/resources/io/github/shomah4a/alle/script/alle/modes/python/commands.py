@@ -18,6 +18,9 @@ if TYPE_CHECKING:
 
 _INDENT_UNIT = 4
 
+# 開きカッコで終わる行のパターン
+_OPEN_BRACKET_END = re.compile(r"[(\[{]\s*(?:#.*)?$")
+
 # コロンで終わる行のパターン（コメント・文字列内のコロンは除外）
 _COLON_END = re.compile(r":\s*(?:#.*)?$")
 
@@ -62,10 +65,27 @@ def _buffer_lines(buf) -> Any:
     return lines
 
 
+_BRACKET_TOKENS = {"(", ")", "[", "]", "{", "}", ","}
+
+
+def _find_first_content_child(node) -> Any | None:
+    """括弧ノードの子ノードから最初のコンテンツ（括弧トークンやカンマ以外）を返す。"""
+    children = node.children()
+    for i in range(children.size()):
+        child = children.get(i)
+        type_name = child.type()
+        if type_name not in _BRACKET_TOKENS:
+            return child
+    return None
+
+
 def _get_bracket_indent(syntax_analyzer, buf, line_index: int, column: int) -> int | None:
     """構文解析で括弧内にいるかを判定し、括弧内ならインデントカラムを返す。
 
     括弧内でない場合や構文解析器が利用不可の場合は None を返す。
+
+    括弧の開始行に括弧以降のコンテンツがある場合はそのカラム位置に揃え、
+    括弧直後が改行の場合は行のインデント + INDENT_UNIT を返す。
     """
     if syntax_analyzer is None:
         return None
@@ -78,14 +98,22 @@ def _get_bracket_indent(syntax_analyzer, buf, line_index: int, column: int) -> i
     bracket_start_line = node.startLine()
     bracket_start_col = node.startColumn()
     bracket_end_line = node.endLine()
-    # カーソルが括弧の開始行と同じ行にいる場合はNone（まだ改行していない）
+    # カーソルが括弧の開始行にいる場合、カッコの開き文字より後ろにいるか確認
     if line_index == bracket_start_line:
-        return None
+        if column <= bracket_start_col:
+            return None
     # カーソルが括弧の終了行より後にいる場合はNone
     if line_index > bracket_end_line:
         return None
-    # 括弧の開始位置の次のカラムをインデントとして返す
-    return bracket_start_col + 1
+    # 子ノードから最初のコンテンツ（開き括弧トークン以外）の位置を判定
+    first_content = _find_first_content_child(node)
+    if first_content is not None and first_content.startLine() == bracket_start_line:
+        # 開き括弧と同じ行にコンテンツがある場合、その位置に揃える
+        return first_content.startColumn()
+    # 開き括弧直後に改行がある場合、行のインデント + INDENT_UNIT
+    bracket_line_text = buf.line_text(bracket_start_line)
+    bracket_line_indent = len(_get_indent(bracket_line_text))
+    return bracket_line_indent + _INDENT_UNIT
 
 
 def _build_indent_candidates(prev_indent_len: int, bracket_indent: int | None) -> list[int]:
@@ -175,6 +203,8 @@ class PythonIndentState:
 
         if bracket_indent is not None:
             indent = " " * bracket_indent
+        elif _OPEN_BRACKET_END.search(text_before_cursor):
+            indent += " " * _INDENT_UNIT
         elif _COLON_END.search(text_before_cursor):
             indent += " " * _INDENT_UNIT
         elif _DEDENT_END.search(text_before_cursor):

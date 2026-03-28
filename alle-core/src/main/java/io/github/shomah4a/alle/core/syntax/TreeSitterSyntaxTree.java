@@ -39,7 +39,7 @@ class TreeSitterSyntaxTree implements SyntaxTree {
         if (descendant.isNull()) {
             return Optional.empty();
         }
-        return Optional.of(toSyntaxNode(descendant));
+        return Optional.of(toSyntaxNode(descendant, 1));
     }
 
     @Override
@@ -53,7 +53,7 @@ class TreeSitterSyntaxTree implements SyntaxTree {
         TSNode current = root.getDescendantForPointRange(point, point);
         while (!current.isNull()) {
             if (nodeType.equals(current.getType())) {
-                return Optional.of(toSyntaxNode(current));
+                return Optional.of(toSyntaxNode(current, 1));
             }
             current = current.getParent();
         }
@@ -71,7 +71,7 @@ class TreeSitterSyntaxTree implements SyntaxTree {
         TSNode current = root.getDescendantForPointRange(point, point);
         while (!current.isNull()) {
             if (bracketTypes.contains(current.getType())) {
-                return Optional.of(toSyntaxNode(current));
+                return Optional.of(toSyntaxNode(current, 1));
             }
             current = current.getParent();
         }
@@ -80,17 +80,29 @@ class TreeSitterSyntaxTree implements SyntaxTree {
 
     @Override
     public SyntaxNode rootNode() {
-        return toSyntaxNode(tree.getRootNode());
+        return toSyntaxNode(tree.getRootNode(), Integer.MAX_VALUE);
     }
 
-    private SyntaxNode toSyntaxNode(TSNode node) {
-        int childCount = node.getChildCount();
-        MutableList<SyntaxNode> children = Lists.mutable.withInitialCapacity(childCount);
-        for (int i = 0; i < childCount; i++) {
-            TSNode child = node.getChild(i);
-            if (!child.isNull()) {
-                children.add(toSyntaxNode(child));
+    /**
+     * TSNodeをSyntaxNodeに変換する。
+     * 指定した深さまで子ノードを再帰的に変換する。
+     *
+     * @param node 変換対象のTSNode
+     * @param maxDepth 変換する深さの上限（0の場合は子ノードなし、1の場合は直接の子まで）
+     */
+    private SyntaxNode toSyntaxNode(TSNode node, int maxDepth) {
+        MutableList<SyntaxNode> children;
+        if (maxDepth > 0) {
+            int childCount = node.getChildCount();
+            children = Lists.mutable.withInitialCapacity(childCount);
+            for (int i = 0; i < childCount; i++) {
+                TSNode child = node.getChild(i);
+                if (!child.isNull()) {
+                    children.add(toSyntaxNode(child, maxDepth - 1));
+                }
             }
+        } else {
+            children = Lists.mutable.empty();
         }
         int startLine = node.getStartPoint().getRow();
         int endLine = node.getEndPoint().getRow();
