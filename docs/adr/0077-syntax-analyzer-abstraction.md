@@ -77,13 +77,18 @@ public interface SyntaxAnalyzer {
 `enclosingBracket` で検索するノードタイプは言語ごとに異なる（Pythonでは `argument_list`, `list`, `dictionary` 等）。
 この定義はSyntaxAnalyzerRegistryの言語登録時に指定する。
 
-TreeSitterStylerとのパース共有は行わず、独立して管理する。
-統合は後続タスクとする。
+### TreeSitterSession
+
+TSTreeのパースとキャッシュ管理を一元化するセッション。
+TreeSitterStylerとTreeSitterAnalyzerが同一セッションを共有し、同一テキストの2重パースを回避する。
+インクリメンタルパース対応。
 
 ### SyntaxAnalyzerRegistry
 
-言語名からSyntaxAnalyzerを生成するレジストリ。
-ParserStylerRegistryと同構造。言語ごとの括弧系ノードタイプ定義もここで管理する。
+言語名からSyntaxAnalyzerとSyntaxStylerをペアで生成するレジストリ。
+ParserStylerRegistryを統合し廃止した。
+TreeSitterLanguageConfigで言語ごとの設定（括弧系ノードタイプ、ハイライトクエリ等）を保持する。
+LanguageSupportレコードでAnalyzerとStylerの組を提供する。
 
 ### MajorMode インターフェイスの拡張
 
