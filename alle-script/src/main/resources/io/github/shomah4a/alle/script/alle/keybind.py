@@ -47,6 +47,17 @@ def meta(char: str) -> Any:
     return KeyStroke.meta(ord(char))
 
 
+def shift(char: str) -> Any:
+    """Shift+キーの KeyStroke を返す。
+
+    :param char: キー文字（例: ``'\\t'``）
+    :type char: str
+    :return: Shift 修飾付きの KeyStroke
+    :rtype: KeyStroke
+    """
+    return KeyStroke.shift(ord(char))
+
+
 def key(char: str) -> Any:
     """修飾キーなしの KeyStroke を返す。
 

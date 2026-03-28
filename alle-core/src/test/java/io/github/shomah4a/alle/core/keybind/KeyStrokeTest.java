@@ -34,6 +34,13 @@ class KeyStrokeTest {
         }
 
         @Test
+        void Shift付きのキーストロークを生成できる() {
+            var ks = KeyStroke.shift('\t');
+            assertEquals('\t', ks.keyCode());
+            assertEquals(Sets.immutable.of(Modifier.SHIFT), ks.modifiers());
+        }
+
+        @Test
         void 複数の修飾キーを指定できる() {
             var ks = KeyStroke.of('a', Modifier.CTRL, Modifier.SHIFT);
             assertEquals(Sets.immutable.of(Modifier.CTRL, Modifier.SHIFT), ks.modifiers());
@@ -126,6 +133,16 @@ class KeyStrokeTest {
         @Test
         void 矢印キー右() {
             assertEquals("<right>", KeyStroke.of(KeyStroke.ARROW_RIGHT).displayString());
+        }
+
+        @Test
+        void タブキー() {
+            assertEquals("TAB", KeyStroke.of('\t').displayString());
+        }
+
+        @Test
+        void ShiftタブはEmacsのbacktab表記になる() {
+            assertEquals("<backtab>", KeyStroke.shift('\t').displayString());
         }
 
         @Test

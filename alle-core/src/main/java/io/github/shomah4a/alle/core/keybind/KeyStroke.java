@@ -45,10 +45,21 @@ public record KeyStroke(ImmutableSet<Modifier> modifiers, int keyCode) {
     }
 
     /**
+     * Shift+キーのキーストロークを生成する。
+     */
+    public static KeyStroke shift(int keyCode) {
+        return new KeyStroke(Sets.immutable.of(Modifier.SHIFT), keyCode);
+    }
+
+    /**
      * キーストロークをEmacs風の表示文字列に変換する。
      * 例: Ctrl+x → "C-x", Meta+x → "M-x", 通常文字 → "a"
      */
     public String displayString() {
+        // Shift+Tab は Emacs に合わせて <backtab> と表示する
+        if (keyCode == '\t' && modifiers.equals(Sets.immutable.of(Modifier.SHIFT))) {
+            return "<backtab>";
+        }
         var sb = new StringBuilder();
         if (modifiers.contains(Modifier.CTRL)) {
             sb.append("C-");
@@ -72,6 +83,7 @@ public record KeyStroke(ImmutableSet<Modifier> modifiers, int keyCode) {
             case '\n' -> "RET";
             case ' ' -> "SPC";
             case 0x7F -> "DEL";
+            case '\t' -> "TAB";
             case 0x1B -> "ESC";
             default -> {
                 if (Character.isValidCodePoint(keyCode) && !Character.isISOControl(keyCode)) {

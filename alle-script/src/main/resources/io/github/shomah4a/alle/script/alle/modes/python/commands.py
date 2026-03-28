@@ -50,11 +50,22 @@ def _set_line_indent(win, buf, line_index: int, new_indent: str) -> None:
         win.goto_char(point - old_len + len(new_indent))
 
 
-@command("python-indent-line")
-def indent_line():
-    """カーソル行のインデントをコンテキストに応じて調整する。
+def _build_indent_candidates(prev_indent_len: int) -> list[int]:
+    """インデントサイクルの候補リストを生成する。"""
+    candidates: list[int] = []
+    seen: set[int] = set()
+    for level in [prev_indent_len,
+                  max(prev_indent_len - _INDENT_UNIT, 0), 0]:
+        if level not in seen:
+            candidates.append(level)
+            seen.add(level)
+    return candidates
 
-    TAB を連続で押すとインデントレベルを循環する。
+
+def _cycle_indent(direction: int) -> None:
+    """インデントサイクルの共通ロジック。
+
+    :param direction: 循環方向。+1 で順方向、-1 で逆方向。
     """
     global _last_indent_line, _last_indent_cycle
 
@@ -69,28 +80,41 @@ def indent_line():
         prev_indent_len = 0
 
     current_indent_len = len(_get_indent(buf.line_text(line_index)))
+    candidates = _build_indent_candidates(prev_indent_len)
 
-    candidates = []
-    seen = set()
-    for level in [prev_indent_len, prev_indent_len + _INDENT_UNIT,
-                  max(prev_indent_len - _INDENT_UNIT, 0), 0]:
-        if level not in seen:
-            candidates.append(level)
-            seen.add(level)
-
-    if _last_indent_line == line_index and _last_indent_cycle < len(candidates):
-        cycle_index = _last_indent_cycle
+    if _last_indent_line == line_index and 0 <= _last_indent_cycle < len(candidates):
+        # 連続操作: 現在位置から direction 方向に進む
+        cycle_index = (_last_indent_cycle + direction) % len(candidates)
     else:
+        # 新規操作: 現在のインデントに対応する位置から direction 方向に進む
         if current_indent_len in candidates:
             idx = candidates.index(current_indent_len)
-            cycle_index = (idx + 1) % len(candidates)
+            cycle_index = (idx + direction) % len(candidates)
         else:
-            cycle_index = 0
+            cycle_index = 0 if direction == 1 else len(candidates) - 1
 
     new_indent = " " * candidates[cycle_index]
     _set_line_indent(win, buf, line_index, new_indent)
     _last_indent_line = line_index
-    _last_indent_cycle = (cycle_index + 1) % len(candidates)
+    _last_indent_cycle = cycle_index
+
+
+@command("python-indent-line")
+def indent_line():
+    """カーソル行のインデントをコンテキストに応じて調整する。
+
+    TAB を連続で押すとインデントレベルを順方向に循環する。
+    """
+    _cycle_indent(1)
+
+
+@command("python-dedent-line")
+def dedent_line():
+    """カーソル行のインデントをコンテキストに応じて逆方向に調整する。
+
+    Shift+TAB を連続で押すとインデントレベルを逆方向に循環する。
+    """
+    _cycle_indent(-1)
 
 
 @command("python-newline-and-indent")

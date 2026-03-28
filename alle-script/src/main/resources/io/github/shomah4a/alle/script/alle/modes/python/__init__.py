@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from alle.keybind import bind_key, create_keymap, key
+from alle.keybind import bind_key, create_keymap, key, shift
 from alle.mode import MajorModeBase
-from alle.modes.python.commands import indent_line, newline_and_indent
+from alle.modes.python.commands import dedent_line, indent_line, newline_and_indent
 from alle.modes.python.styler import create_python_styler
 
 
@@ -25,6 +25,7 @@ def _create_python_keymap() -> Any:
     keymap = create_keymap("python-mode")
     bind_key(keymap, key("\n"), newline_and_indent)
     bind_key(keymap, key("\t"), indent_line)
+    bind_key(keymap, shift("\t"), dedent_line)
     return keymap
 
 

@@ -140,6 +140,15 @@ class KeyStrokeConverterTest {
         }
 
         @Test
+        void ReverseTabキーをSHIFT修飾付きタブ文字に変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.ReverseTab);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of('\t', Modifier.SHIFT), result.get());
+        }
+
+        @Test
         void EOFはemptyを返す() {
             var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.EOF);
             var result = KeyStrokeConverter.convert(lanterna);

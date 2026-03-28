@@ -48,6 +48,12 @@ public final class KeyStrokeConverter {
                 Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
                         modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_RIGHT));
             case Tab -> Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(modifiers, '\t'));
+            case ReverseTab -> {
+                // Lanterna の ReverseTab は isShiftDown()=false のため、明示的に SHIFT を付与する
+                MutableSet<Modifier> withShift = Sets.mutable.withAll(modifiers);
+                withShift.add(Modifier.SHIFT);
+                yield Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(withShift.toImmutable(), '\t'));
+            }
             case EOF -> Optional.empty();
             default -> Optional.empty();
         };
