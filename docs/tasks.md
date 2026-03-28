@@ -30,6 +30,11 @@
 - ユーザー設定ファイルからのテーマ読み込み、スクリプトからのテーマ拡張登録が未実装
 - DefaultFaceTheme に Python モード固有の FaceName マッピングがハードコードされている問題を解消する
 
+### TreeSitterStyler のパース結果キャッシュ
+- 現在は RenderSnapshotFactory.create() の呼び出しごとに全文パース＋全行スパン計算を行っている
+- バッファ内容に変更がなければ前回のパース結果を再利用するキャッシュが必要
+- 将来的には Tree-sitter のインクリメンタルパース（TSTree を保持して編集差分のみ再パース）も検討
+
 ## 将来課題
 
 ### CommandContext のスナップショット化
