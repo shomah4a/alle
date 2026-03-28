@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.styling;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 
 /**
  * 行テキストからスタイル情報を生成するインターフェース。
@@ -27,5 +29,27 @@ public interface SyntaxStyler {
      */
     default StylingState initialState() {
         return StylingState.NONE;
+    }
+
+    /**
+     * ドキュメント全体をスタイリングし、行ごとのスパンリストを返す。
+     *
+     * <p>デフォルト実装は {@link #styleLineWithState} を行ごとに呼び出して結果を組み立てる。
+     * パーサーベースのスタイラーはこのメソッドをオーバーライドしてドキュメント全体を一括処理する。
+     *
+     * @param lines 各行のテキスト（改行文字を含まない）
+     * @return 行ごとのスパンリスト（外側リストのインデックスが行番号に対応、サイズは入力行数と一致）
+     */
+    default ListIterable<ListIterable<StyledSpan>> styleDocument(ListIterable<String> lines) {
+        MutableList<ListIterable<StyledSpan>> result = Lists.mutable.withInitialCapacity(lines.size());
+        StylingState state = initialState();
+
+        for (String lineText : lines) {
+            var stylingResult = styleLineWithState(lineText, state);
+            result.add(stylingResult.spans());
+            state = stylingResult.nextState();
+        }
+
+        return result;
     }
 }

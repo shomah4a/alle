@@ -4,7 +4,6 @@ import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
-import io.github.shomah4a.alle.core.styling.StylingState;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.LayoutResult;
@@ -65,19 +64,18 @@ public final class RenderSnapshotFactory {
             var visibleLines = Lists.mutable.<RenderSnapshot.LineSnapshot>empty();
             if (stylerOpt.isPresent()) {
                 SyntaxStyler styler = stylerOpt.get();
-                StylingState styleState = styler.initialState();
-                for (int i = 0; i < displayStart && i < lineCount; i++) {
-                    styleState = styler.styleLineWithState(buffer.lineText(i), styleState)
-                            .nextState();
+                MutableList<String> allLines = Lists.mutable.withInitialCapacity(lineCount);
+                for (int i = 0; i < lineCount; i++) {
+                    allLines.add(buffer.lineText(i));
                 }
+                var allSpans = styler.styleDocument(allLines);
                 for (int row = 0; row < bufferRows; row++) {
                     int lineIndex = displayStart + row;
                     if (lineIndex < lineCount) {
-                        String lineText = buffer.lineText(lineIndex);
-                        var result = styler.styleLineWithState(lineText, styleState);
-                        var merged = mergeWithTextPropertyFace(buffer, lineIndex, result.spans());
+                        String lineText = allLines.get(lineIndex);
+                        var spans = allSpans.get(lineIndex);
+                        var merged = mergeWithTextPropertyFace(buffer, lineIndex, spans);
                         visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(merged)));
-                        styleState = result.nextState();
                     }
                 }
             } else {

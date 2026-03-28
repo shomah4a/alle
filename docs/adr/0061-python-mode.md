@@ -9,6 +9,9 @@
 モード登録API（ADR 0060）が実装され、スクリプト側からメジャーモードを定義・登録できるようになった。
 コア機能の充足度を検証するベンチマークとして、Pythonモードをスクリプト側（Python/GraalPy）で実装する。
 
+> スタイラーの実装方式について [ADR 0074](0074-parser-based-syntax-highlight.md) で更新あり。
+> RegexStyler から パーサーベーススタイラーへの移行。モード自体のスクリプト側実装方針は維持。
+
 ## 決定
 
 - Pythonモードは `alle/modes/python.py` に Python で実装する
