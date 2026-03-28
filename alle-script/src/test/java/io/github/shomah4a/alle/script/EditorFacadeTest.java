@@ -42,7 +42,8 @@ class EditorFacadeTest {
                 new Keymap("global"),
                 new ModeRegistry(),
                 new AutoModeMap(TextMode::new),
-                new io.github.shomah4a.alle.core.styling.ParserStylerRegistry());
+                new io.github.shomah4a.alle.core.styling.ParserStylerRegistry(),
+                new io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry());
     }
 
     @Test

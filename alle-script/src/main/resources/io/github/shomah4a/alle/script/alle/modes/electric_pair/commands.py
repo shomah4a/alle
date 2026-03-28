@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import alle
 from alle.command import command
+
+if TYPE_CHECKING:
+    from alle.context import CommandContext
 
 _PAIR_MAP = {")": "(", "]": "[", "}": "{"}
 
@@ -114,48 +119,48 @@ def _insert_quote(quote_char: str) -> None:
 
 
 @command("electric-open-paren")
-def open_paren():
+def open_paren(ctx: CommandContext):
     """``(`` を入力し、 ``)`` を自動挿入する。"""
     _insert_pair("(", ")")
 
 
 @command("electric-close-paren")
-def close_paren():
+def close_paren(ctx: CommandContext):
     """次の文字が ``)`` ならスキップし、そうでなければ ``)`` を挿入する。"""
     _skip_or_insert_close(")")
 
 
 @command("electric-open-bracket")
-def open_bracket():
+def open_bracket(ctx: CommandContext):
     """``[`` を入力し、 ``]`` を自動挿入する。"""
     _insert_pair("[", "]")
 
 
 @command("electric-close-bracket")
-def close_bracket():
+def close_bracket(ctx: CommandContext):
     """次の文字が ``]`` ならスキップし、そうでなければ ``]`` を挿入する。"""
     _skip_or_insert_close("]")
 
 
 @command("electric-open-brace")
-def open_brace():
+def open_brace(ctx: CommandContext):
     """``{`` を入力し、 ``}`` を自動挿入する。"""
     _insert_pair("{", "}")
 
 
 @command("electric-close-brace")
-def close_brace():
+def close_brace(ctx: CommandContext):
     """次の文字が ``}`` ならスキップし、そうでなければ ``}`` を挿入する。"""
     _skip_or_insert_close("}")
 
 
 @command("electric-double-quote")
-def insert_double_quote():
+def insert_double_quote(ctx: CommandContext):
     """``"`` のペアを挿入するか、次の ``"`` をスキップする。"""
     _insert_quote('"')
 
 
 @command("electric-single-quote")
-def insert_single_quote():
+def insert_single_quote(ctx: CommandContext):
     """``'`` のペアを挿入するか、次の ``'`` をスキップする。"""
     _insert_quote("'")

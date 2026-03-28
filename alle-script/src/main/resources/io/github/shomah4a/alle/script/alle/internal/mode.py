@@ -41,6 +41,7 @@ def make_major_mode(base: MajorModeBase) -> Any:
     mode_name = base.name()
     keymap_fn = base.keymap
     styler_fn = base.styler
+    syntax_analyzer_fn = base.syntax_analyzer
 
     class _MajorMode(MajorMode):
         def name(self) -> str:
@@ -51,6 +52,9 @@ def make_major_mode(base: MajorModeBase) -> Any:
 
         def styler(self) -> Any:
             return _to_optional(styler_fn())
+
+        def syntaxAnalyzer(self) -> Any:
+            return _to_optional(syntax_analyzer_fn())
 
     return _MajorMode()
 

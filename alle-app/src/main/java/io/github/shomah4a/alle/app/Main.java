@@ -72,6 +72,7 @@ public final class Main {
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
         var parserStylerRegistry = io.github.shomah4a.alle.core.styling.ParserStylerRegistry.createWithBuiltins();
+        var syntaxAnalyzerRegistry = io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins();
         var editorFacade = new EditorFacade(
                 core.frame(),
                 msg,
@@ -79,7 +80,8 @@ public final class Main {
                 core.keymap(),
                 core.modeRegistry(),
                 core.autoModeMap(),
-                parserStylerRegistry);
+                parserStylerRegistry,
+                syntaxAnalyzerRegistry);
         var stdoutStream =
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
         var stderrStream =

@@ -54,7 +54,8 @@ class AlleModuleTest {
                 new Keymap("global"),
                 new ModeRegistry(),
                 new AutoModeMap(TextMode::new),
-                io.github.shomah4a.alle.core.styling.ParserStylerRegistry.createWithBuiltins());
+                io.github.shomah4a.alle.core.styling.ParserStylerRegistry.createWithBuiltins(),
+                io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins());
         var stdoutStream =
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000, new SettingsRegistry());
@@ -318,8 +319,10 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(9)");
         // newline-and-indent を実行
         ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import newline_and_indent
-                newline_and_indent.run()
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.newline_and_indent(win, win.buffer())
                 """);
         if (result instanceof ScriptResult.Failure f) {
             System.err.println("newline-and-indent failed: " + f.message());
@@ -335,8 +338,10 @@ class AlleModuleTest {
         buffer.insertText(0, "def hello():");
         engine.eval("alle.active_window().goto_char(12)");
         ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import newline_and_indent
-                newline_and_indent.run()
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.newline_and_indent(win, win.buffer())
                 """);
         if (result instanceof ScriptResult.Failure f) {
             System.err.println("newline-and-indent colon failed: " + f.message());
@@ -352,8 +357,10 @@ class AlleModuleTest {
         buffer.insertText(0, "x = 1  # Note: something");
         engine.eval("alle.active_window().goto_char(24)");
         ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import newline_and_indent
-                newline_and_indent.run()
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.newline_and_indent(win, win.buffer())
                 """);
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("x = 1  # Note: something\n", buffer.getText());
@@ -364,7 +371,7 @@ class AlleModuleTest {
         engine.eval("import alle");
         engine.eval("""
                 from alle.modes.electric_pair.commands import open_paren
-                open_paren.run()
+                open_paren.run(None)
                 """);
         assertEquals("()", buffer.getText());
         // カーソルが括弧の間にある
@@ -381,7 +388,7 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(1)");
         engine.eval("""
                 from alle.modes.electric_pair.commands import close_paren
-                close_paren.run()
+                close_paren.run(None)
                 """);
         // テキストは変わらず、カーソルが閉じ括弧の後ろに移動
         assertEquals("()", buffer.getText());
@@ -395,7 +402,7 @@ class AlleModuleTest {
         engine.eval("import alle");
         engine.eval("""
                 from alle.modes.electric_pair.commands import insert_double_quote
-                insert_double_quote.run()
+                insert_double_quote.run(None)
                 """);
         assertEquals("\"\"", buffer.getText());
         ScriptResult result = engine.eval("alle.active_window().point()");
@@ -410,7 +417,7 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(1)");
         engine.eval("""
                 from alle.modes.electric_pair.commands import insert_double_quote
-                insert_double_quote.run()
+                insert_double_quote.run(None)
                 """);
         assertEquals("\"\"", buffer.getText());
         ScriptResult result = engine.eval("alle.active_window().point()");
@@ -423,7 +430,7 @@ class AlleModuleTest {
         engine.eval("import alle");
         engine.eval("""
                 from alle.modes.electric_pair.commands import open_bracket
-                open_bracket.run()
+                open_bracket.run(None)
                 """);
         assertEquals("[]", buffer.getText());
     }
@@ -433,7 +440,7 @@ class AlleModuleTest {
         engine.eval("import alle");
         engine.eval("""
                 from alle.modes.electric_pair.commands import open_brace
-                open_brace.run()
+                open_brace.run(None)
                 """);
         assertEquals("{}", buffer.getText());
     }
@@ -445,7 +452,7 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(2)");
         engine.eval("""
                 from alle.modes.electric_pair.commands import insert_single_quote
-                insert_single_quote.run()
+                insert_single_quote.run(None)
                 """);
         assertEquals("it'", buffer.getText());
     }
@@ -458,7 +465,7 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(1)");
         engine.eval("""
                 from alle.modes.electric_pair.commands import close_paren
-                close_paren.run()
+                close_paren.run(None)
                 """);
         // 未対応の開き括弧がないので ) が挿入される
         assertEquals("x))", buffer.getText());
@@ -472,7 +479,7 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(2)");
         engine.eval("""
                 from alle.modes.electric_pair.commands import close_paren
-                close_paren.run()
+                close_paren.run(None)
                 """);
         // 未対応の開き括弧があるのでスキップ
         assertEquals("(x)", buffer.getText());
@@ -487,8 +494,10 @@ class AlleModuleTest {
         buffer.insertText(0, "    x = 1\ny = 2");
         engine.eval("alle.active_window().goto_char(14)"); // y = 2 の行
         ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import indent_line
-                indent_line.run()
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.cycle_indent(win, win.buffer(), 1)
                 """);
         assertInstanceOf(ScriptResult.Success.class, result);
         assertTrue(buffer.getText().contains("    y = 2"), "前行と同じインデントに調整される");
@@ -500,8 +509,10 @@ class AlleModuleTest {
         buffer.insertText(0, "        pass");
         engine.eval("alle.active_window().goto_char(12)");
         ScriptResult result = engine.eval("""
-                from alle.modes.python.commands import newline_and_indent
-                newline_and_indent.run()
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.newline_and_indent(win, win.buffer())
                 """);
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("        pass\n    ", buffer.getText());

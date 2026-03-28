@@ -6,7 +6,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from alle.context import CommandContext
 
 
 class CommandBase(ABC):
@@ -19,8 +22,8 @@ class CommandBase(ABC):
     >>> class MyCommand(CommandBase):
     ...     def name(self):
     ...         return "my-command"
-    ...     def run(self):
-    ...         alle.message("hello")
+    ...     def run(self, ctx):
+    ...         ctx.message("hello")
     >>> alle.register_command(MyCommand())
     """
 
@@ -34,12 +37,16 @@ class CommandBase(ABC):
         ...
 
     @abstractmethod
-    def run(self) -> None:
-        """コマンドの実行内容。"""
+    def run(self, ctx: CommandContext) -> None:
+        """コマンドの実行内容。
+
+        :param ctx: コマンド実行コンテキスト
+        :type ctx: CommandContext
+        """
         ...
 
 
-def command(name: str) -> Callable[[Callable[[], None]], CommandBase]:
+def command(name: str) -> Callable[[Callable[[CommandContext], None]], CommandBase]:
     """関数をコマンドに変換するデコレータ。
 
     デコレータ適用後の変数は関数ではなく CommandBase インスタンスになる。
@@ -47,23 +54,23 @@ def command(name: str) -> Callable[[Callable[[], None]], CommandBase]:
     :param name: コマンドの識別名
     :type name: str
     :return: 関数を CommandBase インスタンスに変換するデコレータ
-    :rtype: Callable[[Callable[[], None]], CommandBase]
+    :rtype: Callable[[Callable[[CommandContext], None]], CommandBase]
 
     使用例:
 
     >>> from alle.command import command
     >>> @command("my-command")
-    ... def my_command():
-    ...     alle.message("hello")
+    ... def my_command(ctx):
+    ...     ctx.message("hello")
     >>> # my_command は CommandBase インスタンス
     >>> alle.register_command(my_command)
     """
-    def decorator(fn: Callable[[], None]) -> CommandBase:
+    def decorator(fn: Callable[[CommandContext], None]) -> CommandBase:
         cmd_name = name
         class _Cmd(CommandBase):
             def name(self) -> str:
                 return cmd_name
-            def run(self) -> None:
-                fn()
+            def run(self, ctx: CommandContext) -> None:
+                fn(ctx)
         return _Cmd()
     return decorator

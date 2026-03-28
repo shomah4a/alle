@@ -49,6 +49,14 @@ class MajorModeBase(ABC):
         """
         return None
 
+    def syntax_analyzer(self) -> Any | None:
+        """構文解析器を返す。不要なら None。
+
+        :return: SyntaxAnalyzer、または None
+        :rtype: Any | None
+        """
+        return None
+
 
 class MinorModeBase(ABC):
     """マイナーモードの基底クラス。

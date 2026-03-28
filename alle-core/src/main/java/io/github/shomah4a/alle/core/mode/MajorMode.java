@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.mode;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.setting.ModeSettings;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
+import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzer;
 import java.util.Optional;
 
 /**
@@ -27,6 +28,14 @@ public interface MajorMode {
      * スタイリング不要の場合はemptyを返す。
      */
     default Optional<SyntaxStyler> styler() {
+        return Optional.empty();
+    }
+
+    /**
+     * 構文解析器を返す。
+     * 構文解析が不要の場合はemptyを返す。
+     */
+    default Optional<SyntaxAnalyzer> syntaxAnalyzer() {
         return Optional.empty();
     }
 
