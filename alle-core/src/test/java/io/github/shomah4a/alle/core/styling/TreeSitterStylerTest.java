@@ -243,6 +243,152 @@ class TreeSitterStylerTest {
         }
     }
 
+    @Nested
+    class インクリメンタルパース {
+
+        @Test
+        void 文末に行を追加した後のスタイリングが正しい() {
+            styler.styleDocument(Lists.immutable.of("x = 1"));
+            var result = styler.styleDocument(Lists.immutable.of("x = 1", "y = 2"));
+
+            assertEquals(2, result.size());
+            var line2Spans = result.get(1);
+            var varSpan = findSpan(line2Spans, 0, 1);
+            assertTrue(varSpan.isPresent(), "追加行の変数yがハイライトされる");
+            assertEquals(FaceName.VARIABLE, varSpan.get().faceName());
+        }
+
+        @Test
+        void 行の途中に文字を挿入した後のスタイリングが正しい() {
+            styler.styleDocument(Lists.immutable.of("x = 1"));
+            var result = styler.styleDocument(Lists.immutable.of("x = 10"));
+
+            var numSpan = findSpan(result.get(0), 4, 6);
+            assertTrue(numSpan.isPresent(), "変更後の数値10がハイライトされる");
+            assertEquals(FaceName.NUMBER, numSpan.get().faceName());
+        }
+
+        @Test
+        void 行を削除した後のスタイリングが正しい() {
+            styler.styleDocument(Lists.immutable.of("x = 1", "y = 2"));
+            var result = styler.styleDocument(Lists.immutable.of("x = 1"));
+
+            assertEquals(1, result.size());
+            var numSpan = findSpan(result.get(0), 4, 5);
+            assertTrue(numSpan.isPresent(), "残った行の数値1がハイライトされる");
+            assertEquals(FaceName.NUMBER, numSpan.get().faceName());
+        }
+
+        @Test
+        void キーワードを追加した後のスタイリングが正しい() {
+            styler.styleDocument(Lists.immutable.of("x = 1"));
+            var result = styler.styleDocument(Lists.immutable.of("if x > 0:", "    pass"));
+
+            var ifSpan = findSpan(result.get(0), 0, 2);
+            assertTrue(ifSpan.isPresent(), "変更後のifキーワードがハイライトされる");
+            assertEquals(FaceName.KEYWORD, ifSpan.get().faceName());
+        }
+
+        @Test
+        void 複数回の連続編集で正しくスタイリングされる() {
+            styler.styleDocument(Lists.immutable.of("x = 1"));
+            styler.styleDocument(Lists.immutable.of("x = 12"));
+            styler.styleDocument(Lists.immutable.of("x = 123"));
+            var result = styler.styleDocument(Lists.immutable.of("x = 1234"));
+
+            var numSpan = findSpan(result.get(0), 4, 8);
+            assertTrue(numSpan.isPresent(), "連続編集後の数値1234がハイライトされる");
+            assertEquals(FaceName.NUMBER, numSpan.get().faceName());
+        }
+
+        @Test
+        void 日本語を含むテキストの編集でスタイリングが正しい() {
+            styler.styleDocument(Lists.immutable.of("名前 = \"太郎\""));
+            var result = styler.styleDocument(Lists.immutable.of("名前 = \"花子\""));
+
+            assertTrue(result.get(0).anySatisfy(s -> s.faceName().equals(FaceName.STRING)), "変更後の文字列がハイライトされる");
+        }
+
+        @Test
+        void 空ドキュメントからの編集でスタイリングが正しい() {
+            styler.styleDocument(Lists.immutable.of(""));
+            var result = styler.styleDocument(Lists.immutable.of("def foo():"));
+
+            var defSpan = findSpan(result.get(0), 0, 3);
+            assertTrue(defSpan.isPresent(), "空からの編集後defキーワードがハイライトされる");
+            assertEquals(FaceName.KEYWORD, defSpan.get().faceName());
+        }
+    }
+
+    @Nested
+    class computeInputEditの計算 {
+
+        @Test
+        void 末尾に文字を追加した場合のオフセットが正しい() {
+            // "abc" → "abcd": 共通prefix=3, 共通suffix=0
+            var edit = TreeSitterStyler.computeInputEdit("abc", "abcd");
+            assertEquals(3, edit.getStartByte());
+            assertEquals(3, edit.getOldEndByte());
+            assertEquals(4, edit.getNewEndByte());
+        }
+
+        @Test
+        void 先頭に文字を挿入した場合のオフセットが正しい() {
+            // "bc" → "abc": 共通prefix=0, 共通suffix=2
+            var edit = TreeSitterStyler.computeInputEdit("bc", "abc");
+            assertEquals(0, edit.getStartByte());
+            assertEquals(0, edit.getOldEndByte());
+            assertEquals(1, edit.getNewEndByte());
+        }
+
+        @Test
+        void 中間の文字を置換した場合のオフセットが正しい() {
+            // "abc" → "axc": 共通prefix=1, 共通suffix=1
+            var edit = TreeSitterStyler.computeInputEdit("abc", "axc");
+            assertEquals(1, edit.getStartByte());
+            assertEquals(2, edit.getOldEndByte());
+            assertEquals(2, edit.getNewEndByte());
+        }
+
+        @Test
+        void 文字を削除した場合のオフセットが正しい() {
+            // "abcd" → "ad": 共通prefix=1, 共通suffix=1
+            var edit = TreeSitterStyler.computeInputEdit("abcd", "ad");
+            assertEquals(1, edit.getStartByte());
+            assertEquals(3, edit.getOldEndByte());
+            assertEquals(1, edit.getNewEndByte());
+        }
+
+        @Test
+        void 日本語テキストでUTF8バイトオフセットが正しい() {
+            // "あいう" → "あえう": 共通prefix=1(あ), 共通suffix=1(う)
+            // startByte = 3 (あ=3bytes)
+            // oldEndByte = 6 (あ+い=6bytes)
+            // newEndByte = 6 (あ+え=6bytes)
+            var edit = TreeSitterStyler.computeInputEdit("あいう", "あえう");
+            assertEquals(3, edit.getStartByte());
+            assertEquals(6, edit.getOldEndByte());
+            assertEquals(6, edit.getNewEndByte());
+        }
+
+        @Test
+        void 改行を含むテキストでTSPointが正しい() {
+            // "ab\ncd" → "ab\nXcd": 共通prefix=3(a,b,\n), 共通suffix=2(c,d)
+            var edit = TreeSitterStyler.computeInputEdit("ab\ncd", "ab\nXcd");
+            // startPoint: offset 3 in "ab\n..." → row=1, col=0
+            assertEquals(1, edit.getStartPoint().getRow());
+            assertEquals(0, edit.getStartPoint().getColumn());
+        }
+
+        @Test
+        void テキスト全体が置換された場合のオフセットが正しい() {
+            var edit = TreeSitterStyler.computeInputEdit("abc", "xyz");
+            assertEquals(0, edit.getStartByte());
+            assertEquals(3, edit.getOldEndByte());
+            assertEquals(3, edit.getNewEndByte());
+        }
+    }
+
     /**
      * 指定位置に一致するスパンを検索する。
      */

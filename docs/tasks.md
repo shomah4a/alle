@@ -30,12 +30,6 @@
 - ユーザー設定ファイルからのテーマ読み込み、スクリプトからのテーマ拡張登録が未実装
 - DefaultFaceTheme に Python モード固有の FaceName マッピングがハードコードされている問題を解消する
 
-### TreeSitterStyler のインクリメンタルパース対応
-- テキスト未変更時のキャッシュは ADR 0075 で導入済み
-- テキスト変更時に TSTree.edit() + parseString(oldTree, newText) による差分パースを行う
-- TSTree のネイティブリソースのライフサイクル管理（AutoCloseable対応）が必要
-- バッファ変更通知（TextChange → TSInputEdit 変換）の仕組みが必要
-- ドキュメント全体のコードポイント→UTF-8バイトオフセット変換が必要
 
 ## 将来課題
 
