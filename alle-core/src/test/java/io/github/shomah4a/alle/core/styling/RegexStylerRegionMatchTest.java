@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class RegexStylerRegionMatchTest {
 
-    private static final Face CODE_FACE = Face.CODE;
+    private static final FaceName CODE_FACE = FaceName.CODE;
 
     @Nested
     class 同一行内のリージョン {
@@ -28,7 +28,7 @@ class RegexStylerRegionMatchTest {
             // "/* comment */" は cp 4〜17
             assertEquals(4, result.spans().get(0).start());
             assertEquals(17, result.spans().get(0).end());
-            assertEquals(CODE_FACE, result.spans().get(0).face());
+            assertEquals(CODE_FACE, result.spans().get(0).faceName());
             assertFalse(result.nextState().isInRegion());
         }
 
@@ -80,7 +80,7 @@ class RegexStylerRegionMatchTest {
             assertEquals(1, result.spans().size());
             assertEquals(0, result.spans().get(0).start());
             assertEquals(17, result.spans().get(0).end());
-            assertEquals(CODE_FACE, result.spans().get(0).face());
+            assertEquals(CODE_FACE, result.spans().get(0).faceName());
             assertTrue(result.nextState().isInRegion());
         }
 
@@ -96,7 +96,7 @@ class RegexStylerRegionMatchTest {
             assertEquals(1, result.spans().size());
             assertEquals(0, result.spans().get(0).start());
             assertEquals(6, result.spans().get(0).end());
-            assertEquals(CODE_FACE, result.spans().get(0).face());
+            assertEquals(CODE_FACE, result.spans().get(0).faceName());
             assertFalse(result.nextState().isInRegion());
         }
 
@@ -136,14 +136,14 @@ class RegexStylerRegionMatchTest {
         void リージョン継続中は他のルールが無視される() {
             var regionRule = new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE);
             var rules = Lists.immutable.of((StylingRule) regionRule, (StylingRule)
-                    new StylingRule.PatternMatch(Pattern.compile("keyword"), Face.KEYWORD));
+                    new StylingRule.PatternMatch(Pattern.compile("keyword"), FaceName.KEYWORD));
             var styler = new RegexStyler(rules);
             var inRegion = new StylingState(java.util.Optional.of(regionRule));
 
             var result = styler.styleLineWithState("keyword in comment", inRegion);
 
             assertEquals(1, result.spans().size());
-            assertEquals(CODE_FACE, result.spans().get(0).face());
+            assertEquals(CODE_FACE, result.spans().get(0).faceName());
             assertEquals(0, result.spans().get(0).start());
             assertEquals(18, result.spans().get(0).end());
         }
@@ -155,7 +155,7 @@ class RegexStylerRegionMatchTest {
         @Test
         void 先に定義されたPatternMatchがRegionMatchのopenより優先される() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("/\\*.*?\\*/"), Face.KEYWORD),
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("/\\*.*?\\*/"), FaceName.KEYWORD),
                     (StylingRule)
                             new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE));
             var styler = new RegexStyler(rules);
@@ -163,7 +163,7 @@ class RegexStylerRegionMatchTest {
             var result = styler.styleLineWithState("/* comment */", StylingState.NONE);
 
             assertEquals(1, result.spans().size());
-            assertEquals(Face.KEYWORD, result.spans().get(0).face());
+            assertEquals(FaceName.KEYWORD, result.spans().get(0).faceName());
         }
     }
 
@@ -242,17 +242,17 @@ class RegexStylerRegionMatchTest {
         void リージョン終了後の同一行で他のルールが適用される() {
             var regionRule = new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE);
             var rules = Lists.immutable.of((StylingRule) regionRule, (StylingRule)
-                    new StylingRule.PatternMatch(Pattern.compile("keyword"), Face.KEYWORD));
+                    new StylingRule.PatternMatch(Pattern.compile("keyword"), FaceName.KEYWORD));
             var styler = new RegexStyler(rules);
             var inRegion = new StylingState(java.util.Optional.of(regionRule));
 
             var result = styler.styleLineWithState("end */ keyword", inRegion);
 
             assertEquals(2, result.spans().size());
-            assertEquals(CODE_FACE, result.spans().get(0).face());
+            assertEquals(CODE_FACE, result.spans().get(0).faceName());
             assertEquals(0, result.spans().get(0).start());
             assertEquals(6, result.spans().get(0).end());
-            assertEquals(Face.KEYWORD, result.spans().get(1).face());
+            assertEquals(FaceName.KEYWORD, result.spans().get(1).faceName());
             assertFalse(result.nextState().isInRegion());
         }
 
@@ -278,7 +278,7 @@ class RegexStylerRegionMatchTest {
         @Test
         void RegionMatchルールがない場合styleLineWithStateはstyleLineと同じ結果を返す() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), FaceName.CODE));
             var styler = new RegexStyler(rules);
 
             var styleResult = styler.styleLine("Hello `code` World");
@@ -293,8 +293,8 @@ class RegexStylerRegionMatchTest {
 
         @Test
         void RegionMatchルールがない場合は常にNONE状態が返される() {
-            var rules =
-                    Lists.immutable.of((StylingRule) new StylingRule.LineMatch(Pattern.compile("^#.*"), Face.HEADING));
+            var rules = Lists.immutable.of(
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#.*"), FaceName.HEADING));
             var styler = new RegexStyler(rules);
 
             var r1 = styler.styleLineWithState("# heading", StylingState.NONE);

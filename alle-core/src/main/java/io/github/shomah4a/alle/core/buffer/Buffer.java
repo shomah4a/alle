@@ -5,7 +5,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -243,7 +243,7 @@ interface Buffer {
      * 指定範囲にface（表示スタイル）プロパティを設定する。
      * 半開区間 [start, end) で管理される。
      */
-    void putFace(int start, int end, Face face);
+    void putFace(int start, int end, FaceName faceName);
 
     /**
      * 指定範囲のfaceプロパティを除去する。

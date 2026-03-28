@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.StylingState;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(7, spans.get(0).end());
-            assertEquals(Face.HEADING, spans.get(0).face());
+            assertEquals(FaceName.HEADING, spans.get(0).faceName());
         }
 
         @Test
@@ -31,7 +31,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("### Section");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.HEADING, spans.get(0).face());
+            assertEquals(FaceName.HEADING, spans.get(0).faceName());
         }
 
         @Test
@@ -52,7 +52,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
             assertEquals(10, spans.get(0).end());
-            assertEquals(Face.CODE, spans.get(0).face());
+            assertEquals(FaceName.CODE, spans.get(0).faceName());
         }
 
         @Test
@@ -60,8 +60,8 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("`a` and `b`");
 
             assertEquals(2, spans.size());
-            assertEquals(Face.CODE, spans.get(0).face());
-            assertEquals(Face.CODE, spans.get(1).face());
+            assertEquals(FaceName.CODE, spans.get(0).faceName());
+            assertEquals(FaceName.CODE, spans.get(1).faceName());
         }
     }
 
@@ -75,7 +75,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(8, spans.get(0).start());
             assertEquals(16, spans.get(0).end());
-            assertEquals(Face.BOLD_FACE, spans.get(0).face());
+            assertEquals(FaceName.STRONG, spans.get(0).faceName());
         }
 
         @Test
@@ -83,7 +83,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("This is __bold__ text");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.BOLD_FACE, spans.get(0).face());
+            assertEquals(FaceName.STRONG, spans.get(0).faceName());
         }
     }
 
@@ -97,7 +97,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(8, spans.get(0).start());
             assertEquals(16, spans.get(0).end());
-            assertEquals(Face.ITALIC_FACE, spans.get(0).face());
+            assertEquals(FaceName.EMPHASIS, spans.get(0).faceName());
         }
     }
 
@@ -111,7 +111,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(8, spans.get(0).start());
             assertEquals(19, spans.get(0).end());
-            assertEquals(Face.STRIKETHROUGH_FACE, spans.get(0).face());
+            assertEquals(FaceName.DELETION, spans.get(0).faceName());
         }
 
         @Test
@@ -119,8 +119,8 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("~~a~~ and ~~b~~");
 
             assertEquals(2, spans.size());
-            assertEquals(Face.STRIKETHROUGH_FACE, spans.get(0).face());
-            assertEquals(Face.STRIKETHROUGH_FACE, spans.get(1).face());
+            assertEquals(FaceName.DELETION, spans.get(0).faceName());
+            assertEquals(FaceName.DELETION, spans.get(1).faceName());
         }
     }
 
@@ -134,7 +134,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
             assertEquals(30, spans.get(0).end());
-            assertEquals(Face.LINK, spans.get(0).face());
+            assertEquals(FaceName.LINK, spans.get(0).faceName());
         }
     }
 
@@ -148,7 +148,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(2, spans.get(0).end());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
 
         @Test
@@ -158,7 +158,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(3, spans.get(0).end());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
 
         @Test
@@ -166,7 +166,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("  - nested");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
     }
 
@@ -178,7 +178,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("# Hello `code`");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.HEADING, spans.get(0).face());
+            assertEquals(FaceName.HEADING, spans.get(0).faceName());
         }
     }
 
@@ -190,7 +190,7 @@ class MarkdownStylerTest {
             var result = styler.styleLineWithState("```java", StylingState.NONE);
 
             assertEquals(1, result.spans().size());
-            assertEquals(Face.CODE, result.spans().get(0).face());
+            assertEquals(FaceName.CODE, result.spans().get(0).faceName());
             assertTrue(result.nextState().isInRegion());
         }
 
@@ -202,7 +202,7 @@ class MarkdownStylerTest {
             assertEquals(1, r2.spans().size());
             assertEquals(0, r2.spans().get(0).start());
             assertEquals(10, r2.spans().get(0).end());
-            assertEquals(Face.CODE, r2.spans().get(0).face());
+            assertEquals(FaceName.CODE, r2.spans().get(0).faceName());
             assertTrue(r2.nextState().isInRegion());
         }
 
@@ -221,7 +221,7 @@ class MarkdownStylerTest {
             var r2 = styler.styleLineWithState("# heading", r1.nextState());
 
             assertEquals(1, r2.spans().size());
-            assertEquals(Face.CODE, r2.spans().get(0).face());
+            assertEquals(FaceName.CODE, r2.spans().get(0).faceName());
         }
 
         @Test
@@ -232,7 +232,7 @@ class MarkdownStylerTest {
             var r4 = styler.styleLineWithState("# heading", r3.nextState());
 
             assertEquals(1, r4.spans().size());
-            assertEquals(Face.HEADING, r4.spans().get(0).face());
+            assertEquals(FaceName.HEADING, r4.spans().get(0).faceName());
             assertFalse(r4.nextState().isInRegion());
         }
 
@@ -252,7 +252,7 @@ class MarkdownStylerTest {
             assertEquals(1, result.spans().size());
             assertEquals(0, result.spans().get(0).start());
             assertEquals(9, result.spans().get(0).end());
-            assertEquals(Face.CODE, result.spans().get(0).face());
+            assertEquals(FaceName.CODE, result.spans().get(0).faceName());
         }
 
         @Test
@@ -294,7 +294,7 @@ class MarkdownStylerTest {
             assertEquals(1, r2.spans().size());
             assertEquals(0, r2.spans().get(0).start());
             assertEquals(15, r2.spans().get(0).end());
-            assertEquals(Face.CODE, r2.spans().get(0).face());
+            assertEquals(FaceName.CODE, r2.spans().get(0).faceName());
         }
 
         @Test
@@ -303,7 +303,7 @@ class MarkdownStylerTest {
             var r2 = styler.styleLineWithState("[link](url)", r1.nextState());
 
             assertEquals(1, r2.spans().size());
-            assertEquals(Face.CODE, r2.spans().get(0).face());
+            assertEquals(FaceName.CODE, r2.spans().get(0).faceName());
         }
     }
 
@@ -315,7 +315,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("---");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.COMMENT, spans.get(0).face());
+            assertEquals(FaceName.COMMENT, spans.get(0).faceName());
         }
 
         @Test
@@ -323,7 +323,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("***");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.COMMENT, spans.get(0).face());
+            assertEquals(FaceName.COMMENT, spans.get(0).faceName());
         }
 
         @Test
@@ -331,7 +331,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("___");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.COMMENT, spans.get(0).face());
+            assertEquals(FaceName.COMMENT, spans.get(0).faceName());
         }
 
         @Test
@@ -339,7 +339,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("- - -");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.COMMENT, spans.get(0).face());
+            assertEquals(FaceName.COMMENT, spans.get(0).faceName());
         }
     }
 
@@ -353,7 +353,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(13, spans.get(0).end());
-            assertEquals(Face.STRING, spans.get(0).face());
+            assertEquals(FaceName.STRING, spans.get(0).faceName());
         }
 
         @Test
@@ -361,7 +361,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine(">");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.STRING, spans.get(0).face());
+            assertEquals(FaceName.STRING, spans.get(0).faceName());
         }
     }
 
@@ -375,7 +375,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
             assertEquals(21, spans.get(0).end());
-            assertEquals(Face.LINK, spans.get(0).face());
+            assertEquals(FaceName.LINK, spans.get(0).faceName());
         }
     }
 
@@ -390,7 +390,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(9, spans.get(0).end());
-            assertEquals(Face.TABLE, spans.get(0).face());
+            assertEquals(FaceName.TABLE, spans.get(0).faceName());
         }
 
         @Test
@@ -398,7 +398,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("| :--- | :---: | ---: |");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.TABLE, spans.get(0).face());
+            assertEquals(FaceName.TABLE, spans.get(0).faceName());
         }
 
         @Test
@@ -406,7 +406,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("--- | --- | ---");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.TABLE, spans.get(0).face());
+            assertEquals(FaceName.TABLE, spans.get(0).faceName());
         }
 
         @Test
@@ -416,7 +416,7 @@ class MarkdownStylerTest {
             // パイプ3つ
             assertEquals(3, spans.size());
             for (var span : spans) {
-                assertEquals(Face.TABLE, span.face());
+                assertEquals(FaceName.TABLE, span.faceName());
                 assertEquals(1, span.end() - span.start());
             }
         }
@@ -427,7 +427,7 @@ class MarkdownStylerTest {
 
             assertEquals(3, spans.size());
             for (var span : spans) {
-                assertEquals(Face.TABLE, span.face());
+                assertEquals(FaceName.TABLE, span.faceName());
             }
         }
     }
@@ -443,7 +443,7 @@ class MarkdownStylerTest {
             assertEquals(0, spans.get(0).start());
             // "- [ ] " = 6文字
             assertEquals(6, spans.get(0).end());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
 
         @Test
@@ -451,7 +451,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("- [x] done item");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
 
         @Test
@@ -459,7 +459,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("- [X] done item");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
 
         @Test
@@ -467,7 +467,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("* [ ] todo");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.LIST_MARKER, spans.get(0).face());
+            assertEquals(FaceName.LIST_MARKER, spans.get(0).faceName());
         }
     }
 
@@ -481,7 +481,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(26, spans.get(0).end());
-            assertEquals(Face.LINK, spans.get(0).face());
+            assertEquals(FaceName.LINK, spans.get(0).faceName());
         }
 
         @Test
@@ -491,7 +491,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(4, spans.get(0).start());
             assertEquals(20, spans.get(0).end());
-            assertEquals(Face.LINK, spans.get(0).face());
+            assertEquals(FaceName.LINK, spans.get(0).faceName());
         }
 
         @Test
@@ -499,7 +499,7 @@ class MarkdownStylerTest {
             var spans = styler.styleLine("See [link text][] here");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.LINK, spans.get(0).face());
+            assertEquals(FaceName.LINK, spans.get(0).faceName());
         }
     }
 
@@ -514,7 +514,7 @@ class MarkdownStylerTest {
             assertEquals(1, spans.size());
             assertEquals(5, spans.get(0).start());
             assertEquals(21, spans.get(0).end());
-            assertEquals(Face.COMMENT, spans.get(0).face());
+            assertEquals(FaceName.COMMENT, spans.get(0).faceName());
         }
 
         @Test
@@ -522,7 +522,7 @@ class MarkdownStylerTest {
             var result = styler.styleLineWithState("<!-- start", StylingState.NONE);
 
             assertEquals(1, result.spans().size());
-            assertEquals(Face.COMMENT, result.spans().get(0).face());
+            assertEquals(FaceName.COMMENT, result.spans().get(0).faceName());
             assertTrue(result.nextState().isInRegion());
         }
 
@@ -532,7 +532,7 @@ class MarkdownStylerTest {
             var r2 = styler.styleLineWithState("middle", r1.nextState());
 
             assertEquals(1, r2.spans().size());
-            assertEquals(Face.COMMENT, r2.spans().get(0).face());
+            assertEquals(FaceName.COMMENT, r2.spans().get(0).faceName());
             assertTrue(r2.nextState().isInRegion());
         }
 

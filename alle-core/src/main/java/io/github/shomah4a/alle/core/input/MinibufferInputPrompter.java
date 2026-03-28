@@ -7,7 +7,7 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -77,7 +77,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         if (promptLength > 0) {
             minibuffer.putReadOnly(0, promptLength);
             minibuffer.putPointGuard(0, promptLength);
-            minibuffer.putFace(0, promptLength, Face.MINIBUFFER_PROMPT);
+            minibuffer.putFace(0, promptLength, FaceName.MINIBUFFER_PROMPT);
         }
 
         // ミニバッファ用キーマップを作成

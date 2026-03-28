@@ -7,6 +7,7 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.screen.Screen;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.render.RenderSnapshot;
+import io.github.shomah4a.alle.core.styling.FaceTheme;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.window.Separator;
 import org.eclipse.collections.api.list.ListIterable;
@@ -23,11 +24,13 @@ import org.eclipse.collections.api.list.ListIterable;
 public class ScreenRenderer {
 
     private final Screen screen;
+    private final FaceTheme faceTheme;
     private final FaceResolver faceResolver;
 
-    public ScreenRenderer(Screen screen) {
+    public ScreenRenderer(Screen screen, FaceTheme faceTheme, FaceResolver faceResolver) {
         this.screen = screen;
-        this.faceResolver = new FaceResolver();
+        this.faceTheme = faceTheme;
+        this.faceResolver = faceResolver;
     }
 
     /**
@@ -166,7 +169,8 @@ public class ScreenRenderer {
             if (spanIdx < spans.size()
                     && spans.get(spanIdx).start() <= cpIndex
                     && cpIndex < spans.get(spanIdx).end()) {
-                var resolved = faceResolver.resolve(spans.get(spanIdx).face());
+                var faceSpec = faceTheme.resolve(spans.get(spanIdx).faceName());
+                var resolved = faceResolver.resolve(faceSpec);
                 tc = TextCharacter.fromString(
                         ch,
                         resolved.foreground(),

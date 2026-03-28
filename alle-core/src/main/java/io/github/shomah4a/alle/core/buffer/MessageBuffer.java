@@ -7,7 +7,7 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.libs.ringbuffer.ArrayRingBuffer;
 import io.github.shomah4a.alle.libs.ringbuffer.RingBuffer;
@@ -386,7 +386,7 @@ public class MessageBuffer implements Buffer {
     }
 
     @Override
-    public void putFace(int start, int end, Face face) {
+    public void putFace(int start, int end, FaceName faceName) {
         // メッセージバッファにテキストプロパティは不要
     }
 

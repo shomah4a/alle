@@ -204,7 +204,7 @@ public final class RenderSnapshotFactory {
         // バッファオフセットから行ローカル座標に変換
         MutableList<StyledSpan> localSpans = Lists.mutable.withInitialCapacity(bufferSpans.size());
         for (var span : bufferSpans) {
-            localSpans.add(new StyledSpan(span.start() - lineStart, span.end() - lineStart, span.face()));
+            localSpans.add(new StyledSpan(span.start() - lineStart, span.end() - lineStart, span.faceName()));
         }
         return localSpans;
     }
@@ -238,7 +238,7 @@ public final class RenderSnapshotFactory {
                     result.add(new StyledSpan(
                             faceSpans.get(fIdx).start(),
                             fEnd,
-                            faceSpans.get(fIdx).face()));
+                            faceSpans.get(fIdx).faceName()));
                 }
                 if (faceSpans.get(fIdx).end() <= stylerSpans.get(stylerIdx).start()) {
                     fIdx++;
@@ -270,14 +270,14 @@ public final class RenderSnapshotFactory {
                 int fClampedStart = Math.max(fSpan.start(), sStart);
                 int fClampedEnd = Math.min(fSpan.end(), sEnd);
                 if (cursor < fClampedStart) {
-                    result.add(new StyledSpan(cursor, fClampedStart, stylerSpan.face()));
+                    result.add(new StyledSpan(cursor, fClampedStart, stylerSpan.faceName()));
                 }
-                result.add(new StyledSpan(fClampedStart, fClampedEnd, fSpan.face()));
+                result.add(new StyledSpan(fClampedStart, fClampedEnd, fSpan.faceName()));
                 cursor = fClampedEnd;
                 tempIdx++;
             }
             if (cursor < sEnd) {
-                result.add(new StyledSpan(cursor, sEnd, stylerSpan.face()));
+                result.add(new StyledSpan(cursor, sEnd, stylerSpan.faceName()));
             }
 
             // fIdxを進める（完全にこのstylerSpan内に収まったfaceSpanをスキップ）

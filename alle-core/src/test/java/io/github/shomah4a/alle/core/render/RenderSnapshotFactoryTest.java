@@ -10,7 +10,7 @@ import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Direction;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -366,7 +366,7 @@ class RenderSnapshotFactoryTest {
         @Test
         void スタイラーなしのバッファにfaceを設定するとLineSnapshotにスパンが付与される() {
             var mainBuffer = createBuffer("main", "hello world");
-            mainBuffer.putFace(0, 5, Face.BOLD_FACE);
+            mainBuffer.putFace(0, 5, FaceName.STRONG);
             var minibuffer = createBuffer("*Minibuffer*", "");
             var frame = new Frame(new Window(mainBuffer), new Window(minibuffer));
 
@@ -379,7 +379,7 @@ class RenderSnapshotFactoryTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(5, spans.get(0).end());
-            assertEquals(Face.BOLD_FACE, spans.get(0).face());
+            assertEquals(FaceName.STRONG, spans.get(0).faceName());
         }
 
         @Test
@@ -397,7 +397,7 @@ class RenderSnapshotFactoryTest {
         void 別の行にfaceを設定すると行ローカル座標に変換される() {
             var mainBuffer = createBuffer("main", "hello\nworld");
             // "world"はバッファオフセット6-11だが、行ローカルでは0-5
-            mainBuffer.putFace(6, 11, Face.KEYWORD);
+            mainBuffer.putFace(6, 11, FaceName.KEYWORD);
             var minibuffer = createBuffer("*Minibuffer*", "");
             var frame = new Frame(new Window(mainBuffer), new Window(minibuffer));
 
@@ -413,7 +413,7 @@ class RenderSnapshotFactoryTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(5, spans.get(0).end());
-            assertEquals(Face.KEYWORD, spans.get(0).face());
+            assertEquals(FaceName.KEYWORD, spans.get(0).faceName());
         }
 
         @Test
@@ -424,7 +424,7 @@ class RenderSnapshotFactoryTest {
             var frame = new Frame(new Window(mainBuffer), minibufferWindow);
             frame.activateMinibuffer();
             minibufferWindow.insert("Find file: /path");
-            minibufferBuffer.putFace(0, 11, Face.MINIBUFFER_PROMPT);
+            minibufferBuffer.putFace(0, 11, FaceName.MINIBUFFER_PROMPT);
 
             var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
 
@@ -434,7 +434,7 @@ class RenderSnapshotFactoryTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(11, spans.get(0).end());
-            assertEquals(Face.MINIBUFFER_PROMPT, spans.get(0).face());
+            assertEquals(FaceName.MINIBUFFER_PROMPT, spans.get(0).faceName());
         }
 
         @Test

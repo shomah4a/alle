@@ -23,6 +23,8 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.KEYWORD, FaceSpec.of("blue", FaceAttribute.BOLD))
             .withKeyValue(FaceName.STRING, FaceSpec.ofForeground("green"))
             .withKeyValue(FaceName.TABLE, FaceSpec.ofForeground("cyan"))
+            .withKeyValue(FaceName.NUMBER, FaceSpec.ofForeground("cyan"))
+            .withKeyValue(FaceName.ANNOTATION, FaceSpec.ofForeground("magenta"))
             .withKeyValue(FaceName.STRONG, FaceSpec.ofAttributes(FaceAttribute.BOLD))
             .withKeyValue(FaceName.EMPHASIS, FaceSpec.ofAttributes(FaceAttribute.ITALIC))
             .withKeyValue(FaceName.DELETION, FaceSpec.ofAttributes(FaceAttribute.STRIKETHROUGH))

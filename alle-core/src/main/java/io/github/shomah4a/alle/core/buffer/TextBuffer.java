@@ -7,7 +7,7 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.textmodel.TextModel;
 import java.nio.file.Path;
@@ -325,8 +325,8 @@ public class TextBuffer implements Buffer {
     }
 
     @Override
-    public void putFace(int start, int end, Face face) {
-        lockedVoid(() -> textPropertyStore.putFace(start, end, face));
+    public void putFace(int start, int end, FaceName faceName) {
+        lockedVoid(() -> textPropertyStore.putFace(start, end, faceName));
     }
 
     @Override

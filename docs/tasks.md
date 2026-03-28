@@ -19,18 +19,16 @@
 - `return`/`pass`/`break`/`continue`/`raise` の入力完了後に自動でインデントを減らす
 - newline-and-indent では対応済みだが、入力中のリアルタイム dedent は未実装
 
-### Face の設計改善と RangeList のオーバーラップ合成対応
-- Face のセマンティック定数（KEYWORD, COMMENT 等）と修飾定数（BOLD_FACE, ITALIC_FACE 等）が同じ型で同列に並んでいるのを整理する
-  - セマンティック: 色名を持ち、構文上の意味を表す（KEYWORD → blue+BOLD）
-  - 修飾: 装飾属性のみを持ち、既存の face に重ね掛けする（ITALIC_FACE → ITALIC のみ）
-  - 案: Face を semantic color + Set\<Decoration\> のような構造にする
+### RangeList のオーバーラップ合成対応
 - RangeList のオーバーラップ時に値を合成（merge）する仕組みを入れる
-  - `Mergeable<T>` インターフェース導入済み（alle-core パッケージ直下）
-  - `RangeList<V extends Mergeable<V>>` の型制約を追加
-  - put 時にオーバーラップ部分で `existing.merge(new)` を呼び、属性を合成する
+  - FaceSpec.merge は実装済み（ADR 0073）
+  - `RangeList<V>` の put 時にオーバーラップ部分で合成する仕組みが必要
   - Flag（readOnly, pointGuard）は自明な merge（常に自身を返す）
-  - Face の merge: attributes は和集合、foreground/background は "default" でなければ後入り優先
-- Face のセマンティック/修飾の分離を先に行い、その上で merge のセマンティクスを定義するのが望ましい
+
+### テーマのカスタマイズ・永続化
+- FaceTheme を差し替え可能にする仕組みは導入済み（ADR 0073）
+- ユーザー設定ファイルからのテーマ読み込み、スクリプトからのテーマ拡張登録が未実装
+- DefaultFaceTheme に Python モード固有の FaceName マッピングがハードコードされている問題を解消する
 
 ## 将来課題
 

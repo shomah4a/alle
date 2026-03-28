@@ -1,6 +1,6 @@
 """スタイリング関連の Java クラスラッパー。
 
-Java 側の RegexStyler, StylingRule, Face 等を Python から
+Java 側の RegexStyler, StylingRule, FaceName 等を Python から
 宣言的に利用するためのヘルパー関数を提供する。
 """
 
@@ -11,61 +11,73 @@ from typing import Any
 import java
 
 Pattern: Any = java.type('java.util.regex.Pattern')
-Face: Any = java.type('io.github.shomah4a.alle.core.styling.Face')
+FaceName: Any = java.type('io.github.shomah4a.alle.core.styling.FaceName')
 FaceAttribute: Any = java.type('io.github.shomah4a.alle.core.styling.FaceAttribute')
 _PatternMatch: Any = java.type('io.github.shomah4a.alle.core.styling.StylingRule$PatternMatch')
 _LineMatch: Any = java.type('io.github.shomah4a.alle.core.styling.StylingRule$LineMatch')
 _RegionMatch: Any = java.type('io.github.shomah4a.alle.core.styling.StylingRule$RegionMatch')
 _RegexStyler: Any = java.type('io.github.shomah4a.alle.core.styling.RegexStyler')
 _Lists: Any = java.type('org.eclipse.collections.api.factory.Lists')
-_Sets: Any = java.type('org.eclipse.collections.api.factory.Sets')
 
 
-def pattern_match(regex: str, face: Any) -> Any:
+def face_name(name: str, description: str) -> Any:
+    """カスタムの FaceName を生成する。
+
+    :param name: セマンティック名
+    :type name: str
+    :param description: 説明
+    :type description: str
+    :return: FaceName インスタンス
+    :rtype: FaceName
+    """
+    return FaceName(name, description)
+
+
+def pattern_match(regex: str, face_name_value: Any) -> Any:
     """部分パターンマッチルールを生成する。
 
-    1行内でパターンにマッチした部分に Face を適用する。
+    1行内でパターンにマッチした部分に FaceName を適用する。
 
     :param regex: 正規表現パターン文字列
     :type regex: str
-    :param face: 適用する Face
-    :type face: Face
+    :param face_name_value: 適用する FaceName
+    :type face_name_value: FaceName
     :return: StylingRule.PatternMatch インスタンス
     :rtype: StylingRule.PatternMatch
     """
-    return _PatternMatch(Pattern.compile(regex), face)
+    return _PatternMatch(Pattern.compile(regex), face_name_value)
 
 
-def line_match(regex: str, face: Any) -> Any:
+def line_match(regex: str, face_name_value: Any) -> Any:
     """行全体マッチルールを生成する。
 
-    パターンが行全体にマッチした場合、行全体に Face を適用する。
+    パターンが行全体にマッチした場合、行全体に FaceName を適用する。
 
     :param regex: 正規表現パターン文字列
     :type regex: str
-    :param face: 適用する Face
-    :type face: Face
+    :param face_name_value: 適用する FaceName
+    :type face_name_value: FaceName
     :return: StylingRule.LineMatch インスタンス
     :rtype: StylingRule.LineMatch
     """
-    return _LineMatch(Pattern.compile(regex), face)
+    return _LineMatch(Pattern.compile(regex), face_name_value)
 
 
-def region_match(open_regex: str, close_regex: str, face: Any) -> Any:
+def region_match(open_regex: str, close_regex: str, face_name_value: Any) -> Any:
     """リージョンマッチルールを生成する。
 
-    開始パターンから終了パターンまでの複数行にまたがる領域に Face を適用する。
+    開始パターンから終了パターンまでの複数行にまたがる領域に FaceName を適用する。
 
     :param open_regex: 開始パターンの正規表現文字列
     :type open_regex: str
     :param close_regex: 終了パターンの正規表現文字列
     :type close_regex: str
-    :param face: 適用する Face
-    :type face: Face
+    :param face_name_value: 適用する FaceName
+    :type face_name_value: FaceName
     :return: StylingRule.RegionMatch インスタンス
     :rtype: StylingRule.RegionMatch
     """
-    return _RegionMatch(Pattern.compile(open_regex), Pattern.compile(close_regex), face)
+    return _RegionMatch(Pattern.compile(open_regex), Pattern.compile(close_regex), face_name_value)
 
 
 def regex_styler(rules: list[Any]) -> Any:
@@ -80,21 +92,3 @@ def regex_styler(rules: list[Any]) -> Any:
     for rule in rules:
         mutable_list.add(rule)
     return _RegexStyler(mutable_list)
-
-
-def face(foreground: str, *attributes: Any) -> Any:
-    """前景色と装飾属性を指定して Face を生成する。
-
-    :param foreground: 前景色名（"red", "blue", "default" 等）
-    :type foreground: str
-    :param attributes: 装飾属性（FaceAttribute.BOLD 等）
-    :type attributes: FaceAttribute
-    :return: Face インスタンス
-    :rtype: Face
-    """
-    if not attributes:
-        return Face.of(foreground)
-    attr_set = _Sets.immutable.empty()
-    for attr in attributes:
-        attr_set = attr_set.newWith(attr)
-    return Face(foreground, "default", attr_set)

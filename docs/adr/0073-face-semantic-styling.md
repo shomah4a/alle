@@ -168,6 +168,8 @@ public ScreenRenderer(Screen screen, FaceTheme faceTheme, FaceResolver faceResol
 | KEYWORD | "blue" | null | {BOLD} |
 | STRING | "green" | null | {} |
 | TABLE | "cyan" | null | {} |
+| NUMBER | "cyan" | null | {} |
+| ANNOTATION | "magenta" | null | {} |
 | STRONG | null | null | {BOLD} |
 | EMPHASIS | null | null | {ITALIC} |
 | DELETION | null | null | {STRIKETHROUGH} |

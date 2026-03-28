@@ -16,7 +16,7 @@ class RegexStylerTest {
         @Test
         void パターンに一致する行全体にFaceが適用される() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), FaceName.HEADING));
             var styler = new RegexStyler(rules);
 
             var spans = styler.styleLine("# Hello");
@@ -24,13 +24,13 @@ class RegexStylerTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(7, spans.get(0).end());
-            assertEquals(Face.HEADING, spans.get(0).face());
+            assertEquals(FaceName.HEADING, spans.get(0).faceName());
         }
 
         @Test
         void パターンに一致しない行ではスパンが生成されない() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), FaceName.HEADING));
             var styler = new RegexStyler(rules);
 
             var spans = styler.styleLine("Hello World");
@@ -45,7 +45,7 @@ class RegexStylerTest {
         @Test
         void マッチした部分にFaceが適用される() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), FaceName.CODE));
             var styler = new RegexStyler(rules);
 
             var spans = styler.styleLine("Hello `code` World");
@@ -53,13 +53,13 @@ class RegexStylerTest {
             assertEquals(1, spans.size());
             assertEquals(6, spans.get(0).start());
             assertEquals(12, spans.get(0).end());
-            assertEquals(Face.CODE, spans.get(0).face());
+            assertEquals(FaceName.CODE, spans.get(0).faceName());
         }
 
         @Test
         void 複数マッチがある場合すべてスパンが生成される() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), FaceName.CODE));
             var styler = new RegexStyler(rules);
 
             var spans = styler.styleLine("`a` and `b`");
@@ -78,15 +78,15 @@ class RegexStylerTest {
         @Test
         void 先に定義されたルールが優先される() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING),
-                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), FaceName.HEADING),
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), FaceName.CODE));
             var styler = new RegexStyler(rules);
 
             // 見出し行内のコードスパンは見出しFaceで上書きされる
             var spans = styler.styleLine("# Hello `code`");
 
             assertEquals(1, spans.size());
-            assertEquals(Face.HEADING, spans.get(0).face());
+            assertEquals(FaceName.HEADING, spans.get(0).faceName());
         }
     }
 
@@ -96,7 +96,7 @@ class RegexStylerTest {
         @Test
         void 空行ではスパンが生成されない() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), Face.HEADING));
+                    (StylingRule) new StylingRule.LineMatch(Pattern.compile("^#\\s.*"), FaceName.HEADING));
             var styler = new RegexStyler(rules);
 
             var spans = styler.styleLine("");
@@ -120,7 +120,7 @@ class RegexStylerTest {
         @Test
         void 絵文字を含む行で正しいコードポイントオフセットを返す() {
             var rules = Lists.immutable.of(
-                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), Face.CODE));
+                    (StylingRule) new StylingRule.PatternMatch(Pattern.compile("`[^`]+`"), FaceName.CODE));
             var styler = new RegexStyler(rules);
 
             // 😀はサロゲートペア（char 2個、コードポイント1個）

@@ -2,8 +2,8 @@ package io.github.shomah4a.alle.tui;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TextColor;
-import io.github.shomah4a.alle.core.styling.Face;
 import io.github.shomah4a.alle.core.styling.FaceAttribute;
+import io.github.shomah4a.alle.core.styling.FaceSpec;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
@@ -53,11 +53,13 @@ public class FaceResolver {
     }
 
     /**
-     * FaceのForeground/Background/Attributesをまとめて解決する。
+     * FaceSpecのForeground/Background/Attributesをまとめて解決する。
+     * foreground/backgroundがnullの場合はDEFAULT色を使用する。
      */
-    public ResolvedFace resolve(Face face) {
-        return new ResolvedFace(
-                resolveColor(face.foreground()), resolveColor(face.background()), resolveSgr(face.attributes()));
+    public ResolvedFace resolve(FaceSpec faceSpec) {
+        String fg = faceSpec.foreground() != null ? faceSpec.foreground() : "default";
+        String bg = faceSpec.background() != null ? faceSpec.background() : "default";
+        return new ResolvedFace(resolveColor(fg), resolveColor(bg), resolveSgr(faceSpec.attributes()));
     }
 
     private static SGR toSgr(FaceAttribute attr) {

@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TextColor;
-import io.github.shomah4a.alle.core.styling.Face;
 import io.github.shomah4a.alle.core.styling.FaceAttribute;
+import io.github.shomah4a.alle.core.styling.FaceSpec;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.junit.jupiter.api.Nested;
@@ -77,22 +77,33 @@ class FaceResolverTest {
     }
 
     @Nested
-    class Face解決 {
+    class FaceSpec解決 {
 
         @Test
-        void HEADING_Faceが前景yellow_BOLD_SGRに解決される() {
-            var resolved = resolver.resolve(Face.HEADING);
+        void 前景yellowとBOLDのFaceSpecが正しく解決される() {
+            var faceSpec = FaceSpec.of("yellow", FaceAttribute.BOLD);
+            var resolved = resolver.resolve(faceSpec);
             assertEquals(TextColor.ANSI.YELLOW, resolved.foreground());
             assertEquals(TextColor.ANSI.DEFAULT, resolved.background());
             assertEquals(Lists.immutable.of(SGR.BOLD), resolved.sgrs());
         }
 
         @Test
-        void CODE_Faceが前景green_属性なしに解決される() {
-            var resolved = resolver.resolve(Face.CODE);
+        void 前景greenで属性なしのFaceSpecが正しく解決される() {
+            var faceSpec = FaceSpec.ofForeground("green");
+            var resolved = resolver.resolve(faceSpec);
             assertEquals(TextColor.ANSI.GREEN, resolved.foreground());
             assertEquals(TextColor.ANSI.DEFAULT, resolved.background());
             assertEquals(0, resolved.sgrs().size());
+        }
+
+        @Test
+        void foregroundがnullの場合DEFAULT色に解決される() {
+            var faceSpec = FaceSpec.ofAttributes(FaceAttribute.BOLD);
+            var resolved = resolver.resolve(faceSpec);
+            assertEquals(TextColor.ANSI.DEFAULT, resolved.foreground());
+            assertEquals(TextColor.ANSI.DEFAULT, resolved.background());
+            assertEquals(Lists.immutable.of(SGR.BOLD), resolved.sgrs());
         }
     }
 }

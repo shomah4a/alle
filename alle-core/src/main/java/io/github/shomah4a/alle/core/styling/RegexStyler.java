@@ -45,12 +45,12 @@ public class RegexStyler implements SyntaxStyler {
                 // close が見つかった: 行頭〜close終了までリージョン Face を適用
                 int closeEndChar = closeMatcher.end();
                 int cpEnd = charOffsetToCodePointOffset(lineText, closeEndChar);
-                addSpanIfNotCovered(spans, covered, 0, cpEnd, region.face());
+                addSpanIfNotCovered(spans, covered, 0, cpEnd, region.faceName());
                 regionEndCharOffset = closeEndChar;
                 nextState = StylingState.NONE;
             } else {
                 // close が見つからない: 行全体にリージョン Face を適用し、リージョン継続
-                addSpanIfNotCovered(spans, covered, 0, codePointCount, region.face());
+                addSpanIfNotCovered(spans, covered, 0, codePointCount, region.faceName());
                 spans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
                 return new StylingResult(spans, state);
             }
@@ -65,7 +65,7 @@ public class RegexStyler implements SyntaxStyler {
         for (var rule : rules) {
             if (rule instanceof StylingRule.LineMatch lineMatch) {
                 if (lineMatch.pattern().matcher(lineText).matches()) {
-                    addSpanIfNotCovered(spans, covered, 0, codePointCount, lineMatch.face());
+                    addSpanIfNotCovered(spans, covered, 0, codePointCount, lineMatch.faceName());
                 }
             } else if (rule instanceof StylingRule.PatternMatch patternMatch) {
                 var matcher = patternMatch.pattern().matcher(lineText);
@@ -74,7 +74,7 @@ public class RegexStyler implements SyntaxStyler {
                     int charEnd = matcher.end();
                     int cpStart = charOffsetToCodePointOffset(lineText, charStart);
                     int cpEnd = charOffsetToCodePointOffset(lineText, charEnd);
-                    addSpanIfNotCovered(spans, covered, cpStart, cpEnd, patternMatch.face());
+                    addSpanIfNotCovered(spans, covered, cpStart, cpEnd, patternMatch.faceName());
                 }
             } else if (rule instanceof StylingRule.RegionMatch regionMatch) {
                 var regionResult =
@@ -127,11 +127,11 @@ public class RegexStyler implements SyntaxStyler {
                 // 同一行内で close が見つかった
                 int closeEndChar = closeMatcher.end();
                 int closeEndCp = charOffsetToCodePointOffset(lineText, closeEndChar);
-                addSpanIfNotCovered(spans, covered, openStartCp, closeEndCp, regionMatch.face());
+                addSpanIfNotCovered(spans, covered, openStartCp, closeEndCp, regionMatch.faceName());
                 searchFrom = closeEndChar;
             } else {
                 // close が見つからない: open 位置〜行末をリージョン Face で適用
-                addSpanIfNotCovered(spans, covered, openStartCp, codePointCount, regionMatch.face());
+                addSpanIfNotCovered(spans, covered, openStartCp, codePointCount, regionMatch.faceName());
                 pendingRegion = Optional.of(regionMatch);
                 break;
             }
@@ -140,7 +140,8 @@ public class RegexStyler implements SyntaxStyler {
         return pendingRegion;
     }
 
-    static void addSpanIfNotCovered(MutableList<StyledSpan> spans, boolean[] covered, int start, int end, Face face) {
+    static void addSpanIfNotCovered(
+            MutableList<StyledSpan> spans, boolean[] covered, int start, int end, FaceName faceName) {
         // 範囲内に未カバーの部分があるか確認
         boolean hasUncovered = false;
         for (int i = start; i < end; i++) {
@@ -160,7 +161,7 @@ public class RegexStyler implements SyntaxStyler {
             if (!isCovered && spanStart < 0) {
                 spanStart = i;
             } else if (isCovered && spanStart >= 0) {
-                spans.add(new StyledSpan(spanStart, i, face));
+                spans.add(new StyledSpan(spanStart, i, faceName));
                 spanStart = -1;
             }
         }

@@ -1,6 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -16,7 +16,7 @@ class TextPropertyStore {
 
     private final RangeList<RangeList.Flag> readOnlyRanges = new RangeList<>();
     private final RangeList<RangeList.Flag> pointGuardRanges = new RangeList<>();
-    private final RangeList<Face> faceRanges = new RangeList<>();
+    private final RangeList<FaceName> faceRanges = new RangeList<>();
 
     /**
      * 指定範囲にread-onlyを設定する。
@@ -102,8 +102,8 @@ class TextPropertyStore {
     /**
      * 指定範囲にface（表示スタイル）を設定する。
      */
-    void putFace(int start, int end, Face face) {
-        faceRanges.put(start, end, face);
+    void putFace(int start, int end, FaceName faceName) {
+        faceRanges.put(start, end, faceName);
     }
 
     /**

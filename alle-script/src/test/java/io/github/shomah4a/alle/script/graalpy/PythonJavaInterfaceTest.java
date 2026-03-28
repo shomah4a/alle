@@ -10,7 +10,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
-import io.github.shomah4a.alle.core.styling.Face;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.RegexStyler;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
@@ -104,15 +104,15 @@ class PythonJavaInterfaceTest {
     }
 
     @Test
-    void PythonからFaceのstaticフィールドにアクセスできる() {
+    void PythonからFaceNameのstaticフィールドにアクセスできる() {
         context.eval("python", """
                 import java
-                Face = java.type('io.github.shomah4a.alle.core.styling.Face')
-                kw = Face.KEYWORD
+                FaceName = java.type('io.github.shomah4a.alle.core.styling.FaceName')
+                kw = FaceName.KEYWORD
                 """);
         Value result = context.eval("python", "kw");
-        Face face = result.as(Face.class);
-        assertEquals(Face.KEYWORD, face);
+        FaceName faceName = result.as(FaceName.class);
+        assertEquals(FaceName.KEYWORD, faceName);
     }
 
     @Test
@@ -120,9 +120,9 @@ class PythonJavaInterfaceTest {
         context.eval("python", """
                 import java
                 Pattern = java.type('java.util.regex.Pattern')
-                Face = java.type('io.github.shomah4a.alle.core.styling.Face')
+                FaceName = java.type('io.github.shomah4a.alle.core.styling.FaceName')
                 PatternMatch = java.type('io.github.shomah4a.alle.core.styling.StylingRule$PatternMatch')
-                rule = PatternMatch(Pattern.compile('#.*$'), Face.COMMENT)
+                rule = PatternMatch(Pattern.compile('#.*$'), FaceName.COMMENT)
                 """);
         Value result = context.eval("python", "rule");
         assertTrue(result.isHostObject());
@@ -133,9 +133,9 @@ class PythonJavaInterfaceTest {
         context.eval("python", """
                 import java
                 Pattern = java.type('java.util.regex.Pattern')
-                Face = java.type('io.github.shomah4a.alle.core.styling.Face')
+                FaceName = java.type('io.github.shomah4a.alle.core.styling.FaceName')
                 RegionMatch = java.type('io.github.shomah4a.alle.core.styling.StylingRule$RegionMatch')
-                rule = RegionMatch(Pattern.compile('\"\"\"'), Pattern.compile('\"\"\"'), Face.STRING)
+                rule = RegionMatch(Pattern.compile('\"\"\"'), Pattern.compile('\"\"\"'), FaceName.STRING)
                 """);
         Value result = context.eval("python", "rule");
         assertTrue(result.isHostObject());
@@ -159,13 +159,13 @@ class PythonJavaInterfaceTest {
         context.eval("python", """
                 import java
                 Pattern = java.type('java.util.regex.Pattern')
-                Face = java.type('io.github.shomah4a.alle.core.styling.Face')
+                FaceName = java.type('io.github.shomah4a.alle.core.styling.FaceName')
                 PatternMatch = java.type('io.github.shomah4a.alle.core.styling.StylingRule$PatternMatch')
                 Lists = java.type('org.eclipse.collections.api.factory.Lists')
                 RegexStyler = java.type('io.github.shomah4a.alle.core.styling.RegexStyler')
 
                 rules = Lists.mutable.empty()
-                rules.add(PatternMatch(Pattern.compile('#.*$'), Face.COMMENT))
+                rules.add(PatternMatch(Pattern.compile('#.*$'), FaceName.COMMENT))
                 styler = RegexStyler(rules)
                 """);
         Value pyStyler = context.eval("python", "styler");
@@ -173,7 +173,7 @@ class PythonJavaInterfaceTest {
         var spans = styler.styleLine("x = 1  # comment");
         assertFalse(spans.isEmpty());
         StyledSpan span = spans.get(0);
-        assertEquals(Face.COMMENT, span.face());
+        assertEquals(FaceName.COMMENT, span.faceName());
     }
 
     @Test
@@ -182,14 +182,14 @@ class PythonJavaInterfaceTest {
                 import java
                 from java.util import Optional
                 Pattern = java.type('java.util.regex.Pattern')
-                Face = java.type('io.github.shomah4a.alle.core.styling.Face')
+                FaceName = java.type('io.github.shomah4a.alle.core.styling.FaceName')
                 PatternMatch = java.type('io.github.shomah4a.alle.core.styling.StylingRule$PatternMatch')
                 Lists = java.type('org.eclipse.collections.api.factory.Lists')
                 RegexStyler = java.type('io.github.shomah4a.alle.core.styling.RegexStyler')
                 MajorMode = java.type('io.github.shomah4a.alle.core.mode.MajorMode')
 
                 rules = Lists.mutable.empty()
-                rules.add(PatternMatch(Pattern.compile('#.*$'), Face.COMMENT))
+                rules.add(PatternMatch(Pattern.compile('#.*$'), FaceName.COMMENT))
                 _styler = RegexStyler(rules)
 
                 class TestPyMode(MajorMode):
@@ -208,7 +208,7 @@ class PythonJavaInterfaceTest {
         assertInstanceOf(RegexStyler.class, styler);
         var spans = styler.styleLine("# hello");
         assertFalse(spans.isEmpty());
-        assertEquals(Face.COMMENT, spans.get(0).face());
+        assertEquals(FaceName.COMMENT, spans.get(0).faceName());
     }
 
     @Test

@@ -227,8 +227,8 @@ public class BufferFacade {
         return buffer.resolvePointGuard(index, forward);
     }
 
-    public void putFace(int start, int end, io.github.shomah4a.alle.core.styling.Face face) {
-        buffer.putFace(start, end, face);
+    public void putFace(int start, int end, io.github.shomah4a.alle.core.styling.FaceName faceName) {
+        buffer.putFace(start, end, faceName);
     }
 
     public void removeFace(int start, int end) {

@@ -57,6 +57,8 @@ public final class FaceName {
     public static final FaceName COMMENT = new FaceName("comment", "コメント");
     public static final FaceName KEYWORD = new FaceName("keyword", "プログラミング言語のキーワード");
     public static final FaceName TABLE = new FaceName("table", "テーブル要素");
+    public static final FaceName NUMBER = new FaceName("number", "数値リテラル");
+    public static final FaceName ANNOTATION = new FaceName("annotation", "アノテーション・デコレータ");
     public static final FaceName LIST_MARKER = new FaceName("list-marker", "リストマーカー");
 
     // インライン修飾（セマンティクス）
