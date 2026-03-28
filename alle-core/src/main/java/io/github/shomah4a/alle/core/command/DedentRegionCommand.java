@@ -28,23 +28,21 @@ public class DedentRegionCommand implements Command {
         int startLine = buffer.lineIndexForOffset(regionStart.get());
         int endLine = buffer.lineIndexForOffset(regionEnd.get());
 
-        buffer.getUndoManager().withTransaction(() -> {
-            for (int li = endLine; li >= startLine; li--) {
-                int lineStart = buffer.lineStartOffset(li);
-                String lineText = buffer.lineText(li);
-                int spaceCount = 0;
-                for (int i = 0; i < lineText.length() && i < indentWidth; i++) {
-                    if (lineText.charAt(i) == ' ') {
-                        spaceCount++;
-                    } else {
-                        break;
-                    }
-                }
-                if (spaceCount > 0) {
-                    buffer.deleteText(lineStart, spaceCount);
+        for (int li = endLine; li >= startLine; li--) {
+            int lineStart = buffer.lineStartOffset(li);
+            String lineText = buffer.lineText(li);
+            int spaceCount = 0;
+            for (int i = 0; i < lineText.length() && i < indentWidth; i++) {
+                if (lineText.charAt(i) == ' ') {
+                    spaceCount++;
+                } else {
+                    break;
                 }
             }
-        });
+            if (spaceCount > 0) {
+                buffer.deleteText(lineStart, spaceCount);
+            }
+        }
         buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }

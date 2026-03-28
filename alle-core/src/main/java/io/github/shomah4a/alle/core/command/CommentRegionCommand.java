@@ -32,13 +32,11 @@ public class CommentRegionCommand implements Command {
 
         boolean shouldUncomment = isAllCommented(buffer, startLine, endLine, commentString);
 
-        buffer.getUndoManager().withTransaction(() -> {
-            if (shouldUncomment) {
-                uncommentRegion(buffer, startLine, endLine, commentString);
-            } else {
-                commentRegion(buffer, startLine, endLine, commentString);
-            }
-        });
+        if (shouldUncomment) {
+            uncommentRegion(buffer, startLine, endLine, commentString);
+        } else {
+            commentRegion(buffer, startLine, endLine, commentString);
+        }
         buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }

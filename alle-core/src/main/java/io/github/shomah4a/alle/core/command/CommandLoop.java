@@ -170,13 +170,16 @@ public class CommandLoop {
                         warningBuffer,
                         settingsRegistry);
                 try {
-                    command.execute(context)
-                            .thenRun(() -> lastCommand = thisCommand)
-                            .exceptionally(ex -> {
-                                var cause = ex.getCause() != null ? ex.getCause() : ex;
-                                handleCommandError(command, context, cause);
-                                return null;
-                            });
+                    var buffer = context.activeWindow().getBuffer();
+                    buffer.getUndoManager().withTransaction(() -> {
+                        command.execute(context)
+                                .thenRun(() -> lastCommand = thisCommand)
+                                .exceptionally(ex -> {
+                                    var cause = ex.getCause() != null ? ex.getCause() : ex;
+                                    handleCommandError(command, context, cause);
+                                    return null;
+                                });
+                    });
                 } catch (ReadOnlyBufferException ex) {
                     messageBuffer.message("Text is read-only");
                 } catch (Exception ex) {
