@@ -17,7 +17,7 @@ class TreeSitterStylerTest {
     @BeforeEach
     void setUp() {
         String query = HighlightQueryLoader.load("python");
-        styler = new TreeSitterStyler(new TreeSitterPython(), query, PythonHighlightQuery.MAPPING);
+        styler = new TreeSitterStyler(new TreeSitterPython(), query, DefaultCaptureMapping.INSTANCE);
     }
 
     @Nested

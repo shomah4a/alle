@@ -3,23 +3,20 @@ package io.github.shomah4a.alle.core.styling;
 import org.eclipse.collections.api.factory.Maps;
 
 /**
- * Python言語用のTree-sitterハイライトクエリとキャプチャ名マッピングを提供する。
+ * Tree-sitter公式のキャプチャ名慣習に基づくデフォルトのFaceNameマッピング。
  *
- * <p>クエリ文字列は公式の {@code highlights.scm} をリソースから読み込む。
- * キャプチャ名→FaceNameのマッピングは公式のキャプチャ名慣習に従う。
+ * <p>公式の {@code highlights.scm} はドット区切りの階層的なキャプチャ名
+ * （例: {@code @function.builtin}）を使用しており、この慣習は全言語で共通である。
+ * 言語固有のキャプチャ名が追加される場合は、このマッピングを拡張して使用する。
  */
-public final class PythonHighlightQuery {
+public final class DefaultCaptureMapping {
 
-    private PythonHighlightQuery() {}
+    private DefaultCaptureMapping() {}
 
     /**
-     * 公式 highlights.scm のキャプチャ名→FaceNameのマッピング。
-     *
-     * <p>公式のキャプチャ名はドット区切り（例: {@code function.builtin}）で、
-     * 階層的な分類になっている。より具体的なキャプチャ名が優先されるが、
-     * マッピング上は各名前を個別に定義する。
+     * 公式キャプチャ名→FaceNameのデフォルトマッピング。
      */
-    public static final NodeFaceMapping MAPPING = new NodeFaceMapping(Maps.mutable
+    public static final NodeFaceMapping INSTANCE = new NodeFaceMapping(Maps.mutable
             .<String, FaceName>empty()
             // コメント・文字列・数値
             .withKeyValue("comment", FaceName.COMMENT)
@@ -40,7 +37,7 @@ public final class PythonHighlightQuery {
             .withKeyValue("constant.builtin", FaceName.BUILTIN)
             .withKeyValue("property", FaceName.VARIABLE)
             .withKeyValue("variable", FaceName.VARIABLE)
-            // 句読点・埋め込み（控えめなスタイル）
+            // 句読点・埋め込み
             .withKeyValue("punctuation.special", FaceName.OPERATOR)
             .withKeyValue("embedded", FaceName.DEFAULT)
             .toImmutable());

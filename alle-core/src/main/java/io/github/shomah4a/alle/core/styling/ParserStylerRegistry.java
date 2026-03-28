@@ -60,7 +60,7 @@ public class ParserStylerRegistry {
         String pythonQuery = HighlightQueryLoader.load("python");
         registry.register(
                 "python",
-                () -> new TreeSitterStyler(new TreeSitterPython(), pythonQuery, PythonHighlightQuery.MAPPING));
+                () -> new TreeSitterStyler(new TreeSitterPython(), pythonQuery, DefaultCaptureMapping.INSTANCE));
         return registry;
     }
 }
