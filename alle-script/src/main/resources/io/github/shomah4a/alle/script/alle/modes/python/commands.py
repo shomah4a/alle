@@ -40,16 +40,21 @@ def _get_indent(text: str) -> str:
 
 
 def _set_line_indent(win, buf, line_index: int, new_indent: str) -> None:
-    """指定行のインデントを変更する。"""
+    """指定行のインデントを変更する。delete+insertをundo1単位にまとめる。"""
     line_start = buf.line_start_offset(line_index)
     line_text = buf.line_text(line_index)
     old_indent = _get_indent(line_text)
     if old_indent == new_indent:
         return
     old_len = len(old_indent)
-    buf.delete_at(line_start, old_len)
-    buf.insert_at(line_start, new_indent)
     point = win.point()
+
+    def do_replace():
+        buf.delete_at(line_start, old_len)
+        buf.insert_at(line_start, new_indent)
+
+    buf.with_undo_transaction(do_replace)
+
     if point < line_start + old_len:
         win.goto_char(line_start + len(new_indent))
     else:

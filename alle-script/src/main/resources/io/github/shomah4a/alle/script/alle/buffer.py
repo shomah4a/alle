@@ -124,3 +124,11 @@ class Buffer:
         :rtype: bool
         """
         return self._buf.isReadOnly()
+
+    def with_undo_transaction(self, action: callable) -> None:
+        """複数の編集操作をundoの1単位としてまとめて実行する。
+
+        :param action: トランザクション内で実行する操作
+        :type action: callable
+        """
+        self._buf.withUndoTransaction(action)

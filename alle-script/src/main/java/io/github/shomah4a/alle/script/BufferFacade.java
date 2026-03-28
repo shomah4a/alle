@@ -95,4 +95,13 @@ public class BufferFacade {
     public boolean isReadOnly() {
         return buffer.isReadOnly();
     }
+
+    /**
+     * 複数の編集操作をundoの1単位としてまとめて実行する。
+     *
+     * @param action トランザクション内で実行する操作
+     */
+    public void withUndoTransaction(Runnable action) {
+        buffer.getUndoManager().withTransaction(action);
+    }
 }
