@@ -4,86 +4,44 @@ import org.eclipse.collections.api.factory.Maps;
 
 /**
  * Python言語用のTree-sitterハイライトクエリとキャプチャ名マッピングを提供する。
+ *
+ * <p>クエリ文字列は公式の {@code highlights.scm} をリソースから読み込む。
+ * キャプチャ名→FaceNameのマッピングは公式のキャプチャ名慣習に従う。
  */
 public final class PythonHighlightQuery {
 
     private PythonHighlightQuery() {}
 
     /**
-     * Python用のS式クエリ文字列。
-     * キャプチャ名はNodeFaceMappingでFaceNameに変換される。
-     */
-    public static final String QUERY = """
-            ; コメント
-            (comment) @comment
-
-            ; 文字列
-            (string) @string
-
-            ; 数値
-            (integer) @number
-            (float) @number
-
-            ; 組み込み定数
-            (true) @builtin
-            (false) @builtin
-            (none) @builtin
-
-            ; キーワード
-            [
-              "and" "as" "assert" "async" "await" "break" "class" "continue"
-              "def" "del" "elif" "else" "except" "finally" "for" "from"
-              "global" "if" "import" "in" "is" "lambda" "nonlocal" "not"
-              "or" "pass" "raise" "return" "try" "while" "with" "yield"
-              "match" "case"
-            ] @keyword
-
-            ; 演算子
-            [
-              "+" "-" "*" "/" "%" "**" "//" "|" "&" "^" "~" "<<" ">>"
-              "=" "+=" "-=" "*=" "/=" "%=" "**=" "//=" "|=" "&=" "^=" "<<=" ">>="
-              "==" "!=" "<" ">" "<=" ">="
-              "->"
-            ] @operator
-
-            ; デコレータ
-            (decorator) @annotation
-
-            ; 関数定義の関数名
-            (function_definition name: (identifier) @function_name)
-
-            ; クラス定義のクラス名
-            (class_definition name: (identifier) @type)
-
-            ; 関数呼び出しの関数名
-            (call function: (identifier) @function_name)
-            (call function: (attribute attribute: (identifier) @function_name))
-
-            ; 型注釈
-            (type (identifier) @type)
-
-            ; self / cls パラメータ
-            ((identifier) @builtin
-              (#match? @builtin "^(self|cls)$"))
-
-            ; 識別子（他のキャプチャに該当しないもの）
-            (identifier) @variable
-            """;
-
-    /**
-     * キャプチャ名→FaceNameのマッピング。
+     * 公式 highlights.scm のキャプチャ名→FaceNameのマッピング。
+     *
+     * <p>公式のキャプチャ名はドット区切り（例: {@code function.builtin}）で、
+     * 階層的な分類になっている。より具体的なキャプチャ名が優先されるが、
+     * マッピング上は各名前を個別に定義する。
      */
     public static final NodeFaceMapping MAPPING = new NodeFaceMapping(Maps.mutable
             .<String, FaceName>empty()
+            // コメント・文字列・数値
             .withKeyValue("comment", FaceName.COMMENT)
             .withKeyValue("string", FaceName.STRING)
             .withKeyValue("number", FaceName.NUMBER)
-            .withKeyValue("builtin", FaceName.BUILTIN)
+            .withKeyValue("escape", FaceName.STRING)
+            // キーワード・演算子
             .withKeyValue("keyword", FaceName.KEYWORD)
             .withKeyValue("operator", FaceName.OPERATOR)
-            .withKeyValue("annotation", FaceName.ANNOTATION)
-            .withKeyValue("function_name", FaceName.FUNCTION_NAME)
+            // 関数
+            .withKeyValue("function", FaceName.FUNCTION_NAME)
+            .withKeyValue("function.method", FaceName.FUNCTION_NAME)
+            .withKeyValue("function.builtin", FaceName.BUILTIN)
+            // 型・定数・変数
             .withKeyValue("type", FaceName.TYPE)
+            .withKeyValue("constructor", FaceName.TYPE)
+            .withKeyValue("constant", FaceName.VARIABLE)
+            .withKeyValue("constant.builtin", FaceName.BUILTIN)
+            .withKeyValue("property", FaceName.VARIABLE)
             .withKeyValue("variable", FaceName.VARIABLE)
+            // 句読点・埋め込み（控えめなスタイル）
+            .withKeyValue("punctuation.special", FaceName.OPERATOR)
+            .withKeyValue("embedded", FaceName.DEFAULT)
             .toImmutable());
 }

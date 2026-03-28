@@ -57,10 +57,10 @@ public class ParserStylerRegistry {
      */
     public static ParserStylerRegistry createWithBuiltins() {
         var registry = new ParserStylerRegistry();
+        String pythonQuery = HighlightQueryLoader.load("python");
         registry.register(
                 "python",
-                () -> new TreeSitterStyler(
-                        new TreeSitterPython(), PythonHighlightQuery.QUERY, PythonHighlightQuery.MAPPING));
+                () -> new TreeSitterStyler(new TreeSitterPython(), pythonQuery, PythonHighlightQuery.MAPPING));
         return registry;
     }
 }

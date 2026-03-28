@@ -16,7 +16,8 @@ class TreeSitterStylerTest {
 
     @BeforeEach
     void setUp() {
-        styler = new TreeSitterStyler(new TreeSitterPython(), PythonHighlightQuery.QUERY, PythonHighlightQuery.MAPPING);
+        String query = HighlightQueryLoader.load("python");
+        styler = new TreeSitterStyler(new TreeSitterPython(), query, PythonHighlightQuery.MAPPING);
     }
 
     @Nested
@@ -140,7 +141,8 @@ class TreeSitterStylerTest {
             var result = styler.styleDocument(Lists.immutable.of("@staticmethod", "def foo():"));
             var spans = result.get(0);
 
-            assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.ANNOTATION)), "デコレータスパンが存在する");
+            // 公式 highlights.scm ではデコレータは @function としてキャプチャされる
+            assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.FUNCTION_NAME)), "デコレータスパンが存在する");
         }
     }
 
