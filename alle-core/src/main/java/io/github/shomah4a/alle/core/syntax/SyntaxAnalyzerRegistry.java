@@ -1,7 +1,10 @@
 package io.github.shomah4a.alle.core.syntax;
 
+import io.github.shomah4a.alle.core.styling.DefaultCaptureMapping;
+import io.github.shomah4a.alle.core.styling.HighlightQueryLoader;
+import io.github.shomah4a.alle.core.styling.SyntaxStyler;
+import io.github.shomah4a.alle.core.styling.TreeSitterStyler;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
@@ -9,44 +12,48 @@ import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.treesitter.TreeSitterPython;
 
 /**
- * 言語名から{@link SyntaxAnalyzer}を生成するレジストリ。
+ * 言語名から{@link SyntaxAnalyzer}と{@link SyntaxStyler}を生成するレジストリ。
  *
- * <p>スクリプト側からは言語名を指定してアナライザーを取得する。
- * 内部でTree-sitterを使用しているかどうかはスクリプト側には見えない。
+ * <p>同一言語のAnalyzerとStylerは共通の{@link TreeSitterSession}を共有し、
+ * 同一テキストの2重パースを回避する。
  */
 public class SyntaxAnalyzerRegistry {
 
-    private final MutableMap<String, Supplier<SyntaxAnalyzer>> factories = UnifiedMap.newMap();
+    private final MutableMap<String, TreeSitterLanguageConfig> configs = UnifiedMap.newMap();
 
     /**
-     * 言語名に対応するアナライザーファクトリを登録する。
+     * 言語名に対応するTree-sitter設定を登録する。
      *
      * @param language 言語名（例: "python"）
-     * @param factory アナライザーのファクトリ
+     * @param config 言語設定
      */
-    public void register(String language, Supplier<SyntaxAnalyzer> factory) {
-        factories.put(language, factory);
+    public void register(String language, TreeSitterLanguageConfig config) {
+        configs.put(language, config);
     }
 
     /**
-     * 言語名に対応するアナライザーを生成して返す。
+     * 言語名に対応するセッション、アナライザー、スタイラーを生成して返す。
+     * 同一セッションを共有するため、1回の呼び出しで両方を取得する。
      *
      * @param language 言語名
-     * @return アナライザー（未登録の場合はempty）
+     * @return セッション・アナライザー・スタイラーの組（未登録の場合はempty）
      */
-    public Optional<SyntaxAnalyzer> create(String language) {
-        Supplier<SyntaxAnalyzer> factory = factories.get(language);
-        if (factory == null) {
+    public Optional<LanguageSupport> create(String language) {
+        TreeSitterLanguageConfig config = configs.get(language);
+        if (config == null) {
             return Optional.empty();
         }
-        return Optional.of(factory.get());
+        var session = new TreeSitterSession(config.language());
+        var analyzer = new TreeSitterAnalyzer(session, config.bracketTypes());
+        var styler = new TreeSitterStyler(session, config.queryString(), config.captureMapping());
+        return Optional.of(new LanguageSupport(analyzer, styler));
     }
 
     /**
-     * 組み込み言語を登録済みのレジストリを生成する。
-     *
-     * @return 組み込み言語が登録されたレジストリ
+     * アナライザーとスタイラーの組。
      */
+    public record LanguageSupport(SyntaxAnalyzer analyzer, SyntaxStyler styler) {}
+
     /** Python用の括弧系ノードタイプ名。 */
     private static final ImmutableSet<String> PYTHON_BRACKET_TYPES = Sets.immutable.with(
             "parenthesized_expression",
@@ -70,7 +77,11 @@ public class SyntaxAnalyzerRegistry {
      */
     public static SyntaxAnalyzerRegistry createWithBuiltins() {
         var registry = new SyntaxAnalyzerRegistry();
-        registry.register("python", () -> new TreeSitterAnalyzer(new TreeSitterPython(), PYTHON_BRACKET_TYPES));
+        String pythonQuery = HighlightQueryLoader.load("python");
+        registry.register(
+                "python",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterPython(), pythonQuery, DefaultCaptureMapping.INSTANCE, PYTHON_BRACKET_TYPES));
         return registry;
     }
 }

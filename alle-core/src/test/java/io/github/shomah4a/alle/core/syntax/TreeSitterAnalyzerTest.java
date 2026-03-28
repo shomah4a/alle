@@ -34,7 +34,8 @@ class TreeSitterAnalyzerTest {
 
     @BeforeEach
     void setUp() {
-        analyzer = new TreeSitterAnalyzer(new TreeSitterPython(), PYTHON_BRACKET_TYPES);
+        var session = new TreeSitterSession(new TreeSitterPython());
+        analyzer = new TreeSitterAnalyzer(session, PYTHON_BRACKET_TYPES);
     }
 
     @Test

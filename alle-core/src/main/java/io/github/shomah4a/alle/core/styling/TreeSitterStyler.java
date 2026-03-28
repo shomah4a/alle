@@ -1,14 +1,11 @@
 package io.github.shomah4a.alle.core.styling;
 
+import io.github.shomah4a.alle.core.syntax.TreeSitterSession;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.jspecify.annotations.Nullable;
-import org.treesitter.TSInputEdit;
-import org.treesitter.TSLanguage;
 import org.treesitter.TSNode;
-import org.treesitter.TSParser;
-import org.treesitter.TSPoint;
 import org.treesitter.TSQuery;
 import org.treesitter.TSQueryCapture;
 import org.treesitter.TSQueryCursor;
@@ -22,28 +19,26 @@ import org.treesitter.TSTree;
  * {@link #styleDocument(ListIterable)} をオーバーライドし、
  * 行単位の {@link #styleLine(String)} は単一行ドキュメントとして処理する。
  *
- * <p>前回のスタイリング結果とTSTreeをキャッシュする。
- * テキストが変更されていない場合はキャッシュ結果を返し、
- * 変更がある場合はTree-sitterのインクリメンタルパースで差分のみ再解析する。
- * スタイラーのインスタンスはバッファごとのモードが保持するため、ステートのスコープはバッファに閉じている。
+ * <p>パースは{@link TreeSitterSession}に委譲し、同一セッションを共有する
+ * TreeSitterAnalyzerと2重パースを回避する。
+ * 前回のスタイリング結果をキャッシュし、テキストが変更されていない場合はキャッシュを返す。
  */
 public class TreeSitterStyler implements SyntaxStyler {
 
-    private final TSLanguage language;
+    private final TreeSitterSession session;
     private final String queryString;
     private final NodeFaceMapping captureMapping;
 
     private @Nullable String cachedText;
     private ListIterable<ListIterable<StyledSpan>> cachedResult = Lists.mutable.empty();
-    private @Nullable TSTree cachedTree;
 
     /**
-     * @param language Tree-sitterの言語定義
+     * @param session パースを管理するセッション
      * @param queryString S式クエリ文字列（キャプチャ名でノードを分類）
      * @param captureMapping キャプチャ名からFaceNameへのマッピング
      */
-    public TreeSitterStyler(TSLanguage language, String queryString, NodeFaceMapping captureMapping) {
-        this.language = language;
+    public TreeSitterStyler(TreeSitterSession session, String queryString, NodeFaceMapping captureMapping) {
+        this.session = session;
         this.queryString = queryString;
         this.captureMapping = captureMapping;
     }
@@ -57,11 +52,12 @@ public class TreeSitterStyler implements SyntaxStyler {
     public ListIterable<ListIterable<StyledSpan>> styleDocument(ListIterable<String> lines) {
         int lineCount = lines.size();
         if (lineCount == 0) {
-            clearCache();
-            return Lists.mutable.empty();
+            cachedText = null;
+            cachedResult = Lists.mutable.empty();
+            return cachedResult;
         }
 
-        String fullText = String.join("\n", lines.toArray(new String[0]));
+        String fullText = lines.makeString("\n");
 
         if (fullText.equals(cachedText)) {
             return cachedResult;
@@ -72,14 +68,10 @@ public class TreeSitterStyler implements SyntaxStyler {
             result.add(Lists.mutable.empty());
         }
 
-        // parse()直後にcachedTreeを更新する。
-        // parseIncremental内で旧treeをcloseするため、
-        // 後続処理で例外が発生してもclose済みオブジェクトを参照し続けることを防ぐ。
-        TSTree tree = parse(fullText);
-        cachedTree = tree;
+        TSTree tree = session.parse(lines);
         TSNode rootNode = tree.getRootNode();
 
-        try (TSQuery query = new TSQuery(language, queryString);
+        try (TSQuery query = new TSQuery(session.language(), queryString);
                 TSQueryCursor cursor = new TSQueryCursor()) {
             cursor.exec(query, rootNode);
 
@@ -105,133 +97,6 @@ public class TreeSitterStyler implements SyntaxStyler {
         cachedResult = sorted;
 
         return sorted;
-    }
-
-    /**
-     * テキストをパースしてTSTreeを返す。
-     * cachedTreeがある場合はインクリメンタルパースを行い、ない場合はフルパースを行う。
-     * 返却されたTSTreeは呼び出し側でcachedTreeに設定すること。
-     */
-    private TSTree parse(String fullText) {
-        try (TSParser parser = new TSParser()) {
-            parser.setLanguage(language);
-            if (cachedTree != null && cachedText != null) {
-                return parseIncremental(parser, fullText, cachedTree, cachedText);
-            }
-            return parser.parseString(null, fullText);
-        }
-    }
-
-    /**
-     * インクリメンタルパースを実行する。
-     * cachedTreeに変更箇所を通知し、差分パースで新しいツリーを生成する。
-     * 失敗した場合はフルパースにフォールバックする。
-     */
-    private TSTree parseIncremental(TSParser parser, String fullText, TSTree oldTree, String oldText) {
-        try {
-            TSInputEdit edit = computeInputEdit(oldText, fullText);
-            oldTree.edit(edit);
-            TSTree newTree = parser.parseString(oldTree, fullText);
-            oldTree.close();
-            return newTree;
-        } catch (RuntimeException e) {
-            // フォールバック: インクリメンタルパース失敗時はフルパース
-            oldTree.close();
-            cachedTree = null;
-            return parser.parseString(null, fullText);
-        }
-    }
-
-    /**
-     * 旧テキストと新テキストの差分からTSInputEditを構築する。
-     *
-     * <p>先頭と末尾の共通部分をスキャンして変更箇所を特定し、
-     * UTF-8バイトオフセットとTSPointに変換する。
-     */
-    static TSInputEdit computeInputEdit(String oldText, String newText) {
-        int oldLen = (int) oldText.codePoints().count();
-        int newLen = (int) newText.codePoints().count();
-
-        // 共通プレフィックス長（コードポイント単位）
-        int commonPrefix = computeCommonPrefixLength(oldText, newText);
-
-        // 共通サフィックス長（コードポイント単位）。プレフィックスと重複しないよう制限
-        int commonSuffix = computeCommonSuffixLength(oldText, newText);
-        commonSuffix = Math.min(commonSuffix, oldLen - commonPrefix);
-        commonSuffix = Math.min(commonSuffix, newLen - commonPrefix);
-
-        int changeStartCp = commonPrefix;
-        int oldEndCp = oldLen - commonSuffix;
-        int newEndCp = newLen - commonSuffix;
-
-        int startByte = Utf8OffsetConverter.codePointOffsetToUtf8ByteOffset(oldText, changeStartCp);
-        int oldEndByte = Utf8OffsetConverter.codePointOffsetToUtf8ByteOffset(oldText, oldEndCp);
-        int newEndByte = Utf8OffsetConverter.codePointOffsetToUtf8ByteOffset(newText, newEndCp);
-
-        Utf8Position startPos = Utf8OffsetConverter.codePointOffsetToRowColumn(oldText, changeStartCp);
-        Utf8Position oldEndPos = Utf8OffsetConverter.codePointOffsetToRowColumn(oldText, oldEndCp);
-        Utf8Position newEndPos = Utf8OffsetConverter.codePointOffsetToRowColumn(newText, newEndCp);
-
-        return new TSInputEdit(
-                startByte,
-                oldEndByte,
-                newEndByte,
-                new TSPoint(startPos.row(), startPos.column()),
-                new TSPoint(oldEndPos.row(), oldEndPos.column()),
-                new TSPoint(newEndPos.row(), newEndPos.column()));
-    }
-
-    /**
-     * 2つのテキストの共通プレフィックス長をコードポイント単位で返す。
-     */
-    private static int computeCommonPrefixLength(String a, String b) {
-        int count = 0;
-        int ai = 0;
-        int bi = 0;
-        while (ai < a.length() && bi < b.length()) {
-            int cpA = a.codePointAt(ai);
-            int cpB = b.codePointAt(bi);
-            if (cpA != cpB) {
-                break;
-            }
-            count++;
-            ai += Character.charCount(cpA);
-            bi += Character.charCount(cpB);
-        }
-        return count;
-    }
-
-    /**
-     * 2つのテキストの共通サフィックス長をコードポイント単位で返す。
-     */
-    private static int computeCommonSuffixLength(String a, String b) {
-        int count = 0;
-        int ai = a.length();
-        int bi = b.length();
-        while (ai > 0 && bi > 0) {
-            int cpA = Character.codePointBefore(a, ai);
-            int cpB = Character.codePointBefore(b, bi);
-            if (cpA != cpB) {
-                break;
-            }
-            count++;
-            ai -= Character.charCount(cpA);
-            bi -= Character.charCount(cpB);
-        }
-        return count;
-    }
-
-    private void clearCache() {
-        closeCachedTree();
-        cachedText = null;
-        cachedResult = Lists.mutable.empty();
-    }
-
-    private void closeCachedTree() {
-        if (cachedTree != null) {
-            cachedTree.close();
-            cachedTree = null;
-        }
     }
 
     /**

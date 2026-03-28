@@ -4,23 +4,28 @@ from __future__ import annotations
 
 from typing import Any
 
-from alle.internal.styling import parser_styler
-from alle.internal.syntax import syntax_analyzer
 
+def _get_language_support() -> Any:
+    """Python 用の言語サポート（スタイラーとアナライザーの組）を取得する。
 
-def create_python_styler() -> Any:
-    """Python 用のパーサーベーススタイラーを生成する。
-
-    :return: SyntaxStyler インスタンス
-    :rtype: SyntaxStyler
+    :return: LanguageSupport インスタンス
+    :rtype: LanguageSupport
+    :raises ValueError: 未対応の言語が指定された場合
     """
-    return parser_styler("python")
+    from alle.internal.facade import _require_facade
+    support = _require_facade().createLanguageSupport("python")
+    if support is None:
+        raise ValueError("未対応の言語です: python")
+    return support
 
 
-def create_python_analyzer() -> Any:
-    """Python 用の構文解析器を生成する。
+def create_python_styler_and_analyzer() -> tuple[Any, Any]:
+    """Python 用のスタイラーとアナライザーを生成する。
 
-    :return: SyntaxAnalyzer インスタンス
-    :rtype: SyntaxAnalyzer
+    同一セッションを共有するため、必ずペアで生成する。
+
+    :return: (SyntaxStyler, SyntaxAnalyzer) のタプル
+    :rtype: tuple[Any, Any]
     """
-    return syntax_analyzer("python")
+    support = _get_language_support()
+    return support.styler(), support.analyzer()

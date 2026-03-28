@@ -54,7 +54,6 @@ class AlleModuleTest {
                 new Keymap("global"),
                 new ModeRegistry(),
                 new AutoModeMap(TextMode::new),
-                io.github.shomah4a.alle.core.styling.ParserStylerRegistry.createWithBuiltins(),
                 io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins());
         var stdoutStream =
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());

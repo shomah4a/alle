@@ -10,15 +10,14 @@ from typing import Any
 from alle.keybind import bind_key, create_keymap, key, shift
 from alle.mode import MajorModeBase
 from alle.modes.python.commands import PythonIndentState, create_indent_commands
-from alle.modes.python.styler import create_python_analyzer, create_python_styler
+from alle.modes.python.styler import create_python_styler_and_analyzer
 
 
 class PythonMode(MajorModeBase):
     """Python のメジャーモード。"""
 
     def __init__(self) -> None:
-        self._styler = create_python_styler()
-        self._analyzer = create_python_analyzer()
+        self._styler, self._analyzer = create_python_styler_and_analyzer()
         self._indent_state = PythonIndentState(self._analyzer)
         indent_line, dedent_line, newline_and_indent = create_indent_commands(self._indent_state)
         self._keymap = self._create_keymap(indent_line, dedent_line, newline_and_indent)
