@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.styling;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.jspecify.annotations.Nullable;
 import org.treesitter.TSLanguage;
 import org.treesitter.TSNode;
 import org.treesitter.TSParser;
@@ -18,12 +19,19 @@ import org.treesitter.TSTree;
  * <p>ドキュメント全体をパースし、S式クエリのキャプチャに基づいてスタイリングを行う。
  * {@link #styleDocument(ListIterable)} をオーバーライドし、
  * 行単位の {@link #styleLine(String)} は単一行ドキュメントとして処理する。
+ *
+ * <p>前回のスタイリング結果をキャッシュし、テキストが変更されていない場合は
+ * パースをスキップしてキャッシュ結果を返す。
+ * スタイラーのインスタンスはバッファごとのモードが保持するため、ステートのスコープはバッファに閉じている。
  */
 public class TreeSitterStyler implements SyntaxStyler {
 
     private final TSLanguage language;
     private final String queryString;
     private final NodeFaceMapping captureMapping;
+
+    private @Nullable String cachedText;
+    private ListIterable<ListIterable<StyledSpan>> cachedResult = Lists.mutable.empty();
 
     /**
      * @param language Tree-sitterの言語定義
@@ -48,12 +56,16 @@ public class TreeSitterStyler implements SyntaxStyler {
             return Lists.mutable.empty();
         }
 
+        String fullText = String.join("\n", lines.toArray(new String[0]));
+
+        if (fullText.equals(cachedText)) {
+            return cachedResult;
+        }
+
         MutableList<MutableList<StyledSpan>> result = Lists.mutable.withInitialCapacity(lineCount);
         for (int i = 0; i < lineCount; i++) {
             result.add(Lists.mutable.empty());
         }
-
-        String fullText = String.join("\n", lines.toArray(new String[0]));
 
         TSParser parser = new TSParser();
         parser.setLanguage(language);
@@ -85,6 +97,9 @@ public class TreeSitterStyler implements SyntaxStyler {
             lineSpans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
             sorted.add(lineSpans);
         }
+
+        cachedText = fullText;
+        cachedResult = sorted;
 
         return sorted;
     }

@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.styling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.eclipse.collections.api.factory.Lists;
@@ -191,6 +193,53 @@ class TreeSitterStylerTest {
             var varSpan = findSpan(spans, 0, 2);
             assertTrue(varSpan.isPresent(), "日本語変数名のスパンが存在する");
             assertEquals(FaceName.VARIABLE, varSpan.get().faceName());
+        }
+    }
+
+    @Nested
+    class スタイリング結果のキャッシュ {
+
+        @Test
+        void 同一テキストで2回呼び出すと同じ結果オブジェクトを返す() {
+            var lines = Lists.immutable.of("def foo():", "    pass");
+            var result1 = styler.styleDocument(lines);
+            var result2 = styler.styleDocument(lines);
+
+            assertSame(result1, result2, "キャッシュされた同一オブジェクトが返される");
+        }
+
+        @Test
+        void テキストが変更されると新しい結果を返す() {
+            var lines1 = Lists.immutable.of("x = 1");
+            var lines2 = Lists.immutable.of("x = 2");
+
+            var result1 = styler.styleDocument(lines1);
+            var result2 = styler.styleDocument(lines2);
+
+            assertNotSame(result1, result2, "異なるテキストでは新しい結果が返される");
+        }
+
+        @Test
+        void テキスト変更後に元のテキストに戻すと再パースされる() {
+            var lines1 = Lists.immutable.of("x = 1");
+            var lines2 = Lists.immutable.of("x = 2");
+
+            var result1 = styler.styleDocument(lines1);
+            styler.styleDocument(lines2);
+            var result3 = styler.styleDocument(lines1);
+
+            assertNotSame(result1, result3, "元のテキストに戻しても再パースされる");
+        }
+
+        @Test
+        void テキスト変更後もスタイリング結果が正しい() {
+            styler.styleDocument(Lists.immutable.of("x = 1"));
+            var result = styler.styleDocument(Lists.immutable.of("def bar():"));
+            var spans = result.get(0);
+
+            var defSpan = findSpan(spans, 0, 3);
+            assertTrue(defSpan.isPresent(), "変更後のdefキーワードが正しくハイライトされる");
+            assertEquals(FaceName.KEYWORD, defSpan.get().faceName());
         }
     }
 
