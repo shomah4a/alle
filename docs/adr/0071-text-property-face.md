@@ -4,6 +4,9 @@
 Accepted
 
 ## コンテキスト
+
+> **注**: face属性の型がFaceからFaceNameに変更された。詳細は [ADR-0073](0073-face-semantic-styling.md) を参照。
+
 ADR 0070でpointGuard属性をTextPropertyStoreに追加したが、プロンプト部分のハイライト表示は未実装。
 現在のスタイリングはSyntaxStyler（メジャーモード単位）のみであり、特定テキスト範囲にピンポイントでスタイルを設定する手段がない。
 
