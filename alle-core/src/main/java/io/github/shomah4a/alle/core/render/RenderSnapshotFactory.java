@@ -63,6 +63,10 @@ public final class RenderSnapshotFactory {
             int displayStartColumn = window.getDisplayStartColumn();
             var stylerOpt = buffer.getMajorMode().styler();
 
+            // リージョン範囲（バッファオフセット）を事前計算
+            var regionStart = window.getRegionStart();
+            var regionEnd = window.getRegionEnd();
+
             var visibleLines = Lists.mutable.<RenderSnapshot.LineSnapshot>empty();
             if (stylerOpt.isPresent()) {
                 SyntaxStyler styler = stylerOpt.get();
@@ -77,7 +81,8 @@ public final class RenderSnapshotFactory {
                         String lineText = allLines.get(lineIndex);
                         var spans = allSpans.get(lineIndex);
                         var merged = mergeWithTextPropertyFace(buffer, lineIndex, spans);
-                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(merged)));
+                        var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(merged), lineRegion));
                     }
                 }
             } else {
@@ -89,7 +94,8 @@ public final class RenderSnapshotFactory {
                         var spansOpt = faceSpans.isEmpty()
                                 ? Optional.<ListIterable<StyledSpan>>empty()
                                 : Optional.<ListIterable<StyledSpan>>of(faceSpans);
-                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, spansOpt));
+                        var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, spansOpt, lineRegion));
                     }
                 }
             }
@@ -103,8 +109,10 @@ public final class RenderSnapshotFactory {
                     highlightLine = OptionalInt.of(relativeLine);
                 }
             }
-            windowSnapshots.add(
-                    new RenderSnapshot.WindowSnapshot(rect, visibleLines, displayStartColumn, modeLine, highlightLine));
+            Optional<RenderSnapshot.RegionRange> regionRange = window.getRegionStart()
+                    .flatMap(start -> window.getRegionEnd().map(end -> new RenderSnapshot.RegionRange(start, end)));
+            windowSnapshots.add(new RenderSnapshot.WindowSnapshot(
+                    rect, visibleLines, displayStartColumn, modeLine, highlightLine, regionRange));
         });
 
         // ミニバッファ / エコーエリア
@@ -188,6 +196,33 @@ public final class RenderSnapshotFactory {
             return new CursorPosition(rect.left() + screenCol, rect.top() + screenRow);
         }
         return new CursorPosition(rect.left(), rect.top());
+    }
+
+    /**
+     * 指定行内のリージョン範囲（コードポイント単位の行ローカルオフセット）を計算する。
+     * リージョンが行と重ならない場合はemptyを返す。
+     */
+    private static Optional<RenderSnapshot.LineRegion> computeLineRegion(
+            BufferFacade buffer, int lineIndex, Optional<Integer> regionStart, Optional<Integer> regionEnd) {
+        if (regionStart.isEmpty() || regionEnd.isEmpty()) {
+            return Optional.empty();
+        }
+        int rStart = regionStart.get();
+        int rEnd = regionEnd.get();
+        if (rStart == rEnd) {
+            return Optional.empty();
+        }
+        int lineStart = buffer.lineStartOffset(lineIndex);
+        int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
+        int lineEnd = lineStart + lineLength;
+
+        // リージョンと行の交差を計算
+        int overlapStart = Math.max(rStart, lineStart);
+        int overlapEnd = Math.min(rEnd, lineEnd);
+        if (overlapStart >= overlapEnd) {
+            return Optional.empty();
+        }
+        return Optional.of(new RenderSnapshot.LineRegion(overlapStart - lineStart, overlapEnd - lineStart));
     }
 
     /**

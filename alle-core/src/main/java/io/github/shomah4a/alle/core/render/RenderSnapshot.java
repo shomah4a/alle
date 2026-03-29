@@ -20,21 +20,36 @@ public record RenderSnapshot(
         CursorPosition cursorPosition) {
 
     /**
+     * リージョンの範囲（コードポイント単位のバッファオフセット）。
+     */
+    public record RegionRange(int start, int end) {}
+
+    /**
      * 各ウィンドウの描画データ。
      *
      * @param highlightLine ハイライト行（visibleLines内の相対インデックス）。未設定はempty。
+     * @param regionRange リージョン範囲。マーク未設定時はempty。
      */
     public record WindowSnapshot(
             Rect rect,
             ListIterable<LineSnapshot> visibleLines,
             int displayStartColumn,
             String modeLine,
-            OptionalInt highlightLine) {}
+            OptionalInt highlightLine,
+            Optional<RegionRange> regionRange) {}
+
+    /**
+     * 行内のリージョン範囲（コードポイント単位の行ローカルオフセット）。
+     */
+    public record LineRegion(int startCp, int endCp) {}
 
     /**
      * 1行分の描画データ。
+     *
+     * @param regionInLine 行内のリージョン範囲。リージョン外の場合はempty。
      */
-    public record LineSnapshot(String text, Optional<ListIterable<StyledSpan>> spans) {}
+    public record LineSnapshot(
+            String text, Optional<ListIterable<StyledSpan>> spans, Optional<LineRegion> regionInLine) {}
 
     /**
      * ミニバッファ / エコーエリアの描画データ。

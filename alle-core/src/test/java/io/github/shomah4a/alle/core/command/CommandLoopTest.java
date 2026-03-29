@@ -304,6 +304,75 @@ class CommandLoopTest {
     }
 
     @Nested
+    class マーク自動クリア {
+
+        @Test
+        void keepsRegionActiveがfalseのコマンド実行後にマークがクリアされる() {
+            var frame = createFrame();
+            var window = frame.getActiveWindow();
+            window.insert("Hello");
+            window.setPoint(0);
+            window.setMark(3);
+            var bufferManager = new BufferManager();
+
+            var keymap = new Keymap("global");
+            keymap.setDefaultCommand(new SelfInsertCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.of('A'));
+
+            assertTrue(window.getMark().isEmpty());
+        }
+
+        @Test
+        void keepsRegionActiveがtrueのコマンド実行後にマークが維持される() {
+            var frame = createFrame();
+            var window = frame.getActiveWindow();
+            window.insert("Hello");
+            window.setPoint(0);
+            window.setMark(3);
+            var bufferManager = new BufferManager();
+
+            var keymap = new Keymap("global");
+            keymap.bind(KeyStroke.ctrl('f'), new ForwardCharCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.ctrl('f'));
+
+            assertTrue(window.getMark().isPresent());
+            assertEquals(3, window.getMark().get());
+        }
+
+        @Test
+        void set_mark後に移動してもマークが維持される() {
+            var frame = createFrame();
+            var window = frame.getActiveWindow();
+            window.insert("Hello World");
+            window.setPoint(0);
+            var bufferManager = new BufferManager();
+
+            var keymap = new Keymap("global");
+            keymap.bind(KeyStroke.ctrl(' '), new SetMarkCommand());
+            keymap.bind(KeyStroke.ctrl('f'), new ForwardCharCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+            loop.processKey(KeyStroke.ctrl(' '));
+            loop.processKey(KeyStroke.ctrl('f'));
+            loop.processKey(KeyStroke.ctrl('f'));
+
+            assertTrue(window.getMark().isPresent());
+            assertEquals(0, window.getMark().get());
+            assertEquals(2, window.getPoint());
+        }
+    }
+
+    @Nested
     class processKey {
 
         @Test

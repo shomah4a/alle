@@ -14,6 +14,11 @@ public class SetMarkCommand implements Command {
     }
 
     @Override
+    public boolean keepsRegionActive() {
+        return true;
+    }
+
+    @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.activeWindow();
         window.setMark(window.getPoint());

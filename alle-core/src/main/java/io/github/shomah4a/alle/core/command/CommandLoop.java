@@ -177,7 +177,12 @@ public class CommandLoop {
                     var buffer = context.activeWindow().getBuffer();
                     buffer.getUndoManager().withTransaction(() -> {
                         command.execute(context)
-                                .thenRun(() -> lastCommand = thisCommand)
+                                .thenRun(() -> {
+                                    lastCommand = thisCommand;
+                                    if (!command.keepsRegionActive()) {
+                                        context.activeWindow().clearMark();
+                                    }
+                                })
                                 .exceptionally(ex -> {
                                     var cause = ex.getCause() != null ? ex.getCause() : ex;
                                     handleCommandError(command, context, cause);

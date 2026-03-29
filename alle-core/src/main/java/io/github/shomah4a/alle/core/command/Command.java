@@ -17,4 +17,13 @@ public interface Command {
      * コマンドを実行する。
      */
     CompletableFuture<Void> execute(CommandContext context);
+
+    /**
+     * コマンド実行後にリージョン（mark）を維持するかどうかを返す。
+     * trueを返すコマンドの実行後はmarkがクリアされない。
+     * 移動系コマンドやset-markコマンドがtrueを返す。
+     */
+    default boolean keepsRegionActive() {
+        return false;
+    }
 }

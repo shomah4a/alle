@@ -110,6 +110,11 @@ public class ScreenRenderer {
             }
         }
 
+        // リージョンハイライト
+        if (ws.regionRange().isPresent()) {
+            applyRegionHighlight(ws);
+        }
+
         // 空行の余白は既にウィンドウ領域全体の空白初期化でカバー済み
 
         // モードライン
@@ -228,6 +233,35 @@ public class ScreenRenderer {
 
         // 行末の余白を空白で埋める
         fillBlank(row, left + screenCol, left + maxColumns);
+    }
+
+    private void applyRegionHighlight(RenderSnapshot.WindowSnapshot ws) {
+        var rect = ws.rect();
+        int displayStartColumn = ws.displayStartColumn();
+        for (int row = 0; row < ws.visibleLines().size(); row++) {
+            var line = ws.visibleLines().get(row);
+            var lineRegion = line.regionInLine();
+            if (lineRegion.isEmpty()) {
+                continue;
+            }
+            int startCp = lineRegion.get().startCp();
+            int endCp = lineRegion.get().endCp();
+            int screenRow = rect.top() + row;
+
+            // コードポイントインデックスを表示カラムに変換
+            int startCol = DisplayWidthUtil.computeColumnForOffset(line.text(), startCp);
+            int endCol = DisplayWidthUtil.computeColumnForOffset(line.text(), endCp);
+
+            // displayStartColumnを考慮して画面カラムに変換
+            int screenStartCol = Math.max(0, startCol - displayStartColumn);
+            int screenEndCol = Math.min(rect.width(), endCol - displayStartColumn);
+
+            if (screenStartCol >= screenEndCol) {
+                continue;
+            }
+
+            applyReverse(screenRow, rect.left() + screenStartCol, screenEndCol - screenStartCol);
+        }
     }
 
     private void applyReverse(int row, int left, int width) {

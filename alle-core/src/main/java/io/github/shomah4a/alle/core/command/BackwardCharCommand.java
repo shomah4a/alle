@@ -14,6 +14,11 @@ public class BackwardCharCommand implements Command {
     }
 
     @Override
+    public boolean keepsRegionActive() {
+        return true;
+    }
+
+    @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.activeWindow();
         int point = window.getPoint();

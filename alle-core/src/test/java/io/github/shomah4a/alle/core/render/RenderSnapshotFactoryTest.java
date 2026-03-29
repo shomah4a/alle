@@ -361,6 +361,103 @@ class RenderSnapshotFactoryTest {
     }
 
     @Nested
+    class リージョン {
+
+        @Test
+        void マーク設定時にリージョン範囲がスナップショットに含まれる() {
+            var mainBuffer = createBuffer("main", "hello world");
+            var window = new Window(mainBuffer);
+            window.setMark(0);
+            window.setPoint(5);
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(window, new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            assertTrue(ws.regionRange().isPresent());
+            assertEquals(0, ws.regionRange().get().start());
+            assertEquals(5, ws.regionRange().get().end());
+        }
+
+        @Test
+        void マーク未設定時にリージョン範囲がemptyになる() {
+            var frame = createFrame("hello world");
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            assertFalse(ws.regionRange().isPresent());
+        }
+
+        @Test
+        void 行内リージョンが行ローカルのコードポイントオフセットで計算される() {
+            var mainBuffer = createBuffer("main", "hello world");
+            var window = new Window(mainBuffer);
+            window.setMark(2);
+            window.setPoint(8);
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(window, new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            var lineRegion = ws.visibleLines().get(0).regionInLine();
+            assertTrue(lineRegion.isPresent());
+            assertEquals(2, lineRegion.get().startCp());
+            assertEquals(8, lineRegion.get().endCp());
+        }
+
+        @Test
+        void 複数行にまたがるリージョンで各行の範囲が正しく計算される() {
+            var mainBuffer = createBuffer("main", "aaa\nbbb\nccc");
+            var window = new Window(mainBuffer);
+            window.setMark(1); // "aaa" の2文字目
+            window.setPoint(9); // "ccc" の2文字目
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(window, new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            // 1行目: offset 0-3 ("aaa"), region 1-3 → lineLocal 1-3
+            var r0 = ws.visibleLines().get(0).regionInLine();
+            assertTrue(r0.isPresent());
+            assertEquals(1, r0.get().startCp());
+            assertEquals(3, r0.get().endCp());
+
+            // 2行目: offset 4-7 ("bbb"), region covers entire line → lineLocal 0-3
+            var r1 = ws.visibleLines().get(1).regionInLine();
+            assertTrue(r1.isPresent());
+            assertEquals(0, r1.get().startCp());
+            assertEquals(3, r1.get().endCp());
+
+            // 3行目: offset 8-10 ("ccc"), region 8-9 → lineLocal 0-1
+            var r2 = ws.visibleLines().get(2).regionInLine();
+            assertTrue(r2.isPresent());
+            assertEquals(0, r2.get().startCp());
+            assertEquals(1, r2.get().endCp());
+        }
+
+        @Test
+        void リージョン範囲外の行にはlineRegionがemptyになる() {
+            var mainBuffer = createBuffer("main", "aaa\nbbb\nccc");
+            var window = new Window(mainBuffer);
+            window.setMark(4); // "bbb" の先頭
+            window.setPoint(7); // "bbb" の末尾
+            var minibuffer = createBuffer("*Minibuffer*", "");
+            var frame = new Frame(window, new Window(minibuffer));
+
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
+
+            var ws = snapshot.windowSnapshots().get(0);
+            assertFalse(ws.visibleLines().get(0).regionInLine().isPresent());
+            assertTrue(ws.visibleLines().get(1).regionInLine().isPresent());
+            assertFalse(ws.visibleLines().get(2).regionInLine().isPresent());
+        }
+    }
+
+    @Nested
     class テキストプロパティface {
 
         @Test

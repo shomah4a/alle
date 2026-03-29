@@ -17,6 +17,11 @@ public class ScrollDownCommand implements Command {
     }
 
     @Override
+    public boolean keepsRegionActive() {
+        return true;
+    }
+
+    @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
