@@ -34,6 +34,7 @@ public class TreeDiredCommand implements Command {
     private final TreeDiredUnmarkCommand unmarkCommand;
     private final TreeDiredToggleMarkCommand toggleMarkCommand;
     private final TreeDiredCopyCommand copyCommand;
+    private final TreeDiredRenameCommand renameCommand;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
@@ -48,7 +49,8 @@ public class TreeDiredCommand implements Command {
             TreeDiredMarkCommand markCommand,
             TreeDiredUnmarkCommand unmarkCommand,
             TreeDiredToggleMarkCommand toggleMarkCommand,
-            TreeDiredCopyCommand copyCommand) {
+            TreeDiredCopyCommand copyCommand,
+            TreeDiredRenameCommand renameCommand) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
@@ -62,6 +64,7 @@ public class TreeDiredCommand implements Command {
         this.unmarkCommand = unmarkCommand;
         this.toggleMarkCommand = toggleMarkCommand;
         this.copyCommand = copyCommand;
+        this.renameCommand = renameCommand;
     }
 
     @Override
@@ -153,6 +156,8 @@ public class TreeDiredCommand implements Command {
         keymap.bind(KeyStroke.of('t'), toggleMarkCommand);
         // C: copy
         keymap.bind(KeyStroke.of('C'), copyCommand);
+        // R: rename
+        keymap.bind(KeyStroke.of('R'), renameCommand);
 
         return keymap;
     }
