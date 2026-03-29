@@ -17,6 +17,8 @@ public final class TreeDiredRenderer {
     private static final String EXPANDED_MARKER = "▼ ";
     private static final String COLLAPSED_MARKER = "▶ ";
     private static final String FILE_MARKER = "  ";
+    private static final String MARKED_PREFIX = "* ";
+    private static final String UNMARKED_PREFIX = "  ";
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final int PERM_WIDTH = 10; // "drwxr-xr-x"
     private static final int TIMESTAMP_WIDTH = 16; // "2025-03-29 13:06"
@@ -62,7 +64,7 @@ public final class TreeDiredRenderer {
         // エントリ行
         for (TreeDiredEntry entry : entries) {
             sb.append('\n');
-            sb.append("  ");
+            sb.append(entry.isMarked() ? MARKED_PREFIX : UNMARKED_PREFIX);
             sb.append(formatEntryLine(entry, widths, zoneId));
         }
         return sb.toString();
@@ -137,12 +139,17 @@ public final class TreeDiredRenderer {
         String columnHeader = "  " + formatHeaderLine(widths);
         int offset = headerLength + 1 + (int) columnHeader.codePoints().count(); // +1 for newline
 
-        // 各エントリの行を走査してディレクトリ名にfaceを適用
+        // 各エントリの行を走査してfaceを適用
         for (TreeDiredEntry entry : entries) {
             offset++; // 改行分
             int lineStart = offset;
-            String lineContent = "  " + formatEntryLine(entry, widths, zoneId);
+            String prefix = entry.isMarked() ? MARKED_PREFIX : UNMARKED_PREFIX;
+            String lineContent = prefix + formatEntryLine(entry, widths, zoneId);
             int lineCodePoints = (int) lineContent.codePoints().count();
+
+            if (entry.isMarked()) {
+                buffer.putFace(lineStart, lineStart + lineCodePoints, FaceName.DIRED_MARKED);
+            }
 
             if (entry.isDirectory()) {
                 String fileName = entry.path().getFileName().toString() + "/";

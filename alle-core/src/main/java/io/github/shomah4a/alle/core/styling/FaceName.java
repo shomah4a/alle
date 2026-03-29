@@ -77,4 +77,5 @@ public final class FaceName {
     // Dired
     public static final FaceName DIRED_HEADER = new FaceName("dired-header", "Diredのヘッダ行（ルートディレクトリパス）");
     public static final FaceName DIRED_DIRECTORY = new FaceName("dired-directory", "Diredのディレクトリ名");
+    public static final FaceName DIRED_MARKED = new FaceName("dired-marked", "Diredのマーク済みエントリ");
 }

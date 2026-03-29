@@ -72,5 +72,18 @@ class TreeDiredRendererTest {
             assertEquals("  drwxr-xr-x shoma shoma 4096 2025-03-29 13:06   ▼ b/", lines.get(3));
             assertEquals("  -rw-r--r-- shoma shoma  916 2025-03-29 13:06       c.txt", lines.get(4));
         }
+
+        @Test
+        void マーク済みエントリの行頭にアスタリスクが表示される() {
+            var entries = Lists.immutable.of(
+                    new TreeDiredEntry(Path.of("/p/a.txt"), 0, false, false, true, FILE_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/b.txt"), 0, false, false, false, FILE_ATTRS));
+
+            String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
+            var lines = text.lines().toList();
+
+            assertEquals("* -rw-r--r-- shoma shoma  916 2025-03-29 13:06   a.txt", lines.get(2));
+            assertEquals("  -rw-r--r-- shoma shoma  916 2025-03-29 13:06   b.txt", lines.get(3));
+        }
     }
 }
