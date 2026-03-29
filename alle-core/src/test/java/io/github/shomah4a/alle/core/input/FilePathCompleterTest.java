@@ -5,13 +5,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.junit.jupiter.api.Test;
 
 class FilePathCompleterTest {
 
     private DirectoryLister stubLister(String... entries) {
-        return directory -> Lists.immutable.of(entries);
+        MutableList<DirectoryEntry> result = Lists.mutable.empty();
+        for (String entry : entries) {
+            if (entry.endsWith("/")) {
+                result.add(new DirectoryEntry.Directory(Path.of(entry.substring(0, entry.length() - 1))));
+            } else {
+                result.add(new DirectoryEntry.File(Path.of(entry)));
+            }
+        }
+        return directory -> result.toImmutable();
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.ansi.UnixLikeTerminal;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.EditorCore;
+import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.MinibufferInputPrompter;
@@ -118,15 +119,14 @@ public final class Main {
         }
     }
 
-    private static ListIterable<String> listDirectory(Path directory) throws IOException {
-        var entries = org.eclipse.collections.api.factory.Lists.mutable.<String>empty();
+    private static ListIterable<DirectoryEntry> listDirectory(Path directory) throws IOException {
+        var entries = org.eclipse.collections.api.factory.Lists.mutable.<DirectoryEntry>empty();
         try (var stream = Files.list(directory)) {
             stream.forEach(entry -> {
-                String name = entry.toString();
                 if (Files.isDirectory(entry)) {
-                    entries.add(name + "/");
+                    entries.add(new DirectoryEntry.Directory(entry));
                 } else {
-                    entries.add(name);
+                    entries.add(new DirectoryEntry.File(entry));
                 }
             });
         }

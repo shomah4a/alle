@@ -45,7 +45,7 @@ public class FilePathCompleter implements Completer {
             parent = Path.of(".");
         }
 
-        ListIterable<String> entries;
+        ListIterable<DirectoryEntry> entries;
         try {
             entries = directoryLister.list(parent);
         } catch (IOException e) {
@@ -54,32 +54,18 @@ public class FilePathCompleter implements Completer {
         }
 
         String inputStr = inputPath.toString();
-        return toCompletionCandidates(entries.select(name -> name.startsWith(inputStr)));
+        return toCompletionCandidates(
+                entries.select(entry -> entry.path().toString().startsWith(inputStr)));
     }
 
-    private static ListIterable<CompletionCandidate> toCompletionCandidates(ListIterable<String> entries) {
+    private static ListIterable<CompletionCandidate> toCompletionCandidates(ListIterable<DirectoryEntry> entries) {
         return entries.collect(entry -> {
-            String label = extractFileName(entry);
-            if (entry.endsWith("/")) {
-                return CompletionCandidate.partial(entry, label);
-            }
-            return CompletionCandidate.terminal(entry, label);
+            String pathStr = entry.path().toString();
+            String fileName = entry.path().getFileName().toString();
+            return switch (entry) {
+                case DirectoryEntry.Directory d -> CompletionCandidate.partial(pathStr + "/", fileName + "/");
+                case DirectoryEntry.File f -> CompletionCandidate.terminal(pathStr, fileName);
+            };
         });
-    }
-
-    /**
-     * フルパスからファイル名またはディレクトリ名部分を抽出する。
-     * ディレクトリの場合は末尾の "/" を保持する。
-     */
-    private static String extractFileName(String path) {
-        if (path.endsWith("/")) {
-            // "/tmp/subdir/" → "subdir/"
-            String withoutTrailingSlash = path.substring(0, path.length() - 1);
-            int lastSep = withoutTrailingSlash.lastIndexOf('/');
-            return lastSep >= 0 ? withoutTrailingSlash.substring(lastSep + 1) + "/" : path;
-        }
-        // "/tmp/foo.txt" → "foo.txt"
-        int lastSep = path.lastIndexOf('/');
-        return lastSep >= 0 ? path.substring(lastSep + 1) : path;
     }
 }

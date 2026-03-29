@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
+import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
@@ -36,7 +37,7 @@ import org.junit.jupiter.api.Test;
 class FindFileCommandTest {
 
     private final MutableMap<String, String> storage = Maps.mutable.empty();
-    private final DirectoryLister stubLister = directory -> Lists.immutable.empty();
+    private final DirectoryLister stubLister = directory -> Lists.immutable.<DirectoryEntry>empty();
     private final AutoModeMap autoModeMap = new AutoModeMap(TextMode::new);
     private Frame frame;
     private BufferManager bufferManager;
