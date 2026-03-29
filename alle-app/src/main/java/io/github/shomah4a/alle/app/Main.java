@@ -123,14 +123,31 @@ public final class Main {
         var entries = org.eclipse.collections.api.factory.Lists.mutable.<DirectoryEntry>empty();
         try (var stream = Files.list(directory)) {
             stream.forEach(entry -> {
+                var attrs = readFileAttributes(entry);
                 if (Files.isDirectory(entry)) {
-                    entries.add(new DirectoryEntry.Directory(entry));
+                    entries.add(new DirectoryEntry.Directory(entry, attrs));
                 } else {
-                    entries.add(new DirectoryEntry.File(entry));
+                    entries.add(new DirectoryEntry.File(entry, attrs));
                 }
             });
         }
         return entries;
+    }
+
+    private static io.github.shomah4a.alle.core.input.FileAttributes readFileAttributes(Path path) {
+        try {
+            var posix = Files.readAttributes(path, java.nio.file.attribute.PosixFileAttributes.class);
+            var perms = java.nio.file.attribute.PosixFilePermissions.toString(posix.permissions());
+            var owner = posix.owner().getName();
+            var group = posix.group().getName();
+            var size = posix.size();
+            var lastModified = posix.lastModifiedTime().toInstant();
+            int linkCount = (Integer) Files.getAttribute(path, "unix:nlink");
+            return new io.github.shomah4a.alle.core.input.FileAttributes(
+                    perms, linkCount, owner, group, size, lastModified);
+        } catch (IOException e) {
+            return io.github.shomah4a.alle.core.input.FileAttributes.EMPTY;
+        }
     }
 
     private static void loadUserInit(

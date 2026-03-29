@@ -1,0 +1,76 @@
+package io.github.shomah4a.alle.core.mode.modes.dired;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import io.github.shomah4a.alle.core.input.FileAttributes;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneId;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+class TreeDiredRendererTest {
+
+    private static final ZoneId UTC = ZoneId.of("UTC");
+    private static final Instant TIME = Instant.parse("2025-03-29T13:06:00Z");
+    private static final FileAttributes DIR_ATTRS = new FileAttributes("rwxr-xr-x", 2, "shoma", "shoma", 4096, TIME);
+    private static final FileAttributes FILE_ATTRS = new FileAttributes("rw-r--r--", 1, "shoma", "shoma", 916, TIME);
+
+    @Nested
+    class テキスト生成 {
+
+        @Test
+        void ヘッダ行にルートディレクトリとカラムヘッダが表示される() {
+            ListIterable<TreeDiredEntry> entries = Lists.immutable.empty();
+            String text = TreeDiredRenderer.buildText(Path.of("/project"), entries, UTC);
+            var lines = text.lines().toList();
+
+            assertEquals("/project:", lines.get(0));
+            assertEquals("  perm       owner group size mtime            name", lines.get(1));
+        }
+
+        @Test
+        void ファイルとディレクトリがls形式で表示される() {
+            var entries = Lists.immutable.of(
+                    new TreeDiredEntry(Path.of("/p/src"), 0, true, false, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/README.md"), 0, false, false, FILE_ATTRS));
+
+            String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
+            var lines = text.lines().toList();
+
+            assertEquals("/p:", lines.get(0));
+            assertEquals("  drwxr-xr-x shoma shoma 4096 2025-03-29 13:06 ▶ src/", lines.get(2));
+            assertEquals("  -rw-r--r-- shoma shoma  916 2025-03-29 13:06   README.md", lines.get(3));
+        }
+
+        @Test
+        void 展開済みディレクトリには下向き三角が表示される() {
+            var entries = Lists.immutable.of(
+                    new TreeDiredEntry(Path.of("/p/src"), 0, true, true, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/src/Main.java"), 1, false, false, FILE_ATTRS));
+
+            String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
+            var lines = text.lines().toList();
+
+            assertEquals("  drwxr-xr-x shoma shoma 4096 2025-03-29 13:06 ▼ src/", lines.get(2));
+            assertEquals("  -rw-r--r-- shoma shoma  916 2025-03-29 13:06     Main.java", lines.get(3));
+        }
+
+        @Test
+        void ネストしたエントリのファイル名前にインデントが入る() {
+            var entries = Lists.immutable.of(
+                    new TreeDiredEntry(Path.of("/p/a"), 0, true, true, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/a/b"), 1, true, true, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/a/b/c.txt"), 2, false, false, FILE_ATTRS));
+
+            String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
+            var lines = text.lines().toList();
+
+            assertEquals("  drwxr-xr-x shoma shoma 4096 2025-03-29 13:06 ▼ a/", lines.get(2));
+            assertEquals("  drwxr-xr-x shoma shoma 4096 2025-03-29 13:06   ▼ b/", lines.get(3));
+            assertEquals("  -rw-r--r-- shoma shoma  916 2025-03-29 13:06       c.txt", lines.get(4));
+        }
+    }
+}

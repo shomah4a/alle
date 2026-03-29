@@ -9,18 +9,22 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCommand;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ファイルを開くコマンド。
  * InputPrompterでファイルパスを入力させ、BufferIOでファイルを読み込む。
  * 同一パスのバッファが既に存在する場合はそのバッファに切り替える。
  * ファイルが存在しない場合は空バッファをファイルパス付きで作成する。
+ * ディレクトリが指定された場合はTree Diredで開く。
  */
 public class FindFileCommand implements Command {
 
@@ -32,6 +36,8 @@ public class FindFileCommand implements Command {
     private final AutoModeMap autoModeMap;
     private final ModeRegistry modeRegistry;
     private final InputHistory filePathHistory;
+    private final Predicate<Path> directoryChecker;
+    private @Nullable TreeDiredCommand treeDiredCommand;
 
     public FindFileCommand(
             BufferIO bufferIO,
@@ -39,13 +45,23 @@ public class FindFileCommand implements Command {
             Path workingDirectory,
             AutoModeMap autoModeMap,
             ModeRegistry modeRegistry,
-            InputHistory filePathHistory) {
+            InputHistory filePathHistory,
+            Predicate<Path> directoryChecker) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.autoModeMap = autoModeMap;
         this.modeRegistry = modeRegistry;
         this.filePathHistory = filePathHistory;
+        this.directoryChecker = directoryChecker;
+    }
+
+    /**
+     * Tree Dired コマンドを設定する。
+     * ディレクトリを指定された場合にTree Diredで開くために必要。
+     */
+    public void setTreeDiredCommand(TreeDiredCommand treeDiredCommand) {
+        this.treeDiredCommand = treeDiredCommand;
     }
 
     @Override
@@ -70,7 +86,15 @@ public class FindFileCommand implements Command {
         if (pathString.isEmpty()) {
             return;
         }
-        var path = normalizePath(pathString);
+        // 末尾の "/" を除去して正規化
+        String trimmed = pathString.endsWith("/") ? pathString.substring(0, pathString.length() - 1) : pathString;
+        var path = normalizePath(trimmed);
+
+        // ディレクトリの場合はTree Diredで開く
+        if (treeDiredCommand != null && directoryChecker.test(path)) {
+            treeDiredCommand.openDiredForPath(context, path);
+            return;
+        }
 
         // 同一パスのバッファが既に存在する場合はそのバッファに切り替え
         var existingBuffer = context.bufferManager().findByPath(path);

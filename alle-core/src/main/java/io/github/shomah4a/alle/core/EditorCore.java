@@ -59,6 +59,11 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredFindFileOrToggleCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRefreshCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUpDirectoryCommand;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -213,8 +218,15 @@ public final class EditorCore {
         registry.register(new CommentDwimCommand());
         registry.register(new CommentRegionCommand());
         var filePathHistory = new InputHistory();
-        registry.register(new FindFileCommand(
-                bufferIO, directoryLister, Path.of("").toAbsolutePath(), autoModeMap, modeRegistry, filePathHistory));
+        var findFileCommand = new FindFileCommand(
+                bufferIO,
+                directoryLister,
+                Path.of("").toAbsolutePath(),
+                autoModeMap,
+                modeRegistry,
+                filePathHistory,
+                path -> java.nio.file.Files.isDirectory(path));
+        registry.register(findFileCommand);
         registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
         registry.register(new RevertBufferCommand(bufferIO));
         var bufferHistory = new InputHistory();
@@ -238,6 +250,30 @@ public final class EditorCore {
         registry.register(new KeyboardQuitCommand());
         registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, shutdownRequestable));
         registry.register(new ProcessQuitCommand(shutdownRequestable));
+
+        // Tree Dired コマンド群
+        var toggleCommand = new TreeDiredToggleCommand();
+        var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
+        var upDirectoryCommand = new TreeDiredUpDirectoryCommand();
+        var refreshCommand = new TreeDiredRefreshCommand();
+        var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
+        var diredHistory = new InputHistory();
+        registry.register(toggleCommand);
+        registry.register(findFileOrToggleCommand);
+        registry.register(upDirectoryCommand);
+        registry.register(refreshCommand);
+        var treeDiredCommand = new TreeDiredCommand(
+                directoryLister,
+                Path.of("").toAbsolutePath(),
+                diredHistory,
+                java.time.ZoneId.systemDefault(),
+                toggleCommand,
+                findFileOrToggleCommand,
+                upDirectoryCommand,
+                refreshCommand,
+                killBufferCmd);
+        registry.register(treeDiredCommand);
+        findFileCommand.setTreeDiredCommand(treeDiredCommand);
         return registry;
     }
 
@@ -290,6 +326,7 @@ public final class EditorCore {
         ctrlXMap.bind(KeyStroke.of('2'), registry.lookup("split-window-below").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('3'), registry.lookup("split-window-right").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('0'), registry.lookup("delete-window").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('d'), registry.lookup("tree-dired").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         // C-SPC (mark)

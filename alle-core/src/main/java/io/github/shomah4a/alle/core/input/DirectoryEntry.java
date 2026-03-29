@@ -14,12 +14,17 @@ public sealed interface DirectoryEntry {
     Path path();
 
     /**
+     * ファイル属性を返す。
+     */
+    FileAttributes attributes();
+
+    /**
      * 通常ファイル。
      */
-    record File(Path path) implements DirectoryEntry {}
+    record File(Path path, FileAttributes attributes) implements DirectoryEntry {}
 
     /**
      * ディレクトリ。
      */
-    record Directory(Path path) implements DirectoryEntry {}
+    record Directory(Path path, FileAttributes attributes) implements DirectoryEntry {}
 }

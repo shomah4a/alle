@@ -73,4 +73,8 @@ public final class FaceName {
 
     // UI要素
     public static final FaceName MINIBUFFER_PROMPT = new FaceName("minibuffer-prompt", "ミニバッファのプロンプト文字列");
+
+    // Dired
+    public static final FaceName DIRED_HEADER = new FaceName("dired-header", "Diredのヘッダ行（ルートディレクトリパス）");
+    public static final FaceName DIRED_DIRECTORY = new FaceName("dired-directory", "Diredのディレクトリ名");
 }

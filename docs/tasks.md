@@ -38,6 +38,19 @@
 - 現在はalle.active_window()を直接呼んでいる
 - ctx経由でウィンドウ・バッファにアクセスするよう変更する
 
+### Tree Dired: mark/unmark, ファイル操作
+- mark (m) / unmark (u) でエントリを選択
+- cp, mv, rm 等のファイル操作コマンド
+- マーク済みエントリに対する一括操作
+
+### Tree Dired: シンボリックリンク循環の保護
+- collectEntries の再帰にdepth上限を設ける
+- 循環参照のシンボリックリンクによる StackOverflowError を防止
+
+### Tree Dired: レンダリングの最適化
+- applyFaces で formatEntryLine と computeMaxSizeWidth が二重に計算されている
+- buildText と applyFaces を統合するか、結果をキャッシュして再利用する
+
 ## 将来課題
 
 ### CommandContext のスナップショット化

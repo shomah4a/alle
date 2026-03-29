@@ -16,9 +16,10 @@ class FilePathCompleterTest {
         MutableList<DirectoryEntry> result = Lists.mutable.empty();
         for (String entry : entries) {
             if (entry.endsWith("/")) {
-                result.add(new DirectoryEntry.Directory(Path.of(entry.substring(0, entry.length() - 1))));
+                result.add(new DirectoryEntry.Directory(
+                        Path.of(entry.substring(0, entry.length() - 1)), FileAttributes.EMPTY));
             } else {
-                result.add(new DirectoryEntry.File(Path.of(entry)));
+                result.add(new DirectoryEntry.File(Path.of(entry), FileAttributes.EMPTY));
             }
         }
         return directory -> result.toImmutable();
