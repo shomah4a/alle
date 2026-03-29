@@ -34,8 +34,8 @@ class TreeDiredRendererTest {
         @Test
         void ファイルとディレクトリがls形式で表示される() {
             var entries = Lists.immutable.of(
-                    new TreeDiredEntry(Path.of("/p/src"), 0, true, false, DIR_ATTRS),
-                    new TreeDiredEntry(Path.of("/p/README.md"), 0, false, false, FILE_ATTRS));
+                    new TreeDiredEntry(Path.of("/p/src"), 0, true, false, false, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/README.md"), 0, false, false, false, FILE_ATTRS));
 
             String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
             var lines = text.lines().toList();
@@ -48,8 +48,8 @@ class TreeDiredRendererTest {
         @Test
         void 展開済みディレクトリには下向き三角が表示される() {
             var entries = Lists.immutable.of(
-                    new TreeDiredEntry(Path.of("/p/src"), 0, true, true, DIR_ATTRS),
-                    new TreeDiredEntry(Path.of("/p/src/Main.java"), 1, false, false, FILE_ATTRS));
+                    new TreeDiredEntry(Path.of("/p/src"), 0, true, true, false, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/src/Main.java"), 1, false, false, false, FILE_ATTRS));
 
             String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
             var lines = text.lines().toList();
@@ -61,9 +61,9 @@ class TreeDiredRendererTest {
         @Test
         void ネストしたエントリのファイル名前にインデントが入る() {
             var entries = Lists.immutable.of(
-                    new TreeDiredEntry(Path.of("/p/a"), 0, true, true, DIR_ATTRS),
-                    new TreeDiredEntry(Path.of("/p/a/b"), 1, true, true, DIR_ATTRS),
-                    new TreeDiredEntry(Path.of("/p/a/b/c.txt"), 2, false, false, FILE_ATTRS));
+                    new TreeDiredEntry(Path.of("/p/a"), 0, true, true, false, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/a/b"), 1, true, true, false, DIR_ATTRS),
+                    new TreeDiredEntry(Path.of("/p/a/b/c.txt"), 2, false, false, false, FILE_ATTRS));
 
             String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC);
             var lines = text.lines().toList();

@@ -155,6 +155,87 @@ class TreeDiredModelTest {
     }
 
     @Nested
+    class マーク機能 {
+
+        @Test
+        void markしたパスがisMarkedでtrueになる() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(Path.of("/project"), Lists.immutable.of(file("/project/a.txt")));
+            var model = new TreeDiredModel(Path.of("/project"), stubLister(entries));
+
+            model.mark(Path.of("/project/a.txt"));
+
+            assertTrue(model.isMarked(Path.of("/project/a.txt")));
+        }
+
+        @Test
+        void unmarkしたパスがisMarkedでfalseになる() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(Path.of("/project"), Lists.immutable.of(file("/project/a.txt")));
+            var model = new TreeDiredModel(Path.of("/project"), stubLister(entries));
+
+            model.mark(Path.of("/project/a.txt"));
+            model.unmark(Path.of("/project/a.txt"));
+
+            assertFalse(model.isMarked(Path.of("/project/a.txt")));
+        }
+
+        @Test
+        void toggleMarkでマーク状態が反転する() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(Path.of("/project"), Lists.immutable.of(file("/project/a.txt")));
+            var model = new TreeDiredModel(Path.of("/project"), stubLister(entries));
+
+            model.toggleMark(Path.of("/project/a.txt"));
+            assertTrue(model.isMarked(Path.of("/project/a.txt")));
+
+            model.toggleMark(Path.of("/project/a.txt"));
+            assertFalse(model.isMarked(Path.of("/project/a.txt")));
+        }
+
+        @Test
+        void clearMarksで全マークがクリアされる() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(Path.of("/project"), Lists.immutable.of(file("/project/a.txt"), file("/project/b.txt")));
+            var model = new TreeDiredModel(Path.of("/project"), stubLister(entries));
+
+            model.mark(Path.of("/project/a.txt"));
+            model.mark(Path.of("/project/b.txt"));
+            model.clearMarks();
+
+            assertFalse(model.isMarked(Path.of("/project/a.txt")));
+            assertFalse(model.isMarked(Path.of("/project/b.txt")));
+        }
+
+        @Test
+        void getVisibleEntriesがマーク状態を含む() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(Path.of("/project"), Lists.immutable.of(file("/project/a.txt"), file("/project/b.txt")));
+            var model = new TreeDiredModel(Path.of("/project"), stubLister(entries));
+
+            model.mark(Path.of("/project/a.txt"));
+            var visible = model.getVisibleEntries();
+
+            assertTrue(visible.get(0).isMarked());
+            assertFalse(visible.get(1).isMarked());
+        }
+
+        @Test
+        void setRootDirectoryでマークがクリアされる() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(Path.of("/project"), Lists.immutable.of(file("/project/a.txt")));
+            entries.put(Path.of("/other"), Lists.immutable.empty());
+            var model = new TreeDiredModel(Path.of("/project"), stubLister(entries));
+
+            model.mark(Path.of("/project/a.txt"));
+            model.setRootDirectory(Path.of("/other"));
+
+            assertFalse(model.isMarked(Path.of("/project/a.txt")));
+            assertTrue(model.getMarkedPaths().isEmpty());
+        }
+    }
+
+    @Nested
     class depth {
 
         @Test

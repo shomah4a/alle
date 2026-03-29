@@ -11,6 +11,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.SetIterable;
 
 /**
  * ツリー表示のディレクトリ状態を管理するモデル。
@@ -22,11 +23,13 @@ public class TreeDiredModel {
 
     private Path rootDirectory;
     private final MutableSet<Path> expandedDirectories;
+    private final MutableSet<Path> markedPaths;
     private final DirectoryLister directoryLister;
 
     public TreeDiredModel(Path rootDirectory, DirectoryLister directoryLister) {
         this.rootDirectory = rootDirectory;
         this.expandedDirectories = Sets.mutable.empty();
+        this.markedPaths = Sets.mutable.empty();
         this.directoryLister = directoryLister;
         expandedDirectories.add(rootDirectory);
     }
@@ -46,6 +49,7 @@ public class TreeDiredModel {
         this.rootDirectory = newRoot;
         expandedDirectories.clear();
         expandedDirectories.add(newRoot);
+        markedPaths.clear();
     }
 
     /**
@@ -68,6 +72,52 @@ public class TreeDiredModel {
      */
     public boolean isExpanded(Path directory) {
         return expandedDirectories.contains(directory);
+    }
+
+    /**
+     * 指定パスをマークする。
+     */
+    public void mark(Path path) {
+        markedPaths.add(path);
+    }
+
+    /**
+     * 指定パスのマークを解除する。
+     */
+    public void unmark(Path path) {
+        markedPaths.remove(path);
+    }
+
+    /**
+     * 指定パスのマーク状態をトグルする。
+     */
+    public void toggleMark(Path path) {
+        if (markedPaths.contains(path)) {
+            markedPaths.remove(path);
+        } else {
+            markedPaths.add(path);
+        }
+    }
+
+    /**
+     * 指定パスがマーク済みかどうかを返す。
+     */
+    public boolean isMarked(Path path) {
+        return markedPaths.contains(path);
+    }
+
+    /**
+     * マーク済みパスの集合を返す。
+     */
+    public SetIterable<Path> getMarkedPaths() {
+        return markedPaths;
+    }
+
+    /**
+     * 全マークをクリアする。
+     */
+    public void clearMarks() {
+        markedPaths.clear();
     }
 
     /**
@@ -105,7 +155,8 @@ public class TreeDiredModel {
         for (DirectoryEntry child : sorted) {
             boolean isDir = child instanceof DirectoryEntry.Directory;
             boolean expanded = isDir && expandedDirectories.contains(child.path());
-            entries.add(new TreeDiredEntry(child.path(), depth, isDir, expanded, child.attributes()));
+            boolean marked = markedPaths.contains(child.path());
+            entries.add(new TreeDiredEntry(child.path(), depth, isDir, expanded, marked, child.attributes()));
             if (expanded) {
                 collectEntries(child.path(), depth + 1, entries);
             }
