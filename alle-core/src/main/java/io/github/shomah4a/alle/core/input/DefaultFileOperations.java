@@ -26,7 +26,11 @@ public class DefaultFileOperations implements FileOperations {
 
     @Override
     public void move(Path source, Path target) throws IOException {
-        Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            Files.move(source, target);
+        }
     }
 
     @Override

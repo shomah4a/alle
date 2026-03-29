@@ -80,9 +80,10 @@ public class TreeDiredCopyCommand implements Command {
                                         executeCopy(context, diredMode, targets, targetPath);
                                     }
                                 });
+                    } else {
+                        executeCopy(context, diredMode, targets, targetPath);
+                        return CompletableFuture.completedFuture(null);
                     }
-                    executeCopy(context, diredMode, targets, targetPath);
-                    return CompletableFuture.completedFuture(null);
                 });
     }
 
