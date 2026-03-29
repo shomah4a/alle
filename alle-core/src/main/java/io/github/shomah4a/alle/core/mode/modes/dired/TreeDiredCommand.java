@@ -8,7 +8,6 @@ import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
-import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
@@ -25,55 +24,19 @@ public class TreeDiredCommand implements Command {
     private final Path workingDirectory;
     private final InputHistory directoryHistory;
     private final ZoneId zoneId;
-    private final TreeDiredToggleCommand toggleCommand;
-    private final TreeDiredFindFileOrToggleCommand findFileOrToggleCommand;
-    private final TreeDiredUpDirectoryCommand upDirectoryCommand;
-    private final TreeDiredRefreshCommand refreshCommand;
-    private final Command killBufferCommand;
-    private final TreeDiredMarkCommand markCommand;
-    private final TreeDiredUnmarkCommand unmarkCommand;
-    private final TreeDiredToggleMarkCommand toggleMarkCommand;
-    private final TreeDiredCopyCommand copyCommand;
-    private final TreeDiredRenameCommand renameCommand;
-    private final TreeDiredDeleteCommand deleteCommand;
-    private final TreeDiredChmodCommand chmodCommand;
-    private final TreeDiredChownCommand chownCommand;
+    private final Keymap diredKeymap;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
             Path workingDirectory,
             InputHistory directoryHistory,
             ZoneId zoneId,
-            TreeDiredToggleCommand toggleCommand,
-            TreeDiredFindFileOrToggleCommand findFileOrToggleCommand,
-            TreeDiredUpDirectoryCommand upDirectoryCommand,
-            TreeDiredRefreshCommand refreshCommand,
-            Command killBufferCommand,
-            TreeDiredMarkCommand markCommand,
-            TreeDiredUnmarkCommand unmarkCommand,
-            TreeDiredToggleMarkCommand toggleMarkCommand,
-            TreeDiredCopyCommand copyCommand,
-            TreeDiredRenameCommand renameCommand,
-            TreeDiredDeleteCommand deleteCommand,
-            TreeDiredChmodCommand chmodCommand,
-            TreeDiredChownCommand chownCommand) {
+            Keymap diredKeymap) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
         this.zoneId = zoneId;
-        this.toggleCommand = toggleCommand;
-        this.findFileOrToggleCommand = findFileOrToggleCommand;
-        this.upDirectoryCommand = upDirectoryCommand;
-        this.refreshCommand = refreshCommand;
-        this.killBufferCommand = killBufferCommand;
-        this.markCommand = markCommand;
-        this.unmarkCommand = unmarkCommand;
-        this.toggleMarkCommand = toggleMarkCommand;
-        this.copyCommand = copyCommand;
-        this.renameCommand = renameCommand;
-        this.deleteCommand = deleteCommand;
-        this.chmodCommand = chmodCommand;
-        this.chownCommand = chownCommand;
+        this.diredKeymap = diredKeymap;
     }
 
     @Override
@@ -124,8 +87,7 @@ public class TreeDiredCommand implements Command {
 
         // モデル・モード作成
         var model = new TreeDiredModel(path, directoryLister);
-        var keymap = createKeymap();
-        var mode = new TreeDiredMode(model, keymap, zoneId);
+        var mode = new TreeDiredMode(model, diredKeymap, zoneId);
         bufferFacade.setMajorMode(mode);
 
         // バッファを登録してウィンドウに表示
@@ -137,59 +99,5 @@ public class TreeDiredCommand implements Command {
         bufferFacade.setReadOnly(true);
         bufferFacade.markClean();
         context.activeWindow().setPoint(0);
-    }
-
-    private Keymap createKeymap() {
-        var keymap = new Keymap("tree-dired");
-
-        // no-op defaultCommand で self-insert を抑制
-        keymap.setDefaultCommand(new NoOpCommand());
-
-        // TAB: toggle
-        keymap.bind(KeyStroke.of('\t'), toggleCommand);
-        // Enter: find-file-or-toggle
-        keymap.bind(KeyStroke.of('\n'), findFileOrToggleCommand);
-        // f: find-file-or-toggle
-        keymap.bind(KeyStroke.of('f'), findFileOrToggleCommand);
-        // ^: up-directory
-        keymap.bind(KeyStroke.of('^'), upDirectoryCommand);
-        // g: refresh
-        keymap.bind(KeyStroke.of('g'), refreshCommand);
-        // q: kill-buffer
-        keymap.bind(KeyStroke.of('q'), killBufferCommand);
-        // m: mark
-        keymap.bind(KeyStroke.of('m'), markCommand);
-        // u: unmark
-        keymap.bind(KeyStroke.of('u'), unmarkCommand);
-        // t: toggle-mark
-        keymap.bind(KeyStroke.of('t'), toggleMarkCommand);
-        // C: copy
-        keymap.bind(KeyStroke.of('C'), copyCommand);
-        // R: rename
-        keymap.bind(KeyStroke.of('R'), renameCommand);
-        // D: delete
-        keymap.bind(KeyStroke.of('D'), deleteCommand);
-        // M: chmod
-        keymap.bind(KeyStroke.of('M'), chmodCommand);
-        // O: chown
-        keymap.bind(KeyStroke.of('O'), chownCommand);
-
-        return keymap;
-    }
-
-    /**
-     * 何もしないコマンド。未バインドキーの self-insert 抑制用。
-     */
-    private static class NoOpCommand implements Command {
-
-        @Override
-        public String name() {
-            return "tree-dired-noop";
-        }
-
-        @Override
-        public CompletableFuture<Void> execute(CommandContext context) {
-            return CompletableFuture.completedFuture(null);
-        }
     }
 }

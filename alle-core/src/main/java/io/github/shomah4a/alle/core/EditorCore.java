@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
+import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommentDwimCommand;
@@ -275,7 +276,6 @@ public final class EditorCore {
         var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
         var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
         var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
-        var diredHistory = new InputHistory();
         registry.register(toggleCommand);
         registry.register(findFileOrToggleCommand);
         registry.register(upDirectoryCommand);
@@ -288,11 +288,9 @@ public final class EditorCore {
         registry.register(deleteCommand);
         registry.register(chmodCommand);
         registry.register(chownCommand);
-        var treeDiredCommand = new TreeDiredCommand(
-                directoryLister,
-                Path.of("").toAbsolutePath(),
-                diredHistory,
-                java.time.ZoneId.systemDefault(),
+
+        // Tree Dired キーマップ構築
+        var diredKeymap = createTreeDiredKeymap(
                 toggleCommand,
                 findFileOrToggleCommand,
                 upDirectoryCommand,
@@ -306,9 +304,50 @@ public final class EditorCore {
                 deleteCommand,
                 chmodCommand,
                 chownCommand);
+
+        var diredHistory = new InputHistory();
+        var treeDiredCommand = new TreeDiredCommand(
+                directoryLister,
+                Path.of("").toAbsolutePath(),
+                diredHistory,
+                java.time.ZoneId.systemDefault(),
+                diredKeymap);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
         return registry;
+    }
+
+    private static Keymap createTreeDiredKeymap(
+            Command toggleCommand,
+            Command findFileOrToggleCommand,
+            Command upDirectoryCommand,
+            Command refreshCommand,
+            Command killBufferCommand,
+            Command markCommand,
+            Command unmarkCommand,
+            Command toggleMarkCommand,
+            Command copyCommand,
+            Command renameCommand,
+            Command deleteCommand,
+            Command chmodCommand,
+            Command chownCommand) {
+        var keymap = new Keymap("tree-dired");
+        keymap.setDefaultCommand(new io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredNoOpCommand());
+        keymap.bind(KeyStroke.of('\t'), toggleCommand);
+        keymap.bind(KeyStroke.of('\n'), findFileOrToggleCommand);
+        keymap.bind(KeyStroke.of('f'), findFileOrToggleCommand);
+        keymap.bind(KeyStroke.of('^'), upDirectoryCommand);
+        keymap.bind(KeyStroke.of('g'), refreshCommand);
+        keymap.bind(KeyStroke.of('q'), killBufferCommand);
+        keymap.bind(KeyStroke.of('m'), markCommand);
+        keymap.bind(KeyStroke.of('u'), unmarkCommand);
+        keymap.bind(KeyStroke.of('t'), toggleMarkCommand);
+        keymap.bind(KeyStroke.of('C'), copyCommand);
+        keymap.bind(KeyStroke.of('R'), renameCommand);
+        keymap.bind(KeyStroke.of('D'), deleteCommand);
+        keymap.bind(KeyStroke.of('M'), chmodCommand);
+        keymap.bind(KeyStroke.of('O'), chownCommand);
+        return keymap;
     }
 
     private static Keymap createKeymap(CommandRegistry registry) {
