@@ -61,6 +61,7 @@ import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCopyCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredDeleteCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredFindFileOrToggleCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredMarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRefreshCommand;
@@ -268,6 +269,7 @@ public final class EditorCore {
         var diredConfirmHistory = new InputHistory();
         var copyCommand = new TreeDiredCopyCommand(fileOperations, new InputHistory(), diredConfirmHistory);
         var renameCommand = new TreeDiredRenameCommand(fileOperations, new InputHistory());
+        var deleteCommand = new TreeDiredDeleteCommand(fileOperations, diredConfirmHistory);
         var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
         var diredHistory = new InputHistory();
         registry.register(toggleCommand);
@@ -279,6 +281,7 @@ public final class EditorCore {
         registry.register(toggleMarkCommand);
         registry.register(copyCommand);
         registry.register(renameCommand);
+        registry.register(deleteCommand);
         var treeDiredCommand = new TreeDiredCommand(
                 directoryLister,
                 Path.of("").toAbsolutePath(),
@@ -293,7 +296,8 @@ public final class EditorCore {
                 unmarkCommand,
                 toggleMarkCommand,
                 copyCommand,
-                renameCommand);
+                renameCommand,
+                deleteCommand);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
         return registry;
