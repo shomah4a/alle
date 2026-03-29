@@ -36,6 +36,7 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.MINIBUFFER_PROMPT, FaceSpec.of("cyan", FaceAttribute.BOLD))
             .withKeyValue(FaceName.DIRED_HEADER, FaceSpec.of("magenta", FaceAttribute.BOLD))
             .withKeyValue(FaceName.DIRED_DIRECTORY, FaceSpec.of("blue", FaceAttribute.BOLD))
+            .withKeyValue(FaceName.DIRED_MARKED, FaceSpec.of("yellow", FaceAttribute.BOLD))
             .toImmutable();
 
     @Override
