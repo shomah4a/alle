@@ -55,7 +55,8 @@ final class TestCommandContextFactory {
                 new KillRing(),
                 new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
-                SETTINGS_REGISTRY);
+                SETTINGS_REGISTRY,
+                new CommandRegistry());
     }
 
     /**
@@ -73,7 +74,8 @@ final class TestCommandContextFactory {
                 new KillRing(),
                 new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
-                SETTINGS_REGISTRY);
+                SETTINGS_REGISTRY,
+                new CommandRegistry());
     }
 
     /**
@@ -92,7 +94,8 @@ final class TestCommandContextFactory {
                 killRing,
                 new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
-                SETTINGS_REGISTRY);
+                SETTINGS_REGISTRY,
+                new CommandRegistry());
     }
 
     /**

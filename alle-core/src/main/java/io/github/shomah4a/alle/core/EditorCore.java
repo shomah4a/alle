@@ -173,7 +173,8 @@ public final class EditorCore {
                 killRing,
                 messageBuffer,
                 warningBuffer,
-                settingsRegistry);
+                settingsRegistry,
+                registry);
 
         return new EditorCore(
                 frame,

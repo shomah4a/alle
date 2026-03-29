@@ -55,7 +55,8 @@ class CommandLoopTest {
                 new KillRing(),
                 new MessageBuffer("*Messages*", 100, SETTINGS),
                 new MessageBuffer("*Warnings*", 100, SETTINGS),
-                SETTINGS);
+                SETTINGS,
+                new CommandRegistry());
     }
 
     @Nested
@@ -292,7 +293,8 @@ class CommandLoopTest {
                     new KillRing(),
                     messageBuffer,
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
-                    new SettingsRegistry());
+                    new SettingsRegistry(),
+                    new CommandRegistry());
             // 例外でスレッドが落ちずにメッセージが表示されること
             loop.processKey(KeyStroke.of(0x7F));
 

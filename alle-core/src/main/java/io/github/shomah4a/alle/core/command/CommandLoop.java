@@ -38,6 +38,7 @@ public class CommandLoop {
     private final MessageBuffer messageBuffer;
     private final MessageBuffer warningBuffer;
     private final SettingsRegistry settingsRegistry;
+    private final CommandRegistry commandRegistry;
     private Optional<String> lastCommand = Optional.empty();
     private @Nullable PendingPrefix pendingPrefix;
 
@@ -55,7 +56,8 @@ public class CommandLoop {
             KillRing killRing,
             MessageBuffer messageBuffer,
             MessageBuffer warningBuffer,
-            SettingsRegistry settingsRegistry) {
+            SettingsRegistry settingsRegistry,
+            CommandRegistry commandRegistry) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
@@ -65,6 +67,7 @@ public class CommandLoop {
         this.messageBuffer = messageBuffer;
         this.warningBuffer = warningBuffer;
         this.settingsRegistry = settingsRegistry;
+        this.commandRegistry = commandRegistry;
     }
 
     /**
@@ -168,7 +171,8 @@ public class CommandLoop {
                         killRing,
                         messageBuffer,
                         warningBuffer,
-                        settingsRegistry);
+                        settingsRegistry,
+                        commandRegistry);
                 try {
                     var buffer = context.activeWindow().getBuffer();
                     buffer.getUndoManager().withTransaction(() -> {

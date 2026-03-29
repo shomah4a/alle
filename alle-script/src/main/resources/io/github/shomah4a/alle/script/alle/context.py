@@ -43,3 +43,14 @@ class CommandContext:
         :type text: str
         """
         self._ctx.message(text)
+
+    def delegate(self, command_name: str) -> None:
+        """名前を指定して別のコマンドを実行する。
+
+        コンテキストはそのまま渡されるため、this_commandやlast_commandは変わらない。
+
+        :param command_name: 実行するコマンド名
+        :type command_name: str
+        :raises IllegalArgumentException: 指定された名前のコマンドが登録されていない場合
+        """
+        self._ctx.delegate(command_name).join()

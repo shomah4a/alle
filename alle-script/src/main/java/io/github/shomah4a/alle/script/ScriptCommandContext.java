@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.command.CommandContext;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * スクリプトに公開するコマンド実行コンテキスト。
@@ -41,5 +42,15 @@ public class ScriptCommandContext {
      */
     public void message(String text) {
         ctx.messageBuffer().message(text);
+    }
+
+    /**
+     * 名前を指定して別のコマンドを実行する。
+     * コンテキストはそのまま渡されるため、thisCommandやlastCommandは変わらない。
+     *
+     * @throws IllegalArgumentException 指定された名前のコマンドが登録されていない場合
+     */
+    public CompletableFuture<Void> delegate(String commandName) {
+        return ctx.delegate(commandName);
     }
 }

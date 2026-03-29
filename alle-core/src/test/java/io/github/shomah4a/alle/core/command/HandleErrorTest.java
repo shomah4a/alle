@@ -43,7 +43,8 @@ class HandleErrorTest {
                 new KillRing(),
                 messageBuffer,
                 warningBuffer,
-                new SettingsRegistry());
+                new SettingsRegistry(),
+                new CommandRegistry());
     }
 
     @Test

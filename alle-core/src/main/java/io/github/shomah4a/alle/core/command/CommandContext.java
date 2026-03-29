@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.window.Window;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * コマンド実行時のコンテキスト。
@@ -32,7 +33,21 @@ public record CommandContext(
         KillRing killRing,
         MessageBuffer messageBuffer,
         MessageBuffer warningBuffer,
-        SettingsRegistry settingsRegistry) {
+        SettingsRegistry settingsRegistry,
+        CommandRegistry commandRegistry) {
+
+    /**
+     * 名前を指定して別のコマンドを実行する。
+     * コンテキストはそのまま渡されるため、thisCommandやlastCommandは変わらない。
+     *
+     * @throws IllegalArgumentException 指定された名前のコマンドが登録されていない場合
+     */
+    public CompletableFuture<Void> delegate(String commandName) {
+        var command = commandRegistry
+                .lookup(commandName)
+                .orElseThrow(() -> new IllegalArgumentException("コマンド '" + commandName + "' は登録されていません"));
+        return command.execute(this);
+    }
 
     /**
      * エラーをエコーエリアと*Warnings*バッファに通知する。
