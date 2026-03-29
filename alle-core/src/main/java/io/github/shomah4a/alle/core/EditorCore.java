@@ -59,6 +59,8 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredChmodCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredChownCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCopyCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredDeleteCommand;
@@ -270,6 +272,8 @@ public final class EditorCore {
         var copyCommand = new TreeDiredCopyCommand(fileOperations, new InputHistory(), diredConfirmHistory);
         var renameCommand = new TreeDiredRenameCommand(fileOperations, new InputHistory());
         var deleteCommand = new TreeDiredDeleteCommand(fileOperations, diredConfirmHistory);
+        var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
+        var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
         var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
         var diredHistory = new InputHistory();
         registry.register(toggleCommand);
@@ -282,6 +286,8 @@ public final class EditorCore {
         registry.register(copyCommand);
         registry.register(renameCommand);
         registry.register(deleteCommand);
+        registry.register(chmodCommand);
+        registry.register(chownCommand);
         var treeDiredCommand = new TreeDiredCommand(
                 directoryLister,
                 Path.of("").toAbsolutePath(),
@@ -297,7 +303,9 @@ public final class EditorCore {
                 toggleMarkCommand,
                 copyCommand,
                 renameCommand,
-                deleteCommand);
+                deleteCommand,
+                chmodCommand,
+                chownCommand);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
         return registry;
