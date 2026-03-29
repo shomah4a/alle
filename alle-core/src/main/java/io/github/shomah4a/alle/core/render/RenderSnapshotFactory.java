@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.LayoutResult;
 import io.github.shomah4a.alle.core.window.Rect;
+import io.github.shomah4a.alle.core.window.ViewportSize;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowLayout;
 import java.util.Optional;
@@ -52,6 +53,7 @@ public final class RenderSnapshotFactory {
                 return;
             }
             int bufferRows = rect.height() - 1;
+            window.setViewportSize(new ViewportSize(bufferRows, rect.width()));
             window.ensurePointVisible(bufferRows);
             window.ensurePointHorizontallyVisible(rect.width());
 

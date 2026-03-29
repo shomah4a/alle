@@ -36,6 +36,8 @@ import io.github.shomah4a.alle.core.command.RedoCommand;
 import io.github.shomah4a.alle.core.command.RevertBufferCommand;
 import io.github.shomah4a.alle.core.command.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.SaveBuffersKillAlleCommand;
+import io.github.shomah4a.alle.core.command.ScrollDownCommand;
+import io.github.shomah4a.alle.core.command.ScrollUpCommand;
 import io.github.shomah4a.alle.core.command.SelfInsertCommand;
 import io.github.shomah4a.alle.core.command.SetMarkCommand;
 import io.github.shomah4a.alle.core.command.ShutdownHandler;
@@ -226,6 +228,8 @@ public final class EditorCore {
         registry.register(new YankCommand());
         registry.register(new UndoCommand());
         registry.register(new RedoCommand());
+        registry.register(new ScrollUpCommand());
+        registry.register(new ScrollDownCommand());
         registry.register(new SplitWindowBelowCommand());
         registry.register(new SplitWindowRightCommand());
         registry.register(new DeleteWindowCommand());
@@ -248,6 +252,8 @@ public final class EditorCore {
         keymap.bind(KeyStroke.ctrl('e'), registry.lookup("end-of-line").orElseThrow());
         keymap.bind(KeyStroke.ctrl('n'), registry.lookup("next-line").orElseThrow());
         keymap.bind(KeyStroke.ctrl('p'), registry.lookup("previous-line").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('v'), registry.lookup("scroll-up").orElseThrow());
+        keymap.bind(KeyStroke.meta('v'), registry.lookup("scroll-down").orElseThrow());
         keymap.bind(KeyStroke.ctrl('d'), registry.lookup("delete-char").orElseThrow());
         keymap.bind(KeyStroke.ctrl('k'), registry.lookup("kill-line").orElseThrow());
         keymap.bind(

@@ -20,6 +20,7 @@ public class Window {
     private int displayStartColumn;
     private @Nullable Integer mark;
     private boolean highlightPointLine;
+    private volatile ViewportSize viewportSize = new ViewportSize(0, 0);
 
     public Window(BufferFacade buffer) {
         this.bufferFacade = buffer;
@@ -278,5 +279,21 @@ public class Window {
      */
     public void setHighlightPointLine(boolean highlightPointLine) {
         this.highlightPointLine = highlightPointLine;
+    }
+
+    /**
+     * 表示可能領域のサイズを返す。
+     * レンダリング前はrows=0, columns=0を返す。
+     */
+    public ViewportSize getViewportSize() {
+        return viewportSize;
+    }
+
+    /**
+     * 表示可能領域のサイズを設定する。
+     * レンダリング時にレイアウト計算結果から呼び出される。
+     */
+    public void setViewportSize(ViewportSize viewportSize) {
+        this.viewportSize = viewportSize;
     }
 }
