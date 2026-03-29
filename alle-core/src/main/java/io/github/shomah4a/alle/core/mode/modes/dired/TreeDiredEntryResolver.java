@@ -3,7 +3,9 @@ package io.github.shomah4a.alle.core.mode.modes.dired;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 
 /**
  * カーソル位置から対応する TreeDiredEntry を解決する。
@@ -34,5 +36,39 @@ final class TreeDiredEntryResolver {
             return Optional.empty();
         }
         return Optional.of(entries.get(entryIndex));
+    }
+
+    /**
+     * 指定されたオフセット範囲（リージョン）に含まれる行のエントリをすべて返す。
+     */
+    static ListIterable<TreeDiredEntry> resolveRange(
+            Window window, TreeDiredMode mode, int regionStart, int regionEnd) {
+        BufferFacade buffer = window.getBuffer();
+        int startLine = buffer.lineIndexForOffset(regionStart);
+        int endLine = buffer.lineIndexForOffset(regionEnd);
+
+        ListIterable<TreeDiredEntry> entries = mode.getModel().getVisibleEntries();
+        MutableList<TreeDiredEntry> result = Lists.mutable.empty();
+
+        for (int line = startLine; line <= endLine; line++) {
+            int entryIndex = line - HEADER_LINES;
+            if (entryIndex >= 0 && entryIndex < entries.size()) {
+                result.add(entries.get(entryIndex));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * マーク済みエントリがあればそれを返し、なければカーソル行のエントリを返す。
+     * ファイル操作コマンドの対象解決用。
+     */
+    static ListIterable<TreeDiredEntry> resolveTargets(Window window, TreeDiredMode mode) {
+        var markedPaths = mode.getModel().getMarkedPaths();
+        if (markedPaths.notEmpty()) {
+            ListIterable<TreeDiredEntry> entries = mode.getModel().getVisibleEntries();
+            return entries.select(e -> markedPaths.contains(e.path()));
+        }
+        return resolve(window, mode).map(Lists.immutable::of).orElseGet(Lists.immutable::empty);
     }
 }

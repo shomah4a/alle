@@ -61,8 +61,11 @@ import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredFindFileOrToggleCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredMarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRefreshCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleMarkCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUnmarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUpDirectoryCommand;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -256,12 +259,18 @@ public final class EditorCore {
         var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
         var upDirectoryCommand = new TreeDiredUpDirectoryCommand();
         var refreshCommand = new TreeDiredRefreshCommand();
+        var markCommand = new TreeDiredMarkCommand();
+        var unmarkCommand = new TreeDiredUnmarkCommand();
+        var toggleMarkCommand = new TreeDiredToggleMarkCommand();
         var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
         var diredHistory = new InputHistory();
         registry.register(toggleCommand);
         registry.register(findFileOrToggleCommand);
         registry.register(upDirectoryCommand);
         registry.register(refreshCommand);
+        registry.register(markCommand);
+        registry.register(unmarkCommand);
+        registry.register(toggleMarkCommand);
         var treeDiredCommand = new TreeDiredCommand(
                 directoryLister,
                 Path.of("").toAbsolutePath(),
@@ -271,7 +280,10 @@ public final class EditorCore {
                 findFileOrToggleCommand,
                 upDirectoryCommand,
                 refreshCommand,
-                killBufferCmd);
+                killBufferCmd,
+                markCommand,
+                unmarkCommand,
+                toggleMarkCommand);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
         return registry;

@@ -30,6 +30,9 @@ public class TreeDiredCommand implements Command {
     private final TreeDiredUpDirectoryCommand upDirectoryCommand;
     private final TreeDiredRefreshCommand refreshCommand;
     private final Command killBufferCommand;
+    private final TreeDiredMarkCommand markCommand;
+    private final TreeDiredUnmarkCommand unmarkCommand;
+    private final TreeDiredToggleMarkCommand toggleMarkCommand;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
@@ -40,7 +43,10 @@ public class TreeDiredCommand implements Command {
             TreeDiredFindFileOrToggleCommand findFileOrToggleCommand,
             TreeDiredUpDirectoryCommand upDirectoryCommand,
             TreeDiredRefreshCommand refreshCommand,
-            Command killBufferCommand) {
+            Command killBufferCommand,
+            TreeDiredMarkCommand markCommand,
+            TreeDiredUnmarkCommand unmarkCommand,
+            TreeDiredToggleMarkCommand toggleMarkCommand) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
@@ -50,6 +56,9 @@ public class TreeDiredCommand implements Command {
         this.upDirectoryCommand = upDirectoryCommand;
         this.refreshCommand = refreshCommand;
         this.killBufferCommand = killBufferCommand;
+        this.markCommand = markCommand;
+        this.unmarkCommand = unmarkCommand;
+        this.toggleMarkCommand = toggleMarkCommand;
     }
 
     @Override
@@ -125,12 +134,20 @@ public class TreeDiredCommand implements Command {
         keymap.bind(KeyStroke.of('\t'), toggleCommand);
         // Enter: find-file-or-toggle
         keymap.bind(KeyStroke.of('\n'), findFileOrToggleCommand);
+        // f: find-file-or-toggle
+        keymap.bind(KeyStroke.of('f'), findFileOrToggleCommand);
         // ^: up-directory
         keymap.bind(KeyStroke.of('^'), upDirectoryCommand);
         // g: refresh
         keymap.bind(KeyStroke.of('g'), refreshCommand);
         // q: kill-buffer
         keymap.bind(KeyStroke.of('q'), killBufferCommand);
+        // m: mark
+        keymap.bind(KeyStroke.of('m'), markCommand);
+        // u: unmark
+        keymap.bind(KeyStroke.of('u'), unmarkCommand);
+        // t: toggle-mark
+        keymap.bind(KeyStroke.of('t'), toggleMarkCommand);
 
         return keymap;
     }
