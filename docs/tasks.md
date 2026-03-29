@@ -38,10 +38,11 @@
 - 現在はalle.active_window()を直接呼んでいる
 - ctx経由でウィンドウ・バッファにアクセスするよう変更する
 
-### Tree Dired: mark/unmark, ファイル操作
-- mark (m) / unmark (u) でエントリを選択
-- cp, mv, rm 等のファイル操作コマンド
-- マーク済みエントリに対する一括操作
+### kill-buffer 後の切り替え先が previousBuffer を考慮しない
+- KillBufferCommand.doKill で切り替え先を決定する際、previousBuffer を参照していない
+- findReplacementBuffer が bufferManager から適当なバッファを選んでいる
+- さらに setBuffer → clearPreviousBufferIf の順序により previousBuffer が消える
+- dired からファイルを開き C-x k で閉じると dired に戻れない問題の原因
 
 ### Tree Dired: シンボリックリンク循環の保護
 - collectEntries の再帰にdepth上限を設ける
