@@ -302,7 +302,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             String userInput = getUserInput(promptLength);
-            var candidates = completer.complete(userInput);
+            var candidates = completer.sortedComplete(userInput);
             var outcome = CompletionResult.resolveDetailed(userInput, candidates);
 
             switch (outcome) {
@@ -512,7 +512,7 @@ public class MinibufferInputPrompter implements InputPrompter {
                 if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
                     // *Completions* 表示中: 候補を再計算して更新
                     String userInput = getUserInput(promptLength);
-                    var candidates = completer.complete(userInput);
+                    var candidates = completer.sortedComplete(userInput);
                     if (candidates.isEmpty()) {
                         closeCompletionsWindow();
                     } else {

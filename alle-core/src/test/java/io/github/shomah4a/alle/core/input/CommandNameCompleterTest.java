@@ -46,8 +46,8 @@ class CommandNameCompleterTest {
     }
 
     @Test
-    void 候補がソートされて返る() {
-        var result = completer.complete("f");
+    void sortedCompleteで候補がlabel順にソートされて返る() {
+        var result = completer.sortedComplete("f");
         assertEquals("find-file", result.get(0).value());
         assertEquals("forward-char", result.get(1).value());
         assertEquals("forward-word", result.get(2).value());

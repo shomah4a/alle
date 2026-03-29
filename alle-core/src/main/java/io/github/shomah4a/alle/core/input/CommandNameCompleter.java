@@ -21,6 +21,6 @@ public class CommandNameCompleter implements Completer {
         return registry.registeredNames()
                 .select(name -> name.startsWith(input))
                 .collect(CompletionCandidate::terminal)
-                .toSortedListBy(CompletionCandidate::value);
+                .toList();
     }
 }

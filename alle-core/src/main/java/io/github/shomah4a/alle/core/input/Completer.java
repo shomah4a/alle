@@ -16,4 +16,16 @@ public interface Completer {
      * @return 補完候補のリスト
      */
     ListIterable<CompletionCandidate> complete(String input);
+
+    /**
+     * 入力文字列に対する補完候補をlabelの自然順でソートして返す。
+     * 表示用途など候補の順序が重要な場面ではこちらを使用する。
+     * このメソッドはオーバーライドせず、そのまま使用すること。
+     *
+     * @param input 現在の入力文字列
+     * @return ソート済みの補完候補のリスト
+     */
+    default ListIterable<CompletionCandidate> sortedComplete(String input) {
+        return complete(input).toSortedListBy(CompletionCandidate::label);
+    }
 }
