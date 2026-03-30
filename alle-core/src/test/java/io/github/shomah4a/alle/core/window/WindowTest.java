@@ -204,6 +204,7 @@ class WindowTest {
         @Test
         void カーソルが表示範囲より右にある場合displayStartColumnが進む() {
             var window = createWindow();
+            window.setTruncateLines(true);
             // "abcdefghij" = 10文字、visibleColumns=5
             window.insert("abcdefghij");
             // カーソルはcol=10
@@ -215,6 +216,7 @@ class WindowTest {
         @Test
         void カーソルが表示範囲より左にある場合displayStartColumnが戻る() {
             var window = createWindow();
+            window.setTruncateLines(true);
             window.insert("abcdefghij");
             window.ensurePointHorizontallyVisible(5);
             // displayStartColumn = 6
@@ -226,6 +228,7 @@ class WindowTest {
         @Test
         void カーソルが表示範囲内の場合displayStartColumnは変わらない() {
             var window = createWindow();
+            window.setTruncateLines(true);
             window.insert("abcdefghij");
             window.ensurePointHorizontallyVisible(5);
             // displayStartColumn = 6, cursor at col=10
@@ -237,6 +240,7 @@ class WindowTest {
         @Test
         void 全角文字でカーソルが右に出る場合displayStartColumnが丸められる() {
             var window = createWindow();
+            window.setTruncateLines(true);
             // "あいうえお" = 全角5文字、各2カラム、合計10カラム
             window.insert("あいうえお");
             // カーソルはcol=10、visibleColumns=6
@@ -256,6 +260,7 @@ class WindowTest {
         @Test
         void バッファ切り替えでdisplayStartColumnがリセットされる() {
             var window = createWindow();
+            window.setTruncateLines(true);
             window.insert("abcdefghij");
             window.ensurePointHorizontallyVisible(5);
             assertTrue(window.getDisplayStartColumn() > 0);
@@ -537,14 +542,15 @@ class WindowTest {
     class 行切り詰めモード {
 
         @Test
-        void デフォルトは切り詰めモード() {
+        void デフォルトは折り返しモード() {
             var window = createWindow();
-            assertTrue(window.isTruncateLines());
+            assertFalse(window.isTruncateLines());
         }
 
         @Test
         void 折り返しモードに切り替えるとdisplayStartColumnが0にリセットされる() {
             var window = createWindow();
+            window.setTruncateLines(true);
             window.insert("abcdefghijklmnopqrstuvwxyz");
             window.ensurePointHorizontallyVisible(10);
             // 水平スクロール位置がリセットされる

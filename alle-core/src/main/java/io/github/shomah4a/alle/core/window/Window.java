@@ -20,7 +20,7 @@ public class Window {
     private int displayStartColumn;
     private @Nullable Integer mark;
     private boolean highlightPointLine;
-    private boolean truncateLines = true;
+    private boolean truncateLines = false;
     private volatile ViewportSize viewportSize = new ViewportSize(0, 0);
 
     public Window(BufferFacade buffer) {

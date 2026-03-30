@@ -23,6 +23,7 @@ class ScrollDownCommandTest {
     void setUp() {
         var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
         var window = new Window(buffer);
+        window.setTruncateLines(true);
         var minibuffer = new Window(
                 new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
         frame = new Frame(window, minibuffer);
