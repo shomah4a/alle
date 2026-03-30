@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.Nested;
@@ -73,7 +74,7 @@ class RegexStylerRegionMatchTest {
             var regionRule = new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE);
             var rules = Lists.immutable.of((StylingRule) regionRule);
             var styler = new RegexStyler(rules);
-            var inRegion = new StylingState(java.util.Optional.of(regionRule));
+            var inRegion = new StylingState(Optional.of(regionRule));
 
             var result = styler.styleLineWithState("middle of comment", inRegion);
 
@@ -89,7 +90,7 @@ class RegexStylerRegionMatchTest {
             var regionRule = new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE);
             var rules = Lists.immutable.of((StylingRule) regionRule);
             var styler = new RegexStyler(rules);
-            var inRegion = new StylingState(java.util.Optional.of(regionRule));
+            var inRegion = new StylingState(Optional.of(regionRule));
 
             var result = styler.styleLineWithState("end */ normal", inRegion);
 
@@ -138,7 +139,7 @@ class RegexStylerRegionMatchTest {
             var rules = Lists.immutable.of((StylingRule) regionRule, (StylingRule)
                     new StylingRule.PatternMatch(Pattern.compile("keyword"), FaceName.KEYWORD));
             var styler = new RegexStyler(rules);
-            var inRegion = new StylingState(java.util.Optional.of(regionRule));
+            var inRegion = new StylingState(Optional.of(regionRule));
 
             var result = styler.styleLineWithState("keyword in comment", inRegion);
 
@@ -175,7 +176,7 @@ class RegexStylerRegionMatchTest {
             var regionRule = new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE);
             var rules = Lists.immutable.of((StylingRule) regionRule);
             var styler = new RegexStyler(rules);
-            var inRegion = new StylingState(java.util.Optional.of(regionRule));
+            var inRegion = new StylingState(Optional.of(regionRule));
 
             var result = styler.styleLineWithState("", inRegion);
 
@@ -244,7 +245,7 @@ class RegexStylerRegionMatchTest {
             var rules = Lists.immutable.of((StylingRule) regionRule, (StylingRule)
                     new StylingRule.PatternMatch(Pattern.compile("keyword"), FaceName.KEYWORD));
             var styler = new RegexStyler(rules);
-            var inRegion = new StylingState(java.util.Optional.of(regionRule));
+            var inRegion = new StylingState(Optional.of(regionRule));
 
             var result = styler.styleLineWithState("end */ keyword", inRegion);
 
@@ -261,7 +262,7 @@ class RegexStylerRegionMatchTest {
             var regionRule = new StylingRule.RegionMatch(Pattern.compile("/\\*"), Pattern.compile("\\*/"), CODE_FACE);
             var rules = Lists.immutable.of((StylingRule) regionRule);
             var styler = new RegexStyler(rules);
-            var inRegion = new StylingState(java.util.Optional.of(regionRule));
+            var inRegion = new StylingState(Optional.of(regionRule));
 
             var result = styler.styleLineWithState("end */ text /* new", inRegion);
 

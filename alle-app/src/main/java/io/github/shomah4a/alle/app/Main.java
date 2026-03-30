@@ -5,27 +5,39 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.ansi.UnixLikeTerminal;
 import com.googlecode.lanterna.terminal.ansi.UnixTerminal;
 import io.github.shomah4a.alle.core.EditorCore;
+import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FileAttributes;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.MinibufferInputPrompter;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.styling.DefaultFaceTheme;
+import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.EvalExpressionCommand;
 import io.github.shomah4a.alle.script.MessageBufferOutputStream;
+import io.github.shomah4a.alle.script.ScriptEngine;
+import io.github.shomah4a.alle.script.ScriptResult;
 import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
+import io.github.shomah4a.alle.tui.FaceResolver;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermissions;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -72,7 +84,7 @@ public final class Main {
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
-        var syntaxAnalyzerRegistry = io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins();
+        var syntaxAnalyzerRegistry = SyntaxAnalyzerRegistry.createWithBuiltins();
         var editorFacade = new EditorFacade(
                 core.frame(),
                 msg,
@@ -102,10 +114,7 @@ public final class Main {
                         KeyStroke.meta(':'),
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
 
-        var renderer = new ScreenRenderer(
-                screen,
-                new io.github.shomah4a.alle.core.styling.DefaultFaceTheme(),
-                new io.github.shomah4a.alle.tui.FaceResolver());
+        var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner =
                 new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame(), core.messageBuffer());
 
@@ -120,7 +129,7 @@ public final class Main {
     }
 
     private static ListIterable<DirectoryEntry> listDirectory(Path directory) throws IOException {
-        var entries = org.eclipse.collections.api.factory.Lists.mutable.<DirectoryEntry>empty();
+        var entries = Lists.mutable.<DirectoryEntry>empty();
         try (var stream = Files.list(directory)) {
             stream.forEach(entry -> {
                 var attrs = readFileAttributes(entry);
@@ -134,26 +143,22 @@ public final class Main {
         return entries;
     }
 
-    private static io.github.shomah4a.alle.core.input.FileAttributes readFileAttributes(Path path) {
+    private static FileAttributes readFileAttributes(Path path) {
         try {
-            var posix = Files.readAttributes(path, java.nio.file.attribute.PosixFileAttributes.class);
-            var perms = java.nio.file.attribute.PosixFilePermissions.toString(posix.permissions());
+            var posix = Files.readAttributes(path, PosixFileAttributes.class);
+            var perms = PosixFilePermissions.toString(posix.permissions());
             var owner = posix.owner().getName();
             var group = posix.group().getName();
             var size = posix.size();
             var lastModified = posix.lastModifiedTime().toInstant();
             int linkCount = (Integer) Files.getAttribute(path, "unix:nlink");
-            return new io.github.shomah4a.alle.core.input.FileAttributes(
-                    perms, linkCount, owner, group, size, lastModified);
+            return new FileAttributes(perms, linkCount, owner, group, size, lastModified);
         } catch (IOException e) {
-            return io.github.shomah4a.alle.core.input.FileAttributes.EMPTY;
+            return FileAttributes.EMPTY;
         }
     }
 
-    private static void loadUserInit(
-            io.github.shomah4a.alle.script.ScriptEngine scriptEngine,
-            io.github.shomah4a.alle.core.buffer.MessageBuffer msg,
-            io.github.shomah4a.alle.core.buffer.MessageBuffer warnings) {
+    private static void loadUserInit(ScriptEngine scriptEngine, MessageBuffer msg, MessageBuffer warnings) {
         Path initFile = Path.of(System.getProperty("user.home"), ".alle.d", "init.py");
         if (!Files.isRegularFile(initFile)) {
             return;
@@ -162,11 +167,11 @@ public final class Main {
         try {
             String code = Files.readString(initFile, StandardCharsets.UTF_8);
             var result = scriptEngine.eval(code);
-            if (result instanceof io.github.shomah4a.alle.script.ScriptResult.Failure failure) {
+            if (result instanceof ScriptResult.Failure failure) {
                 msg.message("init.py error: " + failure.message());
                 warnings.message("init.py error: " + failure.message());
-                var sw = new java.io.StringWriter();
-                failure.cause().printStackTrace(new java.io.PrintWriter(sw));
+                var sw = new StringWriter();
+                failure.cause().printStackTrace(new PrintWriter(sw));
                 for (String line : sw.toString().lines().toList()) {
                     warnings.message(line);
                 }

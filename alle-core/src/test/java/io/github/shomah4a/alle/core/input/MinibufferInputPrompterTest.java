@@ -13,9 +13,12 @@ import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.command.KillRing;
+import io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -242,7 +245,7 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()));
+                    new CommandResolver(new CommandRegistry()));
 
             // ミニバッファがアクティブな状態でキー入力
             loop.processKey(KeyStroke.of('t'));
@@ -270,7 +273,7 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()));
+                    new CommandResolver(new CommandRegistry()));
 
             loop.processKey(KeyStroke.of('a'));
             loop.processKey(KeyStroke.of('b'));
@@ -713,7 +716,7 @@ class MinibufferInputPrompterTest {
         var entryOpt = keymapOpt.get().lookup(keyStroke);
         assertTrue(entryOpt.isPresent(), "キー " + keyStroke + " に対するバインドがありません");
         var entry = entryOpt.get();
-        if (entry instanceof io.github.shomah4a.alle.core.keybind.KeymapEntry.CommandBinding binding) {
+        if (entry instanceof KeymapEntry.CommandBinding binding) {
             var context = new CommandContext(
                     frame,
                     new BufferManager(),
@@ -722,12 +725,12 @@ class MinibufferInputPrompterTest {
                     Optional.of(keyStroke),
                     Optional.of(binding.command().name()),
                     lastCommand,
-                    new io.github.shomah4a.alle.core.command.KillRing(),
-                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, new SettingsRegistry()),
-                    new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
+                    new KillRing(),
+                    new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
+                    new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()),
-                    new io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController());
+                    new CommandResolver(new CommandRegistry()),
+                    new NoOpOverridingKeymapController());
             binding.command().execute(context).join();
         }
     }

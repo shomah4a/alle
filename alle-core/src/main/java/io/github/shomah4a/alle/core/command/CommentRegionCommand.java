@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
@@ -41,8 +42,7 @@ public class CommentRegionCommand implements Command {
         return CompletableFuture.completedFuture(null);
     }
 
-    private void commentRegion(
-            io.github.shomah4a.alle.core.buffer.BufferFacade buffer, int startLine, int endLine, String commentString) {
+    private void commentRegion(BufferFacade buffer, int startLine, int endLine, String commentString) {
         for (int li = endLine; li >= startLine; li--) {
             int lineStart = buffer.lineStartOffset(li);
             String lineText = buffer.lineText(li);
@@ -51,8 +51,7 @@ public class CommentRegionCommand implements Command {
         }
     }
 
-    private void uncommentRegion(
-            io.github.shomah4a.alle.core.buffer.BufferFacade buffer, int startLine, int endLine, String commentString) {
+    private void uncommentRegion(BufferFacade buffer, int startLine, int endLine, String commentString) {
         for (int li = endLine; li >= startLine; li--) {
             String lineText = buffer.lineText(li);
             int indentLen = countLeadingWhitespace(lineText);
@@ -67,8 +66,7 @@ public class CommentRegionCommand implements Command {
         }
     }
 
-    private static boolean isAllCommented(
-            io.github.shomah4a.alle.core.buffer.BufferFacade buffer, int startLine, int endLine, String commentString) {
+    private static boolean isAllCommented(BufferFacade buffer, int startLine, int endLine, String commentString) {
         for (int li = startLine; li <= endLine; li++) {
             String lineText = buffer.lineText(li);
             String stripped = lineText.stripLeading();

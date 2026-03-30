@@ -5,6 +5,8 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
+import io.github.shomah4a.alle.core.styling.FaceName;
+import io.github.shomah4a.alle.core.styling.StyledSpan;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
@@ -227,7 +229,7 @@ public class BufferFacade {
         return buffer.resolvePointGuard(index, forward);
     }
 
-    public void putFace(int start, int end, io.github.shomah4a.alle.core.styling.FaceName faceName) {
+    public void putFace(int start, int end, FaceName faceName) {
         buffer.putFace(start, end, faceName);
     }
 
@@ -235,12 +237,11 @@ public class BufferFacade {
         buffer.removeFace(start, end);
     }
 
-    public void removeFaceByName(int start, int end, io.github.shomah4a.alle.core.styling.FaceName faceName) {
+    public void removeFaceByName(int start, int end, FaceName faceName) {
         buffer.removeFaceByName(start, end, faceName);
     }
 
-    public org.eclipse.collections.api.list.ListIterable<io.github.shomah4a.alle.core.styling.StyledSpan> getFaceSpans(
-            int start, int end) {
+    public ListIterable<StyledSpan> getFaceSpans(int start, int end) {
         return buffer.getFaceSpans(start, end);
     }
 

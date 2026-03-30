@@ -17,6 +17,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowLayout;
+import java.util.Optional;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -323,8 +324,8 @@ class RenderSnapshotFactoryTest {
                 }
 
                 @Override
-                public java.util.Optional<Keymap> keymap() {
-                    return java.util.Optional.empty();
+                public Optional<Keymap> keymap() {
+                    return Optional.empty();
                 }
             });
             var minibuffer = createBuffer("*Minibuffer*", "");

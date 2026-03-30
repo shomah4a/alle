@@ -49,6 +49,7 @@ import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.command.ToggleTruncateLinesCommand;
 import io.github.shomah4a.alle.core.command.UndoCommand;
 import io.github.shomah4a.alle.core.command.YankCommand;
+import io.github.shomah4a.alle.core.input.DefaultFileOperations;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
@@ -69,17 +70,23 @@ import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCopyCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredDeleteCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredFindFileOrToggleCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredMarkCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredNoOpCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRefreshCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRenameCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleMarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUnmarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUpDirectoryCommand;
+import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
+import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
+import io.github.shomah4a.alle.core.search.ISearchHistory;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZoneId;
 import java.util.function.Function;
 
 /**
@@ -245,7 +252,7 @@ public final class EditorCore {
                 autoModeMap,
                 modeRegistry,
                 filePathHistory,
-                path -> java.nio.file.Files.isDirectory(path));
+                path -> Files.isDirectory(path));
         registry.register(findFileCommand);
         registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
         registry.register(new RevertBufferCommand(bufferIO));
@@ -271,9 +278,9 @@ public final class EditorCore {
         registry.register(new ToggleTruncateLinesCommand());
         registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, shutdownRequestable));
         registry.register(new ProcessQuitCommand(shutdownRequestable));
-        var isearchHistory = new io.github.shomah4a.alle.core.search.ISearchHistory();
-        registry.register(new io.github.shomah4a.alle.core.search.ISearchForwardCommand(isearchHistory));
-        registry.register(new io.github.shomah4a.alle.core.search.ISearchBackwardCommand(isearchHistory));
+        var isearchHistory = new ISearchHistory();
+        registry.register(new ISearchForwardCommand(isearchHistory));
+        registry.register(new ISearchBackwardCommand(isearchHistory));
 
         // Tree Dired コマンド群（モードスコープ）
         var toggleCommand = new TreeDiredToggleCommand();
@@ -283,7 +290,7 @@ public final class EditorCore {
         var markCommand = new TreeDiredMarkCommand();
         var unmarkCommand = new TreeDiredUnmarkCommand();
         var toggleMarkCommand = new TreeDiredToggleMarkCommand();
-        var fileOperations = new io.github.shomah4a.alle.core.input.DefaultFileOperations();
+        var fileOperations = new DefaultFileOperations();
         var diredConfirmHistory = new InputHistory();
         var copyCommand = new TreeDiredCopyCommand(fileOperations, new InputHistory(), diredConfirmHistory);
         var renameCommand = new TreeDiredRenameCommand(fileOperations, new InputHistory());
@@ -327,7 +334,7 @@ public final class EditorCore {
                 directoryLister,
                 Path.of("").toAbsolutePath(),
                 diredHistory,
-                java.time.ZoneId.systemDefault(),
+                ZoneId.systemDefault(),
                 diredKeymap,
                 diredCommandRegistry);
         registry.register(treeDiredCommand);
@@ -350,7 +357,7 @@ public final class EditorCore {
             Command chmodCommand,
             Command chownCommand) {
         var keymap = new Keymap("tree-dired");
-        keymap.setDefaultCommand(new io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredNoOpCommand());
+        keymap.setDefaultCommand(new TreeDiredNoOpCommand());
         keymap.bind(KeyStroke.of('\t'), toggleCommand);
         keymap.bind(KeyStroke.of('\n'), findFileOrToggleCommand);
         keymap.bind(KeyStroke.of('f'), findFileOrToggleCommand);

@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.command;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class CopyRegionCommandTest {
@@ -60,6 +61,6 @@ class CopyRegionCommandTest {
     private CommandContext createContext(KillRing killRing) {
         var defaultCtx = TestCommandContextFactory.createDefault();
         return TestCommandContextFactory.create(
-                defaultCtx.frame(), defaultCtx.bufferManager(), killRing, java.util.Optional.empty());
+                defaultCtx.frame(), defaultCtx.bufferManager(), killRing, Optional.empty());
     }
 }

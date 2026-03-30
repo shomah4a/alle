@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.command.Command;
+import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.mode.MajorMode;
@@ -14,6 +15,7 @@ import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.RegexStyler;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
+import org.eclipse.collections.api.factory.Sets;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.jupiter.api.AfterEach;
@@ -231,8 +233,7 @@ class PythonJavaInterfaceTest {
                 """);
         Value pyKeymap = context.eval("python", "km");
         Keymap keymap = pyKeymap.as(Keymap.class);
-        var entry = keymap.lookup(new io.github.shomah4a.alle.core.keybind.KeyStroke(
-                org.eclipse.collections.api.factory.Sets.immutable.empty(), 'a'));
+        var entry = keymap.lookup(new KeyStroke(Sets.immutable.empty(), 'a'));
         assertTrue(entry.isPresent());
         assertInstanceOf(KeymapEntry.CommandBinding.class, entry.get());
     }

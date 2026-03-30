@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.TextMode;
@@ -197,7 +198,7 @@ class BufferLocalSettingsTest {
             }
 
             @Override
-            public Optional<io.github.shomah4a.alle.core.keybind.Keymap> keymap() {
+            public Optional<Keymap> keymap() {
                 return Optional.empty();
             }
 
@@ -216,7 +217,7 @@ class BufferLocalSettingsTest {
             }
 
             @Override
-            public Optional<io.github.shomah4a.alle.core.keybind.Keymap> keymap() {
+            public Optional<Keymap> keymap() {
                 return Optional.empty();
             }
 

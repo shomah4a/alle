@@ -49,8 +49,7 @@ public class MessageBuffer implements Buffer {
         this.lock = new ReentrantLock();
         this.undoManager = new UndoManager();
         this.majorMode = new TextMode();
-        this.settings = new BufferLocalSettings(
-                settingsRegistry, () -> majorMode, org.eclipse.collections.api.factory.Lists.immutable::empty);
+        this.settings = new BufferLocalSettings(settingsRegistry, () -> majorMode, Lists.immutable::empty);
         this.showingMessage = false;
     }
 

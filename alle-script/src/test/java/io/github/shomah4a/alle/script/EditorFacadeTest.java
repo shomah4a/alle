@@ -12,6 +12,7 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -42,7 +43,7 @@ class EditorFacadeTest {
                 new Keymap("global"),
                 new ModeRegistry(),
                 new AutoModeMap(TextMode::new),
-                new io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry());
+                new SyntaxAnalyzerRegistry());
     }
 
     @Test

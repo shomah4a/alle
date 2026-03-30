@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.graalvm.polyglot.Value;
+import org.jspecify.annotations.Nullable;
 
 /**
  * スクリプトに公開するエディタのルートファサード。
@@ -85,7 +86,7 @@ public class EditorFacade implements Loggable {
      * @param name コマンド名
      * @return コマンドが見つかった場合はそのCommand、見つからない場合はnull
      */
-    public @org.jspecify.annotations.Nullable Command lookupCommand(String name) {
+    public @Nullable Command lookupCommand(String name) {
         return commandRegistry.lookup(name).orElse(null);
     }
 
@@ -191,8 +192,7 @@ public class EditorFacade implements Loggable {
      * @param language 言語名（例: "python"）
      * @return 言語サポート、または未対応の場合null
      */
-    public SyntaxAnalyzerRegistry.@org.jspecify.annotations.Nullable LanguageSupport createLanguageSupport(
-            String language) {
+    public SyntaxAnalyzerRegistry.@Nullable LanguageSupport createLanguageSupport(String language) {
         return syntaxAnalyzerRegistry.create(language).orElse(null);
     }
 }

@@ -13,6 +13,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
+import org.eclipse.collections.api.list.ListIterable;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -335,8 +336,7 @@ public class MinibufferInputPrompter implements InputPrompter {
             return context.lastCommand().map("minibuffer-complete"::equals).orElse(false);
         }
 
-        private void showCompletions(
-                org.eclipse.collections.api.list.ListIterable<CompletionCandidate> candidates, CommandContext context) {
+        private void showCompletions(ListIterable<CompletionCandidate> candidates, CommandContext context) {
             completionsModel = new CompletionsModel(candidates);
             var displayText = completionsModel.formatForDisplay();
 

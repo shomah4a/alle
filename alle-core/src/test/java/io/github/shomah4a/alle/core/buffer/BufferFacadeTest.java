@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -105,9 +106,7 @@ class BufferFacadeTest {
 
         @Test
         void setFilePathでReadOnlyBufferExceptionがスローされる() {
-            assertThrows(
-                    ReadOnlyBufferException.class,
-                    () -> readOnlyFacade.setFilePath(java.nio.file.Path.of("/tmp/test")));
+            assertThrows(ReadOnlyBufferException.class, () -> readOnlyFacade.setFilePath(Path.of("/tmp/test")));
         }
 
         @Test

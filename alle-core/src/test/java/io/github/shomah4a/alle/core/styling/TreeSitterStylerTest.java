@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.syntax.TreeSitterSession;
+import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.junit.jupiter.api.BeforeEach;
@@ -325,7 +326,7 @@ class TreeSitterStylerTest {
     /**
      * 指定位置に一致するスパンを検索する。
      */
-    private static java.util.Optional<StyledSpan> findSpan(ListIterable<StyledSpan> spans, int start, int end) {
+    private static Optional<StyledSpan> findSpan(ListIterable<StyledSpan> spans, int start, int end) {
         return spans.detectOptional(s -> s.start() == start && s.end() == end);
     }
 }

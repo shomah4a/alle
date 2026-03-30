@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
@@ -143,7 +144,7 @@ public class CommandResolver {
     public ImmutableSet<String> completeFqcn(String prefix) {
         int dotIndex = prefix.indexOf(SEPARATOR);
         if (dotIndex < 0) {
-            return org.eclipse.collections.api.factory.Sets.immutable.empty();
+            return Sets.immutable.empty();
         }
         String modeName = prefix.substring(0, dotIndex);
         String partialCommand = prefix.substring(dotIndex + 1);

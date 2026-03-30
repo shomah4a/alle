@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class YankCommandTest {
@@ -56,6 +57,6 @@ class YankCommandTest {
     private CommandContext createContext(KillRing killRing) {
         var defaultCtx = TestCommandContextFactory.createDefault();
         return TestCommandContextFactory.create(
-                defaultCtx.frame(), defaultCtx.bufferManager(), killRing, java.util.Optional.empty());
+                defaultCtx.frame(), defaultCtx.bufferManager(), killRing, Optional.empty());
     }
 }

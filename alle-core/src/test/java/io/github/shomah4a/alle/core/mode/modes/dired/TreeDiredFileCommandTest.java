@@ -10,7 +10,10 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.command.KillRing;
+import io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController;
+import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FileAttributes;
@@ -63,10 +66,7 @@ class TreeDiredFileCommandTest {
 
             @Override
             public CompletableFuture<PromptResult> prompt(
-                    String message,
-                    String initialValue,
-                    InputHistory history,
-                    io.github.shomah4a.alle.core.input.Completer completer) {
+                    String message, String initialValue, InputHistory history, Completer completer) {
                 return prompt(message, history);
             }
         };
@@ -82,7 +82,7 @@ class TreeDiredFileCommandTest {
         var lister = stubLister(entries);
         var model = new TreeDiredModel(rootDir, lister);
         var keymap = new Keymap("tree-dired-test");
-        var mode = new TreeDiredMode(model, keymap, UTC, new io.github.shomah4a.alle.core.command.CommandRegistry());
+        var mode = new TreeDiredMode(model, keymap, UTC, new CommandRegistry());
 
         var settings = new SettingsRegistry();
         var bufferFacade = new BufferFacade(new TextBuffer("*Dired " + rootDir + "*", new GapTextModel(), settings));
@@ -109,8 +109,8 @@ class TreeDiredFileCommandTest {
                 new MessageBuffer("*Messages*", 100, settings),
                 new MessageBuffer("*Warnings*", 100, settings),
                 settings,
-                new io.github.shomah4a.alle.core.command.CommandResolver(registry),
-                new io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController());
+                new CommandResolver(registry),
+                new NoOpOverridingKeymapController());
 
         return new DiredSetup(context, mode, window);
     }

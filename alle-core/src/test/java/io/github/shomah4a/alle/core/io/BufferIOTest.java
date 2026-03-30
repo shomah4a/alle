@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -119,9 +122,8 @@ class BufferIOTest {
         @Test
         void ファイルパスが未設定のバッファを保存すると例外が発生する() {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
-            var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
-            var buffer = new io.github.shomah4a.alle.core.buffer.BufferFacade(
-                    new io.github.shomah4a.alle.core.buffer.TextBuffer("nopath", textModel, new SettingsRegistry()));
+            var textModel = new GapTextModel();
+            var buffer = new BufferFacade(new TextBuffer("nopath", textModel, new SettingsRegistry()));
 
             assertThrows(IllegalStateException.class, () -> io.save(buffer));
         }
@@ -186,9 +188,8 @@ class BufferIOTest {
         @Test
         void ファイルパスが未設定のバッファをreloadすると例外が発生する() {
             var io = new BufferIO(inMemoryReader(), inMemoryWriter(), new SettingsRegistry());
-            var textModel = new io.github.shomah4a.alle.core.textmodel.GapTextModel();
-            var buffer = new io.github.shomah4a.alle.core.buffer.BufferFacade(
-                    new io.github.shomah4a.alle.core.buffer.TextBuffer("nopath", textModel, new SettingsRegistry()));
+            var textModel = new GapTextModel();
+            var buffer = new BufferFacade(new TextBuffer("nopath", textModel, new SettingsRegistry()));
 
             assertThrows(IllegalStateException.class, () -> io.reload(buffer));
         }
