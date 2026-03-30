@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.mode.modes.dired;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.window.Window;
+import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
@@ -57,6 +58,24 @@ final class TreeDiredEntryResolver {
             }
         }
         return result;
+    }
+
+    /**
+     * 対象エントリの親ディレクトリがすべて同一かどうかを返す。
+     * 対象が1件以下の場合は常に true を返す。
+     */
+    static boolean hasSameParentDirectory(ListIterable<TreeDiredEntry> targets) {
+        if (targets.size() <= 1) {
+            return true;
+        }
+        Path firstParent = targets.get(0).path().getParent();
+        return targets.allSatisfy(e -> {
+            Path parent = e.path().getParent();
+            if (firstParent == null) {
+                return parent == null;
+            }
+            return firstParent.equals(parent);
+        });
     }
 
     /**

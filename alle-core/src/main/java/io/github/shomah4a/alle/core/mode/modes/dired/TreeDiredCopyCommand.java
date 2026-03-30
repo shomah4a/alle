@@ -50,6 +50,11 @@ public class TreeDiredCopyCommand implements Command {
             return CompletableFuture.completedFuture(null);
         }
 
+        if (!TreeDiredEntryResolver.hasSameParentDirectory(targets)) {
+            context.messageBuffer().message("複数ディレクトリにまたがるファイルのコピーはできません");
+            return CompletableFuture.completedFuture(null);
+        }
+
         String prompt;
         String initialValue;
         if (targets.size() == 1) {

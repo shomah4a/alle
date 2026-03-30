@@ -277,6 +277,58 @@ class TreeDiredFileCommandTest {
     }
 
     @Nested
+    class コピーコマンドのディレクトリまたぎバリデーション {
+
+        @Test
+        void 異なるディレクトリのファイルをマークしてコピーするとエラーになる() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(
+                    Path.of("/p"),
+                    Lists.immutable.of(
+                            new DirectoryEntry.Directory(Path.of("/p/sub"), A),
+                            new DirectoryEntry.File(Path.of("/p/a.txt"), A)));
+            entries.put(Path.of("/p/sub"), Lists.immutable.of(new DirectoryEntry.File(Path.of("/p/sub/b.txt"), A)));
+            var ops = new StubFileOperations();
+            var cmd = new TreeDiredCopyCommand(ops, new InputHistory(), new InputHistory());
+
+            // プロンプトは呼ばれないはずなので空で良い
+            var setup = setupDired(entries, Path.of("/p"), queuePrompter());
+            setup.diredMode().getModel().toggle(Path.of("/p/sub")); // サブディレクトリを展開
+            TreeDiredBufferUpdater.update(setup.window(), setup.diredMode());
+
+            // /p/a.txt と /p/sub/b.txt をマーク（異なるディレクトリ）
+            setup.diredMode().getModel().mark(Path.of("/p/a.txt"));
+            setup.diredMode().getModel().mark(Path.of("/p/sub/b.txt"));
+
+            cmd.execute(setup.context()).join();
+
+            assertTrue(ops.operations.isEmpty(), "コピーが実行されていないこと");
+            assertTrue(setup.diredMode().getModel().isMarked(Path.of("/p/a.txt")), "マークがクリアされていないこと");
+            assertTrue(setup.diredMode().getModel().isMarked(Path.of("/p/sub/b.txt")), "マークがクリアされていないこと");
+        }
+
+        @Test
+        void 同一ディレクトリのファイルを複数マークしてコピーすると正常に実行される() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(
+                    Path.of("/p"),
+                    Lists.immutable.of(
+                            new DirectoryEntry.File(Path.of("/p/a.txt"), A),
+                            new DirectoryEntry.File(Path.of("/p/b.txt"), A)));
+            var ops = new StubFileOperations();
+            var cmd = new TreeDiredCopyCommand(ops, new InputHistory(), new InputHistory());
+
+            var setup = setupDired(entries, Path.of("/p"), queuePrompter("/dest/"));
+            setup.diredMode().getModel().mark(Path.of("/p/a.txt"));
+            setup.diredMode().getModel().mark(Path.of("/p/b.txt"));
+
+            cmd.execute(setup.context()).join();
+
+            assertEquals(2, ops.operations.size());
+        }
+    }
+
+    @Nested
     class リネームコマンド {
 
         @Test
@@ -293,6 +345,35 @@ class TreeDiredFileCommandTest {
 
             assertEquals(1, ops.operations.size());
             assertEquals("move:/p/a.txt->/p/b.txt", ops.operations.get(0));
+        }
+    }
+
+    @Nested
+    class リネームコマンドのディレクトリまたぎバリデーション {
+
+        @Test
+        void 異なるディレクトリのファイルをマークして移動するとエラーになる() {
+            var entries = Maps.mutable.<Path, ListIterable<DirectoryEntry>>empty();
+            entries.put(
+                    Path.of("/p"),
+                    Lists.immutable.of(
+                            new DirectoryEntry.Directory(Path.of("/p/sub"), A),
+                            new DirectoryEntry.File(Path.of("/p/a.txt"), A)));
+            entries.put(Path.of("/p/sub"), Lists.immutable.of(new DirectoryEntry.File(Path.of("/p/sub/b.txt"), A)));
+            var ops = new StubFileOperations();
+            var cmd = new TreeDiredRenameCommand(ops, new InputHistory());
+
+            var setup = setupDired(entries, Path.of("/p"), queuePrompter());
+            setup.diredMode().getModel().toggle(Path.of("/p/sub"));
+            TreeDiredBufferUpdater.update(setup.window(), setup.diredMode());
+
+            setup.diredMode().getModel().mark(Path.of("/p/a.txt"));
+            setup.diredMode().getModel().mark(Path.of("/p/sub/b.txt"));
+
+            cmd.execute(setup.context()).join();
+
+            assertTrue(ops.operations.isEmpty(), "移動が実行されていないこと");
+            assertTrue(setup.diredMode().getModel().isMarked(Path.of("/p/a.txt")), "マークがクリアされていないこと");
         }
     }
 

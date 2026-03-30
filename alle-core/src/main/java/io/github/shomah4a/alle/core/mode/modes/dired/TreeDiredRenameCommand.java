@@ -46,6 +46,11 @@ public class TreeDiredRenameCommand implements Command {
             return CompletableFuture.completedFuture(null);
         }
 
+        if (!TreeDiredEntryResolver.hasSameParentDirectory(targets)) {
+            context.messageBuffer().message("複数ディレクトリにまたがるファイルの移動はできません");
+            return CompletableFuture.completedFuture(null);
+        }
+
         String prompt;
         String initialValue;
         if (targets.size() == 1) {
