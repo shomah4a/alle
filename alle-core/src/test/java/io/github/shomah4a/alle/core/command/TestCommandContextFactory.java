@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * テスト用のCommandContext生成ヘルパー。
  */
-final class TestCommandContextFactory {
+public final class TestCommandContextFactory {
 
     private static final InputPrompter NOOP_PROMPTER =
             (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
@@ -29,21 +29,21 @@ final class TestCommandContextFactory {
     /**
      * テスト用のSettingsRegistryを返す。
      */
-    static SettingsRegistry settingsRegistry() {
+    public static SettingsRegistry settingsRegistry() {
         return SETTINGS_REGISTRY;
     }
 
     /**
      * 最小限のコンテキストを生成する。triggeringKey・コマンド履歴なし。
      */
-    static CommandContext create(Frame frame, BufferManager bufferManager) {
+    public static CommandContext create(Frame frame, BufferManager bufferManager) {
         return create(frame, bufferManager, NOOP_PROMPTER);
     }
 
     /**
      * InputPrompter指定でコンテキストを生成する。triggeringKey・コマンド履歴なし。
      */
-    static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
+    public static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
         return new CommandContext(
                 frame,
                 bufferManager,
@@ -63,7 +63,7 @@ final class TestCommandContextFactory {
     /**
      * triggeringKey付きのコンテキストを生成する。コマンド履歴なし。
      */
-    static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
+    public static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
         return new CommandContext(
                 frame,
                 bufferManager,
@@ -83,7 +83,7 @@ final class TestCommandContextFactory {
     /**
      * KillRingとlastCommand指定でコンテキストを生成する。
      */
-    static CommandContext create(
+    public static CommandContext create(
             Frame frame, BufferManager bufferManager, KillRing killRing, Optional<String> lastCommand) {
         return new CommandContext(
                 frame,
@@ -104,7 +104,7 @@ final class TestCommandContextFactory {
     /**
      * デフォルトのバッファ・ウィンドウ・フレームでコンテキストを生成する。
      */
-    static CommandContext createDefault() {
+    public static CommandContext createDefault() {
         var bufferFacade = new BufferFacade(new TextBuffer("test", new GapTextModel(), SETTINGS_REGISTRY));
         var window = new Window(bufferFacade);
         var minibuffer =
