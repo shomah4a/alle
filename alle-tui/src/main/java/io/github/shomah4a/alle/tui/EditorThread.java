@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.render.RenderSnapshotFactory;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * コマンド処理・スナップショット作成を担当するロジックスレッド。
@@ -15,6 +16,8 @@ import java.util.concurrent.BlockingQueue;
  * 処理結果のスナップショットをSnapshotExchanger経由で描画スレッドに渡す。
  */
 class EditorThread implements Runnable, Loggable {
+
+    private static final long POLL_TIMEOUT_MS = 200;
 
     private final BlockingQueue<KeyStroke> keyQueue;
     private final Screen screen;
@@ -47,7 +50,11 @@ class EditorThread implements Runnable, Loggable {
             publishSnapshot();
 
             while (true) {
-                var keyStroke = keyQueue.take();
+                var keyStroke = keyQueue.poll(POLL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                if (keyStroke == null) {
+                    publishSnapshot();
+                    continue;
+                }
                 if (keyStroke.equals(POISON_PILL)) {
                     break;
                 }
