@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode.modes.dired;
 
+import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import java.time.ZoneId;
@@ -14,11 +15,13 @@ public class TreeDiredMode implements MajorMode {
     private final TreeDiredModel model;
     private final Keymap keymap;
     private final ZoneId zoneId;
+    private final CommandRegistry commandRegistry;
 
-    public TreeDiredMode(TreeDiredModel model, Keymap keymap, ZoneId zoneId) {
+    public TreeDiredMode(TreeDiredModel model, Keymap keymap, ZoneId zoneId, CommandRegistry commandRegistry) {
         this.model = model;
         this.keymap = keymap;
         this.zoneId = zoneId;
+        this.commandRegistry = commandRegistry;
     }
 
     @Override
@@ -43,5 +46,10 @@ public class TreeDiredMode implements MajorMode {
      */
     public ZoneId getZoneId() {
         return zoneId;
+    }
+
+    @Override
+    public Optional<CommandRegistry> commandRegistry() {
+        return Optional.of(commandRegistry);
     }
 }

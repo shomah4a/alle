@@ -82,7 +82,7 @@ class TreeDiredFileCommandTest {
         var lister = stubLister(entries);
         var model = new TreeDiredModel(rootDir, lister);
         var keymap = new Keymap("tree-dired-test");
-        var mode = new TreeDiredMode(model, keymap, UTC);
+        var mode = new TreeDiredMode(model, keymap, UTC, new io.github.shomah4a.alle.core.command.CommandRegistry());
 
         var settings = new SettingsRegistry();
         var bufferFacade = new BufferFacade(new TextBuffer("*Dired " + rootDir + "*", new GapTextModel(), settings));

@@ -265,7 +265,7 @@ public final class EditorCore {
         registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, shutdownRequestable));
         registry.register(new ProcessQuitCommand(shutdownRequestable));
 
-        // Tree Dired コマンド群
+        // Tree Dired コマンド群（モードスコープ）
         var toggleCommand = new TreeDiredToggleCommand();
         var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
         var upDirectoryCommand = new TreeDiredUpDirectoryCommand();
@@ -281,18 +281,19 @@ public final class EditorCore {
         var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
         var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
         var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
-        registry.register(toggleCommand);
-        registry.register(findFileOrToggleCommand);
-        registry.register(upDirectoryCommand);
-        registry.register(refreshCommand);
-        registry.register(markCommand);
-        registry.register(unmarkCommand);
-        registry.register(toggleMarkCommand);
-        registry.register(copyCommand);
-        registry.register(renameCommand);
-        registry.register(deleteCommand);
-        registry.register(chmodCommand);
-        registry.register(chownCommand);
+        var diredCommandRegistry = new CommandRegistry();
+        diredCommandRegistry.register(toggleCommand);
+        diredCommandRegistry.register(findFileOrToggleCommand);
+        diredCommandRegistry.register(upDirectoryCommand);
+        diredCommandRegistry.register(refreshCommand);
+        diredCommandRegistry.register(markCommand);
+        diredCommandRegistry.register(unmarkCommand);
+        diredCommandRegistry.register(toggleMarkCommand);
+        diredCommandRegistry.register(copyCommand);
+        diredCommandRegistry.register(renameCommand);
+        diredCommandRegistry.register(deleteCommand);
+        diredCommandRegistry.register(chmodCommand);
+        diredCommandRegistry.register(chownCommand);
 
         // Tree Dired キーマップ構築
         var diredKeymap = createTreeDiredKeymap(
@@ -316,7 +317,8 @@ public final class EditorCore {
                 Path.of("").toAbsolutePath(),
                 diredHistory,
                 java.time.ZoneId.systemDefault(),
-                diredKeymap);
+                diredKeymap,
+                diredCommandRegistry);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
         return registry;

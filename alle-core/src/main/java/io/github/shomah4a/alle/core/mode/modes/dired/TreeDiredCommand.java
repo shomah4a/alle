@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -25,18 +26,21 @@ public class TreeDiredCommand implements Command {
     private final InputHistory directoryHistory;
     private final ZoneId zoneId;
     private final Keymap diredKeymap;
+    private final CommandRegistry diredCommandRegistry;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
             Path workingDirectory,
             InputHistory directoryHistory,
             ZoneId zoneId,
-            Keymap diredKeymap) {
+            Keymap diredKeymap,
+            CommandRegistry diredCommandRegistry) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
         this.zoneId = zoneId;
         this.diredKeymap = diredKeymap;
+        this.diredCommandRegistry = diredCommandRegistry;
     }
 
     @Override
@@ -87,7 +91,7 @@ public class TreeDiredCommand implements Command {
 
         // モデル・モード作成
         var model = new TreeDiredModel(path, directoryLister);
-        var mode = new TreeDiredMode(model, diredKeymap, zoneId);
+        var mode = new TreeDiredMode(model, diredKeymap, zoneId, diredCommandRegistry);
         bufferFacade.setMajorMode(mode);
 
         // バッファを登録してウィンドウに表示
