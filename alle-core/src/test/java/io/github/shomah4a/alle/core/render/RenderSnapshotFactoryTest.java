@@ -521,7 +521,7 @@ class RenderSnapshotFactoryTest {
             var frame = new Frame(new Window(mainBuffer), minibufferWindow);
             frame.activateMinibuffer();
             minibufferWindow.insert("Find file: /path");
-            minibufferBuffer.putFace(0, 11, FaceName.MINIBUFFER_PROMPT);
+            minibufferBuffer.putFace(0, 11, FaceName.PROMPT);
 
             var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
 
@@ -531,7 +531,7 @@ class RenderSnapshotFactoryTest {
             assertEquals(1, spans.size());
             assertEquals(0, spans.get(0).start());
             assertEquals(11, spans.get(0).end());
-            assertEquals(FaceName.MINIBUFFER_PROMPT, spans.get(0).faceName());
+            assertEquals(FaceName.PROMPT, spans.get(0).faceName());
         }
 
         @Test

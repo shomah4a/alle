@@ -130,7 +130,7 @@ public final class TreeDiredRenderer {
         // ヘッダ行（ルートパス行）
         int headerLength = rootDirectory.toString().length() + 1; // +1 for ":"
         if (headerLength > 0) {
-            buffer.putFace(0, headerLength, FaceName.DIRED_HEADER);
+            buffer.putFace(0, headerLength, FaceName.HEADING);
         }
 
         var widths = computeColumnWidths(entries);
@@ -148,7 +148,7 @@ public final class TreeDiredRenderer {
             int lineCodePoints = (int) lineContent.codePoints().count();
 
             if (entry.isMarked()) {
-                buffer.putFace(lineStart, lineStart + lineCodePoints, FaceName.DIRED_MARKED);
+                buffer.putFace(lineStart, lineStart + lineCodePoints, FaceName.MARKED);
             }
 
             if (entry.isDirectory()) {
@@ -156,7 +156,7 @@ public final class TreeDiredRenderer {
                 int fileNameCodePoints = (int) fileName.codePoints().count();
                 int nameEnd = lineStart + lineCodePoints;
                 int nameStart = nameEnd - fileNameCodePoints;
-                buffer.putFace(nameStart, nameEnd, FaceName.DIRED_DIRECTORY);
+                buffer.putFace(nameStart, nameEnd, FaceName.DIRECTORY);
             }
 
             offset = lineStart + lineCodePoints;

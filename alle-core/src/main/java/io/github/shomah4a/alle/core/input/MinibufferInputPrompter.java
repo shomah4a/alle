@@ -77,7 +77,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         if (promptLength > 0) {
             minibuffer.putReadOnly(0, promptLength);
             minibuffer.putPointGuard(0, promptLength);
-            minibuffer.putFace(0, promptLength, FaceName.MINIBUFFER_PROMPT);
+            minibuffer.putFace(0, promptLength, FaceName.PROMPT);
         }
 
         // ミニバッファ用キーマップを作成

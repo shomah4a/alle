@@ -71,11 +71,11 @@ public final class FaceName {
     public static final FaceName EMPHASIS = new FaceName("emphasis", "強勢テキスト（Markdownの*斜体*等）");
     public static final FaceName DELETION = new FaceName("deletion", "削除テキスト（Markdownの~~取り消し線~~等）");
 
-    // UI要素
-    public static final FaceName MINIBUFFER_PROMPT = new FaceName("minibuffer-prompt", "ミニバッファのプロンプト文字列");
+    // ファイルシステム要素
+    public static final FaceName DIRECTORY = new FaceName("directory", "ディレクトリを表すテキスト");
+    public static final FaceName FILE = new FaceName("file", "ファイルを表すテキスト");
 
-    // Dired
-    public static final FaceName DIRED_HEADER = new FaceName("dired-header", "Diredのヘッダ行（ルートディレクトリパス）");
-    public static final FaceName DIRED_DIRECTORY = new FaceName("dired-directory", "Diredのディレクトリ名");
-    public static final FaceName DIRED_MARKED = new FaceName("dired-marked", "Diredのマーク済みエントリ");
+    // UI要素
+    public static final FaceName PROMPT = new FaceName("prompt", "プロンプト文字列");
+    public static final FaceName MARKED = new FaceName("marked", "マーク・選択済みのテキスト");
 }

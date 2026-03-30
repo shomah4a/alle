@@ -6,7 +6,9 @@ import org.eclipse.collections.api.map.ImmutableMap;
 
 /**
  * 組み込みのデフォルトテーマ。
- * 現在のFace定数に相当するマッピングを提供する。
+ * ここにはモード非依存の汎用セマンティック名のみを定義する。
+ * 各モードのスタイラーはここで定義されたセマンティック名から選択して使用すること。
+ * モード固有のFaceNameを追加してはならない。
  */
 public class DefaultFaceTheme implements FaceTheme {
 
@@ -33,10 +35,10 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.STRONG, FaceSpec.ofAttributes(FaceAttribute.BOLD))
             .withKeyValue(FaceName.EMPHASIS, FaceSpec.ofAttributes(FaceAttribute.ITALIC))
             .withKeyValue(FaceName.DELETION, FaceSpec.ofAttributes(FaceAttribute.STRIKETHROUGH))
-            .withKeyValue(FaceName.MINIBUFFER_PROMPT, FaceSpec.of("cyan", FaceAttribute.BOLD))
-            .withKeyValue(FaceName.DIRED_HEADER, FaceSpec.of("magenta", FaceAttribute.BOLD))
-            .withKeyValue(FaceName.DIRED_DIRECTORY, FaceSpec.of("blue", FaceAttribute.BOLD))
-            .withKeyValue(FaceName.DIRED_MARKED, FaceSpec.of("yellow", FaceAttribute.BOLD))
+            .withKeyValue(FaceName.PROMPT, FaceSpec.of("cyan", FaceAttribute.BOLD))
+            .withKeyValue(FaceName.DIRECTORY, FaceSpec.of("blue", FaceAttribute.BOLD))
+            .withKeyValue(FaceName.FILE, DEFAULT_SPEC)
+            .withKeyValue(FaceName.MARKED, FaceSpec.of("yellow", FaceAttribute.BOLD))
             .toImmutable();
 
     @Override
