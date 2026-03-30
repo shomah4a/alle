@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * マーク状態をトグルする。
  * C-SPCでリージョンが選択されている場合は範囲内のエントリをトグルし、
- * そうでない場合はカーソル行のエントリのみをトグルする。
+ * そうでない場合はカーソル行のエントリをトグルして次行に移動する。
  */
 public class TreeDiredToggleMarkCommand implements Command {
 
@@ -34,15 +34,16 @@ public class TreeDiredToggleMarkCommand implements Command {
                 model.toggleMark(entry.path());
             }
             window.clearMark();
+            TreeDiredBufferUpdater.update(window, diredMode);
+            return CompletableFuture.completedFuture(null);
         } else {
             var entryOpt = TreeDiredEntryResolver.resolve(window, diredMode);
             if (entryOpt.isEmpty()) {
                 return CompletableFuture.completedFuture(null);
             }
             model.toggleMark(entryOpt.get().path());
+            TreeDiredBufferUpdater.update(window, diredMode);
+            return context.delegate("next-line");
         }
-
-        TreeDiredBufferUpdater.update(window, diredMode);
-        return CompletableFuture.completedFuture(null);
     }
 }

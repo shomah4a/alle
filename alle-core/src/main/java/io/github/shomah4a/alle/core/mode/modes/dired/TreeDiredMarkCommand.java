@@ -5,7 +5,9 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * カーソル行のエントリをマークし、次行に移動する。
+ * エントリをマークする。
+ * C-SPCでリージョンが選択されている場合は範囲内のエントリをマークし、
+ * そうでない場合はカーソル行のエントリをマークして次行に移動する。
  */
 public class TreeDiredMarkCommand implements Command {
 
@@ -16,18 +18,32 @@ public class TreeDiredMarkCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var mode = context.activeWindow().getBuffer().getMajorMode();
+        var window = context.activeWindow();
+        var mode = window.getBuffer().getMajorMode();
         if (!(mode instanceof TreeDiredMode diredMode)) {
             return CompletableFuture.completedFuture(null);
         }
 
-        var entryOpt = TreeDiredEntryResolver.resolve(context.activeWindow(), diredMode);
-        if (entryOpt.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
+        var model = diredMode.getModel();
+        var regionStart = window.getRegionStart();
+        var regionEnd = window.getRegionEnd();
 
-        diredMode.getModel().mark(entryOpt.get().path());
-        TreeDiredBufferUpdater.update(context.activeWindow(), diredMode);
-        return context.delegate("next-line");
+        if (regionStart.isPresent() && regionEnd.isPresent()) {
+            var entries = TreeDiredEntryResolver.resolveRange(window, diredMode, regionStart.get(), regionEnd.get());
+            for (var entry : entries) {
+                model.mark(entry.path());
+            }
+            window.clearMark();
+            TreeDiredBufferUpdater.update(window, diredMode);
+            return CompletableFuture.completedFuture(null);
+        } else {
+            var entryOpt = TreeDiredEntryResolver.resolve(window, diredMode);
+            if (entryOpt.isEmpty()) {
+                return CompletableFuture.completedFuture(null);
+            }
+            model.mark(entryOpt.get().path());
+            TreeDiredBufferUpdater.update(window, diredMode);
+            return context.delegate("next-line");
+        }
     }
 }

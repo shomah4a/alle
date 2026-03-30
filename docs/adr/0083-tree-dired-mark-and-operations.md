@@ -4,6 +4,8 @@
 
 採用
 
+→ mark/unmark/toggle の挙動統一については [ADR 0092](0092-tree-dired-mark-behavior-unification.md) を参照
+
 ## コンテキスト
 
 Tree Dired（ADR 0082）はディレクトリのツリー表示とファイルオープン・ディレクトリ展開/折り畳みの機能を提供しているが、Emacs の dired にあるようなマーク機能やファイル操作（コピー・移動・削除・chown・chmod）が未実装である。
