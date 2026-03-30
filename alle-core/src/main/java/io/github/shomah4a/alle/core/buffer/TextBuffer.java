@@ -335,6 +335,11 @@ public class TextBuffer implements Buffer {
     }
 
     @Override
+    public void removeFaceByName(int start, int end, FaceName faceName) {
+        lockedVoid(() -> textPropertyStore.removeFaceByName(start, end, faceName));
+    }
+
+    @Override
     public ListIterable<StyledSpan> getFaceSpans(int start, int end) {
         return locked(() -> textPropertyStore.getFaceSpans(start, end));
     }

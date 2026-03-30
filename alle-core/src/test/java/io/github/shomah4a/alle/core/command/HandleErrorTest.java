@@ -44,7 +44,8 @@ class HandleErrorTest {
                 messageBuffer,
                 warningBuffer,
                 new SettingsRegistry(),
-                new CommandResolver(new CommandRegistry()));
+                new CommandResolver(new CommandRegistry()),
+                new NoOpOverridingKeymapController());
     }
 
     @Test

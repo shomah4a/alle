@@ -726,7 +726,8 @@ class MinibufferInputPrompterTest {
                     new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()));
+                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()),
+                    new io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController());
             binding.command().execute(context).join();
         }
     }

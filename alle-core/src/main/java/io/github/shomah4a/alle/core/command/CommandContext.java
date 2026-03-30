@@ -34,7 +34,8 @@ public record CommandContext(
         MessageBuffer messageBuffer,
         MessageBuffer warningBuffer,
         SettingsRegistry settingsRegistry,
-        CommandResolver commandResolver) {
+        CommandResolver commandResolver,
+        OverridingKeymapController overridingKeymapController) {
 
     /**
      * 名前を指定して別のコマンドを実行する。

@@ -39,6 +39,8 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.DIRECTORY, FaceSpec.of("blue", FaceAttribute.BOLD))
             .withKeyValue(FaceName.FILE, DEFAULT_SPEC)
             .withKeyValue(FaceName.MARKED, FaceSpec.of("yellow", FaceAttribute.BOLD))
+            .withKeyValue(
+                    FaceName.ISEARCH_MATCH, new FaceSpec("black", "yellow", Sets.immutable.with(FaceAttribute.BOLD)))
             .toImmutable();
 
     @Override

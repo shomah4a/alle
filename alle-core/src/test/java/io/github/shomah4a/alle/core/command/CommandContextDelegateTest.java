@@ -56,7 +56,8 @@ class CommandContextDelegateTest {
                 new MessageBuffer("*Messages*", 100, SETTINGS),
                 new MessageBuffer("*Warnings*", 100, SETTINGS),
                 SETTINGS,
-                new CommandResolver(registry));
+                new CommandResolver(registry),
+                new NoOpOverridingKeymapController());
     }
 
     @Nested

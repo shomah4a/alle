@@ -251,6 +251,12 @@ interface Buffer {
     void removeFace(int start, int end);
 
     /**
+     * 指定範囲内で指定FaceNameを持つfaceプロパティのみを除去する。
+     * 他のFaceNameのプロパティには影響しない。
+     */
+    void removeFaceByName(int start, int end, FaceName faceName);
+
+    /**
      * 指定範囲 [start, end) 内のface範囲をStyledSpanリストとして返す。
      */
     ListIterable<StyledSpan> getFaceSpans(int start, int end);

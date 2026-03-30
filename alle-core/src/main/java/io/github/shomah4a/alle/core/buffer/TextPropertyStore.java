@@ -114,6 +114,14 @@ class TextPropertyStore {
     }
 
     /**
+     * 指定範囲内で指定FaceNameを持つfaceのみを除去する。
+     * 他のFaceNameのエントリには影響しない。
+     */
+    void removeFaceByName(int start, int end, FaceName faceName) {
+        faceRanges.removeByValue(start, end, faceName);
+    }
+
+    /**
      * 指定範囲 [start, end) 内のface範囲をStyledSpanリストとして返す。
      */
     ListIterable<StyledSpan> getFaceSpans(int start, int end) {

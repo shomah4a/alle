@@ -396,6 +396,11 @@ public class MessageBuffer implements Buffer {
     }
 
     @Override
+    public void removeFaceByName(int start, int end, FaceName faceName) {
+        // メッセージバッファにテキストプロパティは不要
+    }
+
+    @Override
     public ListIterable<StyledSpan> getFaceSpans(int start, int end) {
         return Lists.immutable.empty();
     }

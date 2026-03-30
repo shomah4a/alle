@@ -319,6 +319,61 @@ class FaceRangeListTest {
     }
 
     @Nested
+    class 値指定による部分除去 {
+
+        @Test
+        void 指定値のエントリのみ除去され他の値のエントリは残る() {
+            list.put(0, 5, FaceName.STRONG);
+            list.put(5, 10, FaceName.KEYWORD);
+            list.put(10, 15, FaceName.STRONG);
+            list.removeByValue(0, 15, FaceName.STRONG);
+
+            var entries = list.getEntries(0, 20);
+            assertEquals(1, entries.size());
+            assertEquals(5, entries.get(0).start());
+            assertEquals(10, entries.get(0).end());
+            assertEquals(FaceName.KEYWORD, entries.get(0).value());
+        }
+
+        @Test
+        void 指定範囲内のエントリのみが対象となる() {
+            list.put(0, 5, FaceName.STRONG);
+            list.put(10, 15, FaceName.STRONG);
+            list.removeByValue(0, 5, FaceName.STRONG);
+
+            var entries = list.getEntries(0, 20);
+            assertEquals(1, entries.size());
+            assertEquals(10, entries.get(0).start());
+            assertEquals(15, entries.get(0).end());
+        }
+
+        @Test
+        void 部分的に重なる範囲で指定値のエントリが縮小される() {
+            list.put(0, 10, FaceName.STRONG);
+            list.put(0, 10, FaceName.KEYWORD);
+            // KETWORDで上書きされているが、STRONGが別にある場合をテスト
+            list.put(3, 7, FaceName.STRONG);
+            list.removeByValue(2, 8, FaceName.STRONG);
+
+            // KEYWORD [0,3), KEYWORD [7,10) は残っていて、STRONG [3,7) は除去
+            var entries = list.getEntries(0, 10);
+            assertEquals(2, entries.size());
+            assertEquals(FaceName.KEYWORD, entries.get(0).value());
+            assertEquals(FaceName.KEYWORD, entries.get(1).value());
+        }
+
+        @Test
+        void 指定値のエントリが存在しない場合は何も起きない() {
+            list.put(0, 5, FaceName.KEYWORD);
+            list.removeByValue(0, 5, FaceName.STRONG);
+
+            var entries = list.getEntries(0, 10);
+            assertEquals(1, entries.size());
+            assertEquals(FaceName.KEYWORD, entries.get(0).value());
+        }
+    }
+
+    @Nested
     class clear {
 
         @Test

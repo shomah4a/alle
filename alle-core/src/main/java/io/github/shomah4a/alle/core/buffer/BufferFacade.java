@@ -235,6 +235,10 @@ public class BufferFacade {
         buffer.removeFace(start, end);
     }
 
+    public void removeFaceByName(int start, int end, io.github.shomah4a.alle.core.styling.FaceName faceName) {
+        buffer.removeFaceByName(start, end, faceName);
+    }
+
     public org.eclipse.collections.api.list.ListIterable<io.github.shomah4a.alle.core.styling.StyledSpan> getFaceSpans(
             int start, int end) {
         return buffer.getFaceSpans(start, end);

@@ -109,7 +109,8 @@ class TreeDiredFileCommandTest {
                 new MessageBuffer("*Messages*", 100, settings),
                 new MessageBuffer("*Warnings*", 100, settings),
                 settings,
-                new io.github.shomah4a.alle.core.command.CommandResolver(registry));
+                new io.github.shomah4a.alle.core.command.CommandResolver(registry),
+                new io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController());
 
         return new DiredSetup(context, mode, window);
     }

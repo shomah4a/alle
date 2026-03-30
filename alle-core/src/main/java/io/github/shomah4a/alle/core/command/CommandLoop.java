@@ -17,6 +17,11 @@ import java.util.logging.Logger;
 import org.jspecify.annotations.Nullable;
 
 /**
+ * overriding keymap設定時に保持する状態。
+ */
+record OverridingKeymapState(Keymap keymap, Runnable onUnboundKeyExit) {}
+
+/**
  * キー入力→コマンド解決→コマンド実行のメインループ。
  * InputSourceからキーを読み、KeyResolverでコマンドを解決し、実行する。
  * コマンドはCompletableFutureを返し、後続処理はthenRunで繋ぐ（fire-and-forget）。
@@ -41,6 +46,19 @@ public class CommandLoop {
     private final CommandResolver commandResolver;
     private Optional<String> lastCommand = Optional.empty();
     private @Nullable PendingPrefix pendingPrefix;
+    private @Nullable OverridingKeymapState overridingKeymapState;
+
+    private final OverridingKeymapController overridingKeymapController = new OverridingKeymapController() {
+        @Override
+        public void set(Keymap keymap, Runnable onUnboundKeyExit) {
+            overridingKeymapState = new OverridingKeymapState(keymap, onUnboundKeyExit);
+        }
+
+        @Override
+        public void clear() {
+            overridingKeymapState = null;
+        }
+    };
 
     /**
      * プレフィックスキー入力待ち状態を表す。
@@ -90,7 +108,10 @@ public class CommandLoop {
      * プレフィックスキーの場合は内部状態として保持し、次の呼び出しで解決する。
      */
     public void processKey(KeyStroke keyStroke) {
-        messageBuffer.clearShowingMessage();
+        // overriding keymap有効時はエコー表示を維持する
+        if (overridingKeymapState == null) {
+            messageBuffer.clearShowingMessage();
+        }
 
         if (pendingPrefix != null) {
             processPrefixKey(keyStroke);
@@ -100,6 +121,18 @@ public class CommandLoop {
     }
 
     private void processNormalKey(KeyStroke keyStroke) {
+        // overriding keymapが設定されている場合、最優先で解決
+        if (overridingKeymapState != null) {
+            var entry = overridingKeymapState.keymap().lookup(keyStroke);
+            if (entry.isPresent()) {
+                handleEntry(entry.get(), keyStroke, "");
+                return;
+            }
+            // 未バインドキー: 終了コールバック → クリア → 通常解決にフォールスルー
+            overridingKeymapState.onUnboundKeyExit().run();
+            overridingKeymapState = null;
+            messageBuffer.clearShowingMessage();
+        }
         var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
             handleEntry(entryOpt.get(), keyStroke, "");
@@ -172,7 +205,8 @@ public class CommandLoop {
                         messageBuffer,
                         warningBuffer,
                         settingsRegistry,
-                        commandResolver);
+                        commandResolver,
+                        overridingKeymapController);
                 try {
                     var buffer = context.activeWindow().getBuffer();
                     buffer.getUndoManager().withTransaction(() -> {

@@ -271,6 +271,9 @@ public final class EditorCore {
         registry.register(new ToggleTruncateLinesCommand());
         registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, shutdownRequestable));
         registry.register(new ProcessQuitCommand(shutdownRequestable));
+        var isearchHistory = new io.github.shomah4a.alle.core.search.ISearchHistory();
+        registry.register(new io.github.shomah4a.alle.core.search.ISearchForwardCommand(isearchHistory));
+        registry.register(new io.github.shomah4a.alle.core.search.ISearchBackwardCommand(isearchHistory));
 
         // Tree Dired コマンド群（モードスコープ）
         var toggleCommand = new TreeDiredToggleCommand();
@@ -438,6 +441,10 @@ public final class EditorCore {
 
         // M-; (comment toggle)
         keymap.bind(KeyStroke.meta(';'), registry.lookup("comment-dwim").orElseThrow());
+
+        // C-s / C-r (i-search)
+        keymap.bind(KeyStroke.ctrl('s'), registry.lookup("isearch-forward").orElseThrow());
+        keymap.bind(KeyStroke.ctrl('r'), registry.lookup("isearch-backward").orElseThrow());
 
         // C-c プレフィックスキーマップ
         var ctrlCMap = new Keymap("C-c");

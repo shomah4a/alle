@@ -373,6 +373,171 @@ class CommandLoopTest {
     }
 
     @Nested
+    class overridingKeymap {
+
+        @Test
+        void overridingKeymapのバインドが通常キーマップより優先される() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+
+            // 通常キーマップ: 'a' で SelfInsert
+            var keymap = new Keymap("global");
+            keymap.setDefaultCommand(new SelfInsertCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+
+            // overriding keymapを設定: 'a' で ForwardChar
+            var overridingKeymap = new Keymap("overriding");
+            overridingKeymap.bind(KeyStroke.of('a'), new ForwardCharCommand());
+
+            // まず文字を挿入して移動を確認できるようにする
+            frame.getActiveWindow().insert("Hello");
+            frame.getActiveWindow().setPoint(0);
+
+            // overridingKeymapを設定するコマンドを実行
+            var setupKeymap = new Keymap("setup");
+            setupKeymap.bind(KeyStroke.ctrl('t'), new Command() {
+                @Override
+                public String name() {
+                    return "setup-overriding";
+                }
+
+                @Override
+                public CompletableFuture<Void> execute(CommandContext context) {
+                    context.overridingKeymapController().set(overridingKeymap, () -> {});
+                    return CompletableFuture.completedFuture(null);
+                }
+            });
+            resolver.addKeymap(setupKeymap);
+
+            loop.processKey(KeyStroke.ctrl('t')); // overriding keymapをセット
+            loop.processKey(KeyStroke.of('a')); // overridingのForwardCharが実行されるはず
+
+            // SelfInsertではなくForwardCharが実行されたことを確認
+            assertEquals("Hello", frame.getActiveWindow().getBuffer().getText());
+            assertEquals(1, frame.getActiveWindow().getPoint());
+        }
+
+        @Test
+        void overridingKeymapに未バインドのキーでonExitが呼ばれ通常解決にフォールスルーする() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+
+            var keymap = new Keymap("global");
+            keymap.setDefaultCommand(new SelfInsertCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+
+            var overridingKeymap = new Keymap("overriding");
+            overridingKeymap.bind(KeyStroke.ctrl('s'), new ForwardCharCommand());
+            MutableList<String> exitLog = Lists.mutable.empty();
+
+            var setupKeymap = new Keymap("setup");
+            setupKeymap.bind(KeyStroke.ctrl('t'), new Command() {
+                @Override
+                public String name() {
+                    return "setup-overriding";
+                }
+
+                @Override
+                public CompletableFuture<Void> execute(CommandContext context) {
+                    context.overridingKeymapController().set(overridingKeymap, () -> exitLog.add("exited"));
+                    return CompletableFuture.completedFuture(null);
+                }
+            });
+            resolver.addKeymap(setupKeymap);
+
+            loop.processKey(KeyStroke.ctrl('t')); // overriding keymapをセット
+            loop.processKey(KeyStroke.of('x')); // overridingに未バインド → onExit + SelfInsert
+
+            // onExitが呼ばれたことを確認
+            assertEquals(1, exitLog.size());
+            assertEquals("exited", exitLog.get(0));
+
+            // SelfInsert にフォールスルーして 'x' が挿入されたことを確認
+            assertEquals("x", frame.getActiveWindow().getBuffer().getText());
+        }
+
+        @Test
+        void overridingKeymapのdefaultCommandが印字可能文字に適用される() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+
+            var keymap = new Keymap("global");
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+
+            var overridingKeymap = new Keymap("overriding");
+            overridingKeymap.setDefaultCommand(new SelfInsertCommand());
+
+            var setupKeymap = new Keymap("setup");
+            setupKeymap.bind(KeyStroke.ctrl('t'), new Command() {
+                @Override
+                public String name() {
+                    return "setup-overriding";
+                }
+
+                @Override
+                public CompletableFuture<Void> execute(CommandContext context) {
+                    context.overridingKeymapController().set(overridingKeymap, () -> {});
+                    return CompletableFuture.completedFuture(null);
+                }
+            });
+            resolver.addKeymap(setupKeymap);
+
+            loop.processKey(KeyStroke.ctrl('t'));
+            loop.processKey(KeyStroke.of('h'));
+            loop.processKey(KeyStroke.of('i'));
+
+            assertEquals("hi", frame.getActiveWindow().getBuffer().getText());
+        }
+
+        @Test
+        void overridingKeymapクリア後は通常のキーマップ解決に戻る() {
+            var frame = createFrame();
+            var bufferManager = new BufferManager();
+
+            var keymap = new Keymap("global");
+            keymap.setDefaultCommand(new SelfInsertCommand());
+            var resolver = new KeyResolver();
+            resolver.addKeymap(keymap);
+
+            var loop = createLoop(() -> Optional.empty(), resolver, frame, bufferManager);
+
+            var overridingKeymap = new Keymap("overriding");
+            // overridingにはC-sのみバインド
+            overridingKeymap.bind(KeyStroke.ctrl('s'), new ForwardCharCommand());
+
+            var setupKeymap = new Keymap("setup");
+            setupKeymap.bind(KeyStroke.ctrl('t'), new Command() {
+                @Override
+                public String name() {
+                    return "setup-overriding";
+                }
+
+                @Override
+                public CompletableFuture<Void> execute(CommandContext context) {
+                    context.overridingKeymapController().set(overridingKeymap, () -> {});
+                    return CompletableFuture.completedFuture(null);
+                }
+            });
+            resolver.addKeymap(setupKeymap);
+
+            loop.processKey(KeyStroke.ctrl('t')); // overridingセット
+            loop.processKey(KeyStroke.of('a')); // 未バインド → onExit → SelfInsertで'a'挿入
+            loop.processKey(KeyStroke.of('b')); // overridingクリア済み → 通常SelfInsertで'b'挿入
+
+            assertEquals("ab", frame.getActiveWindow().getBuffer().getText());
+        }
+    }
+
+    @Nested
     class processKey {
 
         @Test

@@ -183,6 +183,37 @@ class RangeList<V> {
     }
 
     /**
+     * 指定範囲内で指定値を持つエントリのみを除去する。
+     * 他の値を持つエントリには影響しない。
+     */
+    void removeByValue(int start, int end, V value) {
+        MutableList<Entry<V>> toRemove = Lists.mutable.empty();
+        MutableList<Entry<V>> toAdd = Lists.mutable.empty();
+
+        for (var entry : entries) {
+            if (!Objects.equals(entry.value, value)) {
+                continue;
+            }
+            if (entry.start >= start && entry.end <= end) {
+                toRemove.add(entry);
+            } else if (entry.start < start && entry.end > end) {
+                toRemove.add(entry);
+                toAdd.add(new Entry<>(entry.start, start, entry.value));
+                toAdd.add(new Entry<>(end, entry.end, entry.value));
+            } else if (entry.start < end && entry.end > end) {
+                toRemove.add(entry);
+                toAdd.add(new Entry<>(end, entry.end, entry.value));
+            } else if (entry.start < start && entry.end > start) {
+                toRemove.add(entry);
+                toAdd.add(new Entry<>(entry.start, start, entry.value));
+            }
+        }
+
+        entries.removeAll(toRemove);
+        entries.addAll(toAdd);
+    }
+
+    /**
      * 全範囲を除去する。
      */
     void clear() {

@@ -18,6 +18,10 @@ i-searchの「メインウィンドウにフォーカスを残す」モデルと
 
 i-searchはMinibufferInputPrompterとは独立した仕組みとして再設計が必要。
 
+## 後続ADR
+
+- [ADR 0089](../0089-isearch-redesign.md): 本ADRの却下を受けてoverriding keymapベースで再設計
+
 ## コンテキスト
 
 エディタにテキスト検索機能がない。

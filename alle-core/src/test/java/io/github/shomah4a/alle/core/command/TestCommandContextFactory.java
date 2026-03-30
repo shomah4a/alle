@@ -56,7 +56,8 @@ final class TestCommandContextFactory {
                 new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
                 SETTINGS_REGISTRY,
-                new CommandResolver(new CommandRegistry()));
+                new CommandResolver(new CommandRegistry()),
+                new NoOpOverridingKeymapController());
     }
 
     /**
@@ -75,7 +76,8 @@ final class TestCommandContextFactory {
                 new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
                 SETTINGS_REGISTRY,
-                new CommandResolver(new CommandRegistry()));
+                new CommandResolver(new CommandRegistry()),
+                new NoOpOverridingKeymapController());
     }
 
     /**
@@ -95,7 +97,8 @@ final class TestCommandContextFactory {
                 new MessageBuffer("*Messages*", 100, SETTINGS_REGISTRY),
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
                 SETTINGS_REGISTRY,
-                new CommandResolver(new CommandRegistry()));
+                new CommandResolver(new CommandRegistry()),
+                new NoOpOverridingKeymapController());
     }
 
     /**
