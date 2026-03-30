@@ -72,7 +72,9 @@ public class CommandResolver {
 
     /**
      * バッファのモードスコープを考慮して、M-x補完用の全コマンド名を返す。
-     * バッファのモードに属するコマンドは短い名前、他モードのコマンドはFQCN形式で返す。
+     * バッファのモードに属するコマンドは短い名前で返す。
+     * コマンドを持つモードはモード名+ドットのプレフィックス候補も返す。
+     * グローバルコマンドは短い名前で返す。
      */
     public ImmutableSet<String> allCommandNames(BufferFacade buffer) {
         MutableList<String> names = Lists.mutable.empty();
@@ -80,19 +82,37 @@ public class CommandResolver {
         // グローバルコマンド（短い名前）
         names.addAllIterable(globalRegistry.registeredNames());
 
-        // MajorModeコマンド（短い名前、グローバルと衝突する場合はモードが優先）
+        // MajorModeコマンド（短い名前 + FQCN + モード名プレフィックス候補）
         var majorMode = buffer.getMajorMode();
         var majorRegistryOpt = majorMode.commandRegistry();
         if (majorRegistryOpt.isPresent()) {
-            names.addAllIterable(majorRegistryOpt.get().registeredNames());
+            var majorNames = majorRegistryOpt.get().registeredNames();
+            names.addAllIterable(majorNames);
+            String modePrefix = majorMode.name() + SEPARATOR;
+            names.add(modePrefix);
+            for (String cmdName : majorNames) {
+                names.add(modePrefix + cmdName);
+            }
         }
 
-        // MinorModeコマンド（短い名前）
+        // MinorModeコマンド（短い名前 + FQCN + モード名プレフィックス候補）
         for (MinorMode minorMode : buffer.getMinorModes()) {
             var registryOpt = minorMode.commandRegistry();
             if (registryOpt.isPresent()) {
-                names.addAllIterable(registryOpt.get().registeredNames());
+                var minorNames = registryOpt.get().registeredNames();
+                names.addAllIterable(minorNames);
+                String modePrefix = minorMode.name() + SEPARATOR;
+                names.add(modePrefix);
+                for (String cmdName : minorNames) {
+                    names.add(modePrefix + cmdName);
+                }
             }
+        }
+
+        // global.プレフィックス候補
+        names.add(GLOBAL_PREFIX + SEPARATOR);
+        for (String cmdName : globalRegistry.registeredNames()) {
+            names.add(GLOBAL_PREFIX + SEPARATOR + cmdName);
         }
 
         return names.toImmutableSet();

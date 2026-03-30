@@ -7,7 +7,7 @@ import org.eclipse.collections.api.list.ListIterable;
 /**
  * コマンド名の補完を提供する。
  * CommandResolverを通じてカレントバッファのモードスコープを考慮した候補を返す。
- * コマンド名は確定可能（terminal）な候補として返す。
+ * モード名プレフィックス（例: "Python."）は継続補完（partial）として返す。
  */
 public class CommandNameCompleter implements Completer {
 
@@ -24,7 +24,8 @@ public class CommandNameCompleter implements Completer {
         return commandResolver
                 .allCommandNames(buffer)
                 .select(name -> name.startsWith(input))
-                .collect(CompletionCandidate::terminal)
+                .collect(name ->
+                        name.endsWith(".") ? CompletionCandidate.partial(name) : CompletionCandidate.terminal(name))
                 .toList();
     }
 }
