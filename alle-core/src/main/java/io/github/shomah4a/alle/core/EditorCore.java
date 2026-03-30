@@ -77,6 +77,12 @@ import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleMarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUnmarkCommand;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUpDirectoryCommand;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurCommand;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurGotoLineCommand;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurNextLineCommand;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurNoOpCommand;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurPreviousLineCommand;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurQuitCommand;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchHistory;
@@ -179,7 +185,8 @@ public final class EditorCore {
                 modeRegistry,
                 shutdownHandler,
                 shutdownRequestable,
-                commandResolver);
+                commandResolver,
+                settingsRegistry);
         commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
@@ -226,7 +233,8 @@ public final class EditorCore {
             ModeRegistry modeRegistry,
             ShutdownHandler shutdownHandler,
             ShutdownRequestable shutdownRequestable,
-            CommandResolver commandResolver) {
+            CommandResolver commandResolver,
+            SettingsRegistry settingsRegistry) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -339,6 +347,36 @@ public final class EditorCore {
                 diredCommandRegistry);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
+
+        // Occur コマンド群（モードスコープ）
+        var nextLineCmd = registry.lookup("next-line").orElseThrow();
+        var previousLineCmd = registry.lookup("previous-line").orElseThrow();
+        var occurNextLineCommand = new OccurNextLineCommand(nextLineCmd);
+        var occurPreviousLineCommand = new OccurPreviousLineCommand(previousLineCmd);
+        var occurGotoLineCommand = new OccurGotoLineCommand();
+        var occurQuitCommand = new OccurQuitCommand();
+        var occurNoOpCommand = new OccurNoOpCommand();
+        var occurCommandRegistry = new CommandRegistry();
+        occurCommandRegistry.register(occurNextLineCommand);
+        occurCommandRegistry.register(occurPreviousLineCommand);
+        occurCommandRegistry.register(occurGotoLineCommand);
+        occurCommandRegistry.register(occurQuitCommand);
+        occurCommandRegistry.register(occurNoOpCommand);
+        commandResolver.registerModeCommands("occur", occurCommandRegistry);
+
+        // Occur キーマップ構築
+        var occurKeymap = createOccurKeymap(
+                occurNextLineCommand,
+                occurPreviousLineCommand,
+                occurGotoLineCommand,
+                occurQuitCommand,
+                occurNoOpCommand,
+                killBufferCmd);
+
+        var occurHistory = new InputHistory();
+        var occurCommand = new OccurCommand(occurHistory, occurKeymap, occurCommandRegistry, settingsRegistry);
+        registry.register(occurCommand);
+
         return registry;
     }
 
@@ -372,6 +410,25 @@ public final class EditorCore {
         keymap.bind(KeyStroke.of('D'), deleteCommand);
         keymap.bind(KeyStroke.of('M'), chmodCommand);
         keymap.bind(KeyStroke.of('O'), chownCommand);
+        return keymap;
+    }
+
+    private static Keymap createOccurKeymap(
+            Command occurNextLineCommand,
+            Command occurPreviousLineCommand,
+            Command occurGotoLineCommand,
+            Command occurQuitCommand,
+            Command occurNoOpCommand,
+            Command killBufferCommand) {
+        var keymap = new Keymap("occur");
+        keymap.setDefaultCommand(occurNoOpCommand);
+        keymap.bind(KeyStroke.of('\n'), occurGotoLineCommand);
+        keymap.bind(KeyStroke.ctrl('n'), occurNextLineCommand);
+        keymap.bind(KeyStroke.ctrl('p'), occurPreviousLineCommand);
+        keymap.bind(KeyStroke.of(KeyStroke.ARROW_DOWN), occurNextLineCommand);
+        keymap.bind(KeyStroke.of(KeyStroke.ARROW_UP), occurPreviousLineCommand);
+        keymap.bind(KeyStroke.of('q'), occurQuitCommand);
+        keymap.bind(KeyStroke.of('k'), killBufferCommand);
         return keymap;
     }
 

@@ -79,6 +79,9 @@ public final class FaceName {
     public static final FaceName PROMPT = new FaceName("prompt", "プロンプト文字列");
     public static final FaceName MARKED = new FaceName("marked", "マーク・選択済みのテキスト");
 
+    // 行番号
+    public static final FaceName LINE_NUMBER = new FaceName("line-number", "行番号表示");
+
     // 検索
     public static final FaceName ISEARCH_MATCH = new FaceName("isearch-match", "インクリメンタルサーチのマッチ箇所");
 }
