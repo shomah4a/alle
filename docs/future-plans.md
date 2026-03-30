@@ -14,14 +14,6 @@ find-file, dired なんかだと欲しい機能
 
 ## 検索系
 
-### i-search, i-search backwork
-
-ないと意味ないよね
-
-### occur
-
-これもね
-
 ### find-grep
 
 あると便利ですね
