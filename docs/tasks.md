@@ -44,6 +44,11 @@
 - さらに setBuffer → clearPreviousBufferIf の順序により previousBuffer が消える
 - dired からファイルを開き C-x k で閉じると dired に戻れない問題の原因
 
+### TreeDiredInitializer: 副作用の外部化
+- TreeDiredInitializer.initialize() 内で ZoneId.systemDefault() と Path.of("").toAbsolutePath() を直接呼んでいる
+- コーディング規約「副作用の外部化」に基づき、引数経由で注入する設計に改修する
+- EditorCore からの移動前から存在していた問題であり、リファクタリングで導入されたものではない
+
 ### Tree Dired: シンボリックリンク循環の保護
 - collectEntries の再帰にdepth上限を設ける
 - 循環参照のシンボリックリンクによる StackOverflowError を防止

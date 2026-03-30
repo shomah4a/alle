@@ -4,7 +4,6 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
@@ -49,7 +48,6 @@ import io.github.shomah4a.alle.core.command.commands.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.ToggleTruncateLinesCommand;
 import io.github.shomah4a.alle.core.command.commands.UndoCommand;
 import io.github.shomah4a.alle.core.command.commands.YankCommand;
-import io.github.shomah4a.alle.core.input.DefaultFileOperations;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
@@ -63,26 +61,8 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredChmodCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredChownCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredCopyCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredDeleteCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredFindFileOrToggleCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredMarkCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredNoOpCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRefreshCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredRenameCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredToggleMarkCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUnmarkCommand;
-import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredUpDirectoryCommand;
-import io.github.shomah4a.alle.core.mode.modes.occur.OccurCommand;
-import io.github.shomah4a.alle.core.mode.modes.occur.OccurGotoLineCommand;
-import io.github.shomah4a.alle.core.mode.modes.occur.OccurNextLineCommand;
-import io.github.shomah4a.alle.core.mode.modes.occur.OccurNoOpCommand;
-import io.github.shomah4a.alle.core.mode.modes.occur.OccurPreviousLineCommand;
-import io.github.shomah4a.alle.core.mode.modes.occur.OccurQuitCommand;
+import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredInitializer;
+import io.github.shomah4a.alle.core.mode.modes.occur.OccurInitializer;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchHistory;
@@ -92,7 +72,6 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZoneId;
 import java.util.function.Function;
 
 /**
@@ -290,146 +269,17 @@ public final class EditorCore {
         registry.register(new ISearchForwardCommand(isearchHistory));
         registry.register(new ISearchBackwardCommand(isearchHistory));
 
-        // Tree Dired コマンド群（モードスコープ）
-        var toggleCommand = new TreeDiredToggleCommand();
-        var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
-        var upDirectoryCommand = new TreeDiredUpDirectoryCommand();
-        var refreshCommand = new TreeDiredRefreshCommand();
-        var markCommand = new TreeDiredMarkCommand();
-        var unmarkCommand = new TreeDiredUnmarkCommand();
-        var toggleMarkCommand = new TreeDiredToggleMarkCommand();
-        var fileOperations = new DefaultFileOperations();
-        var diredConfirmHistory = new InputHistory();
-        var copyCommand = new TreeDiredCopyCommand(fileOperations, new InputHistory(), diredConfirmHistory);
-        var renameCommand = new TreeDiredRenameCommand(fileOperations, new InputHistory());
-        var deleteCommand = new TreeDiredDeleteCommand(fileOperations, diredConfirmHistory);
-        var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
-        var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
-        var killBufferCmd = registry.lookup("kill-buffer").orElseThrow();
-        var diredCommandRegistry = new CommandRegistry();
-        diredCommandRegistry.register(toggleCommand);
-        diredCommandRegistry.register(findFileOrToggleCommand);
-        diredCommandRegistry.register(upDirectoryCommand);
-        diredCommandRegistry.register(refreshCommand);
-        diredCommandRegistry.register(markCommand);
-        diredCommandRegistry.register(unmarkCommand);
-        diredCommandRegistry.register(toggleMarkCommand);
-        diredCommandRegistry.register(copyCommand);
-        diredCommandRegistry.register(renameCommand);
-        diredCommandRegistry.register(deleteCommand);
-        diredCommandRegistry.register(chmodCommand);
-        diredCommandRegistry.register(chownCommand);
-        commandResolver.registerModeCommands("tree-dired", diredCommandRegistry);
-
-        // Tree Dired キーマップ構築
-        var diredKeymap = createTreeDiredKeymap(
-                toggleCommand,
-                findFileOrToggleCommand,
-                upDirectoryCommand,
-                refreshCommand,
-                killBufferCmd,
-                markCommand,
-                unmarkCommand,
-                toggleMarkCommand,
-                copyCommand,
-                renameCommand,
-                deleteCommand,
-                chmodCommand,
-                chownCommand);
-
-        var diredHistory = new InputHistory();
-        var treeDiredCommand = new TreeDiredCommand(
-                directoryLister,
-                Path.of("").toAbsolutePath(),
-                diredHistory,
-                ZoneId.systemDefault(),
-                diredKeymap,
-                diredCommandRegistry);
+        // Tree Dired
+        var treeDiredCommand = TreeDiredInitializer.initialize(
+                registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
 
-        // Occur コマンド群（モードスコープ）
-        var nextLineCmd = registry.lookup("next-line").orElseThrow();
-        var previousLineCmd = registry.lookup("previous-line").orElseThrow();
-        var occurNextLineCommand = new OccurNextLineCommand(nextLineCmd);
-        var occurPreviousLineCommand = new OccurPreviousLineCommand(previousLineCmd);
-        var occurGotoLineCommand = new OccurGotoLineCommand();
-        var occurQuitCommand = new OccurQuitCommand();
-        var occurNoOpCommand = new OccurNoOpCommand();
-        var occurCommandRegistry = new CommandRegistry();
-        occurCommandRegistry.register(occurNextLineCommand);
-        occurCommandRegistry.register(occurPreviousLineCommand);
-        occurCommandRegistry.register(occurGotoLineCommand);
-        occurCommandRegistry.register(occurQuitCommand);
-        occurCommandRegistry.register(occurNoOpCommand);
-        commandResolver.registerModeCommands("occur", occurCommandRegistry);
-
-        // Occur キーマップ構築
-        var occurKeymap = createOccurKeymap(
-                occurNextLineCommand,
-                occurPreviousLineCommand,
-                occurGotoLineCommand,
-                occurQuitCommand,
-                occurNoOpCommand,
-                killBufferCmd);
-
-        var occurHistory = new InputHistory();
-        var occurCommand = new OccurCommand(occurHistory, occurKeymap, occurCommandRegistry, settingsRegistry);
+        // Occur
+        var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
         registry.register(occurCommand);
 
         return registry;
-    }
-
-    private static Keymap createTreeDiredKeymap(
-            Command toggleCommand,
-            Command findFileOrToggleCommand,
-            Command upDirectoryCommand,
-            Command refreshCommand,
-            Command killBufferCommand,
-            Command markCommand,
-            Command unmarkCommand,
-            Command toggleMarkCommand,
-            Command copyCommand,
-            Command renameCommand,
-            Command deleteCommand,
-            Command chmodCommand,
-            Command chownCommand) {
-        var keymap = new Keymap("tree-dired");
-        keymap.setDefaultCommand(new TreeDiredNoOpCommand());
-        keymap.bind(KeyStroke.of('\t'), toggleCommand);
-        keymap.bind(KeyStroke.of('\n'), findFileOrToggleCommand);
-        keymap.bind(KeyStroke.of('f'), findFileOrToggleCommand);
-        keymap.bind(KeyStroke.of('^'), upDirectoryCommand);
-        keymap.bind(KeyStroke.of('g'), refreshCommand);
-        keymap.bind(KeyStroke.of('q'), killBufferCommand);
-        keymap.bind(KeyStroke.of('m'), markCommand);
-        keymap.bind(KeyStroke.of('u'), unmarkCommand);
-        keymap.bind(KeyStroke.of('t'), toggleMarkCommand);
-        keymap.bind(KeyStroke.of('C'), copyCommand);
-        keymap.bind(KeyStroke.of('R'), renameCommand);
-        keymap.bind(KeyStroke.of('D'), deleteCommand);
-        keymap.bind(KeyStroke.of('M'), chmodCommand);
-        keymap.bind(KeyStroke.of('O'), chownCommand);
-        return keymap;
-    }
-
-    private static Keymap createOccurKeymap(
-            Command occurNextLineCommand,
-            Command occurPreviousLineCommand,
-            Command occurGotoLineCommand,
-            Command occurQuitCommand,
-            Command occurNoOpCommand,
-            Command killBufferCommand) {
-        var keymap = new Keymap("occur");
-        keymap.setDefaultCommand(occurNoOpCommand);
-        keymap.bind(KeyStroke.of('\n'), occurGotoLineCommand);
-        keymap.bind(KeyStroke.ctrl('n'), occurNextLineCommand);
-        keymap.bind(KeyStroke.ctrl('p'), occurPreviousLineCommand);
-        keymap.bind(KeyStroke.of(KeyStroke.ARROW_DOWN), occurNextLineCommand);
-        keymap.bind(KeyStroke.of(KeyStroke.ARROW_UP), occurPreviousLineCommand);
-        keymap.bind(KeyStroke.of('q'), occurQuitCommand);
-        keymap.bind(KeyStroke.of('k'), killBufferCommand);
-        return keymap;
     }
 
     private static Keymap createKeymap(CommandRegistry registry) {
