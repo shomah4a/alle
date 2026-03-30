@@ -41,6 +41,8 @@ class EditorThread implements Runnable, Loggable {
     @Override
     public void run() {
         try {
+            commandLoop.setOnAsyncCommandComplete(this::publishSnapshot);
+
             // 初期描画用スナップショット
             publishSnapshot();
 

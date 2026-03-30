@@ -44,6 +44,7 @@ public class CommandLoop {
     private final MessageBuffer warningBuffer;
     private final SettingsRegistry settingsRegistry;
     private final CommandResolver commandResolver;
+    private volatile Runnable onAsyncCommandComplete = () -> {};
     private Optional<String> lastCommand = Optional.empty();
     private @Nullable PendingPrefix pendingPrefix;
     private @Nullable OverridingKeymapState overridingKeymapState;
@@ -86,6 +87,14 @@ public class CommandLoop {
         this.warningBuffer = warningBuffer;
         this.settingsRegistry = settingsRegistry;
         this.commandResolver = commandResolver;
+    }
+
+    /**
+     * 非同期コマンド完了時に呼ばれるコールバックを設定する。
+     * 画面の再描画トリガー等に使用する。
+     */
+    public void setOnAsyncCommandComplete(Runnable callback) {
+        this.onAsyncCommandComplete = callback;
     }
 
     /**
@@ -216,10 +225,12 @@ public class CommandLoop {
                                     if (!command.keepsRegionActive()) {
                                         context.activeWindow().clearMark();
                                     }
+                                    onAsyncCommandComplete.run();
                                 })
                                 .exceptionally(ex -> {
                                     var cause = ex.getCause() != null ? ex.getCause() : ex;
                                     handleCommandError(command, context, cause);
+                                    onAsyncCommandComplete.run();
                                     return null;
                                 });
                     });

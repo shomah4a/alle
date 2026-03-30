@@ -82,6 +82,9 @@ public final class FaceName {
     // 行番号
     public static final FaceName LINE_NUMBER = new FaceName("line-number", "行番号表示");
 
+    // 出力
+    public static final FaceName WARNING = new FaceName("warning", "警告・標準エラー出力");
+
     // 検索
     public static final FaceName ISEARCH_MATCH = new FaceName("isearch-match", "インクリメンタルサーチのマッチ箇所");
 }

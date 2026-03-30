@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.mode.modes.dired;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.input.DefaultFileOperations;
+import io.github.shomah4a.alle.core.input.DefaultShellCommandExecutor;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.io.BufferIO;
@@ -47,6 +48,8 @@ public final class TreeDiredInitializer {
         var deleteCommand = new TreeDiredDeleteCommand(fileOperations, diredConfirmHistory);
         var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
         var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
+        var shellCommandExecutor = new DefaultShellCommandExecutor();
+        var shellCommand = new TreeDiredShellCommand(shellCommandExecutor, new InputHistory());
         var killBufferCmd = globalRegistry.lookup("kill-buffer").orElseThrow();
 
         var diredCommandRegistry = new CommandRegistry();
@@ -62,6 +65,7 @@ public final class TreeDiredInitializer {
         diredCommandRegistry.register(deleteCommand);
         diredCommandRegistry.register(chmodCommand);
         diredCommandRegistry.register(chownCommand);
+        diredCommandRegistry.register(shellCommand);
         commandResolver.registerModeCommands("tree-dired", diredCommandRegistry);
 
         var diredKeymap = createKeymap(
@@ -77,7 +81,8 @@ public final class TreeDiredInitializer {
                 renameCommand,
                 deleteCommand,
                 chmodCommand,
-                chownCommand);
+                chownCommand,
+                shellCommand);
 
         var diredHistory = new InputHistory();
         return new TreeDiredCommand(
@@ -102,7 +107,8 @@ public final class TreeDiredInitializer {
             TreeDiredRenameCommand renameCommand,
             TreeDiredDeleteCommand deleteCommand,
             TreeDiredChmodCommand chmodCommand,
-            TreeDiredChownCommand chownCommand) {
+            TreeDiredChownCommand chownCommand,
+            TreeDiredShellCommand shellCommand) {
         var keymap = new Keymap("tree-dired");
         keymap.setDefaultCommand(new TreeDiredNoOpCommand());
         keymap.bind(KeyStroke.of('\t'), toggleCommand);
@@ -119,6 +125,7 @@ public final class TreeDiredInitializer {
         keymap.bind(KeyStroke.of('D'), deleteCommand);
         keymap.bind(KeyStroke.of('M'), chmodCommand);
         keymap.bind(KeyStroke.of('O'), chownCommand);
+        keymap.bind(KeyStroke.of('!'), shellCommand);
         return keymap;
     }
 }
