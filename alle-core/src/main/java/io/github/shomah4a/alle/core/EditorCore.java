@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.command.BeginningOfLineCommand;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.command.CommentDwimCommand;
 import io.github.shomah4a.alle.core.command.CommentRegionCommand;
 import io.github.shomah4a.alle.core.command.CopyRegionCommand;
@@ -179,6 +180,7 @@ public final class EditorCore {
         // コマンドループ
         var inputPrompter = inputPrompterFactory.apply(frame);
         var killRing = new KillRing();
+        var commandResolver = new CommandResolver(registry);
         var commandLoop = new CommandLoop(
                 inputSource,
                 resolver,
@@ -189,7 +191,7 @@ public final class EditorCore {
                 messageBuffer,
                 warningBuffer,
                 settingsRegistry,
-                registry);
+                commandResolver);
 
         return new EditorCore(
                 frame,
@@ -244,7 +246,8 @@ public final class EditorCore {
         registry.register(new OtherWindowCommand());
         registry.register(new KillBufferCommand(bufferHistory, bufferIO));
         var commandHistory = new InputHistory();
-        registry.register(new ExecuteCommandCommand(registry, commandHistory));
+        var commandResolver = new CommandResolver(registry);
+        registry.register(new ExecuteCommandCommand(commandResolver, commandHistory));
         registry.register(new SetMarkCommand());
         registry.register(new KillRegionCommand());
         registry.register(new CopyRegionCommand());

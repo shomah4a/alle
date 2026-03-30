@@ -109,7 +109,7 @@ class TreeDiredFileCommandTest {
                 new MessageBuffer("*Messages*", 100, settings),
                 new MessageBuffer("*Warnings*", 100, settings),
                 settings,
-                registry);
+                new io.github.shomah4a.alle.core.command.CommandResolver(registry));
 
         return new DiredSetup(context, mode, window);
     }

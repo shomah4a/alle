@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode;
 
+import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.setting.ModeSettings;
 import java.util.Optional;
@@ -27,5 +28,13 @@ public interface MinorMode {
      */
     default ModeSettings settingDefaults() {
         return ModeSettings.empty();
+    }
+
+    /**
+     * モード固有のコマンドレジストリを返す。
+     * モード固有のコマンドを持たない場合はemptyを返す。
+     */
+    default Optional<CommandRegistry> commandRegistry() {
+        return Optional.empty();
     }
 }

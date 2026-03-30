@@ -3,26 +3,32 @@ package io.github.shomah4a.alle.core.input;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.command.CommandResolver;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CommandNameCompleterTest {
 
-    private CommandRegistry registry;
     private CommandNameCompleter completer;
 
     @BeforeEach
     void setUp() {
-        registry = new CommandRegistry();
+        var registry = new CommandRegistry();
         registry.register(stubCommand("forward-char"));
         registry.register(stubCommand("forward-word"));
         registry.register(stubCommand("backward-char"));
         registry.register(stubCommand("find-file"));
-        completer = new CommandNameCompleter(registry);
+        var resolver = new CommandResolver(registry);
+        var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
+        completer = new CommandNameCompleter(resolver, buffer);
     }
 
     @Test

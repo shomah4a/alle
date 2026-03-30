@@ -56,7 +56,7 @@ class CommandContextDelegateTest {
                 new MessageBuffer("*Messages*", 100, SETTINGS),
                 new MessageBuffer("*Warnings*", 100, SETTINGS),
                 SETTINGS,
-                registry);
+                new CommandResolver(registry));
     }
 
     @Nested

@@ -34,17 +34,18 @@ public record CommandContext(
         MessageBuffer messageBuffer,
         MessageBuffer warningBuffer,
         SettingsRegistry settingsRegistry,
-        CommandRegistry commandRegistry) {
+        CommandResolver commandResolver) {
 
     /**
      * 名前を指定して別のコマンドを実行する。
+     * バッファのモードスコープを考慮した階層的名前解決を行う。
      * コンテキストはそのまま渡されるため、thisCommandやlastCommandは変わらない。
      *
      * @throws IllegalArgumentException 指定された名前のコマンドが登録されていない場合
      */
     public CompletableFuture<Void> delegate(String commandName) {
-        var command = commandRegistry
-                .lookup(commandName)
+        var command = commandResolver
+                .resolve(commandName, activeWindow.getBuffer())
                 .orElseThrow(() -> new IllegalArgumentException("コマンド '" + commandName + "' は登録されていません"));
         return command.execute(this);
     }

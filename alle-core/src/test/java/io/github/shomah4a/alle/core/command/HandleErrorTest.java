@@ -44,7 +44,7 @@ class HandleErrorTest {
                 messageBuffer,
                 warningBuffer,
                 new SettingsRegistry(),
-                new CommandRegistry());
+                new CommandResolver(new CommandRegistry()));
     }
 
     @Test

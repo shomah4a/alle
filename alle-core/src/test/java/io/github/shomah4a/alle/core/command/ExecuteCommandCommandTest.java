@@ -26,7 +26,7 @@ class ExecuteCommandCommandTest {
         void レジストリに登録されたコマンドを名前で実行できる() {
             var registry = new CommandRegistry();
             registry.register(new ForwardCharCommand());
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             var context = TestCommandContextFactory.createDefault();
             context.frame().getActiveWindow().insert("Hello");
@@ -40,7 +40,7 @@ class ExecuteCommandCommandTest {
         @Test
         void 未登録のコマンド名を指定すると例外を投げる() {
             var registry = new CommandRegistry();
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
             var context = TestCommandContextFactory.createDefault();
 
             assertThrows(IllegalArgumentException.class, () -> execCmd.executeByName("nonexistent", context));
@@ -51,7 +51,7 @@ class ExecuteCommandCommandTest {
             var registry = new CommandRegistry();
             registry.register(new ForwardCharCommand());
             registry.register(new BackwardCharCommand());
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             var context = TestCommandContextFactory.createDefault();
             context.frame().getActiveWindow().insert("Hello");
@@ -72,7 +72,7 @@ class ExecuteCommandCommandTest {
         void プロンプトで入力したコマンド名を実行する() {
             var registry = new CommandRegistry();
             registry.register(new ForwardCharCommand());
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
@@ -97,7 +97,7 @@ class ExecuteCommandCommandTest {
         void キャンセル時は何も実行しない() {
             var registry = new CommandRegistry();
             registry.register(new ForwardCharCommand());
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
@@ -122,7 +122,7 @@ class ExecuteCommandCommandTest {
         void 空文字列で確定した場合は何も実行しない() {
             var registry = new CommandRegistry();
             registry.register(new ForwardCharCommand());
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             var context = TestCommandContextFactory.createDefault();
             context.frame().getActiveWindow().insert("Hello");
@@ -137,7 +137,7 @@ class ExecuteCommandCommandTest {
         @Test
         void 存在しないコマンド名で確定した場合は例外を投げる() {
             var registry = new CommandRegistry();
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
@@ -162,7 +162,7 @@ class ExecuteCommandCommandTest {
         @Test
         void コマンド名はexecute_commandである() {
             var registry = new CommandRegistry();
-            var execCmd = new ExecuteCommandCommand(registry, new InputHistory());
+            var execCmd = new ExecuteCommandCommand(new CommandResolver(registry), new InputHistory());
 
             assertEquals("execute-command", execCmd.name());
         }

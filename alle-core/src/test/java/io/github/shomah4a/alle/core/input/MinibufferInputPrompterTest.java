@@ -242,7 +242,7 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new CommandRegistry());
+                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()));
 
             // ミニバッファがアクティブな状態でキー入力
             loop.processKey(KeyStroke.of('t'));
@@ -270,7 +270,7 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new CommandRegistry());
+                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()));
 
             loop.processKey(KeyStroke.of('a'));
             loop.processKey(KeyStroke.of('b'));
@@ -726,7 +726,7 @@ class MinibufferInputPrompterTest {
                     new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new CommandRegistry());
+                    new io.github.shomah4a.alle.core.command.CommandResolver(new CommandRegistry()));
             binding.command().execute(context).join();
         }
     }

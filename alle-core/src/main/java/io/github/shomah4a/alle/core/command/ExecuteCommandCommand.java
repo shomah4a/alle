@@ -9,14 +9,15 @@ import java.util.concurrent.CompletableFuture;
  * コマンドレジストリから名前でコマンドを検索し実行する。
  * Emacsのexecute-extended-command (M-x) に相当。
  * ミニバッファでコマンド名を入力し、Tab補完付きで実行する。
+ * カレントバッファのモードスコープを考慮した名前解決を行う。
  */
 public class ExecuteCommandCommand implements Command {
 
-    private final CommandRegistry registry;
+    private final CommandResolver commandResolver;
     private final InputHistory commandHistory;
 
-    public ExecuteCommandCommand(CommandRegistry registry, InputHistory commandHistory) {
-        this.registry = registry;
+    public ExecuteCommandCommand(CommandResolver commandResolver, InputHistory commandHistory) {
+        this.commandResolver = commandResolver;
         this.commandHistory = commandHistory;
     }
 
@@ -26,12 +27,13 @@ public class ExecuteCommandCommand implements Command {
     }
 
     /**
-     * 指定された名前のコマンドを検索し実行する。
+     * 指定された名前のコマンドをカレントバッファのモードスコープで検索し実行する。
      *
      * @throws IllegalArgumentException 指定された名前のコマンドが存在しない場合
      */
     public CompletableFuture<Void> executeByName(String commandName, CommandContext context) {
-        var command = registry.lookup(commandName);
+        var buffer = context.activeWindow().getBuffer();
+        var command = commandResolver.resolve(commandName, buffer);
         if (command.isEmpty()) {
             throw new IllegalArgumentException("コマンド '" + commandName + "' は登録されていません");
         }
@@ -40,7 +42,8 @@ public class ExecuteCommandCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var completer = new CommandNameCompleter(registry);
+        var buffer = context.activeWindow().getBuffer();
+        var completer = new CommandNameCompleter(commandResolver, buffer);
         return context.inputPrompter()
                 .prompt("M-x ", "", commandHistory, completer)
                 .thenCompose(result -> {

@@ -1,24 +1,28 @@
 package io.github.shomah4a.alle.core.input;
 
-import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.command.CommandResolver;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * コマンド名の補完を提供する。
- * CommandRegistryの登録済みコマンド名から前方一致で候補を返す。
+ * CommandResolverを通じてカレントバッファのモードスコープを考慮した候補を返す。
  * コマンド名は確定可能（terminal）な候補として返す。
  */
 public class CommandNameCompleter implements Completer {
 
-    private final CommandRegistry registry;
+    private final CommandResolver commandResolver;
+    private final BufferFacade buffer;
 
-    public CommandNameCompleter(CommandRegistry registry) {
-        this.registry = registry;
+    public CommandNameCompleter(CommandResolver commandResolver, BufferFacade buffer) {
+        this.commandResolver = commandResolver;
+        this.buffer = buffer;
     }
 
     @Override
     public ListIterable<CompletionCandidate> complete(String input) {
-        return registry.registeredNames()
+        return commandResolver
+                .allCommandNames(buffer)
                 .select(name -> name.startsWith(input))
                 .collect(CompletionCandidate::terminal)
                 .toList();
