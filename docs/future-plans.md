@@ -19,10 +19,6 @@
 
 ## 基本
 
-### toggle-truncate-lines
-
-流石に欲しくなってきた
-
 ### バッファごとのカレントディレクトリ
 
 find-file, dired なんかだと欲しい機能
