@@ -94,16 +94,23 @@ public class ScreenRenderer {
             var line = ws.visibleLines().get(row);
             int screenRow = rect.top() + row;
             boolean isHighlighted = highlightLine.isPresent() && highlightLine.getAsInt() == row;
+
+            int effectiveDisplayStartColumn = displayStartColumn;
+            if (line.visualLineRange().isPresent()) {
+                var vlr = line.visualLineRange().get();
+                effectiveDisplayStartColumn = DisplayWidthUtil.computeColumnForOffset(line.text(), vlr.startCp());
+            }
+
             if (line.spans().isPresent()) {
                 renderLineWithHighlight(
                         line.text(),
                         screenRow,
                         rect.left(),
                         rect.width(),
-                        displayStartColumn,
+                        effectiveDisplayStartColumn,
                         line.spans().get());
             } else {
-                renderLineAt(line.text(), screenRow, rect.left(), rect.width(), displayStartColumn);
+                renderLineAt(line.text(), screenRow, rect.left(), rect.width(), effectiveDisplayStartColumn);
             }
             if (isHighlighted) {
                 applyReverse(screenRow, rect.left(), rect.width());
@@ -248,13 +255,26 @@ public class ScreenRenderer {
             int endCp = lineRegion.get().endCp();
             int screenRow = rect.top() + row;
 
+            // 折り返しモード時はvisualLineRangeでリージョンをクリップ
+            int effectiveDisplayStartColumn = displayStartColumn;
+            if (line.visualLineRange().isPresent()) {
+                var vlr = line.visualLineRange().get();
+                effectiveDisplayStartColumn = DisplayWidthUtil.computeColumnForOffset(line.text(), vlr.startCp());
+                // リージョンを視覚行の範囲にクリップ
+                startCp = Math.max(startCp, vlr.startCp());
+                endCp = Math.min(endCp, vlr.endCp());
+                if (startCp >= endCp) {
+                    continue;
+                }
+            }
+
             // コードポイントインデックスを表示カラムに変換
             int startCol = DisplayWidthUtil.computeColumnForOffset(line.text(), startCp);
             int endCol = DisplayWidthUtil.computeColumnForOffset(line.text(), endCp);
 
             // displayStartColumnを考慮して画面カラムに変換
-            int screenStartCol = Math.max(0, startCol - displayStartColumn);
-            int screenEndCol = Math.min(rect.width(), endCol - displayStartColumn);
+            int screenStartCol = Math.max(0, startCol - effectiveDisplayStartColumn);
+            int screenEndCol = Math.min(rect.width(), endCol - effectiveDisplayStartColumn);
 
             if (screenStartCol >= screenEndCol) {
                 continue;
