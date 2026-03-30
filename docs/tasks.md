@@ -57,6 +57,13 @@
 - applyFaces で formatEntryLine と computeMaxSizeWidth が二重に計算されている
 - buildText と applyFaces を統合するか、結果をキャッシュして再利用する
 
+### 非同期バッファ変更時の自動再描画
+- 現在は EditorThread の processKey() 後に publishSnapshot() を呼ぶことで再描画している
+- 非同期コマンド（shell-command等）の中間出力���次のキー入力まで描画されない
+- CommandLoop の onAsyncCommandComplete コールバックで Future 完了時の再描画は対応済み
+- 理想はバッファ変更を自動検知して再描画する仕組み（EventNotifier を BufferFacade/Window に持たせる等）
+- ストリーミング出力の中間描画にも対応できるようになる
+
 ## 将来課題
 
 ### CommandContext のスナップショット化
