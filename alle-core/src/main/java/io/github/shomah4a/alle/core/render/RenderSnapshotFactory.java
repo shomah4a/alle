@@ -331,6 +331,7 @@ public final class RenderSnapshotFactory {
         int column = point - lineStart;
 
         String dirty = buffer.isDirty() ? "**" : "--";
+        String truncate = window.isTruncateLines() ? "$" : "\\";
         String bufferName = buffer.getName();
         String modeName = buffer.getMajorMode().name();
         var minorModes = buffer.getMinorModes();
@@ -338,7 +339,8 @@ public final class RenderSnapshotFactory {
                 ? ""
                 : " " + minorModes.collect(m -> m.name()).makeString(" ");
         return String.format(
-                "--%s  %s    (%d,%d)  (%s%s)", dirty, bufferName, lineIndex + 1, column, modeName, minorModesText);
+                "--%s%s  %s    (%d,%d)  (%s%s)",
+                dirty, truncate, bufferName, lineIndex + 1, column, modeName, minorModesText);
     }
 
     private static CursorPosition computeCursorPosition(Window window, Rect rect) {

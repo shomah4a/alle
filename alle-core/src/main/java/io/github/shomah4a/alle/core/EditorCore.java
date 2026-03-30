@@ -45,6 +45,7 @@ import io.github.shomah4a.alle.core.command.ShutdownHandler;
 import io.github.shomah4a.alle.core.command.SplitWindowBelowCommand;
 import io.github.shomah4a.alle.core.command.SplitWindowRightCommand;
 import io.github.shomah4a.alle.core.command.SwitchBufferCommand;
+import io.github.shomah4a.alle.core.command.ToggleTruncateLinesCommand;
 import io.github.shomah4a.alle.core.command.UndoCommand;
 import io.github.shomah4a.alle.core.command.YankCommand;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
@@ -257,6 +258,7 @@ public final class EditorCore {
         registry.register(new DeleteWindowCommand());
         registry.register(new DeleteOtherWindowsCommand());
         registry.register(new KeyboardQuitCommand());
+        registry.register(new ToggleTruncateLinesCommand());
         registry.register(new SaveBuffersKillAlleCommand(shutdownHandler, shutdownRequestable));
         registry.register(new ProcessQuitCommand(shutdownRequestable));
 
