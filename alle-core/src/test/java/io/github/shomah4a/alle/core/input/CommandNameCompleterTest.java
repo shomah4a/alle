@@ -46,10 +46,10 @@ class CommandNameCompleterTest {
     }
 
     @Test
-    void 空文字列はグローバルコマンドとFQCN候補を返す() {
+    void 空文字列はグローバルコマンドとモードプレフィックス候補を返す() {
         var result = completer.complete("");
-        // 4コマンド + global.プレフィックス + global.付き4コマンド = 9
-        assertEquals(9, result.size());
+        // 4コマンド + global.プレフィックス = 5
+        assertEquals(5, result.size());
     }
 
     @Test

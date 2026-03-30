@@ -162,10 +162,18 @@ public final class EditorCore {
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
 
-        // コマンドレジストリ
+        // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
+        var commandResolver = new CommandResolver();
         var registry = createCommandRegistry(
-                bufferIO, directoryLister, autoModeMap, modeRegistry, shutdownHandler, shutdownRequestable);
+                bufferIO,
+                directoryLister,
+                autoModeMap,
+                modeRegistry,
+                shutdownHandler,
+                shutdownRequestable,
+                commandResolver);
+        commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
         modeRegistry.setCommandRegistry(registry);
@@ -180,7 +188,6 @@ public final class EditorCore {
         // コマンドループ
         var inputPrompter = inputPrompterFactory.apply(frame);
         var killRing = new KillRing();
-        var commandResolver = new CommandResolver(registry);
         var commandLoop = new CommandLoop(
                 inputSource,
                 resolver,
@@ -211,7 +218,8 @@ public final class EditorCore {
             AutoModeMap autoModeMap,
             ModeRegistry modeRegistry,
             ShutdownHandler shutdownHandler,
-            ShutdownRequestable shutdownRequestable) {
+            ShutdownRequestable shutdownRequestable,
+            CommandResolver commandResolver) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -246,7 +254,6 @@ public final class EditorCore {
         registry.register(new OtherWindowCommand());
         registry.register(new KillBufferCommand(bufferHistory, bufferIO));
         var commandHistory = new InputHistory();
-        var commandResolver = new CommandResolver(registry);
         registry.register(new ExecuteCommandCommand(commandResolver, commandHistory));
         registry.register(new SetMarkCommand());
         registry.register(new KillRegionCommand());
@@ -294,6 +301,7 @@ public final class EditorCore {
         diredCommandRegistry.register(deleteCommand);
         diredCommandRegistry.register(chmodCommand);
         diredCommandRegistry.register(chownCommand);
+        commandResolver.registerModeCommands("Tree-Dired", diredCommandRegistry);
 
         // Tree Dired キーマップ構築
         var diredKeymap = createTreeDiredKeymap(

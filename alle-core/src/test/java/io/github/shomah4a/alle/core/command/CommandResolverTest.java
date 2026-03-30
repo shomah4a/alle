@@ -232,6 +232,7 @@ class CommandResolverTest {
             var mode = majorModeWithCommands("Dired", modeCommand);
             var buffer = createBufferWithMajorMode(mode);
             var resolver = new CommandResolver(new CommandRegistry());
+            resolver.registerModeCommands("Dired", mode.commandRegistry().get());
 
             var result = resolver.resolve("Dired.toggle", buffer);
 
@@ -245,6 +246,7 @@ class CommandResolverTest {
             var mode = minorModeWithCommands("ElectricPair", modeCommand);
             var buffer = createBufferWithMinorMode(mode);
             var resolver = new CommandResolver(new CommandRegistry());
+            resolver.registerModeCommands("ElectricPair", mode.commandRegistry().get());
 
             var result = resolver.resolve("ElectricPair.toggle-pair", buffer);
 

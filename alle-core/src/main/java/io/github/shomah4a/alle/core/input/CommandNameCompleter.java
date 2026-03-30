@@ -8,6 +8,7 @@ import org.eclipse.collections.api.list.ListIterable;
  * コマンド名の補完を提供する。
  * CommandResolverを通じてカレントバッファのモードスコープを考慮した候補を返す。
  * モード名プレフィックス（例: "Python."）は継続補完（partial）として返す。
+ * プレフィックス入力後はFQCN形式の候補を返す。
  */
 public class CommandNameCompleter implements Completer {
 
@@ -21,6 +22,15 @@ public class CommandNameCompleter implements Completer {
 
     @Override
     public ListIterable<CompletionCandidate> complete(String input) {
+        // プレフィックス入力後（ドットを含む入力）はFQCN補完
+        if (input.contains(".")) {
+            return commandResolver
+                    .completeFqcn(input)
+                    .collect(CompletionCandidate::terminal)
+                    .toList();
+        }
+
+        // 通常の補完
         return commandResolver
                 .allCommandNames(buffer)
                 .select(name -> name.startsWith(input))
