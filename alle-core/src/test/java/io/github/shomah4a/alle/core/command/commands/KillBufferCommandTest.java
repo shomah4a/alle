@@ -349,4 +349,68 @@ class KillBufferCommandTest {
             }
         }
     }
+
+    @Nested
+    class previousBufferへの優先切り替え {
+
+        @Test
+        void previousBufferがある場合はそのバッファに切り替わる() {
+            var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
+            bufferManager.add(barBuffer);
+
+            // scratch → bar → foo の順に切り替え → previousBuffer は bar
+            frame.getActiveWindow().setBuffer(barBuffer);
+            frame.getActiveWindow().setBuffer(fooBuffer);
+            assertEquals(barBuffer, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
+
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
+            cmd.execute(context).join();
+
+            assertEquals(barBuffer, frame.getActiveWindow().getBuffer());
+        }
+
+        @Test
+        void previousBufferがkill対象自身の場合はfallbackが使われる() {
+            // scratch → foo に切り替え → previousBuffer は scratch
+            frame.getActiveWindow().setBuffer(fooBuffer);
+            // foo → scratch に切り替え → previousBuffer は foo
+            frame.getActiveWindow().setBuffer(scratch);
+            assertEquals(fooBuffer, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
+
+            // foo を削除 → previousBuffer が kill 対象なので fallback
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
+            cmd.execute(context).join();
+
+            // scratch を表示中なので foo は削除されるだけ
+            // previousBuffer の foo は対象なので fallback される
+            assertNotEquals(fooBuffer, frame.getActiveWindow().getBuffer());
+        }
+
+        @Test
+        void 複数ウィンドウがそれぞれのpreviousBufferに切り替わる() {
+            var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
+            var bazBuffer = new BufferFacade(new TextBuffer("baz.txt", new GapTextModel(), new SettingsRegistry()));
+            bufferManager.add(barBuffer);
+            bufferManager.add(bazBuffer);
+
+            // ウィンドウを分割
+            frame.splitActiveWindow(Direction.VERTICAL, scratch);
+            var windows = frame.getWindowTree().windows();
+            var window1 = windows.get(0);
+            var window2 = windows.get(1);
+
+            // window1: scratch → bar → foo (previousBuffer = bar)
+            window1.setBuffer(barBuffer);
+            window1.setBuffer(fooBuffer);
+            // window2: scratch → baz → foo (previousBuffer = baz)
+            window2.setBuffer(bazBuffer);
+            window2.setBuffer(fooBuffer);
+
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
+            cmd.execute(context).join();
+
+            assertEquals(barBuffer, window1.getBuffer());
+            assertEquals(bazBuffer, window2.getBuffer());
+        }
+    }
 }

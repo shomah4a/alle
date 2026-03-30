@@ -140,13 +140,16 @@ public class KillBufferCommand implements Command {
                     new TextBuffer(SCRATCH_BUFFER_NAME, new GapTextModel(), context.settingsRegistry())));
         }
 
-        // 切り替え先を決定: 他のウィンドウで表示されていないバッファを優先
+        // 切り替え先を決定: previousBuffer を優先し、なければ他のウィンドウで表示されていないバッファ
         var allWindows = context.frame().getWindowTree().windows();
-        var replacement = findReplacementBuffer(bufferManager, allWindows, target);
+        var fallbackReplacement = findReplacementBuffer(bufferManager, allWindows, target);
 
         // 削除対象を表示中の全ウィンドウを切り替え
         for (var window : allWindows) {
             if (window.getBuffer().equals(target)) {
+                var replacement = window.getPreviousBuffer()
+                        .filter(b -> !b.equals(target))
+                        .orElse(fallbackReplacement);
                 window.setBuffer(replacement);
             }
         }
