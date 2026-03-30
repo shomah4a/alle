@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.window;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -529,6 +530,53 @@ class WindowTest {
             window.getBuffer().removePointGuard(0, 8);
             window.setPoint(5);
             assertEquals(5, window.getPoint());
+        }
+    }
+
+    @Nested
+    class 行切り詰めモード {
+
+        @Test
+        void デフォルトは切り詰めモード() {
+            var window = createWindow();
+            assertTrue(window.isTruncateLines());
+        }
+
+        @Test
+        void 折り返しモードに切り替えるとdisplayStartColumnが0にリセットされる() {
+            var window = createWindow();
+            window.insert("abcdefghijklmnopqrstuvwxyz");
+            window.ensurePointHorizontallyVisible(10);
+            // 水平スクロール位置がリセットされる
+            window.setTruncateLines(false);
+            assertEquals(0, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void 折り返しモード時にensurePointHorizontallyVisibleがdisplayStartColumnを0に保つ() {
+            var window = createWindow();
+            window.insert("abcdefghijklmnopqrstuvwxyz");
+            window.setTruncateLines(false);
+            window.ensurePointHorizontallyVisible(10);
+            assertEquals(0, window.getDisplayStartColumn());
+        }
+
+        @Test
+        void 切り詰めモード時は従来通り水平スクロールが有効() {
+            var window = createWindow();
+            window.insert("abcdefghijklmnopqrstuvwxyz");
+            window.setTruncateLines(true);
+            window.ensurePointHorizontallyVisible(10);
+            assertTrue(window.getDisplayStartColumn() > 0);
+        }
+
+        @Test
+        void バッファ切り替え後もtruncateLinesが保持される() {
+            var window = createWindow();
+            window.setTruncateLines(false);
+            assertFalse(window.isTruncateLines());
+            window.setBuffer(new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry())));
+            assertFalse(window.isTruncateLines());
         }
     }
 

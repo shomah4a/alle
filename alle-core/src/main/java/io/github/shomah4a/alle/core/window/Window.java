@@ -20,6 +20,7 @@ public class Window {
     private int displayStartColumn;
     private @Nullable Integer mark;
     private boolean highlightPointLine;
+    private boolean truncateLines = true;
     private volatile ViewportSize viewportSize = new ViewportSize(0, 0);
 
     public Window(BufferFacade buffer) {
@@ -201,6 +202,10 @@ public class Window {
      * @param visibleColumns 表示可能なカラム数
      */
     public void ensurePointHorizontallyVisible(int visibleColumns) {
+        if (!truncateLines) {
+            displayStartColumn = 0;
+            return;
+        }
         if (visibleColumns <= 0) {
             return;
         }
@@ -279,6 +284,26 @@ public class Window {
      */
     public void setHighlightPointLine(boolean highlightPointLine) {
         this.highlightPointLine = highlightPointLine;
+    }
+
+    /**
+     * 行切り詰めモードかどうかを返す。
+     * trueの場合、ウィンドウ幅を超える行は切り詰めて水平スクロールで表示する。
+     * falseの場合、ウィンドウ幅で折り返して表示する。
+     */
+    public boolean isTruncateLines() {
+        return truncateLines;
+    }
+
+    /**
+     * 行切り詰めモードを設定する。
+     * falseに設定すると折り返しモードになり、水平スクロール位置は0にリセットされる。
+     */
+    public void setTruncateLines(boolean truncateLines) {
+        this.truncateLines = truncateLines;
+        if (!truncateLines) {
+            this.displayStartColumn = 0;
+        }
     }
 
     /**
