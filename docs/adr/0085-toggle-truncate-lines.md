@@ -50,16 +50,22 @@ ScreenRendererが視覚行の描画範囲を制限する方式とし、
 折り返しモード時は水平スクロールを無効化する（`displayStartColumn = 0` 固定）。
 切り詰めモード時は従来通り水平スクロールが有効。
 
+### 長大行のスクロール
+
+1バッファ行の視覚行数が画面行数を超える場合、行の途中の視覚行から表示を開始する必要がある。
+Windowに `displayStartVisualLine`（バッファ行内の開始視覚行番号）を追加し、
+`ensurePointVisibleWrapped` がカーソルの視覚行が画面末尾に収まるよう調整する。
+
 ### 段階的実装
 
-実装中の安全性を確保するため、`truncateLines` のデフォルト値は `true`（現在の動作=切り詰め）で開始する。
-全機能が実装・テスト完了した後に、デフォルトを `false`（折り返し）に変更する。
+実装中の安全性を確保するため、`truncateLines` のデフォルト値は `true`（現在の動作=切り詰め）で開始した。
+全機能が実装・テスト完了した後に、デフォルトを `false`（折り返し）に変更した。
 
 ## 影響
 
 ### 変更対象
 
-- Window: `truncateLines` フラグ追加
+- Window: `truncateLines` フラグ、`displayStartVisualLine` フィールド追加
 - RenderSnapshotFactory: 視覚行展開ロジック追加
 - RenderSnapshot: LineSnapshotに視覚行範囲情報追加
 - ScreenRenderer: 視覚行範囲に基づく描画制限
