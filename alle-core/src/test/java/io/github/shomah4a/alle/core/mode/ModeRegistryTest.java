@@ -174,7 +174,7 @@ class ModeRegistryTest {
         void メジャーモード登録時にモード切り替えコマンドが自動登録される() {
             var commandRegistry = new CommandRegistry();
             registry.setCommandRegistry(commandRegistry);
-            registry.registerMajorMode("Python", StubMajorMode::new);
+            registry.registerMajorMode("python", StubMajorMode::new);
             assertTrue(commandRegistry.lookup("python-mode").isPresent());
         }
 
@@ -182,22 +182,22 @@ class ModeRegistryTest {
         void マイナーモード登録時にトグルコマンドが自動登録される() {
             var commandRegistry = new CommandRegistry();
             registry.setCommandRegistry(commandRegistry);
-            registry.registerMinorMode("ElectricPair", StubMinorMode::new);
+            registry.registerMinorMode("electric-pair", StubMinorMode::new);
             assertTrue(commandRegistry.lookup("electric-pair-mode").isPresent());
         }
 
         @Test
         void CommandRegistry未設定でもモード登録が正常に動作する() {
-            registry.registerMajorMode("Test", StubMajorMode::new);
-            assertTrue(registry.lookupMajorMode("Test").isPresent());
+            registry.registerMajorMode("test", StubMajorMode::new);
+            assertTrue(registry.lookupMajorMode("test").isPresent());
         }
 
         @Test
-        void CamelCaseのモード名がkebabCaseのコマンド名に変換される() {
-            assertEquals("python-mode", ModeRegistry.toCommandName("Python"));
-            assertEquals("electric-pair-mode", ModeRegistry.toCommandName("ElectricPair"));
-            assertEquals("text-mode", ModeRegistry.toCommandName("Text"));
-            assertEquals("markdown-mode", ModeRegistry.toCommandName("Markdown"));
+        void モード名の末尾にmodeを付与したコマンド名に変換される() {
+            assertEquals("python-mode", ModeRegistry.toCommandName("python"));
+            assertEquals("electric-pair-mode", ModeRegistry.toCommandName("electric-pair"));
+            assertEquals("text-mode", ModeRegistry.toCommandName("text"));
+            assertEquals("markdown-mode", ModeRegistry.toCommandName("markdown"));
         }
     }
 

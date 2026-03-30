@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 class TextModeTest {
 
     @Test
-    void モード名がTextである() {
+    void モード名がtextである() {
         var mode = new TextMode();
-        assertEquals("Text", mode.name());
+        assertEquals("text", mode.name());
     }
 
     @Test

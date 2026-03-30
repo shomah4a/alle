@@ -26,7 +26,7 @@ public class TreeDiredMode implements MajorMode {
 
     @Override
     public String name() {
-        return "Tree-Dired";
+        return "tree-dired";
     }
 
     @Override

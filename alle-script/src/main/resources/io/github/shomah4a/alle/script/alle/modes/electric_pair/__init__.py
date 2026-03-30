@@ -49,10 +49,10 @@ class ElectricPairMode(MinorModeBase):
     def name(self) -> str:
         """モード名を返す。
 
-        :return: "ElectricPair"
+        :return: "electric-pair"
         :rtype: str
         """
-        return "ElectricPair"
+        return "electric-pair"
 
     def keymap(self) -> Any:
         """Electric Pair モードのキーマップを返す。

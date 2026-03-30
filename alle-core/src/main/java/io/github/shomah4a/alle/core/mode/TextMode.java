@@ -11,7 +11,7 @@ public class TextMode implements MajorMode {
 
     @Override
     public String name() {
-        return "Text";
+        return "text";
     }
 
     @Override

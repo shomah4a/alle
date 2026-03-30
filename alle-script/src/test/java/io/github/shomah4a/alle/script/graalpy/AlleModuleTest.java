@@ -184,7 +184,7 @@ class AlleModuleTest {
         engine.eval("""
                 class PyMode(MajorModeBase):
                     def name(self):
-                        return "Python"
+                        return "python"
                 """);
         ScriptResult result = engine.eval("alle.register_major_mode(PyMode, extensions=['py', 'pyw'])");
         if (result instanceof ScriptResult.Failure f) {
@@ -233,7 +233,7 @@ class AlleModuleTest {
                 mode.name()
                 """);
         assertInstanceOf(ScriptResult.Success.class, result);
-        assertEquals("Python", ((ScriptResult.Success) result).value());
+        assertEquals("python", ((ScriptResult.Success) result).value());
     }
 
     @Test

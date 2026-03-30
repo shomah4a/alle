@@ -98,7 +98,7 @@ def register_major_mode(
     >>> from alle.mode import MajorModeBase
     >>> class PythonMode(MajorModeBase):
     ...     def name(self):
-    ...         return "Python"
+    ...         return "python"
     >>> alle.register_major_mode(PythonMode, extensions=["py", "pyw"])
     """
     facade = _require_facade()
@@ -121,7 +121,7 @@ def register_minor_mode(mode_class: type[MinorModeBase]) -> None:
     >>> from alle.mode import MinorModeBase
     >>> class AutoSaveMode(MinorModeBase):
     ...     def name(self):
-    ...         return "AutoSave"
+    ...         return "auto-save"
     >>> alle.register_minor_mode(AutoSaveMode)
     """
     facade = _require_facade()
@@ -135,7 +135,7 @@ def add_major_mode_hook(mode_name: str, hook: callable) -> None:
     フック関数は ``(buffer, mode_name)`` を引数に取る。
     ``buffer`` は ``alle.buffer.Buffer`` インスタンス。
 
-    :param mode_name: フックを紐付けるモード名（例: ``"Python"``）
+    :param mode_name: フックを紐付けるモード名（例: ``"python"``）
     :type mode_name: str
     :param hook: 有効化時に実行される関数。引数は ``(buffer, mode_name)``
     :type hook: callable
@@ -145,7 +145,7 @@ def add_major_mode_hook(mode_name: str, hook: callable) -> None:
     >>> def setup_python(buffer, mode_name):
     ...     # buffer に対してマイナーモードを有効化する等
     ...     pass
-    >>> alle.add_major_mode_hook("Python", setup_python)
+    >>> alle.add_major_mode_hook("python", setup_python)
     """
     def wrapper(java_buffer, mode):
         hook(Buffer(java_buffer), mode)
@@ -158,7 +158,7 @@ def add_minor_mode_hook(mode_name: str, hook: callable) -> None:
     フック関数は ``(buffer, mode_name)`` を引数に取る。
     ``buffer`` は ``alle.buffer.Buffer`` インスタンス。
 
-    :param mode_name: フックを紐付けるモード名（例: ``"ElectricPair"``）
+    :param mode_name: フックを紐付けるモード名（例: ``"electric-pair"``）
     :type mode_name: str
     :param hook: 有効化時に実行される関数。引数は ``(buffer, mode_name)``
     :type hook: callable

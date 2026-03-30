@@ -26,19 +26,19 @@ class AutoModeMapTest {
     @Test
     void 未登録拡張子のファイルからデフォルトモードが返る() {
         var mode = autoModeMap.resolve("readme.txt");
-        assertEquals("Text", mode.name());
+        assertEquals("text", mode.name());
     }
 
     @Test
     void 拡張子なしのファイルからデフォルトモードが返る() {
         var mode = autoModeMap.resolve("Makefile");
-        assertEquals("Text", mode.name());
+        assertEquals("text", mode.name());
     }
 
     @Test
     void ドットで終わるファイルからデフォルトモードが返る() {
         var mode = autoModeMap.resolve("file.");
-        assertEquals("Text", mode.name());
+        assertEquals("text", mode.name());
     }
 
     @Test

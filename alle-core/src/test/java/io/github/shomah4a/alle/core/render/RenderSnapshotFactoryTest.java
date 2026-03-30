@@ -91,7 +91,7 @@ class RenderSnapshotFactoryTest {
             var modeLine = snapshot.windowSnapshots().get(0).modeLine();
             assertTrue(modeLine.contains("main"), "バッファ名を含む");
             assertTrue(modeLine.contains("(1,0)"), "カーソル位置(行1,列0)を含む");
-            assertTrue(modeLine.contains("Text"), "モード名を含む");
+            assertTrue(modeLine.contains("text"), "モード名を含む");
         }
 
         @Test
@@ -341,7 +341,7 @@ class RenderSnapshotFactoryTest {
             var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 80, 24);
             var modeLine = snapshot.windowSnapshots().get(0).modeLine();
             assertFalse(modeLine.contains("TestMinor"), "マイナーモード名を含まない");
-            assertTrue(modeLine.contains("(Text)"), "メジャーモード名のみ表示される");
+            assertTrue(modeLine.contains("(text)"), "メジャーモード名のみ表示される");
         }
     }
 

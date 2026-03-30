@@ -177,8 +177,8 @@ public final class EditorCore {
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
         modeRegistry.setCommandRegistry(registry);
-        modeRegistry.registerMajorMode("Text", TextMode::new);
-        modeRegistry.registerMajorMode("Markdown", MarkdownMode::new);
+        modeRegistry.registerMajorMode("text", TextMode::new);
+        modeRegistry.registerMajorMode("markdown", MarkdownMode::new);
 
         // キーマップ
         var keymap = createKeymap(registry);
@@ -301,7 +301,7 @@ public final class EditorCore {
         diredCommandRegistry.register(deleteCommand);
         diredCommandRegistry.register(chmodCommand);
         diredCommandRegistry.register(chownCommand);
-        commandResolver.registerModeCommands("Tree-Dired", diredCommandRegistry);
+        commandResolver.registerModeCommands("tree-dired", diredCommandRegistry);
 
         // Tree Dired キーマップ構築
         var diredKeymap = createTreeDiredKeymap(

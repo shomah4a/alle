@@ -35,10 +35,10 @@ class PythonMode(MajorModeBase):
     def name(self) -> str:
         """モード名を返す。
 
-        :return: "Python"
+        :return: "python"
         :rtype: str
         """
-        return "Python"
+        return "python"
 
     def keymap(self) -> Any:
         """Python モード固有のキーマップを返す。

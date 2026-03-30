@@ -13,7 +13,7 @@ public class MarkdownMode implements MajorMode {
 
     @Override
     public String name() {
-        return "Markdown";
+        return "markdown";
     }
 
     @Override

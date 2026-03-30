@@ -195,19 +195,10 @@ public class ModeRegistry {
 
     /**
      * モード名をコマンド名に変換する。
-     * CamelCase を kebab-case に変換し、末尾に "-mode" を付与する。
-     * 例: "Python" → "python-mode", "ElectricPair" → "electric-pair-mode"
+     * モード名（kebab-case）の末尾に "-mode" を付与する。
+     * 例: "python" → "python-mode", "electric-pair" → "electric-pair-mode"
      */
     static String toCommandName(String modeName) {
-        var sb = new StringBuilder();
-        for (int i = 0; i < modeName.length(); i++) {
-            char ch = modeName.charAt(i);
-            if (Character.isUpperCase(ch) && i > 0) {
-                sb.append('-');
-            }
-            sb.append(Character.toLowerCase(ch));
-        }
-        sb.append("-mode");
-        return sb.toString();
+        return modeName + "-mode";
     }
 }
