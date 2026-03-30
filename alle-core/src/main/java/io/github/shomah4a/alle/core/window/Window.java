@@ -17,6 +17,7 @@ public class Window {
     private @Nullable BufferFacade previousBuffer;
     private int point;
     private int displayStartLine;
+    private int displayStartVisualLine;
     private int displayStartColumn;
     private @Nullable Integer mark;
     private boolean highlightPointLine;
@@ -46,6 +47,7 @@ public class Window {
         this.bufferFacade = buffer;
         this.point = 0;
         this.displayStartLine = 0;
+        this.displayStartVisualLine = 0;
         this.displayStartColumn = 0;
         this.mark = null;
     }
@@ -113,6 +115,7 @@ public class Window {
 
     /**
      * 表示開始行を設定する。
+     * 表示開始視覚行は0にリセットされる。
      *
      * @throws IndexOutOfBoundsException lineが範囲外の場合
      */
@@ -122,6 +125,22 @@ public class Window {
             throw new IndexOutOfBoundsException("line " + line + " is out of bounds [0, " + lineCount + ")");
         }
         this.displayStartLine = line;
+        this.displayStartVisualLine = 0;
+    }
+
+    /**
+     * 折り返しモード時の表示開始視覚行（displayStartLine内の視覚行番号、0始まり）を返す。
+     * 1バッファ行が画面行数を超える場合に、行の途中から表示を開始するために使用する。
+     */
+    public int getDisplayStartVisualLine() {
+        return displayStartVisualLine;
+    }
+
+    /**
+     * 折り返しモード時の表示開始視覚行を設定する。
+     */
+    public void setDisplayStartVisualLine(int visualLine) {
+        this.displayStartVisualLine = visualLine;
     }
 
     /**

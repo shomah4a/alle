@@ -548,4 +548,103 @@ class RenderSnapshotFactoryTest {
             assertFalse(snapshot.minibuffer().spans().isPresent());
         }
     }
+
+    @Nested
+    class 折り返しモード {
+
+        @Test
+        void 折り返しモード時に1バッファ行が複数の視覚行に展開される() {
+            // 幅5のウィンドウで10文字の行 → 2視覚行
+            var frame = createFrame("abcdefghij");
+            frame.getActiveWindow().setPoint(0);
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 5, 5);
+            // モードライン1行を除く4行分の表示領域で、2視覚行が生成される
+            var ws = snapshot.windowSnapshots().get(0);
+            assertEquals(2, ws.visibleLines().size());
+            // 各視覚行にvisualLineRangeが設定されている
+            assertTrue(ws.visibleLines().get(0).visualLineRange().isPresent());
+            assertTrue(ws.visibleLines().get(1).visualLineRange().isPresent());
+            // 1行目は cp0-5, 2行目は cp5-10
+            var vl0 = ws.visibleLines().get(0).visualLineRange().get();
+            assertEquals(0, vl0.startCp());
+            assertEquals(5, vl0.endCp());
+            var vl1 = ws.visibleLines().get(1).visualLineRange().get();
+            assertEquals(5, vl1.startCp());
+            assertEquals(10, vl1.endCp());
+        }
+
+        @Test
+        void 長大行でカーソルが後方の視覚行にある場合もカーソルが画面内に収まる() {
+            // 幅5で15文字の1行 → 3視覚行（cp0-5, cp5-10, cp10-15）
+            // 表示3行必要: height = 3(buffer) + 1(modeline) + 1(minibuf) = 5
+            var frame = createFrame("abcdefghijklmno");
+            frame.getActiveWindow().setPoint(15); // 末尾
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 5, 5);
+            var ws = snapshot.windowSnapshots().get(0);
+            assertEquals(3, ws.visibleLines().size());
+            var cursor = snapshot.cursorPosition();
+            assertTrue(cursor.row() >= 0 && cursor.row() < 3);
+        }
+
+        @Test
+        void 画面行数を超える長大行でdisplayStartVisualLineが設定される() {
+            // 幅5で15文字の1行 → 3視覚行だが表示2行しかない
+            // height = 2(buffer) + 1(modeline) + 1(minibuf) = 4
+            // カーソルを末尾に置くと、displayStartVisualLine=1で視覚行1-2が表示される
+            var frame = createFrame("abcdefghijklmno");
+            frame.getActiveWindow().setPoint(15); // 末尾
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 5, 4);
+            var ws = snapshot.windowSnapshots().get(0);
+            assertEquals(2, ws.visibleLines().size());
+            // 先頭の視覚行がスキップされて、視覚行1から表示される
+            var vl0 = ws.visibleLines().get(0).visualLineRange().get();
+            assertEquals(5, vl0.startCp()); // 視覚行1の開始
+            var vl1 = ws.visibleLines().get(1).visualLineRange().get();
+            assertEquals(10, vl1.startCp()); // 視覚行2の開始
+            // カーソルが画面内にある
+            var cursor = snapshot.cursorPosition();
+            assertTrue(cursor.row() >= 0 && cursor.row() < 2);
+        }
+
+        @Test
+        void 画面行数を超える長大行でカーソルが先頭にある場合は視覚行0から表示される() {
+            // 幅5で15文字の1行、表示2行
+            var frame = createFrame("abcdefghijklmno");
+            frame.getActiveWindow().setPoint(0);
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 5, 4);
+            var ws = snapshot.windowSnapshots().get(0);
+            assertEquals(2, ws.visibleLines().size());
+            var vl0 = ws.visibleLines().get(0).visualLineRange().get();
+            assertEquals(0, vl0.startCp());
+            var cursor = snapshot.cursorPosition();
+            assertEquals(0, cursor.column());
+            assertEquals(0, cursor.row());
+        }
+
+        @Test
+        void 画面行数を超える長大行でカーソルが中央にある場合() {
+            // 幅5で25文字の1行 → 5視覚行、表示2行
+            // height = 2(buffer) + 1(modeline) + 1(minibuf) = 4
+            // カーソルをcp12に置く → 視覚行2
+            var frame = createFrame("abcdefghijklmnopqrstuvwxy");
+            frame.getActiveWindow().setPoint(12);
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 5, 4);
+            var ws = snapshot.windowSnapshots().get(0);
+            assertEquals(2, ws.visibleLines().size());
+            var cursor = snapshot.cursorPosition();
+            assertTrue(cursor.row() >= 0 && cursor.row() < 2);
+        }
+
+        @Test
+        void 切り詰めモード時はvisualLineRangeが設定されない() {
+            var frame = createFrame("abcdefghij");
+            frame.getActiveWindow().setTruncateLines(true);
+            frame.getActiveWindow().setPoint(0);
+            var snapshot = RenderSnapshotFactory.create(frame, createMessageBuffer(), 5, 5);
+            var ws = snapshot.windowSnapshots().get(0);
+            for (var line : ws.visibleLines()) {
+                assertTrue(line.visualLineRange().isEmpty());
+            }
+        }
+    }
 }

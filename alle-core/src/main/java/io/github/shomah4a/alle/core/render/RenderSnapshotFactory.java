@@ -76,8 +76,16 @@ public final class RenderSnapshotFactory {
             if (truncateLines) {
                 buildTruncatedVisibleLines(buffer, displayStart, bufferRows, regionStart, regionEnd, visibleLines);
             } else {
+                int displayStartVl = window.getDisplayStartVisualLine();
                 buildWrappedVisibleLines(
-                        buffer, displayStart, bufferRows, rect.width(), regionStart, regionEnd, visibleLines);
+                        buffer,
+                        displayStart,
+                        displayStartVl,
+                        bufferRows,
+                        rect.width(),
+                        regionStart,
+                        regionEnd,
+                        visibleLines);
             }
 
             String modeLine = buildModeLineText(window);
@@ -192,10 +200,13 @@ public final class RenderSnapshotFactory {
     /**
      * 折り返しモード時の可視行を構築する。
      * 1バッファ行を表示幅で分割し、複数の視覚行として展開する。
+     *
+     * @param displayStartVl 表示開始バッファ行内の開始視覚行番号（長大行対応）
      */
     private static void buildWrappedVisibleLines(
             BufferFacade buffer,
             int displayStart,
+            int displayStartVl,
             int bufferRows,
             int columns,
             Optional<Integer> regionStart,
@@ -236,7 +247,9 @@ public final class RenderSnapshotFactory {
             var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
             int cpCount = (int) lineText.codePoints().count();
 
-            for (int vl = 0; vl < visualLineCount && visualRowCount < bufferRows; vl++) {
+            // 表示開始行の場合はdisplayStartVl分だけ先頭の視覚行をスキップ
+            int startVl = (lineIndex == displayStart) ? displayStartVl : 0;
+            for (int vl = startVl; vl < visualLineCount && visualRowCount < bufferRows; vl++) {
                 int startCp = vl == 0 ? 0 : breaks.get(vl - 1);
                 int endCp = vl < breaks.size() ? breaks.get(vl) : cpCount;
                 visibleLines.add(RenderSnapshot.LineSnapshot.wrapped(lineText, spansOpt, lineRegion, startCp, endCp));
@@ -247,7 +260,7 @@ public final class RenderSnapshotFactory {
 
     /**
      * 折り返しモード時のensurePointVisible。
-     * 視覚行数を考慮してdisplayStartLineを調整する。
+     * 視覚行数を考慮してdisplayStartLine/displayStartVisualLineを調整する。
      */
     private static void ensurePointVisibleWrapped(Window window, int visibleRows, int columns) {
         if (visibleRows <= 0) {
@@ -256,6 +269,7 @@ public final class RenderSnapshotFactory {
         var buffer = window.getBuffer();
         int currentLine = buffer.lineIndexForOffset(window.getPoint());
         int displayStart = window.getDisplayStartLine();
+        int displayStartVl = window.getDisplayStartVisualLine();
 
         // カーソルが表示開始行より前にある場合
         if (currentLine < displayStart) {
@@ -263,17 +277,21 @@ public final class RenderSnapshotFactory {
             return;
         }
 
-        // カーソル行までの視覚行数を計算
+        // カーソル行までの視覚行数を計算（displayStartVisualLineを考慮）
         int visualRowsUsed = 0;
         for (int i = displayStart; i <= currentLine && i < buffer.lineCount(); i++) {
             String lineText = buffer.lineText(i);
             int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            if (i == displayStart) {
+                // 表示開始行は displayStartVl 分だけスキップ
+                vlCount -= displayStartVl;
+            }
             if (i == currentLine) {
-                // カーソルがこの行の何番目の視覚行にいるか
                 int lineStart = buffer.lineStartOffset(i);
                 int cpOffset = window.getPoint() - lineStart;
                 int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
-                visualRowsUsed += cursorVisualLine + 1;
+                int effectiveCursorVl = (i == displayStart) ? cursorVisualLine - displayStartVl : cursorVisualLine;
+                visualRowsUsed += effectiveCursorVl + 1;
             } else {
                 visualRowsUsed += vlCount;
             }
@@ -282,20 +300,30 @@ public final class RenderSnapshotFactory {
         // 表示範囲を超えている場合、displayStartLineを進める
         while (visualRowsUsed > visibleRows && displayStart < currentLine) {
             String lineText = buffer.lineText(displayStart);
-            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns) - displayStartVl;
             visualRowsUsed -= vlCount;
             displayStart++;
+            displayStartVl = 0;
         }
 
-        // それでも収まらない場合（1行が画面全体を超える長大行）、
-        // displayStartLineはカーソル行にする
-        if (visualRowsUsed > visibleRows) {
-            displayStart = currentLine;
+        // それでも収まらない場合（1行が画面全体を超える長大行）
+        // displayStartLine内の視覚行を進めてカーソルが見えるようにする
+        if (visualRowsUsed > visibleRows && displayStart == currentLine) {
+            String lineText = buffer.lineText(currentLine);
+            int lineStart = buffer.lineStartOffset(currentLine);
+            int cpOffset = window.getPoint() - lineStart;
+            int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+            // カーソルの視覚行が画面末尾に来るようにdisplayStartVisualLineを設定
+            displayStartVl = cursorVisualLine - visibleRows + 1;
+            if (displayStartVl < 0) {
+                displayStartVl = 0;
+            }
         }
 
         if (displayStart != window.getDisplayStartLine()) {
             window.setDisplayStartLine(displayStart);
         }
+        window.setDisplayStartVisualLine(displayStartVl);
     }
 
     /**
@@ -305,17 +333,26 @@ public final class RenderSnapshotFactory {
     private static OptionalInt computeWrappedHighlightLine(
             Window window, int displayStart, int pointLine, int columns, int visibleLinesSize) {
         var buffer = window.getBuffer();
+        int displayStartVl = window.getDisplayStartVisualLine();
         int visualRow = 0;
         for (int i = displayStart; i < pointLine && i < buffer.lineCount(); i++) {
             String lineText = buffer.lineText(i);
-            visualRow += VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            if (i == displayStart) {
+                vlCount -= displayStartVl;
+            }
+            visualRow += vlCount;
         }
         if (pointLine < buffer.lineCount()) {
             String lineText = buffer.lineText(pointLine);
             int lineStart = buffer.lineStartOffset(pointLine);
             int cpOffset = window.getPoint() - lineStart;
             int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
-            visualRow += cursorVisualLine;
+            if (pointLine == displayStart) {
+                visualRow += cursorVisualLine - displayStartVl;
+            } else {
+                visualRow += cursorVisualLine;
+            }
             if (visualRow >= 0 && visualRow < visibleLinesSize) {
                 return OptionalInt.of(visualRow);
             }
@@ -366,15 +403,24 @@ public final class RenderSnapshotFactory {
 
         // 折り返しモード: 視覚行を考慮したカーソル位置計算
         int columns = rect.width();
+        int displayStartVl = window.getDisplayStartVisualLine();
         int visualRow = 0;
         for (int i = displayStart; i < lineIndex && i < buffer.lineCount(); i++) {
             String lineText = buffer.lineText(i);
-            visualRow += VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            if (i == displayStart) {
+                vlCount -= displayStartVl;
+            }
+            visualRow += vlCount;
         }
         String lineText = buffer.lineText(lineIndex);
         int cpOffset = point - lineStart;
         int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
-        visualRow += cursorVisualLine;
+        if (lineIndex == displayStart) {
+            visualRow += cursorVisualLine - displayStartVl;
+        } else {
+            visualRow += cursorVisualLine;
+        }
 
         if (visualRow < 0 || visualRow >= bufferRows) {
             return new CursorPosition(rect.left(), rect.top());
