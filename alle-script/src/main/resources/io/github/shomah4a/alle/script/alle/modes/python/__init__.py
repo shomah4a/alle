@@ -20,6 +20,7 @@ class PythonMode(MajorModeBase):
         self._styler, self._analyzer = create_python_styler_and_analyzer()
         self._indent_state = PythonIndentState(self._analyzer)
         indent_line, dedent_line, newline_and_indent = create_indent_commands(self._indent_state)
+        self._commands = [indent_line, dedent_line, newline_and_indent]
         self._keymap = self._create_keymap(indent_line, dedent_line, newline_and_indent)
 
     @staticmethod
@@ -62,3 +63,11 @@ class PythonMode(MajorModeBase):
         :rtype: SyntaxAnalyzer
         """
         return self._analyzer
+
+    def commands(self) -> list:
+        """Python モード固有のコマンドを返す。
+
+        :return: CommandBase インスタンスのリスト
+        :rtype: list
+        """
+        return self._commands

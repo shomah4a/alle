@@ -11,6 +11,7 @@ from alle.mode import MajorModeBase, MinorModeBase
 
 MajorMode: Any = java.type('io.github.shomah4a.alle.core.mode.MajorMode')
 MinorMode: Any = java.type('io.github.shomah4a.alle.core.mode.MinorMode')
+CommandRegistry: Any = java.type('io.github.shomah4a.alle.core.command.CommandRegistry')
 
 
 def _to_optional(value: Any | None) -> Any:
@@ -24,6 +25,25 @@ def _to_optional(value: Any | None) -> Any:
     if value is None:
         return Optional.empty()
     return Optional.of(value)
+
+
+def _build_command_registry(commands: list) -> Any | None:
+    """CommandBase のリストから Java CommandRegistry を構築する。
+
+    空リストの場合は None を返す。
+
+    :param commands: CommandBase インスタンスのリスト
+    :type commands: list
+    :return: Java CommandRegistry、または None
+    :rtype: CommandRegistry | None
+    """
+    if not commands:
+        return None
+    from alle.internal.command import make_command
+    registry = CommandRegistry()
+    for cmd in commands:
+        registry.register(make_command(cmd))
+    return registry
 
 
 def make_major_mode(base: MajorModeBase) -> Any:
@@ -42,6 +62,7 @@ def make_major_mode(base: MajorModeBase) -> Any:
     keymap_fn = base.keymap
     styler_fn = base.styler
     syntax_analyzer_fn = base.syntax_analyzer
+    cmd_registry = _build_command_registry(base.commands())
 
     class _MajorMode(MajorMode):
         def name(self) -> str:
@@ -55,6 +76,9 @@ def make_major_mode(base: MajorModeBase) -> Any:
 
         def syntaxAnalyzer(self) -> Any:
             return _to_optional(syntax_analyzer_fn())
+
+        def commandRegistry(self) -> Any:
+            return _to_optional(cmd_registry)
 
     return _MajorMode()
 
@@ -73,6 +97,7 @@ def make_minor_mode(base: MinorModeBase) -> Any:
     """
     mode_name = base.name()
     keymap_fn = base.keymap
+    cmd_registry = _build_command_registry(base.commands())
 
     class _MinorMode(MinorMode):
         def name(self) -> str:
@@ -80,5 +105,8 @@ def make_minor_mode(base: MinorModeBase) -> Any:
 
         def keymap(self) -> Any:
             return _to_optional(keymap_fn())
+
+        def commandRegistry(self) -> Any:
+            return _to_optional(cmd_registry)
 
     return _MinorMode()

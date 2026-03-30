@@ -61,3 +61,20 @@ class ElectricPairMode(MinorModeBase):
         :rtype: Keymap
         """
         return self._keymap
+
+    def commands(self) -> list:
+        """Electric Pair モード固有のコマンドを返す。
+
+        :return: CommandBase インスタンスのリスト
+        :rtype: list
+        """
+        return [
+            open_paren,
+            close_paren,
+            open_bracket,
+            close_bracket,
+            open_brace,
+            close_brace,
+            insert_double_quote,
+            insert_single_quote,
+        ]

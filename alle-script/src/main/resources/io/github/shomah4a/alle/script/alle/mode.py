@@ -20,7 +20,7 @@ class MajorModeBase(ABC):
     """メジャーモードの基底クラス。
 
     サブクラスは name() を実装する。
-    keymap() / styler() はデフォルトで None を返す。
+    keymap() / styler() / commands() はデフォルトで None / 空リストを返す。
     必要に応じてオーバーライドする。
     """
 
@@ -57,12 +57,20 @@ class MajorModeBase(ABC):
         """
         return None
 
+    def commands(self) -> list:
+        """モード固有のコマンド（CommandBase）のリストを返す。
+
+        :return: CommandBase インスタンスのリスト
+        :rtype: list
+        """
+        return []
+
 
 class MinorModeBase(ABC):
     """マイナーモードの基底クラス。
 
     サブクラスは name() を実装する。
-    keymap() はデフォルトで None を返す。
+    keymap() / commands() はデフォルトで None / 空リストを返す。
     必要に応じてオーバーライドする。
     """
 
@@ -82,3 +90,11 @@ class MinorModeBase(ABC):
         :rtype: Any | None
         """
         return None
+
+    def commands(self) -> list:
+        """モード固有のコマンド（CommandBase）のリストを返す。
+
+        :return: CommandBase インスタンスのリスト
+        :rtype: list
+        """
+        return []
