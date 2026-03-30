@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.render;
 
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
+import io.github.shomah4a.alle.core.VisualLineUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
@@ -54,65 +55,49 @@ public final class RenderSnapshotFactory {
             }
             int bufferRows = rect.height() - 1;
             window.setViewportSize(new ViewportSize(bufferRows, rect.width()));
-            window.ensurePointVisible(bufferRows);
+
+            boolean truncateLines = window.isTruncateLines();
+            if (truncateLines) {
+                window.ensurePointVisible(bufferRows);
+            } else {
+                ensurePointVisibleWrapped(window, bufferRows, rect.width());
+            }
             window.ensurePointHorizontallyVisible(rect.width());
 
             var buffer = window.getBuffer();
-            int lineCount = buffer.lineCount();
             int displayStart = window.getDisplayStartLine();
             int displayStartColumn = window.getDisplayStartColumn();
-            var stylerOpt = buffer.getMajorMode().styler();
 
             // リージョン範囲（バッファオフセット）を事前計算
             var regionStart = window.getRegionStart();
             var regionEnd = window.getRegionEnd();
 
             var visibleLines = Lists.mutable.<RenderSnapshot.LineSnapshot>empty();
-            if (stylerOpt.isPresent()) {
-                SyntaxStyler styler = stylerOpt.get();
-                MutableList<String> allLines = Lists.mutable.withInitialCapacity(lineCount);
-                for (int i = 0; i < lineCount; i++) {
-                    allLines.add(buffer.lineText(i));
-                }
-                var allSpans = styler.styleDocument(allLines);
-                for (int row = 0; row < bufferRows; row++) {
-                    int lineIndex = displayStart + row;
-                    if (lineIndex < lineCount) {
-                        String lineText = allLines.get(lineIndex);
-                        var spans = allSpans.get(lineIndex);
-                        var merged = mergeWithTextPropertyFace(buffer, lineIndex, spans);
-                        var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
-                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, Optional.of(merged), lineRegion));
-                    }
-                }
+            if (truncateLines) {
+                buildTruncatedVisibleLines(buffer, displayStart, bufferRows, regionStart, regionEnd, visibleLines);
             } else {
-                for (int row = 0; row < bufferRows; row++) {
-                    int lineIndex = displayStart + row;
-                    if (lineIndex < lineCount) {
-                        String lineText = buffer.lineText(lineIndex);
-                        var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineIndex);
-                        var spansOpt = faceSpans.isEmpty()
-                                ? Optional.<ListIterable<StyledSpan>>empty()
-                                : Optional.<ListIterable<StyledSpan>>of(faceSpans);
-                        var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
-                        visibleLines.add(new RenderSnapshot.LineSnapshot(lineText, spansOpt, lineRegion));
-                    }
-                }
+                buildWrappedVisibleLines(
+                        buffer, displayStart, bufferRows, rect.width(), regionStart, regionEnd, visibleLines);
             }
 
             String modeLine = buildModeLineText(window);
             OptionalInt highlightLine = OptionalInt.empty();
             if (window.isHighlightPointLine()) {
                 int pointLine = buffer.lineIndexForOffset(window.getPoint());
-                int relativeLine = pointLine - displayStart;
-                if (relativeLine >= 0 && relativeLine < visibleLines.size()) {
-                    highlightLine = OptionalInt.of(relativeLine);
+                if (truncateLines) {
+                    int relativeLine = pointLine - displayStart;
+                    if (relativeLine >= 0 && relativeLine < visibleLines.size()) {
+                        highlightLine = OptionalInt.of(relativeLine);
+                    }
+                } else {
+                    highlightLine = computeWrappedHighlightLine(
+                            window, displayStart, pointLine, rect.width(), visibleLines.size());
                 }
             }
             Optional<RenderSnapshot.RegionRange> regionRange = window.getRegionStart()
                     .flatMap(start -> window.getRegionEnd().map(end -> new RenderSnapshot.RegionRange(start, end)));
             windowSnapshots.add(new RenderSnapshot.WindowSnapshot(
-                    rect, visibleLines, displayStartColumn, modeLine, highlightLine, regionRange));
+                    rect, visibleLines, displayStartColumn, truncateLines, modeLine, highlightLine, regionRange));
         });
 
         // ミニバッファ / エコーエリア
@@ -159,6 +144,185 @@ public final class RenderSnapshotFactory {
         return new CursorPosition(0, 0);
     }
 
+    /**
+     * 切り詰めモード時の可視行を構築する。
+     */
+    private static void buildTruncatedVisibleLines(
+            BufferFacade buffer,
+            int displayStart,
+            int bufferRows,
+            Optional<Integer> regionStart,
+            Optional<Integer> regionEnd,
+            MutableList<RenderSnapshot.LineSnapshot> visibleLines) {
+        int lineCount = buffer.lineCount();
+        var stylerOpt = buffer.getMajorMode().styler();
+        if (stylerOpt.isPresent()) {
+            SyntaxStyler styler = stylerOpt.get();
+            MutableList<String> allLines = Lists.mutable.withInitialCapacity(lineCount);
+            for (int i = 0; i < lineCount; i++) {
+                allLines.add(buffer.lineText(i));
+            }
+            var allSpans = styler.styleDocument(allLines);
+            for (int row = 0; row < bufferRows; row++) {
+                int lineIndex = displayStart + row;
+                if (lineIndex < lineCount) {
+                    String lineText = allLines.get(lineIndex);
+                    var spans = allSpans.get(lineIndex);
+                    var merged = mergeWithTextPropertyFace(buffer, lineIndex, spans);
+                    var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+                    visibleLines.add(RenderSnapshot.LineSnapshot.truncated(lineText, Optional.of(merged), lineRegion));
+                }
+            }
+        } else {
+            for (int row = 0; row < bufferRows; row++) {
+                int lineIndex = displayStart + row;
+                if (lineIndex < lineCount) {
+                    String lineText = buffer.lineText(lineIndex);
+                    var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineIndex);
+                    var spansOpt = faceSpans.isEmpty()
+                            ? Optional.<ListIterable<StyledSpan>>empty()
+                            : Optional.<ListIterable<StyledSpan>>of(faceSpans);
+                    var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+                    visibleLines.add(RenderSnapshot.LineSnapshot.truncated(lineText, spansOpt, lineRegion));
+                }
+            }
+        }
+    }
+
+    /**
+     * 折り返しモード時の可視行を構築する。
+     * 1バッファ行を表示幅で分割し、複数の視覚行として展開する。
+     */
+    private static void buildWrappedVisibleLines(
+            BufferFacade buffer,
+            int displayStart,
+            int bufferRows,
+            int columns,
+            Optional<Integer> regionStart,
+            Optional<Integer> regionEnd,
+            MutableList<RenderSnapshot.LineSnapshot> visibleLines) {
+        int lineCount = buffer.lineCount();
+        var stylerOpt = buffer.getMajorMode().styler();
+
+        // スタイラーの事前計算
+        MutableList<String> allLines = null;
+        ListIterable<ListIterable<StyledSpan>> allSpans = null;
+        if (stylerOpt.isPresent()) {
+            SyntaxStyler styler = stylerOpt.get();
+            allLines = Lists.mutable.withInitialCapacity(lineCount);
+            for (int i = 0; i < lineCount; i++) {
+                allLines.add(buffer.lineText(i));
+            }
+            allSpans = styler.styleDocument(allLines);
+        }
+
+        int visualRowCount = 0;
+        for (int lineIndex = displayStart; lineIndex < lineCount && visualRowCount < bufferRows; lineIndex++) {
+            String lineText = allLines != null ? allLines.get(lineIndex) : buffer.lineText(lineIndex);
+            var breaks = VisualLineUtil.computeVisualLineBreaks(lineText, columns);
+            int visualLineCount = breaks.size() + 1;
+
+            Optional<ListIterable<StyledSpan>> spansOpt;
+            if (allSpans != null) {
+                var merged = mergeWithTextPropertyFace(buffer, lineIndex, allSpans.get(lineIndex));
+                spansOpt = Optional.of(merged);
+            } else {
+                var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineIndex);
+                spansOpt = faceSpans.isEmpty()
+                        ? Optional.<ListIterable<StyledSpan>>empty()
+                        : Optional.<ListIterable<StyledSpan>>of(faceSpans);
+            }
+
+            var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+            int cpCount = (int) lineText.codePoints().count();
+
+            for (int vl = 0; vl < visualLineCount && visualRowCount < bufferRows; vl++) {
+                int startCp = vl == 0 ? 0 : breaks.get(vl - 1);
+                int endCp = vl < breaks.size() ? breaks.get(vl) : cpCount;
+                visibleLines.add(RenderSnapshot.LineSnapshot.wrapped(lineText, spansOpt, lineRegion, startCp, endCp));
+                visualRowCount++;
+            }
+        }
+    }
+
+    /**
+     * 折り返しモード時のensurePointVisible。
+     * 視覚行数を考慮してdisplayStartLineを調整する。
+     */
+    private static void ensurePointVisibleWrapped(Window window, int visibleRows, int columns) {
+        if (visibleRows <= 0) {
+            return;
+        }
+        var buffer = window.getBuffer();
+        int currentLine = buffer.lineIndexForOffset(window.getPoint());
+        int displayStart = window.getDisplayStartLine();
+
+        // カーソルが表示開始行より前にある場合
+        if (currentLine < displayStart) {
+            window.setDisplayStartLine(currentLine);
+            return;
+        }
+
+        // カーソル行までの視覚行数を計算
+        int visualRowsUsed = 0;
+        for (int i = displayStart; i <= currentLine && i < buffer.lineCount(); i++) {
+            String lineText = buffer.lineText(i);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            if (i == currentLine) {
+                // カーソルがこの行の何番目の視覚行にいるか
+                int lineStart = buffer.lineStartOffset(i);
+                int cpOffset = window.getPoint() - lineStart;
+                int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+                visualRowsUsed += cursorVisualLine + 1;
+            } else {
+                visualRowsUsed += vlCount;
+            }
+        }
+
+        // 表示範囲を超えている場合、displayStartLineを進める
+        while (visualRowsUsed > visibleRows && displayStart < currentLine) {
+            String lineText = buffer.lineText(displayStart);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            visualRowsUsed -= vlCount;
+            displayStart++;
+        }
+
+        // それでも収まらない場合（1行が画面全体を超える長大行）、
+        // displayStartLineはカーソル行にする
+        if (visualRowsUsed > visibleRows) {
+            displayStart = currentLine;
+        }
+
+        if (displayStart != window.getDisplayStartLine()) {
+            window.setDisplayStartLine(displayStart);
+        }
+    }
+
+    /**
+     * 折り返しモード時のハイライト行（visibleLines内の相対インデックス）を計算する。
+     * カーソルのある視覚行のインデックスを返す。
+     */
+    private static OptionalInt computeWrappedHighlightLine(
+            Window window, int displayStart, int pointLine, int columns, int visibleLinesSize) {
+        var buffer = window.getBuffer();
+        int visualRow = 0;
+        for (int i = displayStart; i < pointLine && i < buffer.lineCount(); i++) {
+            String lineText = buffer.lineText(i);
+            visualRow += VisualLineUtil.computeVisualLineCount(lineText, columns);
+        }
+        if (pointLine < buffer.lineCount()) {
+            String lineText = buffer.lineText(pointLine);
+            int lineStart = buffer.lineStartOffset(pointLine);
+            int cpOffset = window.getPoint() - lineStart;
+            int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+            visualRow += cursorVisualLine;
+            if (visualRow >= 0 && visualRow < visibleLinesSize) {
+                return OptionalInt.of(visualRow);
+            }
+        }
+        return OptionalInt.empty();
+    }
+
     private static String buildModeLineText(Window window) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
@@ -185,15 +349,41 @@ public final class RenderSnapshotFactory {
         int displayStart = window.getDisplayStartLine();
         int bufferRows = rect.height() - 1;
 
-        int screenRow = lineIndex - displayStart;
-        if (screenRow < 0 || screenRow >= bufferRows) {
+        if (window.isTruncateLines()) {
+            int screenRow = lineIndex - displayStart;
+            if (screenRow < 0 || screenRow >= bufferRows) {
+                return new CursorPosition(rect.left(), rect.top());
+            }
+            int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
+            int screenCol = col - window.getDisplayStartColumn();
+            if (screenCol >= 0 && screenCol < rect.width()) {
+                return new CursorPosition(rect.left() + screenCol, rect.top() + screenRow);
+            }
             return new CursorPosition(rect.left(), rect.top());
         }
 
-        int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
-        int screenCol = col - window.getDisplayStartColumn();
-        if (screenCol >= 0 && screenCol < rect.width()) {
-            return new CursorPosition(rect.left() + screenCol, rect.top() + screenRow);
+        // 折り返しモード: 視覚行を考慮したカーソル位置計算
+        int columns = rect.width();
+        int visualRow = 0;
+        for (int i = displayStart; i < lineIndex && i < buffer.lineCount(); i++) {
+            String lineText = buffer.lineText(i);
+            visualRow += VisualLineUtil.computeVisualLineCount(lineText, columns);
+        }
+        String lineText = buffer.lineText(lineIndex);
+        int cpOffset = point - lineStart;
+        int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+        visualRow += cursorVisualLine;
+
+        if (visualRow < 0 || visualRow >= bufferRows) {
+            return new CursorPosition(rect.left(), rect.top());
+        }
+
+        // 視覚行内でのカラム位置
+        int visualLineStart = VisualLineUtil.visualLineStartOffset(lineText, columns, cursorVisualLine);
+        int col = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset)
+                - DisplayWidthUtil.computeColumnForOffset(lineText, visualLineStart);
+        if (col >= 0 && col < columns) {
+            return new CursorPosition(rect.left() + col, rect.top() + visualRow);
         }
         return new CursorPosition(rect.left(), rect.top());
     }
