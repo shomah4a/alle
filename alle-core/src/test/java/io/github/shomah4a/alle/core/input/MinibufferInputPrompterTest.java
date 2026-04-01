@@ -20,7 +20,6 @@ import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
-import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -28,7 +27,6 @@ import io.github.shomah4a.alle.core.window.WindowTree;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -698,92 +696,6 @@ class MinibufferInputPrompterTest {
 
             // Completionsウィンドウが閉じている
             assertInstanceOf(WindowTree.Leaf.class, frame.getWindowTree());
-        }
-    }
-
-    @Nested
-    class シャドウパス {
-
-        @Test
-        void チルダ入力でシャドウ境界より前にシャドウfaceが適用される() {
-            Completer completer = new Completer() {
-                @Override
-                public ListIterable<CompletionCandidate> complete(String input) {
-                    return Lists.immutable.empty();
-                }
-
-                @Override
-                public int shadowBoundary(String input) {
-                    return PathResolver.findShadowBoundary(input);
-                }
-            };
-            var unused = prompter.prompt("Find file: ", "/foo/bar/", new InputHistory(), completer);
-
-            // ~ を入力 → "/foo/bar/~" となりシャドウが発生
-            minibufferWindow.setPoint(20); // "Find file: /foo/bar/" の末尾
-            executeMinibufferKey(KeyStroke.of('~'));
-
-            var minibuffer = minibufferWindow.getBuffer();
-            // プロンプト直後からシャドウ境界までにfaceが適用されている
-            var spans = minibuffer.getFaceSpans(11, 20); // "/foo/bar/" 部分
-            assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.FILE_NAME_SHADOW)));
-        }
-
-        @Test
-        void 確定時にシャドウ部分が除去されて有効パスのみが返る() {
-            Completer completer = new Completer() {
-                @Override
-                public ListIterable<CompletionCandidate> complete(String input) {
-                    return Lists.immutable.empty();
-                }
-
-                @Override
-                public int shadowBoundary(String input) {
-                    return PathResolver.findShadowBoundary(input);
-                }
-            };
-            var future = prompter.prompt("Find file: ", "/foo/bar/", new InputHistory(), completer);
-
-            // ~ を入力 → "/foo/bar/~"
-            minibufferWindow.setPoint(20);
-            executeMinibufferKey(KeyStroke.of('~'));
-
-            // 確定
-            executeMinibufferKey(KeyStroke.of('\n'));
-
-            var result = future.join();
-            assertInstanceOf(PromptResult.Confirmed.class, result);
-            assertEquals("~", ((PromptResult.Confirmed) result).value());
-        }
-
-        @Test
-        void バックスペースでシャドウ文字を消すとシャドウfaceが解除される() {
-            Completer completer = new Completer() {
-                @Override
-                public ListIterable<CompletionCandidate> complete(String input) {
-                    return Lists.immutable.empty();
-                }
-
-                @Override
-                public int shadowBoundary(String input) {
-                    return PathResolver.findShadowBoundary(input);
-                }
-            };
-            var unused = prompter.prompt("Find file: ", "/foo/bar/", new InputHistory(), completer);
-
-            // ~ を入力 → "/foo/bar/~" でシャドウが発生
-            minibufferWindow.setPoint(20);
-            executeMinibufferKey(KeyStroke.of('~'));
-
-            var minibuffer = minibufferWindow.getBuffer();
-            assertTrue(
-                    minibuffer.getFaceSpans(11, 20).anySatisfy(s -> s.faceName().equals(FaceName.FILE_NAME_SHADOW)));
-
-            // バックスペースで ~ を消す → "/foo/bar/" に戻りシャドウが解除
-            executeMinibufferKey(KeyStroke.of(0x7F));
-
-            var spansAfter = minibuffer.getFaceSpans(11, 20);
-            assertFalse(spansAfter.anySatisfy(s -> s.faceName().equals(FaceName.FILE_NAME_SHADOW)));
         }
     }
 

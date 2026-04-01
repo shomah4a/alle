@@ -11,6 +11,7 @@ import org.eclipse.collections.api.list.ListIterable;
  * ファイルパスの補完を提供する。
  * 入力パスの親ディレクトリ内のエントリから前方一致で候補を返す。
  * ディレクトリ候補は継続補完（partial）、ファイル候補は確定可能（terminal）として返す。
+ * ~ で始まるパスはHOMEディレクトリに展開して補完し、候補も ~ 形式で返す。
  */
 public class FilePathCompleter implements Completer {
 
@@ -30,24 +31,15 @@ public class FilePathCompleter implements Completer {
             return Lists.immutable.empty();
         }
 
-        // シャドウ部分を除去して有効パスのみで補完する
-        int boundary = shadowBoundary(input);
-        String shadowPrefix = input.substring(0, boundary);
-        String effectiveInput = input.substring(boundary);
-
-        if (effectiveInput.isEmpty()) {
-            return Lists.immutable.empty();
-        }
-
         // ~ を展開して実パスに変換
-        String expanded = PathResolver.expandTilde(effectiveInput, homeDirectory);
-        boolean useTilde = !expanded.equals(effectiveInput);
+        String expanded = PathResolver.expandTilde(input, homeDirectory);
+        boolean useTilde = !expanded.equals(input);
 
         // 末尾が "/" の場合はそのディレクトリの中身を一覧する
         if (expanded.endsWith("/")) {
             Path directory = Path.of(expanded);
             try {
-                return toCompletionCandidates(directoryLister.list(directory), useTilde, shadowPrefix);
+                return toCompletionCandidates(directoryLister.list(directory), useTilde);
             } catch (IOException e) {
                 logger.log(Level.FINE, "ディレクトリ一覧の取得に失敗: " + directory, e);
                 return Lists.immutable.empty();
@@ -70,24 +62,18 @@ public class FilePathCompleter implements Completer {
 
         String inputStr = inputPath.toString();
         return toCompletionCandidates(
-                entries.select(entry -> entry.path().toString().startsWith(inputStr)), useTilde, shadowPrefix);
-    }
-
-    @Override
-    public int shadowBoundary(String input) {
-        return PathResolver.findShadowBoundary(input);
+                entries.select(entry -> entry.path().toString().startsWith(inputStr)), useTilde);
     }
 
     private ListIterable<CompletionCandidate> toCompletionCandidates(
-            ListIterable<DirectoryEntry> entries, boolean useTilde, String shadowPrefix) {
+            ListIterable<DirectoryEntry> entries, boolean useTilde) {
         return entries.collect(entry -> {
             String pathStr = entry.path().toString();
             String displayPath = useTilde ? PathResolver.collapseTilde(pathStr, homeDirectory) : pathStr;
             String fileName = entry.path().getFileName().toString();
-            String valueWithShadow = shadowPrefix + displayPath;
             return switch (entry) {
-                case DirectoryEntry.Directory d -> CompletionCandidate.partial(valueWithShadow + "/", fileName + "/");
-                case DirectoryEntry.File f -> CompletionCandidate.terminal(valueWithShadow, fileName);
+                case DirectoryEntry.Directory d -> CompletionCandidate.partial(displayPath + "/", fileName + "/");
+                case DirectoryEntry.File f -> CompletionCandidate.terminal(displayPath, fileName);
             };
         });
     }

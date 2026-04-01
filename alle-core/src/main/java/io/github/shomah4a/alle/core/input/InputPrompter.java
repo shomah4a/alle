@@ -48,4 +48,24 @@ public interface InputPrompter {
             String message, String initialValue, InputHistory history, Completer completer) {
         return prompt(message, history, completer);
     }
+
+    /**
+     * 初期値・補完・履歴・テキスト変更通知機能付きでプロンプトを表示する。
+     * ユーザーが文字入力・削除を行うたびにupdateListenerが呼ばれる。
+     *
+     * @param message        プロンプトメッセージ
+     * @param initialValue   入力エリアの初期値
+     * @param history        入力履歴
+     * @param completer      補完候補プロバイダ
+     * @param updateListener テキスト変更時のコールバック
+     * @return 入力結果
+     */
+    default CompletableFuture<PromptResult> prompt(
+            String message,
+            String initialValue,
+            InputHistory history,
+            Completer completer,
+            InputUpdateListener updateListener) {
+        return prompt(message, initialValue, history, completer);
+    }
 }

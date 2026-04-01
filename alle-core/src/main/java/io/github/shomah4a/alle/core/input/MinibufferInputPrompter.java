@@ -39,22 +39,36 @@ public class MinibufferInputPrompter implements InputPrompter {
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
-        return promptInternal(message, "", history, null);
+        return promptInternal(message, "", history, null, null);
     }
 
     @Override
     public CompletableFuture<PromptResult> prompt(String message, InputHistory history, Completer completer) {
-        return promptInternal(message, "", history, completer);
+        return promptInternal(message, "", history, completer, null);
     }
 
     @Override
     public CompletableFuture<PromptResult> prompt(
             String message, String initialValue, InputHistory history, Completer completer) {
-        return promptInternal(message, initialValue, history, completer);
+        return promptInternal(message, initialValue, history, completer, null);
+    }
+
+    @Override
+    public CompletableFuture<PromptResult> prompt(
+            String message,
+            String initialValue,
+            InputHistory history,
+            Completer completer,
+            InputUpdateListener updateListener) {
+        return promptInternal(message, initialValue, history, completer, updateListener);
     }
 
     private CompletableFuture<PromptResult> promptInternal(
-            String message, String initialValue, InputHistory history, @Nullable Completer completer) {
+            String message,
+            String initialValue,
+            InputHistory history,
+            @Nullable Completer completer,
+            @Nullable InputUpdateListener updateListener) {
         if (activeFuture != null && !activeFuture.isDone()) {
             logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
             return CompletableFuture.completedFuture(new PromptResult.Cancelled());
@@ -83,7 +97,8 @@ public class MinibufferInputPrompter implements InputPrompter {
         }
 
         // ミニバッファ用キーマップを作成
-        var keymap = createMinibufferKeymap(future, previousActiveWindow, promptLength, history, completer);
+        var keymap =
+                createMinibufferKeymap(future, previousActiveWindow, promptLength, history, completer, updateListener);
         minibuffer.setLocalKeymap(keymap);
 
         // ミニバッファを有効化
@@ -97,12 +112,13 @@ public class MinibufferInputPrompter implements InputPrompter {
             Window previousActiveWindow,
             int promptLength,
             InputHistory history,
-            @Nullable Completer completer) {
+            @Nullable Completer completer,
+            @Nullable InputUpdateListener updateListener) {
         var keymap = new Keymap("minibuffer");
 
         // 通常文字入力（Completer提供時はCompletions更新付き）
         if (completer != null) {
-            keymap.setDefaultCommand(new MinibufferSelfInsertCommand(completer, promptLength));
+            keymap.setDefaultCommand(new MinibufferSelfInsertCommand(completer, promptLength, updateListener));
         } else {
             keymap.setDefaultCommand(new SelfInsertCommand());
         }
@@ -121,9 +137,9 @@ public class MinibufferInputPrompter implements InputPrompter {
                     KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength, previousActiveWindow));
         }
 
-        // バックスペース（Completer提供時はシャドウ更新付き）
-        if (completer != null) {
-            keymap.bind(KeyStroke.of(0x7F), new MinibufferBackspaceCommand(completer, promptLength));
+        // バックスペース（updateListener提供時は変更通知付き）
+        if (updateListener != null) {
+            keymap.bind(KeyStroke.of(0x7F), new MinibufferBackspaceCommand(promptLength, updateListener));
         }
 
         // ヒストリナビゲーション
@@ -282,13 +298,6 @@ public class MinibufferInputPrompter implements InputPrompter {
             }
 
             String userInput = getUserInput(promptLength);
-            // シャドウ部分を除去して有効パスのみを返す
-            if (completer != null) {
-                int boundary = completer.shadowBoundary(userInput);
-                if (boundary > 0) {
-                    userInput = userInput.substring(boundary);
-                }
-            }
             history.add(userInput);
             cleanup(previousActiveWindow);
             future.complete(new PromptResult.Confirmed(userInput));
@@ -508,10 +517,13 @@ public class MinibufferInputPrompter implements InputPrompter {
         private final SelfInsertCommand delegate = new SelfInsertCommand();
         private final Completer completer;
         private final int promptLength;
+        private final @Nullable InputUpdateListener updateListener;
 
-        MinibufferSelfInsertCommand(Completer completer, int promptLength) {
+        MinibufferSelfInsertCommand(
+                Completer completer, int promptLength, @Nullable InputUpdateListener updateListener) {
             this.completer = completer;
             this.promptLength = promptLength;
+            this.updateListener = updateListener;
         }
 
         @Override
@@ -522,7 +534,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             return delegate.execute(context).thenRun(() -> {
-                updateShadow(completer, promptLength);
+                notifyUpdateListener(updateListener, promptLength);
                 if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
                     // *Completions* 表示中: 候補を再計算して更新
                     String userInput = getUserInput(promptLength);
@@ -539,17 +551,17 @@ public class MinibufferInputPrompter implements InputPrompter {
     }
 
     /**
-     * バックスペース後にシャドウ表示を更新するコマンド。
+     * バックスペース後にテキスト変更を通知するコマンド。
      */
     private class MinibufferBackspaceCommand implements Command {
 
         private final BackwardDeleteCharCommand delegate = new BackwardDeleteCharCommand();
-        private final Completer completer;
         private final int promptLength;
+        private final InputUpdateListener updateListener;
 
-        MinibufferBackspaceCommand(Completer completer, int promptLength) {
-            this.completer = completer;
+        MinibufferBackspaceCommand(int promptLength, InputUpdateListener updateListener) {
             this.promptLength = promptLength;
+            this.updateListener = updateListener;
         }
 
         @Override
@@ -560,7 +572,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             return delegate.execute(context).thenRun(() -> {
-                updateShadow(completer, promptLength);
+                notifyUpdateListener(updateListener, promptLength);
             });
         }
     }
@@ -610,24 +622,14 @@ public class MinibufferInputPrompter implements InputPrompter {
     }
 
     /**
-     * ミニバッファの入力に対してシャドウ face を更新する。
-     * Completer が返すシャドウ境界に基づき、プロンプト直後からシャドウ境界までに
-     * FILE_NAME_SHADOW face を適用する。シャドウがない場合は face を除去する。
+     * InputUpdateListenerが設定されていれば、現在のユーザー入力を通知する。
      */
-    private void updateShadow(Completer completer, int promptLength) {
+    private void notifyUpdateListener(@Nullable InputUpdateListener listener, int promptLength) {
+        if (listener == null) {
+            return;
+        }
         var minibuffer = frame.getMinibufferWindow().getBuffer();
         String userInput = getUserInput(promptLength);
-        int boundary = completer.shadowBoundary(userInput);
-
-        // 既存のシャドウ face を除去（他の face を壊さないよう名前指定で除去）
-        int fullLength = minibuffer.length();
-        if (fullLength > promptLength) {
-            minibuffer.removeFaceByName(promptLength, fullLength, FaceName.FILE_NAME_SHADOW);
-        }
-
-        // シャドウ境界がある場合のみ face を適用
-        if (boundary > 0) {
-            minibuffer.putFace(promptLength, promptLength + boundary, FaceName.FILE_NAME_SHADOW);
-        }
+        listener.onUpdate(minibuffer, promptLength, userInput);
     }
 }

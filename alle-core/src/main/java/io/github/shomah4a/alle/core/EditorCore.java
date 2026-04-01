@@ -49,6 +49,7 @@ import io.github.shomah4a.alle.core.command.commands.ToggleTruncateLinesCommand;
 import io.github.shomah4a.alle.core.command.commands.UndoCommand;
 import io.github.shomah4a.alle.core.command.commands.YankCommand;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
@@ -155,6 +156,10 @@ public final class EditorCore {
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
 
+        // InputPrompter（CommandRegistry構築前に作成。FilePathInputPrompterが必要とするため）
+        var inputPrompter = inputPrompterFactory.apply(frame);
+        var filePathInputPrompter = new FilePathInputPrompter(inputPrompter, directoryLister, homeDirectory);
+
         // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
         var commandResolver = new CommandResolver();
@@ -167,7 +172,7 @@ public final class EditorCore {
                 shutdownRequestable,
                 commandResolver,
                 settingsRegistry,
-                homeDirectory);
+                filePathInputPrompter);
         commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
@@ -179,9 +184,6 @@ public final class EditorCore {
         var keymap = createKeymap(registry);
         var resolver = new KeyResolver();
         resolver.addKeymap(keymap);
-
-        // コマンドループ
-        var inputPrompter = inputPrompterFactory.apply(frame);
         var killRing = new KillRing();
         var commandLoop = new CommandLoop(
                 inputSource,
@@ -216,7 +218,7 @@ public final class EditorCore {
             ShutdownRequestable shutdownRequestable,
             CommandResolver commandResolver,
             SettingsRegistry settingsRegistry,
-            Path homeDirectory) {
+            FilePathInputPrompter filePathInputPrompter) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -237,15 +239,14 @@ public final class EditorCore {
         var filePathHistory = new InputHistory();
         var findFileCommand = new FindFileCommand(
                 bufferIO,
-                directoryLister,
                 Path.of("").toAbsolutePath(),
                 autoModeMap,
                 modeRegistry,
                 filePathHistory,
                 path -> Files.isDirectory(path),
-                homeDirectory);
+                filePathInputPrompter);
         registry.register(findFileCommand);
-        registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory, homeDirectory));
+        registry.register(new SaveBufferCommand(bufferIO, filePathInputPrompter, filePathHistory));
         registry.register(new RevertBufferCommand(bufferIO));
         var bufferHistory = new InputHistory();
         registry.register(new SwitchBufferCommand(bufferHistory));
@@ -275,7 +276,7 @@ public final class EditorCore {
 
         // Tree Dired
         var treeDiredCommand = TreeDiredInitializer.initialize(
-                registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry, homeDirectory);
+                registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry, filePathInputPrompter);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
 

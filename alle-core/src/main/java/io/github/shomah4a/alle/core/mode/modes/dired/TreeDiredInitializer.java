@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.input.DefaultFileOperations;
 import io.github.shomah4a.alle.core.input.DefaultShellCommandExecutor;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -33,7 +34,7 @@ public final class TreeDiredInitializer {
             DirectoryLister directoryLister,
             AutoModeMap autoModeMap,
             ModeRegistry modeRegistry,
-            Path homeDirectory) {
+            FilePathInputPrompter filePathInputPrompter) {
 
         var toggleCommand = new TreeDiredToggleCommand();
         var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
@@ -93,7 +94,7 @@ public final class TreeDiredInitializer {
                 ZoneId.systemDefault(),
                 diredKeymap,
                 diredCommandRegistry,
-                homeDirectory);
+                filePathInputPrompter);
     }
 
     private static Keymap createKeymap(

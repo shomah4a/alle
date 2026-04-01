@@ -7,9 +7,9 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.TestCommandContextFactory;
-import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -39,6 +39,8 @@ import org.junit.jupiter.api.Test;
 
 class FindFileCommandTest {
 
+    private static final Path HOME = Path.of("/home/testuser");
+
     private final MutableMap<String, String> storage = Maps.mutable.empty();
     private final DirectoryLister stubLister = directory -> Lists.immutable.<DirectoryEntry>empty();
     private final AutoModeMap autoModeMap = new AutoModeMap(TextMode::new);
@@ -66,12 +68,58 @@ class FindFileCommandTest {
         bufferIO = new BufferIO(reader, writer, new SettingsRegistry());
     }
 
-    private InputPrompter confirming(String value) {
-        return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+    /**
+     * 指定した値で確定するInputPrompterモックを使ってFilePathInputPrompterを構築する。
+     * FilePathInputPrompterが ~ 展開・シャドウ除去を行うため、
+     * confirmingValueは確定前の生の入力値（~ 形式やシャドウ付き）を指定する。
+     */
+    private FilePathInputPrompter confirmingPrompter(String confirmingValue) {
+        InputPrompter mock = new InputPrompter() {
+            @Override
+            public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                return CompletableFuture.completedFuture(new PromptResult.Confirmed(confirmingValue));
+            }
+
+            @Override
+            public CompletableFuture<PromptResult> prompt(
+                    String message,
+                    String initialValue,
+                    InputHistory history,
+                    io.github.shomah4a.alle.core.input.Completer completer,
+                    io.github.shomah4a.alle.core.input.InputUpdateListener updateListener) {
+                return CompletableFuture.completedFuture(new PromptResult.Confirmed(confirmingValue));
+            }
+        };
+        return new FilePathInputPrompter(mock, stubLister, HOME);
     }
 
-    private InputPrompter cancelling() {
-        return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+    private FilePathInputPrompter cancellingPrompter() {
+        InputPrompter mock = (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+        return new FilePathInputPrompter(mock, stubLister, HOME);
+    }
+
+    /**
+     * 初期値をキャプチャするFilePathInputPrompterを構築する。
+     */
+    private FilePathInputPrompter capturingPrompter(AtomicReference<String> capturedMessage) {
+        InputPrompter mock = new InputPrompter() {
+            @Override
+            public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+            }
+
+            @Override
+            public CompletableFuture<PromptResult> prompt(
+                    String message,
+                    String initialValue,
+                    InputHistory history,
+                    io.github.shomah4a.alle.core.input.Completer completer,
+                    io.github.shomah4a.alle.core.input.InputUpdateListener updateListener) {
+                capturedMessage.set(initialValue);
+                return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+            }
+        };
+        return new FilePathInputPrompter(mock, stubLister, HOME);
     }
 
     @Nested
@@ -82,14 +130,13 @@ class FindFileCommandTest {
             storage.put("/tmp/hello.txt", "Hello\nWorld");
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
+                    confirmingPrompter("/tmp/hello.txt"));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -106,14 +153,13 @@ class FindFileCommandTest {
             storage.put("/tmp/hello.txt", "Hello");
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
+                    confirmingPrompter("/tmp/hello.txt"));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -126,14 +172,13 @@ class FindFileCommandTest {
             storage.put("/tmp/crlf.txt", "Hello\r\nWorld");
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/crlf.txt"));
+                    confirmingPrompter("/tmp/crlf.txt"));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -148,14 +193,13 @@ class FindFileCommandTest {
         void 空バッファがファイルパス付きで作成される() {
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
+                    confirmingPrompter("/tmp/new.txt"));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -175,23 +219,22 @@ class FindFileCommandTest {
             storage.put("/tmp/hello.txt", "Hello");
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
+                    confirmingPrompter("/tmp/hello.txt"));
 
             // 1回目: ファイルを開く
-            var context1 = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
+            var context1 = TestCommandContextFactory.create(frame, bufferManager);
             cmd.execute(context1).join();
 
             // バッファにテキスト追加
             frame.getActiveWindow().getBuffer().insertText(5, "!");
 
             // 2回目: 同じファイルを開く
-            var context2 = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
+            var context2 = TestCommandContextFactory.create(frame, bufferManager);
             cmd.execute(context2).join();
 
             // 新しいバッファが作られず、既存のバッファ（編集済み）が使われる
@@ -232,14 +275,13 @@ class FindFileCommandTest {
         void キャンセル時は何も変わらない() {
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
+                    cancellingPrompter());
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -261,63 +303,34 @@ class FindFileCommandTest {
             frame.getActiveWindow().setBuffer(fileBuffer);
 
             var capturedInitialValue = new AtomicReference<String>();
-            InputPrompter capturingPrompter = new InputPrompter() {
-                @Override
-                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
-                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-                }
-
-                @Override
-                public CompletableFuture<PromptResult> prompt(
-                        String message, String initialValue, InputHistory history, Completer completer) {
-                    capturedInitialValue.set(initialValue);
-                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-                }
-            };
-
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/working"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
+                    capturingPrompter(capturedInitialValue));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
+            // FilePathInputPrompter が collapseTilde + "/" を付ける
             assertEquals("/home/user/project/src/", capturedInitialValue.get());
         }
 
         @Test
         void ファイルパスなしバッファからの実行ではworkingDirectoryが起点になる() {
             var capturedInitialValue = new AtomicReference<String>();
-            InputPrompter capturingPrompter = new InputPrompter() {
-                @Override
-                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
-                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-                }
-
-                @Override
-                public CompletableFuture<PromptResult> prompt(
-                        String message, String initialValue, InputHistory history, Completer completer) {
-                    capturedInitialValue.set(initialValue);
-                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-                }
-            };
-
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/working"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
+                    capturingPrompter(capturedInitialValue));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -332,14 +345,13 @@ class FindFileCommandTest {
         void 空文字列で確定した場合は何も変わらない() {
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
+                    confirmingPrompter(""));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -361,30 +373,15 @@ class FindFileCommandTest {
             frame.getActiveWindow().setBuffer(fileBuffer);
 
             var capturedInitialValue = new AtomicReference<String>();
-            InputPrompter capturingPrompter = new InputPrompter() {
-                @Override
-                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
-                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-                }
-
-                @Override
-                public CompletableFuture<PromptResult> prompt(
-                        String message, String initialValue, InputHistory history, Completer completer) {
-                    capturedInitialValue.set(initialValue);
-                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
-                }
-            };
-
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/working"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
+                    capturingPrompter(capturedInitialValue));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -394,16 +391,16 @@ class FindFileCommandTest {
         @Test
         void チルダで始まるパスがHOMEに展開されてファイルが開かれる() {
             storage.put("/home/testuser/hello.txt", "Hello");
+            // FilePathInputPrompter が ~ を展開するので、確定値は ~/hello.txt
             var cmd = new FindFileCommand(
                     bufferIO,
-                    stubLister,
                     Path.of("/test"),
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
                     path -> false,
-                    Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("~/hello.txt"));
+                    confirmingPrompter("~/hello.txt"));
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 

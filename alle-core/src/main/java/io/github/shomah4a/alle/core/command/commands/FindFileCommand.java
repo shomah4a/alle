@@ -4,10 +4,8 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
-import io.github.shomah4a.alle.core.input.DirectoryLister;
-import io.github.shomah4a.alle.core.input.FilePathCompleter;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
-import io.github.shomah4a.alle.core.input.PathResolver;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
@@ -34,32 +32,29 @@ public class FindFileCommand implements Command {
     private static final Logger logger = Logger.getLogger(FindFileCommand.class.getName());
 
     private final BufferIO bufferIO;
-    private final DirectoryLister directoryLister;
     private final Path workingDirectory;
     private final AutoModeMap autoModeMap;
     private final ModeRegistry modeRegistry;
     private final InputHistory filePathHistory;
     private final Predicate<Path> directoryChecker;
-    private final Path homeDirectory;
+    private final FilePathInputPrompter filePathInputPrompter;
     private @Nullable TreeDiredCommand treeDiredCommand;
 
     public FindFileCommand(
             BufferIO bufferIO,
-            DirectoryLister directoryLister,
             Path workingDirectory,
             AutoModeMap autoModeMap,
             ModeRegistry modeRegistry,
             InputHistory filePathHistory,
             Predicate<Path> directoryChecker,
-            Path homeDirectory) {
+            FilePathInputPrompter filePathInputPrompter) {
         this.bufferIO = bufferIO;
-        this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.autoModeMap = autoModeMap;
         this.modeRegistry = modeRegistry;
         this.filePathHistory = filePathHistory;
         this.directoryChecker = directoryChecker;
-        this.homeDirectory = homeDirectory;
+        this.filePathInputPrompter = filePathInputPrompter;
     }
 
     /**
@@ -77,11 +72,9 @@ public class FindFileCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var completer = new FilePathCompleter(directoryLister, homeDirectory);
         var defaultDir = context.activeWindow().getBuffer().getDefaultDirectory(workingDirectory);
-        String initialValue = PathResolver.collapseTilde(defaultDir.toString(), homeDirectory) + "/";
-        return context.inputPrompter()
-                .prompt("Find file: ", initialValue, filePathHistory, completer)
+        return filePathInputPrompter
+                .prompt("Find file: ", defaultDir.toString(), filePathHistory)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         openFile(context, confirmed.value());
@@ -93,9 +86,8 @@ public class FindFileCommand implements Command {
         if (pathString.isEmpty()) {
             return;
         }
-        // ~ を展開してから末尾の "/" を除去して正規化
-        String expanded = PathResolver.expandTilde(pathString, homeDirectory);
-        String trimmed = expanded.endsWith("/") ? expanded.substring(0, expanded.length() - 1) : expanded;
+        // 末尾の "/" を除去して正規化（~ 展開は FilePathInputPrompter が済ませている）
+        String trimmed = pathString.endsWith("/") ? pathString.substring(0, pathString.length() - 1) : pathString;
         var path = normalizePath(trimmed);
 
         // ディレクトリの場合はTree Diredで開く

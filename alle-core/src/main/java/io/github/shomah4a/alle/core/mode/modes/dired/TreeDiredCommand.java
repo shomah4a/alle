@@ -6,9 +6,8 @@ import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
-import io.github.shomah4a.alle.core.input.FilePathCompleter;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
-import io.github.shomah4a.alle.core.input.PathResolver;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -28,7 +27,7 @@ public class TreeDiredCommand implements Command {
     private final ZoneId zoneId;
     private final Keymap diredKeymap;
     private final CommandRegistry diredCommandRegistry;
-    private final Path homeDirectory;
+    private final FilePathInputPrompter filePathInputPrompter;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
@@ -37,14 +36,14 @@ public class TreeDiredCommand implements Command {
             ZoneId zoneId,
             Keymap diredKeymap,
             CommandRegistry diredCommandRegistry,
-            Path homeDirectory) {
+            FilePathInputPrompter filePathInputPrompter) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
         this.zoneId = zoneId;
         this.diredKeymap = diredKeymap;
         this.diredCommandRegistry = diredCommandRegistry;
-        this.homeDirectory = homeDirectory;
+        this.filePathInputPrompter = filePathInputPrompter;
     }
 
     @Override
@@ -54,11 +53,9 @@ public class TreeDiredCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var completer = new FilePathCompleter(directoryLister, homeDirectory);
         var defaultDir = context.activeWindow().getBuffer().getDefaultDirectory(workingDirectory);
-        String initialValue = PathResolver.collapseTilde(defaultDir.toString(), homeDirectory) + "/";
-        return context.inputPrompter()
-                .prompt("Dired (directory): ", initialValue, directoryHistory, completer)
+        return filePathInputPrompter
+                .prompt("Dired (directory): ", defaultDir.toString(), directoryHistory)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         openDired(context, confirmed.value());
@@ -78,8 +75,7 @@ public class TreeDiredCommand implements Command {
         if (pathString.isEmpty()) {
             return;
         }
-        var expanded = PathResolver.expandTilde(pathString, homeDirectory);
-        var path = Path.of(expanded).toAbsolutePath().normalize();
+        var path = Path.of(pathString).toAbsolutePath().normalize();
 
         // 末尾の "/" を除去してディレクトリパスとして扱う
         String bufferName = "*Dired " + path + "*";

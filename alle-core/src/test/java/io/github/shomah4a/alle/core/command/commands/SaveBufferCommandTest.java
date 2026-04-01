@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.TestCommandContextFactory;
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
@@ -60,12 +61,36 @@ class SaveBufferCommandTest {
         bufferIO = new BufferIO(reader, writer, new SettingsRegistry());
     }
 
-    private InputPrompter confirming(String value) {
-        return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+    private static final Path HOME = Path.of("/home/testuser");
+
+    private FilePathInputPrompter noPromptPrompter() {
+        InputPrompter mock = (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+        return new FilePathInputPrompter(mock, stubLister, HOME);
     }
 
-    private InputPrompter cancelling() {
-        return (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+    private FilePathInputPrompter confirmingFilePrompter(String value) {
+        InputPrompter mock = new InputPrompter() {
+            @Override
+            public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                return CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+            }
+
+            @Override
+            public CompletableFuture<PromptResult> prompt(
+                    String message,
+                    String initialValue,
+                    InputHistory history,
+                    io.github.shomah4a.alle.core.input.Completer completer,
+                    io.github.shomah4a.alle.core.input.InputUpdateListener updateListener) {
+                return CompletableFuture.completedFuture(new PromptResult.Confirmed(value));
+            }
+        };
+        return new FilePathInputPrompter(mock, stubLister, HOME);
+    }
+
+    private FilePathInputPrompter cancellingFilePrompter() {
+        InputPrompter mock = (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
+        return new FilePathInputPrompter(mock, stubLister, HOME);
     }
 
     @Nested
@@ -78,7 +103,7 @@ class SaveBufferCommandTest {
             buffer.insertText(0, "Hello\nWorld");
             buffer.markDirty();
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
+            var cmd = new SaveBufferCommand(bufferIO, noPromptPrompter(), new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -94,7 +119,7 @@ class SaveBufferCommandTest {
             buffer.setFilePath(Path.of("/tmp/test.txt"));
             buffer.insertText(0, "Hello");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
+            var cmd = new SaveBufferCommand(bufferIO, noPromptPrompter(), new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -112,7 +137,7 @@ class SaveBufferCommandTest {
             buffer.markDirty();
             assertTrue(buffer.isDirty());
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
+            var cmd = new SaveBufferCommand(bufferIO, noPromptPrompter(), new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -127,7 +152,7 @@ class SaveBufferCommandTest {
             buffer.setLineEnding(LineEnding.CRLF);
             buffer.insertText(0, "Hello\nWorld");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
+            var cmd = new SaveBufferCommand(bufferIO, noPromptPrompter(), new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -146,8 +171,8 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "New file content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
+            var cmd = new SaveBufferCommand(bufferIO, confirmingFilePrompter("/tmp/new.txt"), new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -162,8 +187,8 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "New file content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
+            var cmd = new SaveBufferCommand(bufferIO, confirmingFilePrompter("/tmp/new.txt"), new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -177,8 +202,8 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "Content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
+            var cmd = new SaveBufferCommand(bufferIO, cancellingFilePrompter(), new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
@@ -191,8 +216,8 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "Content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
+            var cmd = new SaveBufferCommand(bufferIO, confirmingFilePrompter(""), new InputHistory());
+            var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
 
