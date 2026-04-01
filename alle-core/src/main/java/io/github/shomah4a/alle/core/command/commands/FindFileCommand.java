@@ -74,7 +74,8 @@ public class FindFileCommand implements Command {
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var completer = new FilePathCompleter(directoryLister);
-        String initialValue = workingDirectory + "/";
+        var defaultDir = context.activeWindow().getBuffer().getDefaultDirectory(workingDirectory, directoryChecker);
+        String initialValue = defaultDir + "/";
         return context.inputPrompter()
                 .prompt("Find file: ", initialValue, filePathHistory, completer)
                 .thenAccept(result -> {

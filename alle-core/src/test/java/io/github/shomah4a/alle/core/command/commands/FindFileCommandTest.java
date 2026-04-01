@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.TestCommandContextFactory;
+import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -28,6 +29,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
@@ -237,6 +239,81 @@ class FindFileCommandTest {
 
             assertEquals("*scratch*", frame.getActiveWindow().getBuffer().getName());
             assertEquals(1, bufferManager.size());
+        }
+    }
+
+    @Nested
+    class 起点ディレクトリ {
+
+        @Test
+        void ファイルパス付きバッファからの実行ではそのファイルのディレクトリが起点になる() {
+            var fileBuffer = new BufferFacade(new TextBuffer(
+                    "Main.java",
+                    new GapTextModel(),
+                    new SettingsRegistry(),
+                    Path.of("/home/user/project/src/Main.java")));
+            frame.getActiveWindow().setBuffer(fileBuffer);
+
+            var capturedInitialValue = new AtomicReference<String>();
+            InputPrompter capturingPrompter = new InputPrompter() {
+                @Override
+                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+                }
+
+                @Override
+                public CompletableFuture<PromptResult> prompt(
+                        String message, String initialValue, InputHistory history, Completer completer) {
+                    capturedInitialValue.set(initialValue);
+                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+                }
+            };
+
+            var cmd = new FindFileCommand(
+                    bufferIO,
+                    stubLister,
+                    Path.of("/working"),
+                    autoModeMap,
+                    new ModeRegistry(),
+                    new InputHistory(),
+                    path -> false);
+            var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
+
+            cmd.execute(context).join();
+
+            assertEquals("/home/user/project/src/", capturedInitialValue.get());
+        }
+
+        @Test
+        void ファイルパスなしバッファからの実行ではworkingDirectoryが起点になる() {
+            var capturedInitialValue = new AtomicReference<String>();
+            InputPrompter capturingPrompter = new InputPrompter() {
+                @Override
+                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+                }
+
+                @Override
+                public CompletableFuture<PromptResult> prompt(
+                        String message, String initialValue, InputHistory history, Completer completer) {
+                    capturedInitialValue.set(initialValue);
+                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+                }
+            };
+
+            var cmd = new FindFileCommand(
+                    bufferIO,
+                    stubLister,
+                    Path.of("/working"),
+                    autoModeMap,
+                    new ModeRegistry(),
+                    new InputHistory(),
+                    path -> false);
+            var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
+
+            cmd.execute(context).join();
+
+            assertEquals("/working/", capturedInitialValue.get());
         }
     }
 

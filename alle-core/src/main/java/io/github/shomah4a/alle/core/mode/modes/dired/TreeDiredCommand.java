@@ -14,6 +14,7 @@ import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 /**
  * Tree Dired バッファを開くコマンド。
@@ -27,6 +28,7 @@ public class TreeDiredCommand implements Command {
     private final ZoneId zoneId;
     private final Keymap diredKeymap;
     private final CommandRegistry diredCommandRegistry;
+    private final Predicate<Path> directoryChecker;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
@@ -34,13 +36,15 @@ public class TreeDiredCommand implements Command {
             InputHistory directoryHistory,
             ZoneId zoneId,
             Keymap diredKeymap,
-            CommandRegistry diredCommandRegistry) {
+            CommandRegistry diredCommandRegistry,
+            Predicate<Path> directoryChecker) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
         this.zoneId = zoneId;
         this.diredKeymap = diredKeymap;
         this.diredCommandRegistry = diredCommandRegistry;
+        this.directoryChecker = directoryChecker;
     }
 
     @Override
@@ -51,7 +55,8 @@ public class TreeDiredCommand implements Command {
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var completer = new FilePathCompleter(directoryLister);
-        String initialValue = workingDirectory + "/";
+        var defaultDir = context.activeWindow().getBuffer().getDefaultDirectory(workingDirectory, directoryChecker);
+        String initialValue = defaultDir + "/";
         return context.inputPrompter()
                 .prompt("Dired (directory): ", initialValue, directoryHistory, completer)
                 .thenAccept(result -> {
@@ -85,8 +90,8 @@ public class TreeDiredCommand implements Command {
             return;
         }
 
-        // バッファ作成
-        var textBuffer = new TextBuffer(bufferName, new GapTextModel(), context.settingsRegistry());
+        // バッファ作成（ディレクトリパスをfilePathに設定し、find-file等の起点にする）
+        var textBuffer = new TextBuffer(bufferName, new GapTextModel(), context.settingsRegistry(), path);
         var bufferFacade = new BufferFacade(textBuffer);
 
         // モデル・モード作成

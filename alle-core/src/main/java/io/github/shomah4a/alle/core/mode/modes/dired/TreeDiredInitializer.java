@@ -11,6 +11,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 
@@ -91,7 +92,8 @@ public final class TreeDiredInitializer {
                 diredHistory,
                 ZoneId.systemDefault(),
                 diredKeymap,
-                diredCommandRegistry);
+                diredCommandRegistry,
+                Files::isDirectory);
     }
 
     private static Keymap createKeymap(

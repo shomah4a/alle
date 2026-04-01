@@ -153,6 +153,37 @@ class BufferFacadeTest {
     }
 
     @Nested
+    class デフォルトディレクトリ {
+
+        @Test
+        void ファイルパスが設定されていればその親ディレクトリを返す() {
+            editableBuffer.setFilePath(Path.of("/home/user/project/src/Main.java"));
+
+            assertEquals(
+                    Path.of("/home/user/project/src"), facade.getDefaultDirectory(Path.of("/fallback"), p -> false));
+        }
+
+        @Test
+        void ファイルパスが未設定の場合はフォールバックを返す() {
+            assertEquals(Path.of("/fallback"), facade.getDefaultDirectory(Path.of("/fallback"), p -> false));
+        }
+
+        @Test
+        void ルートパス直下のファイルの場合はルートディレクトリを返す() {
+            editableBuffer.setFilePath(Path.of("/file.txt"));
+
+            assertEquals(Path.of("/"), facade.getDefaultDirectory(Path.of("/fallback"), p -> false));
+        }
+
+        @Test
+        void ディレクトリパスが設定されていればそのディレクトリ自身を返す() {
+            editableBuffer.setFilePath(Path.of("/home/user/project"));
+
+            assertEquals(Path.of("/home/user/project"), facade.getDefaultDirectory(Path.of("/fallback"), p -> true));
+        }
+    }
+
+    @Nested
     class 同一性 {
 
         @Test

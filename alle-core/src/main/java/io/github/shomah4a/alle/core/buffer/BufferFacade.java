@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.styling.StyledSpan;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -115,6 +116,21 @@ public class BufferFacade {
 
     public Optional<Path> getFilePath() {
         return buffer.getFilePath();
+    }
+
+    /**
+     * バッファのデフォルトディレクトリを返す。
+     * ファイルパスが設定されていれば、ディレクトリならそのまま、ファイルなら親ディレクトリを返す。
+     * 未設定またはルートパスの場合はfallbackを返す。
+     * 状態は持たず、既存のfilePathから導出する。
+     *
+     * @param fallback ファイルパス未設定時のデフォルト値
+     * @param isDirectory パスがディレクトリかどうかを判定する関数
+     */
+    public Path getDefaultDirectory(Path fallback, Predicate<Path> isDirectory) {
+        return buffer.getFilePath()
+                .map(p -> isDirectory.test(p) ? p : p.getParent())
+                .orElse(fallback);
     }
 
     public void setFilePath(Path filePath) {
