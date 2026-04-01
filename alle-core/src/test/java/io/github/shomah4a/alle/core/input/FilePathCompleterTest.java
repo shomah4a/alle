@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 
 class FilePathCompleterTest {
 
+    private static final Path HOME = Path.of("/home/user");
+
     private DirectoryLister stubLister(String... entries) {
         MutableList<DirectoryEntry> result = Lists.mutable.empty();
         for (String entry : entries) {
@@ -27,7 +29,7 @@ class FilePathCompleterTest {
 
     @Test
     void 親ディレクトリ内の前方一致するエントリを返す() {
-        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt", "/tmp/foobar.txt", "/tmp/bar.txt"));
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt", "/tmp/foobar.txt", "/tmp/bar.txt"), HOME);
         var result = completer.complete("/tmp/foo");
 
         assertEquals(2, result.size());
@@ -37,7 +39,7 @@ class FilePathCompleterTest {
 
     @Test
     void 一致するエントリがない場合は空リストを返す() {
-        var completer = new FilePathCompleter(stubLister("/tmp/bar.txt"));
+        var completer = new FilePathCompleter(stubLister("/tmp/bar.txt"), HOME);
         var result = completer.complete("/tmp/foo");
 
         assertTrue(result.isEmpty());
@@ -45,7 +47,7 @@ class FilePathCompleterTest {
 
     @Test
     void 空文字列入力では空リストを返す() {
-        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt"));
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt"), HOME);
         var result = completer.complete("");
 
         assertTrue(result.isEmpty());
@@ -56,7 +58,7 @@ class FilePathCompleterTest {
         DirectoryLister failingLister = directory -> {
             throw new IOException("read error");
         };
-        var completer = new FilePathCompleter(failingLister);
+        var completer = new FilePathCompleter(failingLister, HOME);
         var result = completer.complete("/tmp/foo");
 
         assertTrue(result.isEmpty());
@@ -64,7 +66,7 @@ class FilePathCompleterTest {
 
     @Test
     void ディレクトリエントリの末尾スラッシュが保持されpartialとして返る() {
-        var completer = new FilePathCompleter(stubLister("/tmp/subdir/"));
+        var completer = new FilePathCompleter(stubLister("/tmp/subdir/"), HOME);
         var result = completer.complete("/tmp/sub");
 
         assertEquals(1, result.size());
@@ -74,7 +76,7 @@ class FilePathCompleterTest {
 
     @Test
     void ファイルエントリはterminalとして返る() {
-        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt"));
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt"), HOME);
         var result = completer.complete("/tmp/foo");
 
         assertEquals(1, result.size());
@@ -83,7 +85,7 @@ class FilePathCompleterTest {
 
     @Test
     void ファイルのラベルはファイル名のみである() {
-        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt", "/tmp/bar.txt"));
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt", "/tmp/bar.txt"), HOME);
         var result = completer.complete("/tmp/");
 
         assertEquals(
@@ -94,7 +96,7 @@ class FilePathCompleterTest {
 
     @Test
     void ディレクトリのラベルはディレクトリ名に末尾スラッシュ付きである() {
-        var completer = new FilePathCompleter(stubLister("/tmp/subdir/"));
+        var completer = new FilePathCompleter(stubLister("/tmp/subdir/"), HOME);
         var result = completer.complete("/tmp/sub");
 
         assertEquals("subdir/", result.get(0).label());
@@ -102,7 +104,7 @@ class FilePathCompleterTest {
 
     @Test
     void 末尾スラッシュの入力ではそのディレクトリの中身を一覧する() {
-        var completer = new FilePathCompleter(stubLister("/tmp/subdir/file1.txt", "/tmp/subdir/file2.txt"));
+        var completer = new FilePathCompleter(stubLister("/tmp/subdir/file1.txt", "/tmp/subdir/file2.txt"), HOME);
         var result = completer.complete("/tmp/subdir/");
 
         assertEquals(2, result.size());
@@ -112,7 +114,7 @@ class FilePathCompleterTest {
 
     @Test
     void ルートディレクトリの入力ではルートの中身を一覧する() {
-        var completer = new FilePathCompleter(stubLister("/tmp/", "/home/"));
+        var completer = new FilePathCompleter(stubLister("/tmp/", "/home/"), HOME);
         var result = completer.complete("/");
 
         assertEquals(2, result.size());
@@ -125,9 +127,28 @@ class FilePathCompleterTest {
         DirectoryLister failingLister = directory -> {
             throw new IOException("no such directory");
         };
-        var completer = new FilePathCompleter(failingLister);
+        var completer = new FilePathCompleter(failingLister, HOME);
         var result = completer.complete("/tmp/nonexistent/");
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void チルダで始まる入力がHOMEに展開されて補完候補が返る() {
+        var completer = new FilePathCompleter(stubLister("/home/user/project/", "/home/user/documents/"), HOME);
+        var result = completer.complete("~/");
+
+        assertEquals(2, result.size());
+        assertTrue(result.anySatisfy(c -> c.value().equals("~/project/")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("~/documents/")));
+    }
+
+    @Test
+    void チルダで始まる入力の前方一致で候補が絞られる() {
+        var completer = new FilePathCompleter(stubLister("/home/user/project/", "/home/user/documents/"), HOME);
+        var result = completer.complete("~/pro");
+
+        assertEquals(1, result.size());
+        assertEquals("~/project/", result.get(0).value());
     }
 }

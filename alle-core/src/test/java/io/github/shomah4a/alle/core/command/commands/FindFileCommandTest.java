@@ -87,7 +87,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
 
             cmd.execute(context).join();
@@ -110,7 +111,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
 
             cmd.execute(context).join();
@@ -129,7 +131,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/crlf.txt"));
 
             cmd.execute(context).join();
@@ -150,7 +153,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
 
             cmd.execute(context).join();
@@ -176,7 +180,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
 
             // 1回目: ファイルを開く
             var context1 = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/hello.txt"));
@@ -232,7 +237,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
 
             cmd.execute(context).join();
@@ -246,7 +252,7 @@ class FindFileCommandTest {
     class 起点ディレクトリ {
 
         @Test
-        void ファイルパス付きバッファからの実行ではそのファイルのディレクトリが起点になる() {
+        void HOME外のファイルパス付きバッファからの実行では絶対パスのまま起点になる() {
             var fileBuffer = new BufferFacade(new TextBuffer(
                     "Main.java",
                     new GapTextModel(),
@@ -276,7 +282,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
 
             cmd.execute(context).join();
@@ -308,7 +315,8 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
 
             cmd.execute(context).join();
@@ -329,13 +337,80 @@ class FindFileCommandTest {
                     autoModeMap,
                     new ModeRegistry(),
                     new InputHistory(),
-                    path -> false);
+                    path -> false,
+                    Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();
 
             assertEquals("*scratch*", frame.getActiveWindow().getBuffer().getName());
             assertEquals(1, bufferManager.size());
+        }
+    }
+
+    @Nested
+    class チルダ展開 {
+
+        @Test
+        void HOME配下のバッファからの実行では初期値がチルダで始まる() {
+            var fileBuffer = new BufferFacade(new TextBuffer(
+                    "Main.java",
+                    new GapTextModel(),
+                    new SettingsRegistry(),
+                    Path.of("/home/testuser/project/src/Main.java")));
+            frame.getActiveWindow().setBuffer(fileBuffer);
+
+            var capturedInitialValue = new AtomicReference<String>();
+            InputPrompter capturingPrompter = new InputPrompter() {
+                @Override
+                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+                }
+
+                @Override
+                public CompletableFuture<PromptResult> prompt(
+                        String message, String initialValue, InputHistory history, Completer completer) {
+                    capturedInitialValue.set(initialValue);
+                    return CompletableFuture.completedFuture(new PromptResult.Cancelled());
+                }
+            };
+
+            var cmd = new FindFileCommand(
+                    bufferIO,
+                    stubLister,
+                    Path.of("/working"),
+                    autoModeMap,
+                    new ModeRegistry(),
+                    new InputHistory(),
+                    path -> false,
+                    Path.of("/home/testuser"));
+            var context = TestCommandContextFactory.create(frame, bufferManager, capturingPrompter);
+
+            cmd.execute(context).join();
+
+            assertEquals("~/project/src/", capturedInitialValue.get());
+        }
+
+        @Test
+        void チルダで始まるパスがHOMEに展開されてファイルが開かれる() {
+            storage.put("/home/testuser/hello.txt", "Hello");
+            var cmd = new FindFileCommand(
+                    bufferIO,
+                    stubLister,
+                    Path.of("/test"),
+                    autoModeMap,
+                    new ModeRegistry(),
+                    new InputHistory(),
+                    path -> false,
+                    Path.of("/home/testuser"));
+            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("~/hello.txt"));
+
+            cmd.execute(context).join();
+
+            assertEquals("hello.txt", frame.getActiveWindow().getBuffer().getName());
+            assertEquals(
+                    Path.of("/home/testuser/hello.txt"),
+                    frame.getActiveWindow().getBuffer().getFilePath().orElseThrow());
         }
     }
 }

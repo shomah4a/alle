@@ -127,7 +127,8 @@ public final class EditorCore {
             BufferIO bufferIO,
             DirectoryLister directoryLister,
             ShutdownRequestable shutdownRequestable,
-            SettingsRegistry settingsRegistry) {
+            SettingsRegistry settingsRegistry,
+            Path homeDirectory) {
 
         // バッファ・ウィンドウ・フレーム
         var scratchFacade = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), settingsRegistry));
@@ -165,7 +166,8 @@ public final class EditorCore {
                 shutdownHandler,
                 shutdownRequestable,
                 commandResolver,
-                settingsRegistry);
+                settingsRegistry,
+                homeDirectory);
         commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
@@ -213,7 +215,8 @@ public final class EditorCore {
             ShutdownHandler shutdownHandler,
             ShutdownRequestable shutdownRequestable,
             CommandResolver commandResolver,
-            SettingsRegistry settingsRegistry) {
+            SettingsRegistry settingsRegistry,
+            Path homeDirectory) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -239,9 +242,10 @@ public final class EditorCore {
                 autoModeMap,
                 modeRegistry,
                 filePathHistory,
-                path -> Files.isDirectory(path));
+                path -> Files.isDirectory(path),
+                homeDirectory);
         registry.register(findFileCommand);
-        registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory));
+        registry.register(new SaveBufferCommand(bufferIO, directoryLister, filePathHistory, homeDirectory));
         registry.register(new RevertBufferCommand(bufferIO));
         var bufferHistory = new InputHistory();
         registry.register(new SwitchBufferCommand(bufferHistory));
@@ -271,7 +275,7 @@ public final class EditorCore {
 
         // Tree Dired
         var treeDiredCommand = TreeDiredInitializer.initialize(
-                registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry);
+                registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry, homeDirectory);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
 

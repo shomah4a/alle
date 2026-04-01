@@ -32,7 +32,8 @@ public final class TreeDiredInitializer {
             BufferIO bufferIO,
             DirectoryLister directoryLister,
             AutoModeMap autoModeMap,
-            ModeRegistry modeRegistry) {
+            ModeRegistry modeRegistry,
+            Path homeDirectory) {
 
         var toggleCommand = new TreeDiredToggleCommand();
         var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
@@ -91,7 +92,8 @@ public final class TreeDiredInitializer {
                 diredHistory,
                 ZoneId.systemDefault(),
                 diredKeymap,
-                diredCommandRegistry);
+                diredCommandRegistry,
+                homeDirectory);
     }
 
     private static Keymap createKeymap(

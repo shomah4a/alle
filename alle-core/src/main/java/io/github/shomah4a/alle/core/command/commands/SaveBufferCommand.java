@@ -6,6 +6,7 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
+import io.github.shomah4a.alle.core.input.PathResolver;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import java.io.IOException;
@@ -26,11 +27,14 @@ public class SaveBufferCommand implements Command {
     private final BufferIO bufferIO;
     private final DirectoryLister directoryLister;
     private final InputHistory filePathHistory;
+    private final Path homeDirectory;
 
-    public SaveBufferCommand(BufferIO bufferIO, DirectoryLister directoryLister, InputHistory filePathHistory) {
+    public SaveBufferCommand(
+            BufferIO bufferIO, DirectoryLister directoryLister, InputHistory filePathHistory, Path homeDirectory) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
         this.filePathHistory = filePathHistory;
+        this.homeDirectory = homeDirectory;
     }
 
     @Override
@@ -48,14 +52,15 @@ public class SaveBufferCommand implements Command {
         }
 
         // ファイルパス未設定の場合はプロンプトで入力を求める
-        var completer = new FilePathCompleter(directoryLister);
+        var completer = new FilePathCompleter(directoryLister, homeDirectory);
         return context.inputPrompter()
                 .prompt("Save file: ", "", filePathHistory, completer)
                 .thenAccept(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         String pathString = confirmed.value();
                         if (!pathString.isEmpty()) {
-                            buffer.setFilePath(Path.of(pathString));
+                            String expanded = PathResolver.expandTilde(pathString, homeDirectory);
+                            buffer.setFilePath(Path.of(expanded));
                             saveBuffer(buffer, context);
                         }
                     }

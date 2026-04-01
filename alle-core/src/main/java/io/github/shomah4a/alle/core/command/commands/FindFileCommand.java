@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
+import io.github.shomah4a.alle.core.input.PathResolver;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
@@ -39,6 +40,7 @@ public class FindFileCommand implements Command {
     private final ModeRegistry modeRegistry;
     private final InputHistory filePathHistory;
     private final Predicate<Path> directoryChecker;
+    private final Path homeDirectory;
     private @Nullable TreeDiredCommand treeDiredCommand;
 
     public FindFileCommand(
@@ -48,7 +50,8 @@ public class FindFileCommand implements Command {
             AutoModeMap autoModeMap,
             ModeRegistry modeRegistry,
             InputHistory filePathHistory,
-            Predicate<Path> directoryChecker) {
+            Predicate<Path> directoryChecker,
+            Path homeDirectory) {
         this.bufferIO = bufferIO;
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
@@ -56,6 +59,7 @@ public class FindFileCommand implements Command {
         this.modeRegistry = modeRegistry;
         this.filePathHistory = filePathHistory;
         this.directoryChecker = directoryChecker;
+        this.homeDirectory = homeDirectory;
     }
 
     /**
@@ -73,9 +77,9 @@ public class FindFileCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var completer = new FilePathCompleter(directoryLister);
+        var completer = new FilePathCompleter(directoryLister, homeDirectory);
         var defaultDir = context.activeWindow().getBuffer().getDefaultDirectory(workingDirectory);
-        String initialValue = defaultDir + "/";
+        String initialValue = PathResolver.collapseTilde(defaultDir.toString(), homeDirectory) + "/";
         return context.inputPrompter()
                 .prompt("Find file: ", initialValue, filePathHistory, completer)
                 .thenAccept(result -> {
@@ -89,8 +93,9 @@ public class FindFileCommand implements Command {
         if (pathString.isEmpty()) {
             return;
         }
-        // 末尾の "/" を除去して正規化
-        String trimmed = pathString.endsWith("/") ? pathString.substring(0, pathString.length() - 1) : pathString;
+        // ~ を展開してから末尾の "/" を除去して正規化
+        String expanded = PathResolver.expandTilde(pathString, homeDirectory);
+        String trimmed = expanded.endsWith("/") ? expanded.substring(0, expanded.length() - 1) : expanded;
         var path = normalizePath(trimmed);
 
         // ディレクトリの場合はTree Diredで開く

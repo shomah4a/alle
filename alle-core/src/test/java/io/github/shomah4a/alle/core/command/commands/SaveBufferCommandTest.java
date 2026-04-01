@@ -78,7 +78,7 @@ class SaveBufferCommandTest {
             buffer.insertText(0, "Hello\nWorld");
             buffer.markDirty();
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -94,7 +94,7 @@ class SaveBufferCommandTest {
             buffer.setFilePath(Path.of("/tmp/test.txt"));
             buffer.insertText(0, "Hello");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -112,7 +112,7 @@ class SaveBufferCommandTest {
             buffer.markDirty();
             assertTrue(buffer.isDirty());
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -127,7 +127,7 @@ class SaveBufferCommandTest {
             buffer.setLineEnding(LineEnding.CRLF);
             buffer.insertText(0, "Hello\nWorld");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -146,7 +146,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "New file content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
 
             cmd.execute(context).join();
@@ -162,7 +162,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "New file content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("/tmp/new.txt"));
 
             cmd.execute(context).join();
@@ -177,7 +177,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "Content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, cancelling());
 
             cmd.execute(context).join();
@@ -191,7 +191,7 @@ class SaveBufferCommandTest {
             var buffer = frame.getActiveWindow().getBuffer();
             buffer.insertText(0, "Content");
 
-            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory());
+            var cmd = new SaveBufferCommand(bufferIO, stubLister, new InputHistory(), Path.of("/home/testuser"));
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 
             cmd.execute(context).join();

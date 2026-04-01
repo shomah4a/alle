@@ -78,8 +78,15 @@ public final class Main {
                 settingsRegistry);
         DirectoryLister directoryLister = Main::listDirectory;
 
+        var homeDirectory = Path.of(System.getProperty("user.home"));
         var core = EditorCore.create(
-                inputSource, MinibufferInputPrompter::new, bufferIO, directoryLister, inputSource, settingsRegistry);
+                inputSource,
+                MinibufferInputPrompter::new,
+                bufferIO,
+                directoryLister,
+                inputSource,
+                settingsRegistry,
+                homeDirectory);
 
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
