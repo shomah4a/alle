@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
@@ -24,13 +25,22 @@ import org.eclipse.collections.api.list.ListIterable;
 public class BufferFacade {
 
     private final Buffer buffer;
+    private final Predicate<Path> directoryChecker;
 
     /**
      * 指定Bufferをラップするファサードを作成する。
-     * 渡されたBufferが既にBufferFacadeでラップされている場合は内部Bufferを取り出す。
+     * ディレクトリ判定にはFiles::isDirectoryを使用する。
      */
     public BufferFacade(Buffer buffer) {
+        this(buffer, Files::isDirectory);
+    }
+
+    /**
+     * ディレクトリ判定関数を指定してファサードを作成する。
+     */
+    public BufferFacade(Buffer buffer, Predicate<Path> directoryChecker) {
         this.buffer = buffer;
+        this.directoryChecker = directoryChecker;
     }
 
     /**
@@ -123,13 +133,10 @@ public class BufferFacade {
      * ファイルパスが設定されていれば、ディレクトリならそのまま、ファイルなら親ディレクトリを返す。
      * 未設定またはルートパスの場合はfallbackを返す。
      * 状態は持たず、既存のfilePathから導出する。
-     *
-     * @param fallback ファイルパス未設定時のデフォルト値
-     * @param isDirectory パスがディレクトリかどうかを判定する関数
      */
-    public Path getDefaultDirectory(Path fallback, Predicate<Path> isDirectory) {
+    public Path getDefaultDirectory(Path fallback) {
         return buffer.getFilePath()
-                .map(p -> isDirectory.test(p) ? p : p.getParent())
+                .map(p -> directoryChecker.test(p) ? p : p.getParent())
                 .orElse(fallback);
     }
 

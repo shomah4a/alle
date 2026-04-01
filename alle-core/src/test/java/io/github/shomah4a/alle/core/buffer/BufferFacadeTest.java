@@ -159,27 +159,28 @@ class BufferFacadeTest {
         void ファイルパスが設定されていればその親ディレクトリを返す() {
             editableBuffer.setFilePath(Path.of("/home/user/project/src/Main.java"));
 
-            assertEquals(
-                    Path.of("/home/user/project/src"), facade.getDefaultDirectory(Path.of("/fallback"), p -> false));
+            assertEquals(Path.of("/home/user/project/src"), facade.getDefaultDirectory(Path.of("/fallback")));
         }
 
         @Test
         void ファイルパスが未設定の場合はフォールバックを返す() {
-            assertEquals(Path.of("/fallback"), facade.getDefaultDirectory(Path.of("/fallback"), p -> false));
+            assertEquals(Path.of("/fallback"), facade.getDefaultDirectory(Path.of("/fallback")));
         }
 
         @Test
         void ルートパス直下のファイルの場合はルートディレクトリを返す() {
             editableBuffer.setFilePath(Path.of("/file.txt"));
 
-            assertEquals(Path.of("/"), facade.getDefaultDirectory(Path.of("/fallback"), p -> false));
+            assertEquals(Path.of("/"), facade.getDefaultDirectory(Path.of("/fallback")));
         }
 
         @Test
         void ディレクトリパスが設定されていればそのディレクトリ自身を返す() {
-            editableBuffer.setFilePath(Path.of("/home/user/project"));
+            var dirBuffer = new TextBuffer("dired", new GapTextModel(), new SettingsRegistry());
+            dirBuffer.setFilePath(Path.of("/home/user/project"));
+            var dirFacade = new BufferFacade(dirBuffer, p -> true);
 
-            assertEquals(Path.of("/home/user/project"), facade.getDefaultDirectory(Path.of("/fallback"), p -> true));
+            assertEquals(Path.of("/home/user/project"), dirFacade.getDefaultDirectory(Path.of("/fallback")));
         }
     }
 
