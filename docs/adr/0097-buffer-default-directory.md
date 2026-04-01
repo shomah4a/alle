@@ -12,13 +12,14 @@ Emacsの `default-directory` に相当する動作が実現できていない。
 
 ## 決定
 
-`BufferFacade` に `getDefaultDirectory(Path fallback, Predicate<Path> isDirectory)` メソッドを追加する。
+`BufferFacade` に `getDefaultDirectory(Path fallback)` メソッドを追加する。
 
 - バッファにファイルパスがあり、それがディレクトリであればそのまま返す
 - バッファにファイルパスがあり、それがファイルであれば親ディレクトリを返す
 - ファイルパスがない場合、または親ディレクトリが取得できない場合は `fallback` を返す
-- ディレクトリ判定は `Predicate<Path>` で外部から注入する（副作用の外部化）
-- 新しいフィールドは追加しない（既存の `filePath` から導出するのみ）
+- ディレクトリ判定は `Predicate<Path>` として `BufferFacade` のコンストラクタで注入する（副作用の外部化）
+- 既存の1引数コンストラクタは `Files::isDirectory` をデフォルトとするオーバーロードとして残す
+- 新しい状態は追加しない（既存の `filePath` から導出するのみ）
 
 Emacsの `default-directory` はバッファローカル変数として状態を持つが、
 現時点では状態を増やさず導出で済ませる方針とする。
