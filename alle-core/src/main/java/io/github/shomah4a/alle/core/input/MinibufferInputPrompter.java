@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.commands.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.commands.SelfInsertCommand;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
@@ -118,6 +119,11 @@ public class MinibufferInputPrompter implements InputPrompter {
         if (completer != null) {
             keymap.bind(
                     KeyStroke.of('\t'), new MinibufferCompleteCommand(completer, promptLength, previousActiveWindow));
+        }
+
+        // バックスペース（Completer提供時はシャドウ更新付き）
+        if (completer != null) {
+            keymap.bind(KeyStroke.of(0x7F), new MinibufferBackspaceCommand(completer, promptLength));
         }
 
         // ヒストリナビゲーション
@@ -276,6 +282,13 @@ public class MinibufferInputPrompter implements InputPrompter {
             }
 
             String userInput = getUserInput(promptLength);
+            // シャドウ部分を除去して有効パスのみを返す
+            if (completer != null) {
+                int boundary = completer.shadowBoundary(userInput);
+                if (boundary > 0) {
+                    userInput = userInput.substring(boundary);
+                }
+            }
             history.add(userInput);
             cleanup(previousActiveWindow);
             future.complete(new PromptResult.Confirmed(userInput));
@@ -509,6 +522,7 @@ public class MinibufferInputPrompter implements InputPrompter {
         @Override
         public CompletableFuture<Void> execute(CommandContext context) {
             return delegate.execute(context).thenRun(() -> {
+                updateShadow(completer, promptLength);
                 if (completionsWindow != null && frame.getWindowTree().contains(completionsWindow)) {
                     // *Completions* 表示中: 候補を再計算して更新
                     String userInput = getUserInput(promptLength);
@@ -520,6 +534,33 @@ public class MinibufferInputPrompter implements InputPrompter {
                         replaceCompletionsBuffer(context);
                     }
                 }
+            });
+        }
+    }
+
+    /**
+     * バックスペース後にシャドウ表示を更新するコマンド。
+     */
+    private class MinibufferBackspaceCommand implements Command {
+
+        private final BackwardDeleteCharCommand delegate = new BackwardDeleteCharCommand();
+        private final Completer completer;
+        private final int promptLength;
+
+        MinibufferBackspaceCommand(Completer completer, int promptLength) {
+            this.completer = completer;
+            this.promptLength = promptLength;
+        }
+
+        @Override
+        public String name() {
+            return "minibuffer-backward-delete-char";
+        }
+
+        @Override
+        public CompletableFuture<Void> execute(CommandContext context) {
+            return delegate.execute(context).thenRun(() -> {
+                updateShadow(completer, promptLength);
             });
         }
     }
@@ -566,5 +607,27 @@ public class MinibufferInputPrompter implements InputPrompter {
         }
         var buffer = createReadOnlyCompletionsBuffer(completionsModel.formatForDisplay(), context);
         completionsWindow.setBuffer(buffer);
+    }
+
+    /**
+     * ミニバッファの入力に対してシャドウ face を更新する。
+     * Completer が返すシャドウ境界に基づき、プロンプト直後からシャドウ境界までに
+     * FILE_NAME_SHADOW face を適用する。シャドウがない場合は face を除去する。
+     */
+    private void updateShadow(Completer completer, int promptLength) {
+        var minibuffer = frame.getMinibufferWindow().getBuffer();
+        String userInput = getUserInput(promptLength);
+        int boundary = completer.shadowBoundary(userInput);
+
+        // 既存のシャドウ face を除去（他の face を壊さないよう名前指定で除去）
+        int fullLength = minibuffer.length();
+        if (fullLength > promptLength) {
+            minibuffer.removeFaceByName(promptLength, fullLength, FaceName.FILE_NAME_SHADOW);
+        }
+
+        // シャドウ境界がある場合のみ face を適用
+        if (boundary > 0) {
+            minibuffer.putFace(promptLength, promptLength + boundary, FaceName.FILE_NAME_SHADOW);
+        }
     }
 }

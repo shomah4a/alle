@@ -72,4 +72,53 @@ class PathResolverTest {
             assertEquals("/tmp/~/file.txt", PathResolver.expandTilde("/tmp/~/file.txt", HOME));
         }
     }
+
+    @Nested
+    class findShadowBoundary {
+
+        @Test
+        void シャドウがない場合は0を返す() {
+            assertEquals(0, PathResolver.findShadowBoundary("/tmp/foo.txt"));
+        }
+
+        @Test
+        void チルダで始まるパスにはシャドウがない() {
+            assertEquals(0, PathResolver.findShadowBoundary("~/project/src/"));
+        }
+
+        @Test
+        void スラッシュの後のチルダでシャドウが発生する() {
+            assertEquals(9, PathResolver.findShadowBoundary("/foo/bar/~/baz"));
+        }
+
+        @Test
+        void スラッシュの後のチルダのみでもシャドウが発生する() {
+            assertEquals(9, PathResolver.findShadowBoundary("/foo/bar/~"));
+        }
+
+        @Test
+        void ダブルスラッシュでシャドウが発生する() {
+            assertEquals(9, PathResolver.findShadowBoundary("/foo/bar//baz"));
+        }
+
+        @Test
+        void 複数のシャドウポイントがある場合は最も右のものが使われる() {
+            assertEquals(6, PathResolver.findShadowBoundary("//foo//bar"));
+        }
+
+        @Test
+        void ルートパスのみの場合はシャドウがない() {
+            assertEquals(0, PathResolver.findShadowBoundary("/"));
+        }
+
+        @Test
+        void 空文字列の場合はシャドウがない() {
+            assertEquals(0, PathResolver.findShadowBoundary(""));
+        }
+
+        @Test
+        void 先頭のダブルスラッシュではシャドウが発生する() {
+            assertEquals(1, PathResolver.findShadowBoundary("//foo"));
+        }
+    }
 }

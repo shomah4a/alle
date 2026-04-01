@@ -28,4 +28,17 @@ public interface Completer {
     default ListIterable<CompletionCandidate> sortedComplete(String input) {
         return complete(input).toSortedListBy(CompletionCandidate::label);
     }
+
+    /**
+     * 入力文字列のシャドウ境界位置を返す。
+     * シャドウとは、新しいルート指定によって無効化された先行部分のこと。
+     * 戻り値は有効入力の開始位置であり、0の場合はシャドウなし。
+     * ファイルパス補完など、シャドウが必要な場合にオーバーライドする。
+     *
+     * @param input 現在の入力文字列
+     * @return シャドウ境界位置（有効入力の開始インデックス）
+     */
+    default int shadowBoundary(String input) {
+        return 0;
+    }
 }

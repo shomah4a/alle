@@ -151,4 +151,24 @@ class FilePathCompleterTest {
         assertEquals(1, result.size());
         assertEquals("~/project/", result.get(0).value());
     }
+
+    @Test
+    void シャドウ付き入力ではシャドウ部分を除去して補完し候補にシャドウを再付与する() {
+        var completer = new FilePathCompleter(stubLister("/tmp/foo.txt", "/tmp/bar.txt"), HOME);
+        var result = completer.complete("/old/path//tmp/");
+
+        assertEquals(2, result.size());
+        // 候補にシャドウプレフィックスが付いている
+        assertTrue(result.anySatisfy(c -> c.value().equals("/old/path//tmp/foo.txt")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("/old/path//tmp/bar.txt")));
+    }
+
+    @Test
+    void シャドウ境界が正しく返される() {
+        var completer = new FilePathCompleter(stubLister(), HOME);
+
+        assertEquals(0, completer.shadowBoundary("/tmp/foo"));
+        assertEquals(5, completer.shadowBoundary("/tmp//foo"));
+        assertEquals(5, completer.shadowBoundary("/tmp/~/foo"));
+    }
 }
