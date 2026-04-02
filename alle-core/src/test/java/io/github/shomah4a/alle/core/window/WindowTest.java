@@ -683,4 +683,83 @@ class WindowTest {
             assertEquals(0, window2.getPoint());
         }
     }
+
+    @Nested
+    class ビュー状態のキャプチャと復元 {
+
+        @Test
+        void 現在のビュー状態をキャプチャできる() {
+            var window = createWindow();
+            window.insert("Hello\nWorld\nFoo");
+            window.setPoint(7);
+            window.setMark(3);
+
+            var state = window.captureViewState();
+
+            assertEquals(7, state.point());
+            assertEquals(0, state.displayStartLine());
+            assertEquals(0, state.displayStartVisualLine());
+            assertEquals(0, state.displayStartColumn());
+            assertEquals(3, state.mark());
+        }
+
+        @Test
+        void ビュー状態を復元できる() {
+            var window = createWindow();
+            window.insert("Hello\nWorld\nFoo");
+            var state = new ViewState(7, 1, 0, 0, 3);
+
+            window.restoreViewState(state);
+
+            assertEquals(7, window.getPoint());
+            assertEquals(1, window.getDisplayStartLine());
+            assertEquals(3, window.getMark().orElseThrow());
+        }
+
+        @Test
+        void 復元時にpointがバッファ長を超過していた場合クランプされる() {
+            var window = createWindow();
+            window.insert("Hi");
+            var state = new ViewState(100, 0, 0, 0, null);
+
+            window.restoreViewState(state);
+
+            assertEquals(2, window.getPoint());
+        }
+
+        @Test
+        void 復元時にdisplayStartLineが行数を超過していた場合クランプされる() {
+            var window = createWindow();
+            window.insert("Hello\nWorld");
+            // 2行のバッファに対してdisplayStartLine=10
+            var state = new ViewState(0, 10, 0, 0, null);
+
+            window.restoreViewState(state);
+
+            assertEquals(1, window.getDisplayStartLine());
+        }
+
+        @Test
+        void 復元時にmarkがバッファ長を超過していた場合クランプされる() {
+            var window = createWindow();
+            window.insert("Hi");
+            var state = new ViewState(0, 0, 0, 0, 100);
+
+            window.restoreViewState(state);
+
+            assertEquals(2, window.getMark().orElseThrow());
+        }
+
+        @Test
+        void markがnullの状態を復元できる() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setMark(2);
+            var state = new ViewState(0, 0, 0, 0, null);
+
+            window.restoreViewState(state);
+
+            assertTrue(window.getMark().isEmpty());
+        }
+    }
 }

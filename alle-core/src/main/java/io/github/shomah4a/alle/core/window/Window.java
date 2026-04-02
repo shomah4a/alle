@@ -76,6 +76,27 @@ public class Window {
     }
 
     /**
+     * 現在のビュー状態をスナップショットとして取得する。
+     */
+    public ViewState captureViewState() {
+        return new ViewState(point, displayStartLine, displayStartVisualLine, displayStartColumn, mark);
+    }
+
+    /**
+     * ビュー状態を復元する。
+     * バッファの範囲を超過している場合はクランプする。
+     */
+    public void restoreViewState(ViewState state) {
+        int length = bufferFacade.length();
+        this.point = Math.min(state.point(), length);
+        int lineCount = bufferFacade.lineCount();
+        this.displayStartLine = Math.min(state.displayStartLine(), Math.max(0, lineCount - 1));
+        this.displayStartVisualLine = state.displayStartVisualLine();
+        this.displayStartColumn = state.displayStartColumn();
+        this.mark = state.mark() != null ? Math.min(state.mark(), length) : null;
+    }
+
+    /**
      * カーソル位置(point)をコードポイント単位で返す。
      * バッファの長さを超過している場合は末尾にclampする。
      * pointGuard範囲内にある場合はガード範囲のend位置にクランプする。
