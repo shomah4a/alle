@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * カーソル行のコメントをトグルするコマンド。
+ * リージョンがアクティブな場合はリージョン全体のコメントをトグルする。
  * コメント文字列はバッファの設定（COMMENT_STRING）から取得する。
  * 行がコメント行ならコメント文字列を削除し、そうでなければ挿入する。
  */
@@ -21,6 +22,24 @@ public class CommentDwimCommand implements Command {
     public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
+
+        // リージョンがアクティブならリージョン全体をトグル
+        var regionStart = window.getRegionStart();
+        var regionEnd = window.getRegionEnd();
+        if (regionStart.isPresent() && regionEnd.isPresent()) {
+            String commentString = buffer.getSettings().get(EditorSettings.COMMENT_STRING);
+            int startLine = buffer.lineIndexForOffset(regionStart.get());
+            int endLine = buffer.lineIndexForOffset(regionEnd.get());
+            if (CommentRegionUtil.isAllCommented(buffer, startLine, endLine, commentString)) {
+                CommentRegionUtil.uncommentRegion(buffer, startLine, endLine, commentString);
+            } else {
+                CommentRegionUtil.commentRegion(buffer, startLine, endLine, commentString);
+            }
+            buffer.markDirty();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        // 単一行のトグル
         int point = window.getPoint();
         String commentString = buffer.getSettings().get(EditorSettings.COMMENT_STRING);
         int commentLen = commentString.length();
@@ -29,28 +48,17 @@ public class CommentDwimCommand implements Command {
         int lineStart = buffer.lineStartOffset(lineIndex);
         String lineText = buffer.lineText(lineIndex);
 
-        // 行頭の空白の長さを計算
-        int indentLen = 0;
-        for (int i = 0; i < lineText.length(); i++) {
-            if (lineText.charAt(i) == ' ' || lineText.charAt(i) == '\t') {
-                indentLen++;
-            } else {
-                break;
-            }
-        }
+        int indentLen = CommentRegionUtil.countLeadingWhitespace(lineText);
         int contentStart = lineStart + indentLen;
         String afterIndent = lineText.substring(indentLen);
 
         if (afterIndent.startsWith(commentString)) {
-            // コメント解除
             buffer.deleteText(contentStart, commentLen);
             window.setPoint(Math.max(point - commentLen, lineStart));
         } else if (!afterIndent.isEmpty() && afterIndent.charAt(0) == commentString.charAt(0)) {
-            // コメント文字列の先頭文字のみの場合（例: "#" without space）
             buffer.deleteText(contentStart, 1);
             window.setPoint(Math.max(point - 1, lineStart));
         } else {
-            // コメント挿入
             buffer.insertText(contentStart, commentString);
             window.setPoint(point + commentLen);
         }

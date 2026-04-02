@@ -91,6 +91,28 @@ class CoreEditingCommandsTest {
 
             assertEquals("    x = 1", buffer.getText());
         }
+
+        @Test
+        void リージョンがアクティブなら選択範囲をコメントアウトする() {
+            buffer.insertText(0, "x = 1\ny = 2");
+            frame.getActiveWindow().setMark(0);
+            frame.getActiveWindow().setPoint(11);
+
+            new CommentDwimCommand().execute(createContext()).join();
+
+            assertEquals("# x = 1\n# y = 2", buffer.getText());
+        }
+
+        @Test
+        void リージョンが全行コメント済みならコメント解除する() {
+            buffer.insertText(0, "# x = 1\n# y = 2");
+            frame.getActiveWindow().setMark(0);
+            frame.getActiveWindow().setPoint(15);
+
+            new CommentDwimCommand().execute(createContext()).join();
+
+            assertEquals("x = 1\ny = 2", buffer.getText());
+        }
     }
 
     @Nested
