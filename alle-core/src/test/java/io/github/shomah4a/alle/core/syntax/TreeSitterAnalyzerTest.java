@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.syntax;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -112,6 +113,27 @@ class TreeSitterAnalyzerTest {
         SyntaxTree tree1 = analyzer.analyze(Lists.immutable.of("x = 1"));
         SyntaxTree tree2 = analyzer.analyze(Lists.immutable.of("x = 2"));
         assertFalse(tree1 == tree2);
+    }
+
+    @Test
+    void セッション共有時にStylerパース後もAnalyzerの結果が有効である() {
+        // Analyzer と Styler が同一セッションを共有する状況を再現
+        var session = new TreeSitterSession(new TreeSitterPython());
+        var sharedAnalyzer = new TreeSitterAnalyzer(session, PYTHON_BRACKET_TYPES);
+
+        // 1. Analyzer がテキストv1をパース
+        ListIterable<String> linesV1 = Lists.immutable.of("x = [", "    1,", "]");
+        SyntaxTree treeV1 = sharedAnalyzer.analyze(linesV1);
+        // 括弧内にいることを確認
+        assertTrue(treeV1.enclosingBracket(1, 4).isPresent());
+
+        // 2. Styler側がテキストv2（変更後）をパース → セッション内でoldTree.close()が走る
+        ListIterable<String> linesV2 = Lists.immutable.of("x = [", "    1,", "    2,", "]");
+        session.parse(linesV2);
+
+        // 3. Analyzer が再度テキストv1でパースした場合でもTree is closedにならない
+        SyntaxTree treeV1Again = sharedAnalyzer.analyze(linesV1);
+        assertDoesNotThrow(() -> treeV1Again.enclosingBracket(1, 4));
     }
 
     @Test

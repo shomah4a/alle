@@ -16,7 +16,7 @@ public class TreeSitterAnalyzer implements SyntaxAnalyzer {
 
     private final TreeSitterSession session;
     private final ImmutableSet<String> bracketTypes;
-    private @Nullable String cachedText;
+    private @Nullable TSTree cachedTree;
     private @Nullable TreeSitterSyntaxTree cachedResult;
 
     /**
@@ -31,13 +31,15 @@ public class TreeSitterAnalyzer implements SyntaxAnalyzer {
     @Override
     public SyntaxTree analyze(ListIterable<String> lines) {
         TSTree tree = session.parse(lines);
-        String fullText = lines.isEmpty() ? "" : lines.makeString("\n");
 
-        if (fullText.equals(cachedText) && cachedResult != null) {
+        // session.parse()が返したTSTreeインスタンスが前回と同一ならキャッシュを再利用する。
+        // テキスト比較ではなくインスタンス比較にすることで、Styler側のパースにより
+        // 旧TSTreeがcloseされた後にcachedResultを誤って返す問題を防ぐ。
+        if (tree == cachedTree && cachedResult != null) {
             return cachedResult;
         }
 
-        cachedText = fullText;
+        cachedTree = tree;
         cachedResult = new TreeSitterSyntaxTree(tree, lines, bracketTypes);
         return cachedResult;
     }
