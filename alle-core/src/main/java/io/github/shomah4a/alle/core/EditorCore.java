@@ -13,6 +13,7 @@ import io.github.shomah4a.alle.core.command.commands.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.commands.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.commands.BeginningOfLineCommand;
 import io.github.shomah4a.alle.core.command.commands.CommentDwimCommand;
+import io.github.shomah4a.alle.core.command.commands.CommentOrUncommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.CommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.CopyRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.DedentRegionCommand;
@@ -46,6 +47,7 @@ import io.github.shomah4a.alle.core.command.commands.SplitWindowBelowCommand;
 import io.github.shomah4a.alle.core.command.commands.SplitWindowRightCommand;
 import io.github.shomah4a.alle.core.command.commands.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.ToggleTruncateLinesCommand;
+import io.github.shomah4a.alle.core.command.commands.UncommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.UndoCommand;
 import io.github.shomah4a.alle.core.command.commands.YankCommand;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
@@ -59,6 +61,8 @@ import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.JavaScriptMode;
+import io.github.shomah4a.alle.core.mode.JsonMode;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
@@ -68,6 +72,7 @@ import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchHistory;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
@@ -90,6 +95,7 @@ public final class EditorCore {
     private final CommandLoop commandLoop;
     private final ModeRegistry modeRegistry;
     private final AutoModeMap autoModeMap;
+    private final SyntaxAnalyzerRegistry syntaxAnalyzerRegistry;
 
     private EditorCore(
             Frame frame,
@@ -100,7 +106,8 @@ public final class EditorCore {
             Keymap keymap,
             CommandLoop commandLoop,
             ModeRegistry modeRegistry,
-            AutoModeMap autoModeMap) {
+            AutoModeMap autoModeMap,
+            SyntaxAnalyzerRegistry syntaxAnalyzerRegistry) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -110,6 +117,7 @@ public final class EditorCore {
         this.commandLoop = commandLoop;
         this.modeRegistry = modeRegistry;
         this.autoModeMap = autoModeMap;
+        this.syntaxAnalyzerRegistry = syntaxAnalyzerRegistry;
     }
 
     /**
@@ -148,10 +156,22 @@ public final class EditorCore {
         bufferManager.add(new BufferFacade(messageBuffer));
         bufferManager.add(new BufferFacade(warningBuffer));
 
+        // SyntaxAnalyzerRegistry
+        var syntaxAnalyzerRegistry = SyntaxAnalyzerRegistry.createWithBuiltins();
+
         // モードマップ
         var autoModeMap = new AutoModeMap(TextMode::new);
         autoModeMap.register("md", MarkdownMode::new);
         autoModeMap.register("markdown", MarkdownMode::new);
+        autoModeMap.register(
+                "js",
+                () -> new JavaScriptMode(
+                        syntaxAnalyzerRegistry.create("javascript").orElseThrow()));
+        autoModeMap.register(
+                "json", () -> new JsonMode(syntaxAnalyzerRegistry.create("json").orElseThrow()));
+        autoModeMap.register(
+                "jsonl",
+                () -> new JsonMode(syntaxAnalyzerRegistry.create("json").orElseThrow()));
 
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
@@ -179,6 +199,12 @@ public final class EditorCore {
         modeRegistry.setCommandRegistry(registry);
         modeRegistry.registerMajorMode("text", TextMode::new);
         modeRegistry.registerMajorMode("markdown", MarkdownMode::new);
+        modeRegistry.registerMajorMode(
+                "javascript",
+                () -> new JavaScriptMode(
+                        syntaxAnalyzerRegistry.create("javascript").orElseThrow()));
+        modeRegistry.registerMajorMode(
+                "json", () -> new JsonMode(syntaxAnalyzerRegistry.create("json").orElseThrow()));
 
         // キーマップ
         var keymap = createKeymap(registry);
@@ -206,7 +232,8 @@ public final class EditorCore {
                 keymap,
                 commandLoop,
                 modeRegistry,
-                autoModeMap);
+                autoModeMap,
+                syntaxAnalyzerRegistry);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -236,6 +263,8 @@ public final class EditorCore {
         registry.register(new DedentRegionCommand());
         registry.register(new CommentDwimCommand());
         registry.register(new CommentRegionCommand());
+        registry.register(new UncommentRegionCommand());
+        registry.register(new CommentOrUncommentRegionCommand());
         var filePathHistory = new InputHistory();
         var findFileCommand = new FindFileCommand(
                 bufferIO,
@@ -409,5 +438,9 @@ public final class EditorCore {
 
     public AutoModeMap autoModeMap() {
         return autoModeMap;
+    }
+
+    public SyntaxAnalyzerRegistry syntaxAnalyzerRegistry() {
+        return syntaxAnalyzerRegistry;
     }
 }

@@ -138,12 +138,64 @@ class CoreEditingCommandsTest {
         }
 
         @Test
-        void 全行コメント済みなら解除される() {
+        void 既にコメント済みの行にもコメントが追加される() {
             buffer.insertText(0, "# x = 1\n# y = 2");
             frame.getActiveWindow().setMark(0);
             frame.getActiveWindow().setPoint(15);
 
             new CommentRegionCommand().execute(createContext()).join();
+
+            assertEquals("# # x = 1\n# # y = 2", buffer.getText());
+        }
+    }
+
+    @Nested
+    class UncommentRegion {
+
+        @Test
+        void 選択範囲のコメントが解除される() {
+            buffer.insertText(0, "# x = 1\n# y = 2");
+            frame.getActiveWindow().setMark(0);
+            frame.getActiveWindow().setPoint(15);
+
+            new UncommentRegionCommand().execute(createContext()).join();
+
+            assertEquals("x = 1\ny = 2", buffer.getText());
+        }
+
+        @Test
+        void コメントされていない行には何もしない() {
+            buffer.insertText(0, "x = 1\ny = 2");
+            frame.getActiveWindow().setMark(0);
+            frame.getActiveWindow().setPoint(11);
+
+            new UncommentRegionCommand().execute(createContext()).join();
+
+            assertEquals("x = 1\ny = 2", buffer.getText());
+        }
+    }
+
+    @Nested
+    class CommentOrUncommentRegion {
+
+        @Test
+        void 未コメント行がコメントアウトされる() {
+            buffer.insertText(0, "x = 1\ny = 2");
+            frame.getActiveWindow().setMark(0);
+            frame.getActiveWindow().setPoint(11);
+
+            new CommentOrUncommentRegionCommand().execute(createContext()).join();
+
+            assertEquals("# x = 1\n# y = 2", buffer.getText());
+        }
+
+        @Test
+        void 全行コメント済みなら解除される() {
+            buffer.insertText(0, "# x = 1\n# y = 2");
+            frame.getActiveWindow().setMark(0);
+            frame.getActiveWindow().setPoint(15);
+
+            new CommentOrUncommentRegionCommand().execute(createContext()).join();
 
             assertEquals("x = 1\ny = 2", buffer.getText());
         }

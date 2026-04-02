@@ -9,6 +9,8 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
+import org.treesitter.TreeSitterJavascript;
+import org.treesitter.TreeSitterJson;
 import org.treesitter.TreeSitterPython;
 
 /**
@@ -70,6 +72,22 @@ public class SyntaxAnalyzerRegistry {
             "set_comprehension",
             "subscript");
 
+    /** JavaScript用の括弧系ノードタイプ名。 */
+    private static final ImmutableSet<String> JAVASCRIPT_BRACKET_TYPES = Sets.immutable.with(
+            "parenthesized_expression",
+            "arguments",
+            "formal_parameters",
+            "array",
+            "object",
+            "template_string",
+            "subscript_expression",
+            "statement_block",
+            "class_body",
+            "switch_body");
+
+    /** JSON用の括弧系ノードタイプ名。 */
+    private static final ImmutableSet<String> JSON_BRACKET_TYPES = Sets.immutable.with("object", "array");
+
     /**
      * 組み込み言語を登録済みのレジストリを生成する。
      *
@@ -82,6 +100,19 @@ public class SyntaxAnalyzerRegistry {
                 "python",
                 new TreeSitterLanguageConfig(
                         new TreeSitterPython(), pythonQuery, DefaultCaptureMapping.INSTANCE, PYTHON_BRACKET_TYPES));
+        String javascriptQuery = HighlightQueryLoader.load("javascript");
+        registry.register(
+                "javascript",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterJavascript(),
+                        javascriptQuery,
+                        DefaultCaptureMapping.INSTANCE,
+                        JAVASCRIPT_BRACKET_TYPES));
+        String jsonQuery = HighlightQueryLoader.load("json");
+        registry.register(
+                "json",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterJson(), jsonQuery, DefaultCaptureMapping.INSTANCE, JSON_BRACKET_TYPES));
         return registry;
     }
 }

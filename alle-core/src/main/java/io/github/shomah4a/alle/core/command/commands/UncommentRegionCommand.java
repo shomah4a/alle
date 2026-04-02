@@ -6,14 +6,14 @@ import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 選択範囲の各行をコメントアウトするコマンド。
+ * 選択範囲の各行のコメントを解除するコマンド。
  * コメント文字列はバッファの設定（COMMENT_STRING）から取得する。
  */
-public class CommentRegionCommand implements Command {
+public class UncommentRegionCommand implements Command {
 
     @Override
     public String name() {
-        return "comment-region";
+        return "uncomment-region";
     }
 
     @Override
@@ -31,7 +31,7 @@ public class CommentRegionCommand implements Command {
         int startLine = buffer.lineIndexForOffset(regionStart.get());
         int endLine = buffer.lineIndexForOffset(regionEnd.get());
 
-        CommentRegionUtil.commentRegion(buffer, startLine, endLine, commentString);
+        CommentRegionUtil.uncommentRegion(buffer, startLine, endLine, commentString);
         buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }

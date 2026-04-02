@@ -7,6 +7,8 @@ dependencies {
     implementation(project(":libs:ring-buffer"))
     implementation(libs.tree.sitter)
     implementation(libs.tree.sitter.python)
+    implementation(libs.tree.sitter.javascript)
+    implementation(libs.tree.sitter.json)
 }
 
 // Tree-sitter ハイライトクエリのダウンロード
@@ -15,7 +17,9 @@ val treeSitterQueryDir = layout.buildDirectory.dir("generated-resources/treesitt
 data class TreeSitterGrammar(val language: String, val repo: String, val tag: String)
 
 val grammars = listOf(
-    TreeSitterGrammar("python", "tree-sitter/tree-sitter-python", "v${libs.versions.tree.sitter.python.get()}")
+    TreeSitterGrammar("python", "tree-sitter/tree-sitter-python", "v${libs.versions.tree.sitter.python.get()}"),
+    TreeSitterGrammar("javascript", "tree-sitter/tree-sitter-javascript", "v${libs.versions.tree.sitter.javascript.get()}"),
+    TreeSitterGrammar("json", "tree-sitter/tree-sitter-json", "v${libs.versions.tree.sitter.json.get()}")
 )
 
 val downloadTreeSitterQueries = tasks.register("downloadTreeSitterQueries") {

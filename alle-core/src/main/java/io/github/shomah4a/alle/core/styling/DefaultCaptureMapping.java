@@ -37,6 +37,9 @@ public final class DefaultCaptureMapping {
             .withKeyValue("constant.builtin", FaceName.BUILTIN)
             .withKeyValue("property", FaceName.VARIABLE)
             .withKeyValue("variable", FaceName.VARIABLE)
+            .withKeyValue("variable.builtin", FaceName.BUILTIN)
+            // JSON キー名
+            .withKeyValue("string.special.key", FaceName.VARIABLE)
             // 句読点・埋め込み
             .withKeyValue("punctuation.special", FaceName.OPERATOR)
             .withKeyValue("embedded", FaceName.DEFAULT)

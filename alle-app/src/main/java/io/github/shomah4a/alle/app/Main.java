@@ -16,7 +16,6 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.styling.DefaultFaceTheme;
-import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.EvalExpressionCommand;
 import io.github.shomah4a.alle.script.MessageBufferOutputStream;
@@ -91,7 +90,6 @@ public final class Main {
         // スクリプトエンジンの初期化
         var msg = core.messageBuffer();
         msg.message("Initializing script engine...");
-        var syntaxAnalyzerRegistry = SyntaxAnalyzerRegistry.createWithBuiltins();
         var editorFacade = new EditorFacade(
                 core.frame(),
                 msg,
@@ -99,7 +97,7 @@ public final class Main {
                 core.keymap(),
                 core.modeRegistry(),
                 core.autoModeMap(),
-                syntaxAnalyzerRegistry);
+                core.syntaxAnalyzerRegistry());
         var stdoutStream =
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
         var stderrStream =
