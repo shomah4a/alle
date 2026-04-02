@@ -274,7 +274,7 @@ class WindowTest {
     class バッファ切り替え {
 
         @Test
-        void バッファを切り替えるとポイントと表示開始行がリセットされる() {
+        void 初回切り替えではポイントと表示開始行がリセットされる() {
             var window = createWindow();
             window.insert("Hello");
             window.setPoint(3);
@@ -285,6 +285,76 @@ class WindowTest {
             assertEquals("other", window.getBuffer().getName());
             assertEquals(0, window.getPoint());
             assertEquals(0, window.getDisplayStartLine());
+        }
+
+        @Test
+        void 同一バッファへの切り替えは何もしない() {
+            var window = createWindow();
+            window.insert("Hello");
+            window.setPoint(3);
+            var currentBuffer = window.getBuffer();
+
+            window.setBuffer(currentBuffer);
+
+            assertEquals(3, window.getPoint());
+            assertTrue(window.getBufferHistory().isEmpty());
+        }
+
+        @Test
+        void バッファを戻すとカーソル位置が復元される() {
+            var window = createWindow();
+            window.insert("Hello\nWorld");
+            window.setPoint(7);
+            window.setMark(3);
+            var bufferA = window.getBuffer();
+
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            window.setBuffer(bufferB);
+
+            // Bに切り替え後はリセット
+            assertEquals(0, window.getPoint());
+
+            window.setBuffer(bufferA);
+
+            // Aに戻るとカーソル位置とmarkが復元される
+            assertEquals(7, window.getPoint());
+            assertEquals(3, window.getMark().orElseThrow());
+        }
+
+        @Test
+        void バッファ内容が縮小した場合にpointがクランプされる() {
+            var bufferA = new BufferFacade(new TextBuffer("a", new GapTextModel(), new SettingsRegistry()));
+            var window = new Window(bufferA);
+            window.insert("Hello World");
+            window.setPoint(10);
+
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            window.setBuffer(bufferB);
+
+            // Aの内容を別ウィンドウで縮小（同一バッファを共有するケースを模擬）
+            var window2 = new Window(bufferA);
+            window2.setPoint(0);
+            window2.deleteForward(9); // "ld" だけ残る (長さ2)
+
+            window.setBuffer(bufferA);
+
+            // point=10 は長さ2にクランプされる
+            assertEquals(2, window.getPoint());
+        }
+
+        @Test
+        void displayStartLineが復元される() {
+            var window = createWindow();
+            window.insert("line1\nline2\nline3\nline4");
+            window.setDisplayStartLine(2);
+            var bufferA = window.getBuffer();
+
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            window.setBuffer(bufferB);
+            assertEquals(0, window.getDisplayStartLine());
+
+            window.setBuffer(bufferA);
+            assertEquals(2, window.getDisplayStartLine());
         }
     }
 
@@ -298,7 +368,7 @@ class WindowTest {
         }
 
         @Test
-        void バッファ切り替え後に旧バッファ名が履歴先頭に記録される() {
+        void バッファ切り替え後に旧バッファの識別子が履歴先頭に記録される() {
             var window = createWindow();
             var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
 
@@ -306,33 +376,33 @@ class WindowTest {
 
             assertEquals(1, window.getBufferHistory().size());
             assertEquals(
-                    new BufferHistoryEntry.ByName("test"),
-                    window.getBufferHistory().get(0));
+                    new BufferIdentifier.ByName("test"),
+                    window.getBufferHistory().get(0).identifier());
         }
 
         @Test
-        void 指定エントリを履歴から除去できる() {
+        void 指定識別子のエントリを履歴から除去できる() {
             var window = createWindow();
             var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
-            window.removeFromBufferHistory(new BufferHistoryEntry.ByName("test"));
+            window.removeFromBufferHistory(new BufferIdentifier.ByName("test"));
 
             assertTrue(window.getBufferHistory().isEmpty());
         }
 
         @Test
-        void 一致しないエントリの除去では履歴が変わらない() {
+        void 一致しない識別子の除去では履歴が変わらない() {
             var window = createWindow();
             var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
-            window.removeFromBufferHistory(new BufferHistoryEntry.ByName("unrelated"));
+            window.removeFromBufferHistory(new BufferIdentifier.ByName("unrelated"));
 
             assertEquals(1, window.getBufferHistory().size());
             assertEquals(
-                    new BufferHistoryEntry.ByName("test"),
-                    window.getBufferHistory().get(0));
+                    new BufferIdentifier.ByName("test"),
+                    window.getBufferHistory().get(0).identifier());
         }
 
         @Test
@@ -346,15 +416,15 @@ class WindowTest {
 
             assertEquals(2, window.getBufferHistory().size());
             assertEquals(
-                    new BufferHistoryEntry.ByName("b"),
-                    window.getBufferHistory().get(0));
+                    new BufferIdentifier.ByName("b"),
+                    window.getBufferHistory().get(0).identifier());
             assertEquals(
-                    new BufferHistoryEntry.ByName("test"),
-                    window.getBufferHistory().get(1));
+                    new BufferIdentifier.ByName("test"),
+                    window.getBufferHistory().get(1).identifier());
         }
 
         @Test
-        void 既に履歴にあるバッファに切り替えると先頭に移動する() {
+        void 既に履歴にあるバッファに切り替えると履歴から除去される() {
             var window = createWindow();
             var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
             var bufferC = new BufferFacade(new TextBuffer("c", new GapTextModel(), new SettingsRegistry()));
@@ -364,16 +434,14 @@ class WindowTest {
             window.setBuffer(bufferC);
             window.setBuffer(originalBuffer); // testに戻る
 
-            assertEquals(3, window.getBufferHistory().size());
+            // testの履歴エントリはsetBuffer時に消費されるので2件
+            assertEquals(2, window.getBufferHistory().size());
             assertEquals(
-                    new BufferHistoryEntry.ByName("c"),
-                    window.getBufferHistory().get(0));
+                    new BufferIdentifier.ByName("c"),
+                    window.getBufferHistory().get(0).identifier());
             assertEquals(
-                    new BufferHistoryEntry.ByName("b"),
-                    window.getBufferHistory().get(1));
-            assertEquals(
-                    new BufferHistoryEntry.ByName("test"),
-                    window.getBufferHistory().get(2));
+                    new BufferIdentifier.ByName("b"),
+                    window.getBufferHistory().get(1).identifier());
         }
 
         @Test
@@ -398,8 +466,8 @@ class WindowTest {
 
             assertEquals(1, window.getBufferHistory().size());
             assertEquals(
-                    new BufferHistoryEntry.ByPath(filePath),
-                    window.getBufferHistory().get(0));
+                    new BufferIdentifier.ByPath(filePath),
+                    window.getBufferHistory().get(0).identifier());
         }
     }
 

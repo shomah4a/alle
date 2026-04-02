@@ -12,7 +12,7 @@ import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
-import io.github.shomah4a.alle.core.window.BufferHistoryEntry;
+import io.github.shomah4a.alle.core.window.BufferIdentifier;
 import io.github.shomah4a.alle.core.window.Window;
 import java.io.IOException;
 import java.util.Optional;
@@ -134,8 +134,8 @@ public class KillBufferCommand implements Command {
     }
 
     private void doKill(CommandContext context, BufferManager bufferManager, String bufferName, BufferFacade target) {
-        // kill対象の履歴エントリを事前に作成（remove前にバッファ情報が必要）
-        var targetEntry = BufferHistoryEntry.of(target);
+        // kill対象の識別子を事前に作成（remove前にバッファ情報が必要）
+        var targetIdentifier = BufferIdentifier.of(target);
 
         bufferManager.remove(bufferName);
 
@@ -160,14 +160,14 @@ public class KillBufferCommand implements Command {
 
         // 全ウィンドウの履歴からkill対象を除去
         for (var window : allWindows) {
-            window.removeFromBufferHistory(targetEntry);
+            window.removeFromBufferHistory(targetIdentifier);
         }
     }
 
     private static Optional<BufferFacade> resolveFirstHistoryBuffer(
             Window window, BufferManager bufferManager, BufferFacade excluded) {
         for (var entry : window.getBufferHistory()) {
-            var found = bufferManager.findByHistoryEntry(entry);
+            var found = bufferManager.findByIdentifier(entry.identifier());
             if (found.isPresent() && !found.get().equals(excluded)) {
                 return found;
             }

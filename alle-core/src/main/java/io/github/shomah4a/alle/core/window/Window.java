@@ -43,21 +43,43 @@ public class Window {
 
     /**
      * ウィンドウに表示するバッファを切り替える。
-     * 切り替え前のバッファを履歴先頭に記録する。
-     * 同一バッファへの切り替えは履歴に記録しない。
+     * 切り替え前のビュー状態をスナップショットとして履歴に記録する。
+     * 切り替え先が履歴にある場合、保存されたビュー状態を復元する。
+     * 同一バッファへの切り替えは何もしない。
      */
     public void setBuffer(BufferFacade buffer) {
-        if (!this.bufferFacade.equals(buffer)) {
-            var entry = BufferHistoryEntry.of(this.bufferFacade);
-            bufferHistory.remove(entry);
-            bufferHistory.add(0, entry);
+        if (this.bufferFacade.equals(buffer)) {
+            return;
         }
+        // 現在のビュー状態をキャプチャして履歴に保存
+        var currentIdentifier = BufferIdentifier.of(this.bufferFacade);
+        var currentViewState = captureViewState();
+        var entry = new BufferHistoryEntry(currentIdentifier, currentViewState);
+        bufferHistory.remove(entry);
+        bufferHistory.add(0, entry);
+
+        // 切り替え先のビュー状態を履歴から検索
+        var targetIdentifier = BufferIdentifier.of(buffer);
+        ViewState targetViewState = null;
+        for (int i = 0; i < bufferHistory.size(); i++) {
+            if (bufferHistory.get(i).identifier().equals(targetIdentifier)) {
+                targetViewState = bufferHistory.get(i).viewState();
+                bufferHistory.remove(i);
+                break;
+            }
+        }
+
         this.bufferFacade = buffer;
-        this.point = 0;
-        this.displayStartLine = 0;
-        this.displayStartVisualLine = 0;
-        this.displayStartColumn = 0;
-        this.mark = null;
+
+        if (targetViewState != null) {
+            restoreViewState(targetViewState);
+        } else {
+            this.point = 0;
+            this.displayStartLine = 0;
+            this.displayStartVisualLine = 0;
+            this.displayStartColumn = 0;
+            this.mark = null;
+        }
     }
 
     /**
@@ -68,11 +90,11 @@ public class Window {
     }
 
     /**
-     * 指定エントリを履歴から除去する。
+     * 指定識別子のエントリを履歴から除去する。
      * バッファ削除時に使用する。
      */
-    public void removeFromBufferHistory(BufferHistoryEntry entry) {
-        bufferHistory.remove(entry);
+    public void removeFromBufferHistory(BufferIdentifier identifier) {
+        bufferHistory.removeIf(e -> e.identifier().equals(identifier));
     }
 
     /**

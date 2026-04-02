@@ -341,8 +341,8 @@ class KillBufferCommandTest {
 
             // 履歴に元の scratch のエントリが残っていないこと
             var history = frame.getActiveWindow().getBufferHistory();
-            assertFalse(
-                    history.contains(new io.github.shomah4a.alle.core.window.BufferHistoryEntry.ByName("*scratch*")));
+            var scratchIdentifier = new io.github.shomah4a.alle.core.window.BufferIdentifier.ByName("*scratch*");
+            assertFalse(history.anySatisfy(e -> e.identifier().equals(scratchIdentifier)));
         }
     }
 

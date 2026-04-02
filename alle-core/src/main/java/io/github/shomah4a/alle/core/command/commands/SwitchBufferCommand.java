@@ -53,7 +53,7 @@ public class SwitchBufferCommand implements Command {
 
     private static String resolveFirstHistoryBufferName(Window window, BufferManager bufferManager) {
         for (var entry : window.getBufferHistory()) {
-            var found = bufferManager.findByHistoryEntry(entry);
+            var found = bufferManager.findByIdentifier(entry.identifier());
             if (found.isPresent()) {
                 return found.get().getName();
             }

@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class BufferHistoryEntryTest {
+class BufferIdentifierTest {
 
     @Nested
     class ファクトリメソッド {
@@ -22,9 +22,9 @@ class BufferHistoryEntryTest {
             var filePath = Path.of("/tmp/file.txt");
             buffer.setFilePath(filePath);
 
-            var entry = BufferHistoryEntry.of(buffer);
+            var identifier = BufferIdentifier.of(buffer);
 
-            var byPath = assertInstanceOf(BufferHistoryEntry.ByPath.class, entry);
+            var byPath = assertInstanceOf(BufferIdentifier.ByPath.class, identifier);
             assertEquals(filePath, byPath.path());
         }
 
@@ -32,9 +32,9 @@ class BufferHistoryEntryTest {
         void ファイルパスを持たないバッファからByNameが生成される() {
             var buffer = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
 
-            var entry = BufferHistoryEntry.of(buffer);
+            var identifier = BufferIdentifier.of(buffer);
 
-            var byName = assertInstanceOf(BufferHistoryEntry.ByName.class, entry);
+            var byName = assertInstanceOf(BufferIdentifier.ByName.class, identifier);
             assertEquals("*scratch*", byName.name());
         }
 
@@ -44,9 +44,9 @@ class BufferHistoryEntryTest {
             var filePath = Path.of("/tmp/dir/file.txt");
             buffer.setFilePath(filePath);
 
-            var entry = BufferHistoryEntry.of(buffer);
+            var identifier = BufferIdentifier.of(buffer);
 
-            var byPath = assertInstanceOf(BufferHistoryEntry.ByPath.class, entry);
+            var byPath = assertInstanceOf(BufferIdentifier.ByPath.class, identifier);
             assertEquals(filePath, byPath.path());
         }
     }

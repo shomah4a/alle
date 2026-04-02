@@ -1,31 +1,52 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * バッファ履歴のエントリ。
- * ファイルパスを持つバッファはパスで、持たないバッファは名前で識別する。
+ * バッファの識別子と、そのバッファを表示していた時のビュー状態を保持する。
+ * equals/hashCode は識別子ベースで判定する。
  */
-public sealed interface BufferHistoryEntry {
+public final class BufferHistoryEntry {
 
-    /**
-     * BufferFacade から履歴エントリを生成する。
-     * ファイルパスがあれば ByPath、なければ ByName を返す。
-     */
-    static BufferHistoryEntry of(BufferFacade buffer) {
-        return buffer.getFilePath().<BufferHistoryEntry>map(ByPath::new).orElseGet(() -> new ByName(buffer.getName()));
+    private final BufferIdentifier identifier;
+    private final ViewState viewState;
+
+    public BufferHistoryEntry(BufferIdentifier identifier, ViewState viewState) {
+        this.identifier = Objects.requireNonNull(identifier);
+        this.viewState = Objects.requireNonNull(viewState);
     }
 
     /**
-     * ファイルパスによるバッファ識別。
-     * displayName の変更に影響されない。
+     * BufferFacade とビュー状態から履歴エントリを生成する。
      */
-    record ByPath(Path path) implements BufferHistoryEntry {}
+    public static BufferHistoryEntry of(BufferFacade buffer, ViewState viewState) {
+        return new BufferHistoryEntry(BufferIdentifier.of(buffer), viewState);
+    }
 
-    /**
-     * バッファ名による識別。
-     * ファイルパスを持たないバッファ（*scratch* 等）に使用する。
-     */
-    record ByName(String name) implements BufferHistoryEntry {}
+    public BufferIdentifier identifier() {
+        return identifier;
+    }
+
+    public ViewState viewState() {
+        return viewState;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BufferHistoryEntry other)) return false;
+        return identifier.equals(other.identifier);
+    }
+
+    @Override
+    public int hashCode() {
+        return identifier.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "BufferHistoryEntry{identifier=" + identifier + ", viewState=" + viewState + "}";
+    }
 }

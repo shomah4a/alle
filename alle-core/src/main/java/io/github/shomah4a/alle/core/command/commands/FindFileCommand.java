@@ -130,6 +130,5 @@ public class FindFileCommand implements Command {
 
     private void switchToBuffer(CommandContext context, BufferFacade buffer) {
         context.frame().getActiveWindow().setBuffer(buffer);
-        context.frame().getActiveWindow().setPoint(0);
     }
 }
