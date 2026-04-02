@@ -289,54 +289,54 @@ class WindowTest {
     }
 
     @Nested
-    class 直前バッファ {
+    class バッファ履歴 {
 
         @Test
-        void 初期状態では直前バッファがない() {
+        void 初期状態では履歴が空() {
             var window = createWindow();
-            assertTrue(window.getPreviousBuffer().isEmpty());
+            assertTrue(window.getBufferHistory().isEmpty());
         }
 
         @Test
-        void バッファ切り替え後に直前バッファが記録される() {
+        void バッファ切り替え後に旧バッファ名が履歴先頭に記録される() {
             var window = createWindow();
-            var originalBuffer = window.getBuffer();
             var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
 
             window.setBuffer(newBuffer);
 
-            assertTrue(window.getPreviousBuffer().isPresent());
-            assertEquals(originalBuffer, window.getPreviousBuffer().get());
+            assertEquals(1, window.getBufferHistory().size());
+            assertEquals(
+                    new BufferHistoryEntry.ByName("test"),
+                    window.getBufferHistory().get(0));
         }
 
         @Test
-        void 削除対象と一致する直前バッファがクリアされる() {
+        void 指定エントリを履歴から除去できる() {
             var window = createWindow();
-            var originalBuffer = window.getBuffer();
             var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
-            window.clearPreviousBufferIf(originalBuffer);
+            window.removeFromBufferHistory(new BufferHistoryEntry.ByName("test"));
 
-            assertTrue(window.getPreviousBuffer().isEmpty());
+            assertTrue(window.getBufferHistory().isEmpty());
         }
 
         @Test
-        void 削除対象と一致しない直前バッファはクリアされない() {
+        void 一致しないエントリの除去では履歴が変わらない() {
             var window = createWindow();
-            var originalBuffer = window.getBuffer();
             var newBuffer = new BufferFacade(new TextBuffer("new", new GapTextModel(), new SettingsRegistry()));
-            var unrelated = new BufferFacade(new TextBuffer("unrelated", new GapTextModel(), new SettingsRegistry()));
             window.setBuffer(newBuffer);
 
-            window.clearPreviousBufferIf(unrelated);
+            window.removeFromBufferHistory(new BufferHistoryEntry.ByName("unrelated"));
 
-            assertTrue(window.getPreviousBuffer().isPresent());
-            assertEquals(originalBuffer, window.getPreviousBuffer().get());
+            assertEquals(1, window.getBufferHistory().size());
+            assertEquals(
+                    new BufferHistoryEntry.ByName("test"),
+                    window.getBufferHistory().get(0));
         }
 
         @Test
-        void 複数回切り替えると直近の切り替え元が直前バッファになる() {
+        void 複数回切り替えると履歴がMRU順に記録される() {
             var window = createWindow();
             var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
             var bufferC = new BufferFacade(new TextBuffer("c", new GapTextModel(), new SettingsRegistry()));
@@ -344,7 +344,62 @@ class WindowTest {
             window.setBuffer(bufferB);
             window.setBuffer(bufferC);
 
-            assertEquals(bufferB, window.getPreviousBuffer().get());
+            assertEquals(2, window.getBufferHistory().size());
+            assertEquals(
+                    new BufferHistoryEntry.ByName("b"),
+                    window.getBufferHistory().get(0));
+            assertEquals(
+                    new BufferHistoryEntry.ByName("test"),
+                    window.getBufferHistory().get(1));
+        }
+
+        @Test
+        void 既に履歴にあるバッファに切り替えると先頭に移動する() {
+            var window = createWindow();
+            var bufferB = new BufferFacade(new TextBuffer("b", new GapTextModel(), new SettingsRegistry()));
+            var bufferC = new BufferFacade(new TextBuffer("c", new GapTextModel(), new SettingsRegistry()));
+            var originalBuffer = window.getBuffer();
+
+            window.setBuffer(bufferB);
+            window.setBuffer(bufferC);
+            window.setBuffer(originalBuffer); // testに戻る
+
+            assertEquals(3, window.getBufferHistory().size());
+            assertEquals(
+                    new BufferHistoryEntry.ByName("c"),
+                    window.getBufferHistory().get(0));
+            assertEquals(
+                    new BufferHistoryEntry.ByName("b"),
+                    window.getBufferHistory().get(1));
+            assertEquals(
+                    new BufferHistoryEntry.ByName("test"),
+                    window.getBufferHistory().get(2));
+        }
+
+        @Test
+        void 同一バッファへの切り替えは履歴に記録されない() {
+            var window = createWindow();
+            var currentBuffer = window.getBuffer();
+
+            window.setBuffer(currentBuffer);
+
+            assertTrue(window.getBufferHistory().isEmpty());
+        }
+
+        @Test
+        void ファイルパスを持つバッファはByPathで記録される() {
+            var buffer = new BufferFacade(new TextBuffer("file.txt", new GapTextModel(), new SettingsRegistry()));
+            var filePath = java.nio.file.Path.of("/tmp/file.txt");
+            buffer.setFilePath(filePath);
+            var window = new Window(buffer);
+            var newBuffer = new BufferFacade(new TextBuffer("other", new GapTextModel(), new SettingsRegistry()));
+
+            window.setBuffer(newBuffer);
+
+            assertEquals(1, window.getBufferHistory().size());
+            assertEquals(
+                    new BufferHistoryEntry.ByPath(filePath),
+                    window.getBufferHistory().get(0));
         }
     }
 

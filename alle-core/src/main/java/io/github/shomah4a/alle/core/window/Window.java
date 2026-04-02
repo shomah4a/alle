@@ -3,6 +3,9 @@ package io.github.shomah4a.alle.core.window;
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -14,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 public class Window {
 
     private BufferFacade bufferFacade;
-    private @Nullable BufferFacade previousBuffer;
+    private final MutableList<BufferHistoryEntry> bufferHistory = Lists.mutable.empty();
     private int point;
     private int displayStartLine;
     private int displayStartVisualLine;
@@ -40,10 +43,15 @@ public class Window {
 
     /**
      * ウィンドウに表示するバッファを切り替える。
-     * 切り替え前のバッファを直前バッファとして記録する。
+     * 切り替え前のバッファを履歴先頭に記録する。
+     * 同一バッファへの切り替えは履歴に記録しない。
      */
     public void setBuffer(BufferFacade buffer) {
-        this.previousBuffer = this.bufferFacade;
+        if (!this.bufferFacade.equals(buffer)) {
+            var entry = BufferHistoryEntry.of(this.bufferFacade);
+            bufferHistory.remove(entry);
+            bufferHistory.add(0, entry);
+        }
         this.bufferFacade = buffer;
         this.point = 0;
         this.displayStartLine = 0;
@@ -53,20 +61,18 @@ public class Window {
     }
 
     /**
-     * 直前に表示していたバッファを返す。
+     * バッファ表示履歴を返す。先頭が最も最近表示したバッファ。
      */
-    public Optional<BufferFacade> getPreviousBuffer() {
-        return Optional.ofNullable(previousBuffer);
+    public ListIterable<BufferHistoryEntry> getBufferHistory() {
+        return bufferHistory;
     }
 
     /**
-     * 直前バッファが指定バッファと同一の場合にクリアする。
-     * バッファ削除時の dangling reference 防止用。
+     * 指定エントリを履歴から除去する。
+     * バッファ削除時に使用する。
      */
-    public void clearPreviousBufferIf(BufferFacade target) {
-        if (previousBuffer != null && target.equals(previousBuffer)) {
-            previousBuffer = null;
-        }
+    public void removeFromBufferHistory(BufferHistoryEntry entry) {
+        bufferHistory.remove(entry);
     }
 
     /**

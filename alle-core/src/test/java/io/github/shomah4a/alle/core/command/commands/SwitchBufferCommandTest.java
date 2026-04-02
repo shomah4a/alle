@@ -88,8 +88,8 @@ class SwitchBufferCommandTest {
     class デフォルトバッファ {
 
         @Test
-        void 直前バッファがある場合プロンプトにデフォルト名が表示される() {
-            // まず other.txt に切り替えて previousBuffer を作る
+        void 履歴がある場合プロンプトにデフォルト名が表示される() {
+            // まず other.txt に切り替えて履歴を作る
             frame.getActiveWindow().setBuffer(otherBuffer);
             frame.getActiveWindow().setBuffer(scratchBuffer);
 
@@ -106,7 +106,7 @@ class SwitchBufferCommandTest {
 
         @Test
         void 空入力時にデフォルトバッファに切り替わる() {
-            // まず other.txt に切り替えて previousBuffer を作る
+            // まず other.txt に切り替えて履歴を作る
             frame.getActiveWindow().setBuffer(otherBuffer);
             frame.getActiveWindow().setBuffer(scratchBuffer);
 
@@ -119,7 +119,7 @@ class SwitchBufferCommandTest {
         }
 
         @Test
-        void 直前バッファがない場合はデフォルトなしのプロンプトになる() {
+        void 履歴がない場合はデフォルトなしのプロンプトになる() {
             var capturedMessage = new AtomicReference<>("");
             var cmd = new SwitchBufferCommand(new InputHistory());
             var context =
@@ -131,7 +131,7 @@ class SwitchBufferCommandTest {
         }
 
         @Test
-        void 直前バッファがなく空入力の場合は何も変わらない() {
+        void 履歴がなく空入力の場合は何も変わらない() {
             var cmd = new SwitchBufferCommand(new InputHistory());
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming(""));
 

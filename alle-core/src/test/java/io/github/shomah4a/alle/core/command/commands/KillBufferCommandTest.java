@@ -2,7 +2,6 @@ package io.github.shomah4a.alle.core.command.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -329,39 +328,35 @@ class KillBufferCommandTest {
     }
 
     @Nested
-    class previousBufferのクリーンアップ {
+    class バッファ履歴のクリーンアップ {
 
         @Test
-        void 削除対象がpreviousBufferの場合にクリアされる() {
-            // scratch → foo に切り替え → scratch が previousBuffer になる
+        void 削除対象が履歴から除去される() {
+            // scratch → foo に切り替え → 履歴に scratch がある
             frame.getActiveWindow().setBuffer(fooBuffer);
-            assertEquals(scratch, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
 
             // scratch を削除
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("*scratch*"));
             cmd.execute(context).join();
 
-            // previousBuffer に元の scratch が残っていないこと
-            // (setBufferで切り替えが発生するのでpreviousBufferは更新される)
-            var prevOpt = frame.getActiveWindow().getPreviousBuffer();
-            if (prevOpt.isPresent()) {
-                assertNotEquals(scratch, prevOpt.get());
-            }
+            // 履歴に元の scratch のエントリが残っていないこと
+            var history = frame.getActiveWindow().getBufferHistory();
+            assertFalse(
+                    history.contains(new io.github.shomah4a.alle.core.window.BufferHistoryEntry.ByName("*scratch*")));
         }
     }
 
     @Nested
-    class previousBufferへの優先切り替え {
+    class バッファ履歴への優先切り替え {
 
         @Test
-        void previousBufferがある場合はそのバッファに切り替わる() {
+        void 履歴先頭のバッファに切り替わる() {
             var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
             bufferManager.add(barBuffer);
 
-            // scratch → bar → foo の順に切り替え → previousBuffer は bar
+            // scratch → bar → foo の順に切り替え → 履歴は [bar, scratch]
             frame.getActiveWindow().setBuffer(barBuffer);
             frame.getActiveWindow().setBuffer(fooBuffer);
-            assertEquals(barBuffer, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
 
             var context = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
             cmd.execute(context).join();
@@ -370,24 +365,27 @@ class KillBufferCommandTest {
         }
 
         @Test
-        void previousBufferがkill対象自身の場合はfallbackが使われる() {
-            // scratch → foo に切り替え → previousBuffer は scratch
+        void 履歴先頭がkill対象の場合は次の履歴エントリが使われる() {
+            var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
+            bufferManager.add(barBuffer);
+
+            // scratch → bar → foo の順に切り替え → 履歴は [bar, scratch]
+            frame.getActiveWindow().setBuffer(barBuffer);
             frame.getActiveWindow().setBuffer(fooBuffer);
-            // foo → scratch に切り替え → previousBuffer は foo
-            frame.getActiveWindow().setBuffer(scratch);
-            assertEquals(fooBuffer, frame.getActiveWindow().getPreviousBuffer().orElseThrow());
 
-            // foo を削除 → previousBuffer が kill 対象なので fallback
-            var context = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
-            cmd.execute(context).join();
+            // bar を先にkill
+            var context1 = TestCommandContextFactory.create(frame, bufferManager, confirming("bar.txt"));
+            cmd.execute(context1).join();
 
-            // scratch を表示中なので foo は削除されるだけ
-            // previousBuffer の foo は対象なので fallback される
-            assertNotEquals(fooBuffer, frame.getActiveWindow().getBuffer());
+            // foo を表示中のまま、foo をkill → 履歴のbarは既にkill済みなのでscratchにフォールバック
+            var context2 = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
+            cmd.execute(context2).join();
+
+            assertEquals("*scratch*", frame.getActiveWindow().getBuffer().getName());
         }
 
         @Test
-        void 複数ウィンドウがそれぞれのpreviousBufferに切り替わる() {
+        void 複数ウィンドウがそれぞれの履歴に基づいて切り替わる() {
             var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
             var bazBuffer = new BufferFacade(new TextBuffer("baz.txt", new GapTextModel(), new SettingsRegistry()));
             bufferManager.add(barBuffer);
@@ -399,10 +397,10 @@ class KillBufferCommandTest {
             var window1 = windows.get(0);
             var window2 = windows.get(1);
 
-            // window1: scratch → bar → foo (previousBuffer = bar)
+            // window1: scratch → bar → foo (履歴 = [bar, scratch])
             window1.setBuffer(barBuffer);
             window1.setBuffer(fooBuffer);
-            // window2: scratch → baz → foo (previousBuffer = baz)
+            // window2: scratch → baz → foo (履歴 = [baz, scratch])
             window2.setBuffer(bazBuffer);
             window2.setBuffer(fooBuffer);
 
@@ -411,6 +409,29 @@ class KillBufferCommandTest {
 
             assertEquals(barBuffer, window1.getBuffer());
             assertEquals(bazBuffer, window2.getBuffer());
+        }
+
+        @Test
+        void 連続killで履歴を遡って切り替わる() {
+            var barBuffer = new BufferFacade(new TextBuffer("bar.txt", new GapTextModel(), new SettingsRegistry()));
+            var bazBuffer = new BufferFacade(new TextBuffer("baz.txt", new GapTextModel(), new SettingsRegistry()));
+            bufferManager.add(barBuffer);
+            bufferManager.add(bazBuffer);
+
+            // scratch → bar → baz → foo の順に切り替え → 履歴は [baz, bar, scratch]
+            frame.getActiveWindow().setBuffer(barBuffer);
+            frame.getActiveWindow().setBuffer(bazBuffer);
+            frame.getActiveWindow().setBuffer(fooBuffer);
+
+            // foo をkill → baz に切り替わる
+            var context1 = TestCommandContextFactory.create(frame, bufferManager, confirming("foo.txt"));
+            cmd.execute(context1).join();
+            assertEquals(bazBuffer, frame.getActiveWindow().getBuffer());
+
+            // baz をkill → bar に切り替わる
+            var context2 = TestCommandContextFactory.create(frame, bufferManager, confirming("baz.txt"));
+            cmd.execute(context2).join();
+            assertEquals(barBuffer, frame.getActiveWindow().getBuffer());
         }
     }
 }

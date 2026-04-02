@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command.commands;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
@@ -8,6 +9,7 @@ import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -32,7 +34,8 @@ public class SwitchBufferCommand implements Command {
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var window = context.frame().getActiveWindow();
-        var defaultName = window.getPreviousBuffer().map(BufferFacade::getName).orElse("");
+        var bufferManager = context.bufferManager();
+        var defaultName = resolveFirstHistoryBufferName(window, bufferManager);
         var promptMessage =
                 defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
 
@@ -46,6 +49,16 @@ public class SwitchBufferCommand implements Command {
                         switchBuffer(context, bufferName);
                     }
                 });
+    }
+
+    private static String resolveFirstHistoryBufferName(Window window, BufferManager bufferManager) {
+        for (var entry : window.getBufferHistory()) {
+            var found = bufferManager.findByHistoryEntry(entry);
+            if (found.isPresent()) {
+                return found.get().getName();
+            }
+        }
+        return "";
     }
 
     private void switchBuffer(CommandContext context, String bufferName) {

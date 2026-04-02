@@ -12,8 +12,10 @@ import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
+import io.github.shomah4a.alle.core.window.BufferHistoryEntry;
 import io.github.shomah4a.alle.core.window.Window;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -132,6 +134,9 @@ public class KillBufferCommand implements Command {
     }
 
     private void doKill(CommandContext context, BufferManager bufferManager, String bufferName, BufferFacade target) {
+        // kill対象の履歴エントリを事前に作成（remove前にバッファ情報が必要）
+        var targetEntry = BufferHistoryEntry.of(target);
+
         bufferManager.remove(bufferName);
 
         // *scratch* を削除した場合はサイレントに再作成
@@ -140,24 +145,34 @@ public class KillBufferCommand implements Command {
                     new TextBuffer(SCRATCH_BUFFER_NAME, new GapTextModel(), context.settingsRegistry())));
         }
 
-        // 切り替え先を決定: previousBuffer を優先し、なければ他のウィンドウで表示されていないバッファ
+        // 切り替え先を決定: 履歴を優先し、なければ他のウィンドウで表示されていないバッファ
         var allWindows = context.frame().getWindowTree().windows();
         var fallbackReplacement = findReplacementBuffer(bufferManager, allWindows, target);
 
         // 削除対象を表示中の全ウィンドウを切り替え
         for (var window : allWindows) {
             if (window.getBuffer().equals(target)) {
-                var replacement = window.getPreviousBuffer()
-                        .filter(b -> !b.equals(target))
-                        .orElse(fallbackReplacement);
+                var replacement =
+                        resolveFirstHistoryBuffer(window, bufferManager, target).orElse(fallbackReplacement);
                 window.setBuffer(replacement);
             }
         }
 
-        // 全ウィンドウの previousBuffer から dangling reference をクリア
+        // 全ウィンドウの履歴からkill対象を除去
         for (var window : allWindows) {
-            window.clearPreviousBufferIf(target);
+            window.removeFromBufferHistory(targetEntry);
         }
+    }
+
+    private static Optional<BufferFacade> resolveFirstHistoryBuffer(
+            Window window, BufferManager bufferManager, BufferFacade excluded) {
+        for (var entry : window.getBufferHistory()) {
+            var found = bufferManager.findByHistoryEntry(entry);
+            if (found.isPresent() && !found.get().equals(excluded)) {
+                return found;
+            }
+        }
+        return Optional.empty();
     }
 
     private BufferFacade findReplacementBuffer(

@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import io.github.shomah4a.alle.core.window.BufferHistoryEntry;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
@@ -53,6 +54,17 @@ public class BufferManager {
     public Optional<BufferFacade> findByPath(Path path) {
         return Optional.ofNullable(
                 buffers.detect(b -> b.getFilePath().map(p -> p.equals(path)).orElse(false)));
+    }
+
+    /**
+     * 履歴エントリからバッファを検索する。
+     * ByPathならパスで、ByNameなら名前で検索する。
+     */
+    public Optional<BufferFacade> findByHistoryEntry(BufferHistoryEntry entry) {
+        return switch (entry) {
+            case BufferHistoryEntry.ByPath byPath -> findByPath(byPath.path());
+            case BufferHistoryEntry.ByName byName -> findByName(byName.name());
+        };
     }
 
     /**

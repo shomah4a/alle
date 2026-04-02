@@ -6,6 +6,8 @@
 
 ## コンテキスト
 
+> **注**: 本 ADR の判断は [ADR 0101](0101-window-buffer-history.md) で拡張された。previousBuffer の単一参照から MRU リストへの変更。
+
 kill-buffer でバッファを削除した後、切り替え先は `findReplacementBuffer` によってバッファリストの順序で決定されていた。
 このため、削除後は大抵 `*scratch*` など先頭付近のバッファに切り替わり、ユーザーの作業文脈が途切れる。
 
