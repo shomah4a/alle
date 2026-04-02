@@ -43,11 +43,8 @@ public class FilePathInputPrompter {
         var filePathCompleter = new FilePathCompleter(directoryLister, homeDirectory);
         var shadowCompleter = new ShadowAwareCompleter(filePathCompleter);
 
-        // MinibufferInputPrompter には空の history を渡し、履歴管理はこちらで行う
-        var internalHistory = new InputHistory();
-
         return inputPrompter
-                .prompt(message, displayInitialValue, internalHistory, shadowCompleter, this::onUpdate)
+                .prompt(message, displayInitialValue, history, shadowCompleter, this::onUpdate)
                 .thenApply(result -> {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         String raw = confirmed.value();
