@@ -53,6 +53,7 @@ public class SaveBufferCommand implements Command {
                 String pathString = confirmed.value();
                 if (!pathString.isEmpty()) {
                     buffer.setFilePath(Path.of(pathString));
+                    context.bufferManager().recomputeUniquify();
                     saveBuffer(buffer, context);
                 }
             }

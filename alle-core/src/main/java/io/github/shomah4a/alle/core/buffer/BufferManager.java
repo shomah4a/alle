@@ -12,10 +12,12 @@ import org.eclipse.collections.api.list.MutableList;
 public class BufferManager {
 
     private final MutableList<BufferFacade> buffers;
+    private final BufferNameUniquifier uniquifier;
     private int currentIndex;
 
     public BufferManager() {
         this.buffers = Lists.mutable.empty();
+        this.uniquifier = new BufferNameUniquifier();
         this.currentIndex = -1;
     }
 
@@ -25,6 +27,7 @@ public class BufferManager {
     public void add(BufferFacade buffer) {
         buffers.add(buffer);
         currentIndex = buffers.size() - 1;
+        uniquifier.uniquify(buffers);
     }
 
     /**
@@ -84,6 +87,7 @@ public class BufferManager {
                 } else if (currentIndex > i) {
                     currentIndex--;
                 }
+                uniquifier.uniquify(buffers);
                 return true;
             }
         }
@@ -95,6 +99,14 @@ public class BufferManager {
      */
     public ListIterable<BufferFacade> getBuffers() {
         return buffers;
+    }
+
+    /**
+     * バッファ名のuniquifyを再計算する。
+     * バッファのファイルパスが変更された場合に呼び出す。
+     */
+    public void recomputeUniquify() {
+        uniquifier.uniquify(buffers);
     }
 
     /**

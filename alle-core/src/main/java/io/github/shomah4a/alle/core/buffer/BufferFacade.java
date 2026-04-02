@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.eclipse.collections.api.list.ListIterable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Bufferのファサード。
@@ -26,6 +27,7 @@ public class BufferFacade {
 
     private final Buffer buffer;
     private final Predicate<Path> directoryChecker;
+    private @Nullable String displayName;
 
     /**
      * 指定Bufferをラップするファサードを作成する。
@@ -121,7 +123,23 @@ public class BufferFacade {
     // ── メタデータ ──
 
     public String getName() {
-        return buffer.getName();
+        return displayName != null ? displayName : buffer.getName();
+    }
+
+    /**
+     * uniquifyによる表示名を設定する。
+     * パッケージプライベート: {@link BufferNameUniquifier}からのみ使用する。
+     */
+    void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    /**
+     * uniquifyによる表示名をリセットし、元のバッファ名に戻す。
+     * パッケージプライベート: {@link BufferNameUniquifier}からのみ使用する。
+     */
+    void resetDisplayName() {
+        this.displayName = null;
     }
 
     public Optional<Path> getFilePath() {
