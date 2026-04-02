@@ -4,6 +4,8 @@
 
 承認
 
+→ ADR 0102 で BufferHistoryEntry にビュー状態を追加し、BufferIdentifier を分離した。
+
 ## コンテキスト
 
 Window は直前に表示していたバッファを `previousBuffer` として単一の BufferFacade 参照で保持していた。
