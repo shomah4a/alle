@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.jspecify.annotations.Nullable;
@@ -31,6 +32,27 @@ public class Window {
         this.bufferFacade = buffer;
         this.point = 0;
         this.displayStartLine = 0;
+    }
+
+    /**
+     * スナップショットからウィンドウを復元する。
+     * setBuffer()の副作用（履歴追加）を回避するため、内部状態を直接設定する。
+     *
+     * @param currentBuffer 現在表示するバッファ
+     * @param viewState 復元するビュー状態
+     * @param history バッファ履歴
+     * @param truncateLines 行切り詰めモード
+     */
+    static Window restoreFromSnapshot(
+            BufferFacade currentBuffer,
+            ViewState viewState,
+            ImmutableList<BufferHistoryEntry> history,
+            boolean truncateLines) {
+        var window = new Window(currentBuffer);
+        window.restoreViewState(viewState);
+        window.bufferHistory.addAll(history.castToList());
+        window.truncateLines = truncateLines;
+        return window;
     }
 
     /**

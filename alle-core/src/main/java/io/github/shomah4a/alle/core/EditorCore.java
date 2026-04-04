@@ -36,9 +36,11 @@ import io.github.shomah4a.alle.core.command.commands.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.commands.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.commands.ProcessQuitCommand;
 import io.github.shomah4a.alle.core.command.commands.RedoCommand;
+import io.github.shomah4a.alle.core.command.commands.RestoreFrameStateCommand;
 import io.github.shomah4a.alle.core.command.commands.RevertBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.SaveBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.SaveBuffersKillAlleCommand;
+import io.github.shomah4a.alle.core.command.commands.SaveFrameStateCommand;
 import io.github.shomah4a.alle.core.command.commands.ScrollDownCommand;
 import io.github.shomah4a.alle.core.command.commands.ScrollUpCommand;
 import io.github.shomah4a.alle.core.command.commands.SelfInsertCommand;
@@ -75,6 +77,7 @@ import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import io.github.shomah4a.alle.core.window.Window;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,6 +99,7 @@ public final class EditorCore {
     private final ModeRegistry modeRegistry;
     private final AutoModeMap autoModeMap;
     private final SyntaxAnalyzerRegistry syntaxAnalyzerRegistry;
+    private final FrameLayoutStore frameLayoutStore;
 
     private EditorCore(
             Frame frame,
@@ -107,7 +111,8 @@ public final class EditorCore {
             CommandLoop commandLoop,
             ModeRegistry modeRegistry,
             AutoModeMap autoModeMap,
-            SyntaxAnalyzerRegistry syntaxAnalyzerRegistry) {
+            SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
+            FrameLayoutStore frameLayoutStore) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -118,6 +123,7 @@ public final class EditorCore {
         this.modeRegistry = modeRegistry;
         this.autoModeMap = autoModeMap;
         this.syntaxAnalyzerRegistry = syntaxAnalyzerRegistry;
+        this.frameLayoutStore = frameLayoutStore;
     }
 
     /**
@@ -180,6 +186,9 @@ public final class EditorCore {
         var inputPrompter = inputPrompterFactory.apply(frame);
         var filePathInputPrompter = new FilePathInputPrompter(inputPrompter, directoryLister, homeDirectory);
 
+        // フレームレイアウトストア
+        var frameLayoutStore = new FrameLayoutStore();
+
         // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
         var commandResolver = new CommandResolver();
@@ -192,7 +201,9 @@ public final class EditorCore {
                 shutdownRequestable,
                 commandResolver,
                 settingsRegistry,
-                filePathInputPrompter);
+                filePathInputPrompter,
+                frameLayoutStore,
+                scratchFacade);
         commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
@@ -233,7 +244,8 @@ public final class EditorCore {
                 commandLoop,
                 modeRegistry,
                 autoModeMap,
-                syntaxAnalyzerRegistry);
+                syntaxAnalyzerRegistry,
+                frameLayoutStore);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -245,7 +257,9 @@ public final class EditorCore {
             ShutdownRequestable shutdownRequestable,
             CommandResolver commandResolver,
             SettingsRegistry settingsRegistry,
-            FilePathInputPrompter filePathInputPrompter) {
+            FilePathInputPrompter filePathInputPrompter,
+            FrameLayoutStore frameLayoutStore,
+            BufferFacade scratchBuffer) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -302,6 +316,11 @@ public final class EditorCore {
         var isearchHistory = new ISearchHistory();
         registry.register(new ISearchForwardCommand(isearchHistory));
         registry.register(new ISearchBackwardCommand(isearchHistory));
+
+        // Frame state save/restore
+        var frameStateHistory = new InputHistory();
+        registry.register(new SaveFrameStateCommand(frameLayoutStore, frameStateHistory));
+        registry.register(new RestoreFrameStateCommand(frameLayoutStore, frameStateHistory, () -> scratchBuffer));
 
         // Tree Dired
         var treeDiredCommand = TreeDiredInitializer.initialize(
@@ -442,5 +461,9 @@ public final class EditorCore {
 
     public SyntaxAnalyzerRegistry syntaxAnalyzerRegistry() {
         return syntaxAnalyzerRegistry;
+    }
+
+    public FrameLayoutStore frameLayoutStore() {
+        return frameLayoutStore;
     }
 }

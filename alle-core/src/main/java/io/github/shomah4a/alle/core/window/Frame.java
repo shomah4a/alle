@@ -1,6 +1,9 @@
 package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.BufferManager;
+import java.util.Optional;
+import org.eclipse.collections.api.list.ImmutableList;
 
 /**
  * エディタのフレーム。
@@ -163,6 +166,107 @@ public class Frame {
         int index = candidates.indexOf(activeWindow);
         int nextIndex = (index + 1) % candidates.size();
         activeWindow = candidates.get(nextIndex);
+    }
+
+    /**
+     * 現在のフレーム状態をスナップショットとしてキャプチャする。
+     */
+    public FrameSnapshot captureSnapshot() {
+        var windows = windowTree.windows();
+        int activeIndex = windows.indexOf(activeWindow);
+        if (activeIndex < 0) {
+            activeIndex = 0;
+        }
+        var treeSnapshot = captureTreeSnapshot(windowTree);
+        return new FrameSnapshot(treeSnapshot, activeIndex);
+    }
+
+    /**
+     * スナップショットからフレーム状態を復元する。
+     * バッファが存在しない場合はhistoryから生存バッファを探索し、
+     * それもなければfallbackBufferを使用する。
+     *
+     * @param snapshot 復元するスナップショット
+     * @param bufferManager バッファの検索に使用するマネージャ
+     * @param fallbackBuffer すべてのバッファが見つからない場合のフォールバック
+     */
+    public void restoreSnapshot(FrameSnapshot snapshot, BufferManager bufferManager, BufferFacade fallbackBuffer) {
+        windowTree = restoreTreeSnapshot(snapshot.tree(), bufferManager, fallbackBuffer);
+        var windows = windowTree.windows();
+        int index = snapshot.activeWindowIndex();
+        if (index >= 0 && index < windows.size()) {
+            activeWindow = windows.get(index);
+        } else {
+            activeWindow = findFirstWindow(windowTree);
+        }
+    }
+
+    private static WindowTreeSnapshot captureTreeSnapshot(WindowTree tree) {
+        return switch (tree) {
+            case WindowTree.Leaf leaf -> {
+                var window = leaf.window();
+                var current = BufferHistoryEntry.of(window.getBuffer(), window.captureViewState());
+                var history = window.getBufferHistory().toImmutable();
+                var snapshot = new WindowSnapshot(current, history, window.isTruncateLines());
+                yield new WindowTreeSnapshot.Leaf(snapshot);
+            }
+            case WindowTree.Split split ->
+                new WindowTreeSnapshot.Split(
+                        split.direction(),
+                        split.ratio(),
+                        captureTreeSnapshot(split.first()),
+                        captureTreeSnapshot(split.second()));
+        };
+    }
+
+    private static WindowTree restoreTreeSnapshot(
+            WindowTreeSnapshot treeSnapshot, BufferManager bufferManager, BufferFacade fallbackBuffer) {
+        return switch (treeSnapshot) {
+            case WindowTreeSnapshot.Leaf leaf -> {
+                var ws = leaf.snapshot();
+                var resolved = resolveBuffer(ws.current(), ws.history(), bufferManager, fallbackBuffer);
+                var window = Window.restoreFromSnapshot(
+                        resolved.buffer(), resolved.viewState(), ws.history(), ws.truncateLines());
+                yield new WindowTree.Leaf(window);
+            }
+            case WindowTreeSnapshot.Split split ->
+                new WindowTree.Split(
+                        split.direction(),
+                        split.ratio(),
+                        restoreTreeSnapshot(split.first(), bufferManager, fallbackBuffer),
+                        restoreTreeSnapshot(split.second(), bufferManager, fallbackBuffer));
+        };
+    }
+
+    /**
+     * バッファ解決結果。
+     */
+    private record ResolvedBuffer(BufferFacade buffer, ViewState viewState) {}
+
+    /**
+     * currentのバッファをBufferManagerから検索し、見つからなければhistoryから探索、
+     * それでも見つからなければfallbackBufferを返す。
+     */
+    private static ResolvedBuffer resolveBuffer(
+            BufferHistoryEntry current,
+            ImmutableList<BufferHistoryEntry> history,
+            BufferManager bufferManager,
+            BufferFacade fallbackBuffer) {
+        // currentのバッファを探す
+        Optional<BufferFacade> found = bufferManager.findByIdentifier(current.identifier());
+        if (found.isPresent()) {
+            return new ResolvedBuffer(found.get(), current.viewState());
+        }
+        // historyから生存バッファを探す
+        for (int i = 0; i < history.size(); i++) {
+            var entry = history.get(i);
+            found = bufferManager.findByIdentifier(entry.identifier());
+            if (found.isPresent()) {
+                return new ResolvedBuffer(found.get(), entry.viewState());
+            }
+        }
+        // フォールバック
+        return new ResolvedBuffer(fallbackBuffer, ViewState.INITIAL);
     }
 
     /**
