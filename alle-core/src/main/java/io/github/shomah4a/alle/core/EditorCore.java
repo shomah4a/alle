@@ -30,6 +30,7 @@ import io.github.shomah4a.alle.core.command.commands.KeyboardQuitCommand;
 import io.github.shomah4a.alle.core.command.commands.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.KillLineCommand;
 import io.github.shomah4a.alle.core.command.commands.KillRegionCommand;
+import io.github.shomah4a.alle.core.command.commands.MarkWholeBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.NewlineCommand;
 import io.github.shomah4a.alle.core.command.commands.NextLineCommand;
 import io.github.shomah4a.alle.core.command.commands.OtherWindowCommand;
@@ -298,6 +299,7 @@ public final class EditorCore {
         var commandHistory = new InputHistory();
         registry.register(new ExecuteCommandCommand(commandResolver, commandHistory));
         registry.register(new SetMarkCommand());
+        registry.register(new MarkWholeBufferCommand());
         registry.register(new KillRegionCommand());
         registry.register(new CopyRegionCommand());
         registry.register(new YankCommand());
@@ -385,6 +387,7 @@ public final class EditorCore {
         ctrlXMap.bind(KeyStroke.of('3'), registry.lookup("split-window-right").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('0'), registry.lookup("delete-window").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('d'), registry.lookup("tree-dired").orElseThrow());
+        ctrlXMap.bind(KeyStroke.of('h'), registry.lookup("mark-whole-buffer").orElseThrow());
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         // C-SPC (mark)
