@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 
 class Window:
@@ -95,3 +95,14 @@ class Window:
         :type position: int
         """
         self._win.setMark(position)
+
+    def selected_text(self) -> Optional[str]:
+        """選択中のテキストを返す。mark が未設定の場合は None を返す。
+
+        :return: 選択中のテキスト、または None
+        :rtype: Optional[str]
+        """
+        result = self._win.selectedText()
+        if result.isEmpty():
+            return None
+        return result.get()

@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.Optional;
 
 /**
  * スクリプトに公開するウィンドウ操作のファサード。
@@ -82,5 +83,17 @@ public class WindowFacade {
      */
     public void setMark(int position) {
         window.setMark(position);
+    }
+
+    /**
+     * 選択中のテキストを返す。markが未設定の場合は空のOptionalを返す。
+     */
+    public Optional<String> selectedText() {
+        var start = window.getRegionStart();
+        var end = window.getRegionEnd();
+        if (start.isEmpty() || end.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(window.getBuffer().substring(start.get(), end.get()));
     }
 }
