@@ -1,9 +1,0 @@
-{
-  "name": "jdtls-lsp",
-  "description": "Java language support using Eclipse JDT Language Server",
-  "version": "1.0.0",
-  "author": {
-    "name": "alle"
-  },
-  "lspServers": "./.lsp.json"
-}

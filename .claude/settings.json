@@ -1,4 +1,12 @@
 {
+  "extraKnownMarketplaces": {
+    "alle-marketplace": {
+      "source": {
+        "source": "directory",
+        "path": ".claude/plugins"
+      }
+    }
+  },
   "enabledPlugins": {
     "jdtls-lsp@alle-marketplace": true
   }
