@@ -104,12 +104,14 @@ public final class Main {
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Error*", 1000, settingsRegistry);
         var logStream = new MessageBufferOutputStream(core.bufferManager(), "*Python Log*", 1000, settingsRegistry);
         msg.message("Creating GraalPy engine...");
-        var scriptEngineFactory = new GraalPyEngineFactory(editorFacade, stdoutStream, stderrStream, logStream);
+        var alleDotD = homeDirectory.resolve(".alle.d");
+        var scriptEngineFactory =
+                new GraalPyEngineFactory(editorFacade, alleDotD, stdoutStream, stderrStream, logStream);
         var scriptEngine = scriptEngineFactory.create();
         msg.message("Script engine initialized.");
 
         // ユーザー初期化スクリプトの読み込み
-        loadUserInit(scriptEngine, msg, core.warningBuffer());
+        loadUserInit(scriptEngine, alleDotD, msg, core.warningBuffer());
 
         // eval-expression コマンド (M-:)
         var evalHistory = new InputHistory();
@@ -163,28 +165,20 @@ public final class Main {
         }
     }
 
-    private static void loadUserInit(ScriptEngine scriptEngine, MessageBuffer msg, MessageBuffer warnings) {
-        Path initFile = Path.of(System.getProperty("user.home"), ".alle.d", "init.py");
-        if (!Files.isRegularFile(initFile)) {
-            return;
-        }
-        msg.message("Loading " + initFile + "...");
-        try {
-            String code = Files.readString(initFile, StandardCharsets.UTF_8);
-            var result = scriptEngine.eval(code);
-            if (result instanceof ScriptResult.Failure failure) {
-                msg.message("init.py error: " + failure.message());
-                warnings.message("init.py error: " + failure.message());
-                var sw = new StringWriter();
-                failure.cause().printStackTrace(new PrintWriter(sw));
-                for (String line : sw.toString().lines().toList()) {
-                    warnings.message(line);
-                }
-            } else {
-                msg.message("Loaded " + initFile);
+    private static void loadUserInit(
+            ScriptEngine scriptEngine, Path alleDotD, MessageBuffer msg, MessageBuffer warnings) {
+        msg.message("Loading user init...");
+        var result = scriptEngine.loadUserInit(alleDotD);
+        if (result instanceof ScriptResult.Failure failure) {
+            msg.message("init.py error: " + failure.message());
+            warnings.message("init.py error: " + failure.message());
+            var sw = new StringWriter();
+            failure.cause().printStackTrace(new PrintWriter(sw));
+            for (String line : sw.toString().lines().toList()) {
+                warnings.message(line);
             }
-        } catch (IOException e) {
-            msg.message("init.py read error: " + e.getMessage());
+        } else {
+            msg.message("User init loaded.");
         }
     }
 

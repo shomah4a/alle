@@ -20,9 +20,11 @@ import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.MessageBufferOutputStream;
 import io.github.shomah4a.alle.script.ScriptResult;
+import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * alleモジュール経由でエディタ操作が動作することの結合テスト。
@@ -36,7 +38,7 @@ class AlleModuleTest {
     private MessageBuffer messageBuffer;
 
     @BeforeEach
-    void setUp() {
+    void setUp(@TempDir Path tempDir) {
         buffer = new TextBuffer("test.py", new GapTextModel(), new SettingsRegistry());
         var bufferFacade = new BufferFacade(buffer);
         var window = new Window(bufferFacade);
@@ -59,7 +61,7 @@ class AlleModuleTest {
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000, new SettingsRegistry());
         var logStream = new MessageBufferOutputStream(bufferManager, "*Python Log*", 1000, new SettingsRegistry());
-        factory = new GraalPyEngineFactory(facade, stdoutStream, stderrStream, logStream);
+        factory = new GraalPyEngineFactory(facade, tempDir, stdoutStream, stderrStream, logStream);
         engine = (GraalPyEngine) factory.create();
     }
 

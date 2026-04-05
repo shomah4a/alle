@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.github.shomah4a.alle.script.ScriptResult;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class GraalPyEngineTest {
 
@@ -70,5 +74,30 @@ class GraalPyEngineTest {
         ScriptResult result = engine.eval("x = 10");
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void initファイルが存在しない場合はSuccessで空文字列を返す(@TempDir Path tempDir) {
+        ScriptResult result = engine.loadUserInit(tempDir);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("", ((ScriptResult.Success) result).value());
+    }
+
+    @Test
+    void initファイルが存在する場合はevalされる(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("init.py"), "x = 42");
+        ScriptResult result = engine.loadUserInit(tempDir);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        // init.py で定義した変数にアクセスできる
+        ScriptResult varResult = engine.eval("x");
+        assertInstanceOf(ScriptResult.Success.class, varResult);
+        assertEquals("42", ((ScriptResult.Success) varResult).value());
+    }
+
+    @Test
+    void initファイルに構文エラーがある場合はFailureを返す(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("init.py"), "def");
+        ScriptResult result = engine.loadUserInit(tempDir);
+        assertInstanceOf(ScriptResult.Failure.class, result);
     }
 }

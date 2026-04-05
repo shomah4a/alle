@@ -80,6 +80,11 @@ class ScriptEngineRegistryTest {
         public void bind(String name, Object value) {}
 
         @Override
+        public ScriptResult loadUserInit(java.nio.file.Path userConfigDir) {
+            return new ScriptResult.Success("");
+        }
+
+        @Override
         public void close() {}
     }
 }

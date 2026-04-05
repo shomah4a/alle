@@ -3,7 +3,11 @@ package io.github.shomah4a.alle.script.graalpy;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.ScriptEngine;
 import io.github.shomah4a.alle.script.ScriptResult;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
@@ -80,6 +84,20 @@ public class GraalPyEngine implements ScriptEngine {
     @Override
     public void bind(String name, Object value) {
         context.getBindings(LANGUAGE_ID).putMember(name, value);
+    }
+
+    @Override
+    public ScriptResult loadUserInit(Path userConfigDir) {
+        Path initFile = userConfigDir.resolve("init.py");
+        if (!Files.isRegularFile(initFile)) {
+            return new ScriptResult.Success("");
+        }
+        try {
+            String code = Files.readString(initFile, StandardCharsets.UTF_8);
+            return eval(code);
+        } catch (IOException e) {
+            return new ScriptResult.Failure("init.py read error: " + e.getMessage(), e);
+        }
     }
 
     @Override
