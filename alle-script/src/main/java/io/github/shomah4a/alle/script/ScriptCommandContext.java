@@ -1,7 +1,9 @@
 package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * スクリプトに公開するコマンド実行コンテキスト。
@@ -42,6 +44,14 @@ public class ScriptCommandContext {
      */
     public void message(String text) {
         ctx.messageBuffer().message(text);
+    }
+
+    /**
+     * コマンドを発動したキーシーケンスを返す。
+     * プログラム的呼び出し時は空リストを返す。
+     */
+    public ListIterable<KeyStroke> triggeringKeySequence() {
+        return ctx.triggeringKeySequence();
     }
 
     /**

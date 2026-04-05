@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ class CommandContextDelegateTest {
                 bufferManager,
                 frame.getActiveWindow(),
                 NOOP_PROMPTER,
-                Optional.empty(),
+                Lists.immutable.empty(),
                 thisCommand,
                 lastCommand,
                 new KillRing(),

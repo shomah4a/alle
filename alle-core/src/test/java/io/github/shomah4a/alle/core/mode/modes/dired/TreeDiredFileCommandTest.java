@@ -102,7 +102,7 @@ class TreeDiredFileCommandTest {
                 bufferManager,
                 window,
                 prompter,
-                Optional.empty(),
+                Lists.immutable.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),

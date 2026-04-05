@@ -77,7 +77,7 @@ class SelfInsertCommandTest {
         }
 
         @Test
-        void triggeringKeyがemptyでは挿入しない() {
+        void triggeringKeySequenceが空では挿入しない() {
             var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
             var window = new Window(buffer);
             var minibuffer = new Window(

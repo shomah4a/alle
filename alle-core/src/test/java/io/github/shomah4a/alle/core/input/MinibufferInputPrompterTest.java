@@ -722,7 +722,7 @@ class MinibufferInputPrompterTest {
                     new BufferManager(),
                     frame.getActiveWindow(),
                     prompter,
-                    Optional.of(keyStroke),
+                    Lists.immutable.of(keyStroke),
                     Optional.of(binding.command().name()),
                     lastCommand,
                     new KillRing(),

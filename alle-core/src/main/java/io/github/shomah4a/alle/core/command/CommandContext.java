@@ -11,13 +11,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * コマンド実行時のコンテキスト。
  * 編集操作はactiveWindow経由で行う。
  * バッファの作成・削除・一覧取得はbufferManagerを通じて行う。
  * ユーザーからの文字列入力はinputPrompter経由で行う。
- * triggeringKeyはコマンドを発動したキーストローク（プログラム的呼び出し時はempty）。
+ * triggeringKeySequenceはコマンドを発動したキーシーケンス（プログラム的呼び出し時は空リスト）。
  * thisCommandは現在実行中のコマンド名、lastCommandは直前に実行されたコマンド名。
  * killRingはkillコマンドで削除されたテキストの蓄積先。
  * messageBufferはエコーエリアへのメッセージ出力先。
@@ -27,7 +28,7 @@ public record CommandContext(
         BufferManager bufferManager,
         Window activeWindow,
         InputPrompter inputPrompter,
-        Optional<KeyStroke> triggeringKey,
+        ListIterable<KeyStroke> triggeringKeySequence,
         Optional<String> thisCommand,
         Optional<String> lastCommand,
         KillRing killRing,

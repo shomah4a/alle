@@ -18,11 +18,11 @@ public class SelfInsertCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var keyOpt = context.triggeringKey();
-        if (keyOpt.isEmpty()) {
+        var keySequence = context.triggeringKeySequence();
+        if (keySequence.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
-        var key = keyOpt.get();
+        var key = keySequence.getLast();
         if (!key.modifiers().isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }

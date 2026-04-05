@@ -89,7 +89,7 @@ class TreeDiredMarkCommandTest {
                 bufferManager,
                 window,
                 noOpPrompter(),
-                Optional.empty(),
+                Lists.immutable.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),

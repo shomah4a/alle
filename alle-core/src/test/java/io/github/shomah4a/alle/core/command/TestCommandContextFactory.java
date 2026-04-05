@@ -13,6 +13,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.factory.Lists;
 
 /**
  * テスト用のCommandContext生成ヘルパー。
@@ -34,14 +35,14 @@ public final class TestCommandContextFactory {
     }
 
     /**
-     * 最小限のコンテキストを生成する。triggeringKey・コマンド履歴なし。
+     * 最小限のコンテキストを生成する。triggeringKeySequence・コマンド履歴なし。
      */
     public static CommandContext create(Frame frame, BufferManager bufferManager) {
         return create(frame, bufferManager, NOOP_PROMPTER);
     }
 
     /**
-     * InputPrompter指定でコンテキストを生成する。triggeringKey・コマンド履歴なし。
+     * InputPrompter指定でコンテキストを生成する。triggeringKeySequence・コマンド履歴なし。
      */
     public static CommandContext create(Frame frame, BufferManager bufferManager, InputPrompter inputPrompter) {
         return new CommandContext(
@@ -49,7 +50,7 @@ public final class TestCommandContextFactory {
                 bufferManager,
                 frame.getActiveWindow(),
                 inputPrompter,
-                Optional.empty(),
+                Lists.immutable.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
@@ -61,7 +62,7 @@ public final class TestCommandContextFactory {
     }
 
     /**
-     * triggeringKey付きのコンテキストを生成する。コマンド履歴なし。
+     * triggeringKeySequence付きのコンテキストを生成する。コマンド履歴なし。
      */
     public static CommandContext create(Frame frame, BufferManager bufferManager, KeyStroke triggeringKey) {
         return new CommandContext(
@@ -69,7 +70,7 @@ public final class TestCommandContextFactory {
                 bufferManager,
                 frame.getActiveWindow(),
                 NOOP_PROMPTER,
-                Optional.of(triggeringKey),
+                Lists.immutable.of(triggeringKey),
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
@@ -90,7 +91,7 @@ public final class TestCommandContextFactory {
                 bufferManager,
                 frame.getActiveWindow(),
                 NOOP_PROMPTER,
-                Optional.empty(),
+                Lists.immutable.empty(),
                 Optional.empty(),
                 lastCommand,
                 killRing,

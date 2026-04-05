@@ -23,7 +23,10 @@ class ISearchSelfInsertCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        context.triggeringKey().ifPresent(key -> session.appendChar(key.keyCode()));
+        var keySequence = context.triggeringKeySequence();
+        if (!keySequence.isEmpty()) {
+            session.appendChar(keySequence.getLast().keyCode());
+        }
         return CompletableFuture.completedFuture(null);
     }
 }

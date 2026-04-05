@@ -14,6 +14,8 @@ import io.github.shomah4a.alle.core.window.Frame;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -64,7 +66,7 @@ public class CommandLoop {
     /**
      * プレフィックスキー入力待ち状態を表す。
      */
-    private record PendingPrefix(Keymap keymap, String displayText) {}
+    private record PendingPrefix(Keymap keymap, String displayText, ImmutableList<KeyStroke> keys) {}
 
     public CommandLoop(
             InputSource inputSource,
@@ -130,11 +132,12 @@ public class CommandLoop {
     }
 
     private void processNormalKey(KeyStroke keyStroke) {
+        var singleKeySequence = Lists.immutable.of(keyStroke);
         // overriding keymapが設定されている場合、最優先で解決
         if (overridingKeymapState != null) {
             var entry = overridingKeymapState.keymap().lookup(keyStroke);
             if (entry.isPresent()) {
-                handleEntry(entry.get(), keyStroke, "");
+                handleEntry(entry.get(), singleKeySequence, "");
                 return;
             }
             // 未バインドキー: 終了コールバック → クリア → 通常解決にフォールスルー
@@ -144,7 +147,7 @@ public class CommandLoop {
         }
         var entryOpt = resolveKey(keyStroke);
         if (entryOpt.isPresent()) {
-            handleEntry(entryOpt.get(), keyStroke, "");
+            handleEntry(entryOpt.get(), singleKeySequence, "");
         }
     }
 
@@ -157,7 +160,8 @@ public class CommandLoop {
 
         var entryOpt = prefix.keymap().lookup(keyStroke);
         if (entryOpt.isPresent()) {
-            handleEntry(entryOpt.get(), keyStroke, prefix.displayText());
+            var fullSequence = prefix.keys().newWith(keyStroke);
+            handleEntry(entryOpt.get(), fullSequence, prefix.displayText());
         }
     }
 
@@ -198,7 +202,7 @@ public class CommandLoop {
         return keyResolver.resolve(keyStroke);
     }
 
-    private void handleEntry(KeymapEntry entry, KeyStroke keyStroke, String prefixDisplay) {
+    private void handleEntry(KeymapEntry entry, ImmutableList<KeyStroke> keySequence, String prefixDisplay) {
         switch (entry) {
             case KeymapEntry.CommandBinding(var command) -> {
                 var thisCommand = Optional.of(command.name());
@@ -207,7 +211,7 @@ public class CommandLoop {
                         bufferManager,
                         frame.getActiveWindow(),
                         inputPrompter,
-                        Optional.of(keyStroke),
+                        keySequence,
                         thisCommand,
                         lastCommand,
                         killRing,
@@ -241,8 +245,9 @@ public class CommandLoop {
                 }
             }
             case KeymapEntry.PrefixBinding(var prefixKeymap) -> {
-                var displayText = prefixDisplay + keyStroke.displayString() + " ";
-                pendingPrefix = new PendingPrefix(prefixKeymap, displayText);
+                var lastKey = keySequence.getLast();
+                var displayText = prefixDisplay + lastKey.displayString() + " ";
+                pendingPrefix = new PendingPrefix(prefixKeymap, displayText, keySequence);
                 messageBuffer.message(displayText);
             }
         }

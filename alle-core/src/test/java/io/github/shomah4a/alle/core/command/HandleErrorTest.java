@@ -14,6 +14,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,7 @@ class HandleErrorTest {
                 new BufferManager(),
                 window,
                 (msg, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled()),
-                Optional.empty(),
+                Lists.immutable.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),

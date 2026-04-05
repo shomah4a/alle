@@ -25,6 +25,7 @@ import io.github.shomah4a.alle.core.window.Window;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -76,7 +77,7 @@ class OccurCommandTest {
                 bufferManager,
                 window,
                 prompter,
-                Optional.empty(),
+                Lists.immutable.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 new KillRing(),
@@ -161,7 +162,7 @@ class OccurCommandTest {
                     s.context.bufferManager(),
                     sourceWindow,
                     s.context.inputPrompter(),
-                    Optional.empty(),
+                    Lists.immutable.empty(),
                     Optional.empty(),
                     Optional.empty(),
                     s.context.killRing(),
