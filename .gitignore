@@ -22,3 +22,6 @@ build/
 # Claude Code
 .claude/settings.local.json
 .claude/tmp
+
+# Local tools
+tmp/

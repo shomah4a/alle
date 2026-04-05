@@ -1,0 +1,9 @@
+{
+  "java": {
+    "command": ".claude/script/jdtls.sh",
+    "args": [],
+    "extensionToLanguage": {
+      ".java": "java"
+    }
+  }
+}

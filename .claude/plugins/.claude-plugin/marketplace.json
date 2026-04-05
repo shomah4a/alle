@@ -1,0 +1,14 @@
+{
+  "name": "alle-marketplace",
+  "owner": {
+    "name": "alle"
+  },
+  "plugins": [
+    {
+      "name": "jdtls-lsp",
+      "source": "./jdtls-lsp",
+      "description": "Java language support using Eclipse JDT Language Server",
+      "version": "1.0.0"
+    }
+  ]
+}
