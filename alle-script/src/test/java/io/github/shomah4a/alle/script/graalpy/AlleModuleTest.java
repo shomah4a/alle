@@ -526,6 +526,66 @@ class AlleModuleTest {
     }
 
     @Test
+    void コロン終端行の次行でTABを押すとインデント増加候補が含まれる() {
+        engine.eval("import alle");
+        buffer.insertText(0, "def foo():\n");
+        engine.eval("alle.active_window().goto_char(11)"); // 2行目の先頭
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.cycle_indent(win, win.buffer(), 1)
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("def foo():\n    ", buffer.getText(), "def文の次行でTabを押すと4スペースインデントになるべき");
+    }
+
+    @Test
+    void インデント付きコロン終端行の次行でTABを押すとインデント増加候補が含まれる() {
+        engine.eval("import alle");
+        buffer.insertText(0, "    if x:\n");
+        engine.eval("alle.active_window().goto_char(10)"); // 2行目の先頭
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.cycle_indent(win, win.buffer(), 1)
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("    if x:\n        ", buffer.getText(), "if文の次行でTabを押すと8スペースインデントになるべき");
+    }
+
+    @Test
+    void 開き括弧終端行の次行でTABを押すとインデント増加候補が含まれる() {
+        engine.eval("import alle");
+        buffer.insertText(0, "x = [\n");
+        engine.eval("alle.active_window().goto_char(6)"); // 2行目の先頭
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.cycle_indent(win, win.buffer(), 1)
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("x = [\n    ", buffer.getText(), "開き括弧の次行でTabを押すと4スペースインデントになるべき");
+    }
+
+    @Test
+    void コメント内のコロンではインデント増加候補が生成されない() {
+        engine.eval("import alle");
+        buffer.insertText(0, "x = 1  # Note:\n");
+        engine.eval("alle.active_window().goto_char(16)"); // 2行目の先頭
+        ScriptResult result = engine.eval("""
+                from alle.modes.python.commands import PythonIndentState
+                state = PythonIndentState(None)
+                win = alle.active_window()
+                state.cycle_indent(win, win.buffer(), 1)
+                """);
+        assertInstanceOf(ScriptResult.Success.class, result);
+        assertEquals("x = 1  # Note:\n", buffer.getText(), "コメント内のコロンではインデント増加しない");
+    }
+
+    @Test
     void MinorModeBaseでマイナーモードを定義して登録できる() {
         engine.eval("import alle");
         engine.eval("from alle.mode import MinorModeBase");
