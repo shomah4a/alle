@@ -86,17 +86,55 @@ public class TreeSitterStyler implements SyntaxStyler {
             }
         }
 
-        // 各行のスパンをstart順にソート
+        // 各行のスパンをstart順にソートし、同一範囲の重複を解決する。
+        // TSQueryCursor.nextMatch()は同一ノードに複数パターンがマッチした場合、
+        // より具体的なパターンのマッチを先に返す。List.sort()は安定ソートのため、
+        // 同一startのスパンは追加順を維持する。
+        // 同一[start, end)のスパンが複数存在する場合、最初のもの（最も具体的なパターン）を残す。
         MutableList<ListIterable<StyledSpan>> sorted = Lists.mutable.withInitialCapacity(lineCount);
         for (MutableList<StyledSpan> lineSpans : result) {
             lineSpans.sortThis((a, b) -> Integer.compare(a.start(), b.start()));
-            sorted.add(lineSpans);
+            sorted.add(deduplicateSpans(lineSpans));
         }
 
         cachedText = fullText;
         cachedResult = sorted;
 
         return sorted;
+    }
+
+    /**
+     * 同一範囲[start, end)のスパンが複数存在する場合、最初のもののみを残す。
+     * start順にソート済みのリストを前提とする。
+     *
+     * <p>tree-sitterのクエリマッチでは、より具体的なパターン（親ノードの条件を含む等）の
+     * マッチが先に返される。例えばYAMLの{@code string_scalar}ノードに対して、
+     * {@code (block_mapping_pair key: ... (string_scalar) @property)} のような
+     * 具体的パターンが汎用の {@code (string_scalar) @string} より先にマッチする。
+     * したがって同一範囲の最初のスパンが最も具体的なキャプチャに対応する。
+     *
+     * <p>このメソッドに渡されるスパンは{@link NodeFaceMapping#resolve(String)}で
+     * FaceNameに解決済みのもののみである。マッピングできないキャプチャは
+     * {@link #styleDocument(ListIterable)}でスパン生成自体がスキップされるため、
+     * 常にマッピング可能なスパンが選択される。
+     */
+    private static ListIterable<StyledSpan> deduplicateSpans(MutableList<StyledSpan> spans) {
+        if (spans.size() <= 1) {
+            return spans;
+        }
+        MutableList<StyledSpan> deduplicated = Lists.mutable.withInitialCapacity(spans.size());
+        for (int i = 0; i < spans.size(); i++) {
+            StyledSpan current = spans.get(i);
+            // 前のスパンが同一範囲なら、現在のスパンをスキップする
+            if (i > 0) {
+                StyledSpan prev = spans.get(i - 1);
+                if (current.start() == prev.start() && current.end() == prev.end()) {
+                    continue;
+                }
+            }
+            deduplicated.add(current);
+        }
+        return deduplicated;
     }
 
     /**

@@ -29,7 +29,7 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.ANNOTATION, FaceSpec.ofForeground("magenta"))
             .withKeyValue(FaceName.TYPE, FaceSpec.ofForeground("yellow"))
             .withKeyValue(FaceName.FUNCTION_NAME, FaceSpec.ofForeground("cyan"))
-            .withKeyValue(FaceName.VARIABLE, FaceSpec.ofForeground("white"))
+            .withKeyValue(FaceName.VARIABLE, FaceSpec.ofForeground("yellow"))
             .withKeyValue(FaceName.OPERATOR, FaceSpec.ofForeground("white"))
             .withKeyValue(FaceName.BUILTIN, FaceSpec.ofForeground("cyan"))
             .withKeyValue(FaceName.STRONG, FaceSpec.ofAttributes(FaceAttribute.BOLD))
