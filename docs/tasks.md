@@ -2,6 +2,12 @@
 
 ## 未着手タスク
 
+### Dependabot の導入
+- CI（ADR 0110）のマージ後に着手する
+- minor/patch更新は全依存を1つのPRにまとめる
+- major更新はtesting / build-tools / runtime の3カテゴリに分けてPRを作成する
+- GitHub Actionsエコシステムも対象に含める
+
 ### スクリプトエンジン: 初期化の遅延実行
 - スクリプトエンジンの初期化を EditorRunner.run() 開始後に遅延する
 - 現在は描画スレッド起動前に初期化しているため、初期化中のメッセージが画面に表示されない
