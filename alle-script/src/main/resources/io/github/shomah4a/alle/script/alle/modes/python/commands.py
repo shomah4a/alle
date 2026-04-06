@@ -18,12 +18,6 @@ if TYPE_CHECKING:
 
 _INDENT_UNIT = 4
 
-# 開きカッコで終わる行のパターン
-_OPEN_BRACKET_END = re.compile(r"[(\[{]\s*(?:#.*)?$")
-
-# コロンで終わる行のパターン（コメント・文字列内のコロンは除外）
-_COLON_END = re.compile(r":\s*(?:#.*)?$")
-
 # dedentキーワードで終わる行のパターン
 _DEDENT_END = re.compile(r"\b(?:return|pass|break|continue|raise)\b\s*(?:#.*)?$")
 
@@ -169,15 +163,18 @@ _COMPOUND_STATEMENT_TYPES = frozenset({
 })
 
 
-def _prev_line_needs_indent(syntax_analyzer, buf, line_index: int) -> bool:
-    """前行がインデント増加を要するかをASTで判定する。
+def _needs_indent_increase(syntax_analyzer, buf, text: str, line: int) -> bool:
+    """テキスト末尾がインデント増加を要するかをASTで判定する。
 
-    前行末のノードが複合文のコロンまたは開き括弧であればTrueを返す。
+    コロン終端（複合文）または開き括弧終端の場合にTrueを返す。
+    コメント・文字列内のコロンや括弧は除外する。
+
+    :param syntax_analyzer: 構文解析器
+    :param buf: バッファファサード
+    :param text: 判定対象のテキスト（行全体またはカーソルまでの部分テキスト）
+    :param line: テキストが存在する行番号（AST問い合わせ用）
     """
-    if line_index <= 0:
-        return False
-    prev_text = buf.line_text(line_index - 1)
-    stripped = prev_text.rstrip()
+    stripped = text.rstrip()
     if not stripped:
         return False
 
@@ -185,35 +182,28 @@ def _prev_line_needs_indent(syntax_analyzer, buf, line_index: int) -> bool:
     last_col = len(stripped) - 1
 
     if last_char == ':':
-        # ASTで複合文のコロンかを判定
         lines = _buffer_lines(buf)
         tree = syntax_analyzer.analyze(lines)
-        # コロン位置から親ノードをたどり、複合文ノードが見つかればTrue
-        node = tree.nodeAt(line_index - 1, last_col)
+        node = tree.nodeAt(line, last_col)
         if node.isEmpty():
             return False
-        # nodeAt は最も内側のノードを返す。コロン自体(":")か
-        # 複合文ノードの場合がある
         n = node.get()
         if n.type() in _COMPOUND_STATEMENT_TYPES:
             return True
         if n.type() == ":":
-            # 親ノードが複合文であるかを enclosingNodeOfType で確認
             for stmt_type in _COMPOUND_STATEMENT_TYPES:
-                parent = tree.enclosingNodeOfType(line_index - 1, last_col, stmt_type)
+                parent = tree.enclosingNodeOfType(line, last_col, stmt_type)
                 if parent.isPresent():
                     return True
         return False
 
     if last_char in ('(', '[', '{'):
-        # ASTでコメント・文字列内でないか確認
         lines = _buffer_lines(buf)
         tree = syntax_analyzer.analyze(lines)
-        node = tree.nodeAt(line_index - 1, last_col)
+        node = tree.nodeAt(line, last_col)
         if node.isEmpty():
             return False
         node_type = node.get().type()
-        # コメントや文字列内の括弧は無視
         return node_type not in ("comment", "string", "string_content")
 
     return False
@@ -247,8 +237,12 @@ class PythonIndentState:
 
         current_indent_len = len(_get_indent(buf.line_text(line_index)))
 
-        # 前行がインデント増加を要するか判定（AST併用）
-        prev_needs_indent = _prev_line_needs_indent(self.syntax_analyzer, buf, line_index)
+        # 前行がインデント増加を要するか判定（AST）
+        prev_needs_indent = False
+        if line_index > 0:
+            prev_needs_indent = _needs_indent_increase(
+                self.syntax_analyzer, buf, buf.line_text(line_index - 1), line_index - 1
+            )
 
         # 構文解析によるカッコ内インデント検知
         bracket_indent = _get_bracket_indent(self.syntax_analyzer, buf, line_index, 0)
@@ -291,9 +285,7 @@ class PythonIndentState:
 
         if bracket_indent is not None:
             indent = " " * bracket_indent
-        elif _OPEN_BRACKET_END.search(text_before_cursor):
-            indent += " " * _INDENT_UNIT
-        elif _COLON_END.search(text_before_cursor):
+        elif _needs_indent_increase(self.syntax_analyzer, buf, text_before_cursor, line_index):
             indent += " " * _INDENT_UNIT
         elif _DEDENT_END.search(text_before_cursor):
             if len(indent) >= _INDENT_UNIT:
