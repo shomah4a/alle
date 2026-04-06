@@ -28,7 +28,7 @@ public class JsonMode implements MajorMode {
             .build();
 
     private static final CStyleIndentConfig INDENT_CONFIG =
-            CStyleIndentConfig.of(INDENT_WIDTH, Sets.immutable.with('[', '{'), Sets.immutable.with(']', '}'));
+            new CStyleIndentConfig(INDENT_WIDTH, Sets.immutable.with('[', '{'), Sets.immutable.with(']', '}'));
 
     private final LanguageSupport languageSupport;
     private final Keymap keymap;

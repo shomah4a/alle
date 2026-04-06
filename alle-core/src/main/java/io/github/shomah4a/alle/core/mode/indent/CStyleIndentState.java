@@ -17,21 +17,23 @@ import org.jspecify.annotations.Nullable;
  * Cスタイルインデントの状態管理。
  * インデントサイクルとnewline-and-indentのロジックを提供する。
  *
- * <p>Python modeのPythonIndentStateのJava版。
- * 括弧文字を{@link CStyleIndentConfig}でカスタマイズ可能にしている。
+ * <p>括弧判定はすべてtree-sitterのASTに基づいて行う。
+ * 行末の開き括弧判定は{@link SyntaxTree#nodeAt(int, int)}でトークンを取得し、
+ * コメントノードをスキップして意味のある最後のトークンが開き括弧かを判定する。
  */
 public class CStyleIndentState {
 
     private static final Pattern LEADING_WHITESPACE = Pattern.compile("^(\\s*)");
+    private static final String COMMENT_NODE_TYPE = "comment";
     private static final String[] BRACKET_TOKENS = {"(", ")", "[", "]", "{", "}", ","};
 
     private final CStyleIndentConfig config;
-    private final @Nullable SyntaxAnalyzer syntaxAnalyzer;
+    private final SyntaxAnalyzer syntaxAnalyzer;
 
     private int lastIndentLine = -1;
     private int lastIndentCycle = 0;
 
-    public CStyleIndentState(CStyleIndentConfig config, @Nullable SyntaxAnalyzer syntaxAnalyzer) {
+    public CStyleIndentState(CStyleIndentConfig config, SyntaxAnalyzer syntaxAnalyzer) {
         this.config = config;
         this.syntaxAnalyzer = syntaxAnalyzer;
     }
@@ -52,8 +54,8 @@ public class CStyleIndentState {
         if (lineIndex > 0) {
             String prevLineText = buf.lineText(lineIndex - 1);
             prevIndentLen = getIndent(prevLineText).length();
-            prevLineEndsWithOpenBracket =
-                    config.openBracketEndPattern().matcher(prevLineText).find();
+            SyntaxTree tree = analyzeBuffer(buf);
+            prevLineEndsWithOpenBracket = isOpenBracketBeforeColumn(tree, lineIndex - 1, prevLineText.length());
         }
 
         int currentIndentLen = getIndent(buf.lineText(lineIndex)).length();
@@ -91,8 +93,8 @@ public class CStyleIndentState {
         int point = window.getPoint();
         int lineIndex = buf.lineIndexForOffset(point);
         int lineStart = buf.lineStartOffset(lineIndex);
-        String textBeforeCursor = buf.substring(lineStart, point);
 
+        String textBeforeCursor = buf.substring(lineStart, point);
         String indent = getIndent(textBeforeCursor);
 
         int col = point - lineStart;
@@ -100,11 +102,56 @@ public class CStyleIndentState {
 
         if (bracketIndent != null) {
             indent = " ".repeat(bracketIndent);
-        } else if (config.openBracketEndPattern().matcher(textBeforeCursor).find()) {
-            indent += " ".repeat(config.indentWidth());
+        } else {
+            SyntaxTree tree = analyzeBuffer(buf);
+            if (isOpenBracketBeforeColumn(tree, lineIndex, col)) {
+                indent += " ".repeat(config.indentWidth());
+            }
         }
 
         window.insert("\n" + indent);
+    }
+
+    /**
+     * 指定行の指定カラムより前にある、コメントを除いた最後のトークンが
+     * 開き括弧文字であるかをASTで判定する。
+     *
+     * @param tree 構文木
+     * @param lineIndex 対象行
+     * @param column 判定対象の終了位置（この位置より前のトークンを対象とする）
+     * @return 開き括弧で終わる場合true
+     */
+    private boolean isOpenBracketBeforeColumn(SyntaxTree tree, int lineIndex, int column) {
+        int searchCol = column;
+        // 行末（または指定位置）から後方に向かってトークンを探索する。
+        // コメントノードはスキップし、意味のある最後のトークンが開き括弧かを判定する。
+        while (searchCol > 0) {
+            searchCol--;
+            Optional<SyntaxNode> nodeOpt = tree.nodeAt(lineIndex, searchCol);
+            if (nodeOpt.isEmpty()) {
+                continue;
+            }
+            SyntaxNode node = nodeOpt.get();
+            if (COMMENT_NODE_TYPE.equals(node.type())) {
+                // コメントノードの開始位置より前にジャンプする
+                searchCol = node.startColumn();
+                continue;
+            }
+            // 意味のあるトークンが見つかった
+            return isOpenBracketToken(node);
+        }
+        return false;
+    }
+
+    /**
+     * ノードのtypeが開き括弧文字の1文字トークンであるかを判定する。
+     */
+    private boolean isOpenBracketToken(SyntaxNode node) {
+        String type = node.type();
+        if (type.length() != 1) {
+            return false;
+        }
+        return config.openBrackets().contains(type.charAt(0));
     }
 
     private static String getIndent(String text) {
@@ -131,14 +178,7 @@ public class CStyleIndentState {
     }
 
     private @Nullable Integer getBracketIndent(BufferFacade buf, int lineIndex, int column) {
-        if (syntaxAnalyzer == null) {
-            return null;
-        }
-        var lines = Lists.mutable.<String>withInitialCapacity(buf.lineCount());
-        for (int i = 0; i < buf.lineCount(); i++) {
-            lines.add(buf.lineText(i));
-        }
-        SyntaxTree tree = syntaxAnalyzer.analyze(lines);
+        SyntaxTree tree = analyzeBuffer(buf);
         Optional<SyntaxNode> bracket = tree.enclosingBracket(lineIndex, column);
         if (bracket.isEmpty()) {
             return null;
@@ -173,18 +213,36 @@ public class CStyleIndentState {
     private static @Nullable SyntaxNode findFirstContentChild(SyntaxNode node) {
         for (int i = 0; i < node.children().size(); i++) {
             SyntaxNode child = node.children().get(i);
-            boolean isBracketToken = false;
-            for (String token : BRACKET_TOKENS) {
-                if (token.equals(child.type())) {
-                    isBracketToken = true;
-                    break;
-                }
+            if (isSkippableToken(child.type())) {
+                continue;
             }
-            if (!isBracketToken) {
-                return child;
-            }
+            return child;
         }
         return null;
+    }
+
+    /**
+     * 括弧内の最初の意味のある子を探索する際にスキップすべきトークンかを判定する。
+     * 括弧トークンとコメントをスキップする。
+     */
+    private static boolean isSkippableToken(String type) {
+        if (COMMENT_NODE_TYPE.equals(type)) {
+            return true;
+        }
+        for (String token : BRACKET_TOKENS) {
+            if (token.equals(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private SyntaxTree analyzeBuffer(BufferFacade buf) {
+        var lines = Lists.mutable.<String>withInitialCapacity(buf.lineCount());
+        for (int i = 0; i < buf.lineCount(); i++) {
+            lines.add(buf.lineText(i));
+        }
+        return syntaxAnalyzer.analyze(lines);
     }
 
     private MutableList<Integer> buildIndentCandidates(
