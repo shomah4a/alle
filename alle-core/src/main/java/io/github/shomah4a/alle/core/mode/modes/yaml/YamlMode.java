@@ -1,8 +1,9 @@
-package io.github.shomah4a.alle.core.mode;
+package io.github.shomah4a.alle.core.mode.modes.yaml;
 
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.indent.YamlIndentCommands;
 import io.github.shomah4a.alle.core.mode.indent.YamlIndentState;
 import io.github.shomah4a.alle.core.setting.EditorSettings;

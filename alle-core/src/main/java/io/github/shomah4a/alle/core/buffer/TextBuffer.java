@@ -4,7 +4,7 @@ import io.github.shomah4a.alle.core.io.LineEnding;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
-import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.styling.FaceName;

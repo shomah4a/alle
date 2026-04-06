@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.mode;
+package io.github.shomah4a.alle.core.mode.modes.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

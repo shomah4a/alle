@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.mode;
+package io.github.shomah4a.alle.core.mode.modes.markdown;
 
 import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.styling.RegexStyler;

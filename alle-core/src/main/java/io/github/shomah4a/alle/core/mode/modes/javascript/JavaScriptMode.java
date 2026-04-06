@@ -1,8 +1,9 @@
-package io.github.shomah4a.alle.core.mode;
+package io.github.shomah4a.alle.core.mode.modes.javascript;
 
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.indent.CStyleIndentCommands;
 import io.github.shomah4a.alle.core.mode.indent.CStyleIndentConfig;
 import io.github.shomah4a.alle.core.mode.indent.CStyleIndentState;
@@ -15,35 +16,36 @@ import java.util.Optional;
 import org.eclipse.collections.api.factory.Sets;
 
 /**
- * JSONモード。.json / .jsonl ファイルに適用される。
- * tree-sitter-json によるシンタックスハイライト、構文解析、
+ * JavaScriptモード。.js ファイルに適用される。
+ * tree-sitter-javascript によるシンタックスハイライト、構文解析、
  * Cスタイルオートインデントを提供する。
  */
-public class JsonMode implements MajorMode {
+public class JavaScriptMode implements MajorMode {
 
     private static final int INDENT_WIDTH = 2;
 
     private static final ModeSettings DEFAULTS = ModeSettings.builder()
             .set(EditorSettings.INDENT_WIDTH, INDENT_WIDTH)
+            .set(EditorSettings.COMMENT_STRING, "// ")
             .build();
 
-    private static final CStyleIndentConfig INDENT_CONFIG =
-            new CStyleIndentConfig(INDENT_WIDTH, Sets.immutable.with('[', '{'), Sets.immutable.with(']', '}'));
+    private static final CStyleIndentConfig INDENT_CONFIG = new CStyleIndentConfig(
+            INDENT_WIDTH, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'));
 
     private final LanguageSupport languageSupport;
     private final Keymap keymap;
     private final CommandRegistry commandRegistry;
 
-    public JsonMode(LanguageSupport languageSupport) {
+    public JavaScriptMode(LanguageSupport languageSupport) {
         this.languageSupport = languageSupport;
         var indentState = new CStyleIndentState(INDENT_CONFIG, languageSupport.analyzer());
-        var commands = CStyleIndentCommands.create("json", indentState);
+        var commands = CStyleIndentCommands.create("javascript", indentState);
         this.keymap = createKeymap(commands);
         this.commandRegistry = createCommandRegistry(commands);
     }
 
     private static Keymap createKeymap(CStyleIndentCommands.Commands commands) {
-        var km = new Keymap("json-mode");
+        var km = new Keymap("javascript-mode");
         km.bind(KeyStroke.of('\n'), commands.newlineAndIndent());
         km.bind(KeyStroke.of('\t'), commands.indentLine());
         km.bind(KeyStroke.shift('\t'), commands.dedentLine());
@@ -60,7 +62,7 @@ public class JsonMode implements MajorMode {
 
     @Override
     public String name() {
-        return "json";
+        return "javascript";
     }
 
     @Override

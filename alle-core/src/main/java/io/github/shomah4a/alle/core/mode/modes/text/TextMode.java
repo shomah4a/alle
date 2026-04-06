@@ -1,6 +1,7 @@
-package io.github.shomah4a.alle.core.mode;
+package io.github.shomah4a.alle.core.mode.modes.text;
 
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.MajorMode;
 import java.util.Optional;
 
 /**

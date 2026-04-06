@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.mode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
