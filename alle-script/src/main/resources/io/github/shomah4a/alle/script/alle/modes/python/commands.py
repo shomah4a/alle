@@ -82,13 +82,11 @@ def _find_first_content_child(node) -> Any | None:
 def _get_bracket_indent(syntax_analyzer, buf, line_index: int, column: int) -> int | None:
     """構文解析で括弧内にいるかを判定し、括弧内ならインデントカラムを返す。
 
-    括弧内でない場合や構文解析器が利用不可の場合は None を返す。
+    括弧内でない場合は None を返す。
 
     括弧の開始行に括弧以降のコンテンツがある場合はそのカラム位置に揃え、
     括弧直後が改行の場合は行のインデント + INDENT_UNIT を返す。
     """
-    if syntax_analyzer is None:
-        return None
     lines = _buffer_lines(buf)
     tree = syntax_analyzer.analyze(lines)
     bracket = tree.enclosingBracket(line_index, column)
@@ -121,8 +119,15 @@ def _get_bracket_indent(syntax_analyzer, buf, line_index: int, column: int) -> i
     return bracket_line_indent + _INDENT_UNIT
 
 
-def _build_indent_candidates(prev_indent_len: int, bracket_indent: int | None) -> list[int]:
-    """インデントサイクルの候補リストを生成する。"""
+def _build_indent_candidates(
+    prev_indent_len: int,
+    bracket_indent: int | None,
+    prev_line_needs_indent: bool,
+) -> list[int]:
+    """インデントサイクルの候補リストを生成する。
+
+    Java版 CStyleIndentState.buildIndentCandidates に対応する。
+    """
     candidates: list[int] = []
     seen: set[int] = set()
 
@@ -130,6 +135,13 @@ def _build_indent_candidates(prev_indent_len: int, bracket_indent: int | None) -
     if bracket_indent is not None:
         candidates.append(bracket_indent)
         seen.add(bracket_indent)
+
+    # 前行がコロンや開き括弧で終わる場合、インデント増加を候補に含める
+    if prev_line_needs_indent:
+        increased = prev_indent_len + _INDENT_UNIT
+        if increased not in seen:
+            candidates.append(increased)
+            seen.add(increased)
 
     for level in [prev_indent_len,
                   max(prev_indent_len - _INDENT_UNIT, 0), 0]:
@@ -139,13 +151,81 @@ def _build_indent_candidates(prev_indent_len: int, bracket_indent: int | None) -
     return candidates
 
 
+# コロンの後にブロックを持つ複合文のノードタイプ（tree-sitter Python）
+_COMPOUND_STATEMENT_TYPES = frozenset({
+    "function_definition",
+    "class_definition",
+    "if_statement",
+    "elif_clause",
+    "else_clause",
+    "for_statement",
+    "while_statement",
+    "with_statement",
+    "try_statement",
+    "except_clause",
+    "finally_clause",
+    "match_statement",
+    "case_clause",
+})
+
+
+def _prev_line_needs_indent(syntax_analyzer, buf, line_index: int) -> bool:
+    """前行がインデント増加を要するかをASTで判定する。
+
+    前行末のノードが複合文のコロンまたは開き括弧であればTrueを返す。
+    """
+    if line_index <= 0:
+        return False
+    prev_text = buf.line_text(line_index - 1)
+    stripped = prev_text.rstrip()
+    if not stripped:
+        return False
+
+    last_char = stripped[-1]
+    last_col = len(stripped) - 1
+
+    if last_char == ':':
+        # ASTで複合文のコロンかを判定
+        lines = _buffer_lines(buf)
+        tree = syntax_analyzer.analyze(lines)
+        # コロン位置から親ノードをたどり、複合文ノードが見つかればTrue
+        node = tree.nodeAt(line_index - 1, last_col)
+        if node.isEmpty():
+            return False
+        # nodeAt は最も内側のノードを返す。コロン自体(":")か
+        # 複合文ノードの場合がある
+        n = node.get()
+        if n.type() in _COMPOUND_STATEMENT_TYPES:
+            return True
+        if n.type() == ":":
+            # 親ノードが複合文であるかを enclosingNodeOfType で確認
+            for stmt_type in _COMPOUND_STATEMENT_TYPES:
+                parent = tree.enclosingNodeOfType(line_index - 1, last_col, stmt_type)
+                if parent.isPresent():
+                    return True
+        return False
+
+    if last_char in ('(', '[', '{'):
+        # ASTでコメント・文字列内でないか確認
+        lines = _buffer_lines(buf)
+        tree = syntax_analyzer.analyze(lines)
+        node = tree.nodeAt(line_index - 1, last_col)
+        if node.isEmpty():
+            return False
+        node_type = node.get().type()
+        # コメントや文字列内の括弧は無視
+        return node_type not in ("comment", "string", "string_content")
+
+    return False
+
+
 class PythonIndentState:
     """Python モードのインデントサイクル状態。
 
     PythonMode のインスタンスメンバとして保持される。
     """
 
-    def __init__(self, syntax_analyzer: Any | None) -> None:
+    def __init__(self, syntax_analyzer: Any) -> None:
         self.syntax_analyzer = syntax_analyzer
         self.last_indent_line: int = -1
         self.last_indent_cycle: int = 0
@@ -167,10 +247,13 @@ class PythonIndentState:
 
         current_indent_len = len(_get_indent(buf.line_text(line_index)))
 
+        # 前行がインデント増加を要するか判定（AST併用）
+        prev_needs_indent = _prev_line_needs_indent(self.syntax_analyzer, buf, line_index)
+
         # 構文解析によるカッコ内インデント検知
         bracket_indent = _get_bracket_indent(self.syntax_analyzer, buf, line_index, 0)
 
-        candidates = _build_indent_candidates(prev_indent_len, bracket_indent)
+        candidates = _build_indent_candidates(prev_indent_len, bracket_indent, prev_needs_indent)
 
         if self.last_indent_line == line_index and 0 <= self.last_indent_cycle < len(candidates):
             # 連続操作: 現在位置から direction 方向に進む

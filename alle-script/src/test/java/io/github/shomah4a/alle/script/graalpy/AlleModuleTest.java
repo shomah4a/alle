@@ -327,7 +327,9 @@ class AlleModuleTest {
         // newline-and-indent を実行
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.newline_and_indent(win, win.buffer())
                 """);
@@ -346,7 +348,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(12)");
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.newline_and_indent(win, win.buffer())
                 """);
@@ -365,7 +369,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(24)");
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.newline_and_indent(win, win.buffer())
                 """);
@@ -502,7 +508,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(14)"); // y = 2 の行
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.cycle_indent(win, win.buffer(), 1)
                 """);
@@ -517,7 +525,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(12)");
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.newline_and_indent(win, win.buffer())
                 """);
@@ -532,7 +542,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(11)"); // 2行目の先頭
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.cycle_indent(win, win.buffer(), 1)
                 """);
@@ -547,7 +559,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(10)"); // 2行目の先頭
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.cycle_indent(win, win.buffer(), 1)
                 """);
@@ -562,7 +576,9 @@ class AlleModuleTest {
         engine.eval("alle.active_window().goto_char(6)"); // 2行目の先頭
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.cycle_indent(win, win.buffer(), 1)
                 """);
@@ -574,10 +590,12 @@ class AlleModuleTest {
     void コメント内のコロンではインデント増加候補が生成されない() {
         engine.eval("import alle");
         buffer.insertText(0, "x = 1  # Note:\n");
-        engine.eval("alle.active_window().goto_char(16)"); // 2行目の先頭
+        engine.eval("alle.active_window().goto_char(15)"); // 2行目の先頭
         ScriptResult result = engine.eval("""
                 from alle.modes.python.commands import PythonIndentState
-                state = PythonIndentState(None)
+                from alle.modes.python.styler import create_python_styler_and_analyzer
+                _, analyzer = create_python_styler_and_analyzer()
+                state = PythonIndentState(analyzer)
                 win = alle.active_window()
                 state.cycle_indent(win, win.buffer(), 1)
                 """);
