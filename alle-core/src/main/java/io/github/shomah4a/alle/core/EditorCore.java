@@ -70,6 +70,7 @@ import io.github.shomah4a.alle.core.mode.JsonMode;
 import io.github.shomah4a.alle.core.mode.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.TextMode;
+import io.github.shomah4a.alle.core.mode.YamlMode;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredInitializer;
 import io.github.shomah4a.alle.core.mode.modes.occur.OccurInitializer;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
@@ -183,6 +184,10 @@ public final class EditorCore {
         autoModeMap.register(
                 "jsonl",
                 () -> new JsonMode(syntaxAnalyzerRegistry.create("json").orElseThrow()));
+        autoModeMap.register(
+                "yml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
+        autoModeMap.register(
+                "yaml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
 
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
@@ -221,6 +226,8 @@ public final class EditorCore {
                         syntaxAnalyzerRegistry.create("javascript").orElseThrow()));
         modeRegistry.registerMajorMode(
                 "json", () -> new JsonMode(syntaxAnalyzerRegistry.create("json").orElseThrow()));
+        modeRegistry.registerMajorMode(
+                "yaml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
 
         // キーマップ
         var keymap = createKeymap(registry);

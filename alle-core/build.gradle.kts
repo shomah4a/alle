@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.tree.sitter.python)
     implementation(libs.tree.sitter.javascript)
     implementation(libs.tree.sitter.json)
+    implementation(libs.tree.sitter.yaml)
 }
 
 // Tree-sitter ハイライトクエリのダウンロード
@@ -19,7 +20,10 @@ data class TreeSitterGrammar(val language: String, val repo: String, val tag: St
 val grammars = listOf(
     TreeSitterGrammar("python", "tree-sitter/tree-sitter-python", "v${libs.versions.tree.sitter.python.get()}"),
     TreeSitterGrammar("javascript", "tree-sitter/tree-sitter-javascript", "v${libs.versions.tree.sitter.javascript.get()}"),
-    TreeSitterGrammar("json", "tree-sitter/tree-sitter-json", "v${libs.versions.tree.sitter.json.get()}")
+    TreeSitterGrammar("json", "tree-sitter/tree-sitter-json", "v${libs.versions.tree.sitter.json.get()}"),
+    // bonede版(0.5.0a)の由来元リポジトリにはhighlights.scmが存在しないため、
+    // tree-sitter-grammarsリポジトリから互換性のあるタグを指定して取得する（ADR 0113参照）
+    TreeSitterGrammar("yaml", "tree-sitter-grammars/tree-sitter-yaml", "v0.7.0")
 )
 
 val downloadTreeSitterQueries = tasks.register("downloadTreeSitterQueries") {

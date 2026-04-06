@@ -36,6 +36,12 @@
 - ユーザー設定ファイルからのテーマ読み込み、スクリプトからのテーマ拡張登録が未実装
 - DefaultFaceTheme に Python モード固有の FaceName マッピングがハードコードされている問題を解消する
 
+### CStyleIndentState の AST ベース統一
+- CStyleIndentState は AST の enclosingBracket と正規表現による行末括弧判定が混在している
+- AST がある以上、正規表現は劣化版であり、AST に統一すべき
+- 影響範囲: JavaScriptMode, JsonMode
+- 関連: ADR 0113 (yaml-mode)
+
 ### 構文解析: toSyntaxNodeの遅延変換
 - rootNode()呼び出しで全構文木がJavaオブジェクトにコピーされる
 - 子ノードの遅延変換でパフォーマンスを改善する
