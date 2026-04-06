@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.script;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
@@ -9,6 +10,10 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.input.Completer;
+import io.github.shomah4a.alle.core.input.InputHistory;
+import io.github.shomah4a.alle.core.input.InputPrompter;
+import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
@@ -19,12 +24,14 @@ import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class EditorFacadeTest {
 
     private EditorFacade facade;
+    private Frame frame;
     private TextBuffer buffer;
     private MessageBuffer messageBuffer;
 
@@ -36,7 +43,7 @@ class EditorFacadeTest {
         var scratchBuffer = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), settings));
         var window = new Window(bufferFacade);
         var minibuffer = new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), settings)));
-        var frame = new Frame(window, minibuffer);
+        frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(bufferFacade);
         bufferManager.add(scratchBuffer);
@@ -50,7 +57,10 @@ class EditorFacadeTest {
                 new AutoModeMap(TextMode::new),
                 new SyntaxAnalyzerRegistry(),
                 new FrameLayoutStore(),
-                bufferManager);
+                bufferManager,
+                (message, history) -> {
+                    throw new UnsupportedOperationException();
+                });
     }
 
     @Test
@@ -117,5 +127,70 @@ class EditorFacadeTest {
         facade.saveFrameState("layout1");
         assertTrue(facade.hasFrameState("layout1"));
         assertTrue(facade.restoreFrameState("layout1"));
+    }
+
+    @Test
+    void promptはInputPrompterに委譲してCompletableFutureを返す() {
+        var confirmed = new PromptResult.Confirmed("test-input");
+        var stubFacade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new),
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                new BufferManager(),
+                (message, history) -> CompletableFuture.completedFuture(confirmed));
+        var history = stubFacade.createInputHistory();
+        var future = stubFacade.prompt("Enter: ", history);
+        assertTrue(future.isDone());
+        var result = future.join();
+        assertInstanceOf(PromptResult.Confirmed.class, result);
+        assertEquals("test-input", ((PromptResult.Confirmed) result).value());
+    }
+
+    @Test
+    void 初期値付きpromptはInputPrompterの4引数オーバーロードに委譲する() {
+        var confirmed = new PromptResult.Confirmed("edited-value");
+        var stubPrompter = new InputPrompter() {
+            @Override
+            public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                throw new UnsupportedOperationException("2引数版が呼ばれるべきではない");
+            }
+
+            @Override
+            public CompletableFuture<PromptResult> prompt(
+                    String message, String initialValue, InputHistory history, Completer completer) {
+                assertEquals("initial", initialValue);
+                return CompletableFuture.completedFuture(confirmed);
+            }
+        };
+        var stubFacade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new),
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                new BufferManager(),
+                stubPrompter);
+        var history = stubFacade.createInputHistory();
+        var future = stubFacade.prompt("Enter: ", "initial", history);
+        assertTrue(future.isDone());
+        var result = future.join();
+        assertInstanceOf(PromptResult.Confirmed.class, result);
+        assertEquals("edited-value", ((PromptResult.Confirmed) result).value());
+    }
+
+    @Test
+    void createInputHistoryは新しいインスタンスを返す() {
+        var history = facade.createInputHistory();
+        assertEquals(0, history.size());
+        history.add("entry1");
+        assertEquals(1, history.size());
     }
 }

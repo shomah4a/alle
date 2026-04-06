@@ -59,7 +59,10 @@ class AlleModuleTest {
                 new AutoModeMap(TextMode::new),
                 io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins(),
                 new FrameLayoutStore(),
-                bufferManager);
+                bufferManager,
+                (message, history) -> {
+                    throw new UnsupportedOperationException();
+                });
         var stdoutStream =
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000, new SettingsRegistry());

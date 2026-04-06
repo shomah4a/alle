@@ -102,6 +102,7 @@ public final class EditorCore {
     private final AutoModeMap autoModeMap;
     private final SyntaxAnalyzerRegistry syntaxAnalyzerRegistry;
     private final FrameLayoutStore frameLayoutStore;
+    private final InputPrompter inputPrompter;
 
     private EditorCore(
             Frame frame,
@@ -114,7 +115,8 @@ public final class EditorCore {
             ModeRegistry modeRegistry,
             AutoModeMap autoModeMap,
             SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
-            FrameLayoutStore frameLayoutStore) {
+            FrameLayoutStore frameLayoutStore,
+            InputPrompter inputPrompter) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -126,6 +128,7 @@ public final class EditorCore {
         this.autoModeMap = autoModeMap;
         this.syntaxAnalyzerRegistry = syntaxAnalyzerRegistry;
         this.frameLayoutStore = frameLayoutStore;
+        this.inputPrompter = inputPrompter;
     }
 
     /**
@@ -247,7 +250,8 @@ public final class EditorCore {
                 modeRegistry,
                 autoModeMap,
                 syntaxAnalyzerRegistry,
-                frameLayoutStore);
+                frameLayoutStore,
+                inputPrompter);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -469,5 +473,9 @@ public final class EditorCore {
 
     public FrameLayoutStore frameLayoutStore() {
         return frameLayoutStore;
+    }
+
+    public InputPrompter inputPrompter() {
+        return inputPrompter;
     }
 }

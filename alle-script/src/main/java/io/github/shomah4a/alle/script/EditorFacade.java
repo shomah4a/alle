@@ -6,6 +6,10 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.constants.BufferNames;
+import io.github.shomah4a.alle.core.input.CompletionCandidate;
+import io.github.shomah4a.alle.core.input.InputHistory;
+import io.github.shomah4a.alle.core.input.InputPrompter;
+import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
@@ -18,7 +22,9 @@ import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import org.eclipse.collections.api.factory.Lists;
 import org.graalvm.polyglot.Value;
 import org.jspecify.annotations.Nullable;
 
@@ -38,6 +44,7 @@ public class EditorFacade implements Loggable {
     private final SyntaxAnalyzerRegistry syntaxAnalyzerRegistry;
     private final FrameLayoutStore frameLayoutStore;
     private final BufferManager bufferManager;
+    private final InputPrompter inputPrompter;
 
     public EditorFacade(
             Frame frame,
@@ -48,7 +55,8 @@ public class EditorFacade implements Loggable {
             AutoModeMap autoModeMap,
             SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
             FrameLayoutStore frameLayoutStore,
-            BufferManager bufferManager) {
+            BufferManager bufferManager,
+            InputPrompter inputPrompter) {
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
@@ -58,6 +66,7 @@ public class EditorFacade implements Loggable {
         this.syntaxAnalyzerRegistry = syntaxAnalyzerRegistry;
         this.frameLayoutStore = frameLayoutStore;
         this.bufferManager = bufferManager;
+        this.inputPrompter = inputPrompter;
     }
 
     /**
@@ -241,5 +250,41 @@ public class EditorFacade implements Loggable {
      */
     public boolean hasFrameState(String name) {
         return frameLayoutStore.load(name).isPresent();
+    }
+
+    /**
+     * プロンプトを表示してユーザーから文字列入力を受け付ける。
+     * 返却されるCompletableFutureはミニバッファで入力が確定またはキャンセルされた時点で完了する。
+     *
+     * @param message プロンプトメッセージ
+     * @param history 入力履歴
+     * @return 入力結果のCompletableFuture
+     */
+    public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+        return inputPrompter.prompt(message, history);
+    }
+
+    /**
+     * 初期値付きでプロンプトを表示してユーザーから文字列入力を受け付ける。
+     * ユーザー入力エリアにinitialValueが事前入力された状態で開始される。
+     *
+     * @param message プロンプトメッセージ
+     * @param initialValue 入力エリアの初期値
+     * @param history 入力履歴
+     * @return 入力結果のCompletableFuture
+     */
+    public CompletableFuture<PromptResult> prompt(String message, String initialValue, InputHistory history) {
+        return inputPrompter.prompt(
+                message, initialValue, history, input -> Lists.immutable.<CompletionCandidate>empty());
+    }
+
+    /**
+     * 新しいInputHistoryインスタンスを生成する。
+     * スクリプト側で入力履歴を明示的に管理するために使用する。
+     *
+     * @return 新しいInputHistory
+     */
+    public InputHistory createInputHistory() {
+        return new InputHistory();
     }
 }

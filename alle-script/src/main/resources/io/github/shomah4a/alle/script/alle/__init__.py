@@ -19,10 +19,12 @@ Java側のEditorFacadeをラップし、Python的なAPIを提供する。
 
 from __future__ import annotations
 
+import concurrent.futures
 from typing import Any
 
 from alle.buffer import Buffer
 from alle.command import CommandBase
+from alle.history import InputHistory
 from alle.internal.facade import (
     _init,
     _make_major_mode_factory,
@@ -30,7 +32,9 @@ from alle.internal.facade import (
     _require_facade,
     _wrap_command,
 )
+from alle.internal.prompt import PromptFuture
 from alle.mode import MajorModeBase, MinorModeBase
+from alle.prompt import Cancelled, Confirmed
 from alle.window import Window
 
 
@@ -197,3 +201,58 @@ def has_frame_state(name: str) -> bool:
     :rtype: bool
     """
     return _require_facade().hasFrameState(name)
+
+
+def prompt(
+    message: str,
+    history: InputHistory | None = None,
+    initial_value: str | None = None,
+) -> concurrent.futures.Future[Confirmed | Cancelled]:
+    """プロンプトを表示してユーザーから文字列入力を受け付ける。
+
+    返却されるFutureはミニバッファで入力が確定またはキャンセルされた時点で完了する。
+    コマンドの ``run()`` 内では ``add_done_callback()`` や
+    ``on_confirmed()`` / ``on_cancelled()`` で後続処理を登録すること。
+
+    :param message: プロンプトメッセージ
+    :type message: str
+    :param history: 入力履歴（省略時は新規作成）
+    :type history: InputHistory | None
+    :param initial_value: 入力エリアの初期値
+    :type initial_value: str | None
+    :return: 入力結果のFuture（結果はConfirmed or Cancelled）
+    :rtype: concurrent.futures.Future[Confirmed | Cancelled]
+
+    使用例::
+
+        from alle.history import InputHistory
+        history = InputHistory()
+
+        def run(ctx):
+            alle.prompt("Enter name: ", history=history).on_confirmed(
+                lambda value: ctx.message(f"Hello, {value}")
+            )
+    """
+    facade = _require_facade()
+    java_history = (
+        history.java_history if history is not None
+        else facade.createInputHistory()
+    )
+    if initial_value is not None:
+        java_future = facade.prompt(message, initial_value, java_history)
+    else:
+        java_future = facade.prompt(message, java_history)
+    return PromptFuture(java_future)
+
+
+def create_input_history(max_size: int | None = None) -> InputHistory:
+    """新しいInputHistoryインスタンスを生成する。
+
+    スクリプト側で入力履歴を明示的に管理するために使用する。
+
+    :param max_size: 履歴の最大保持件数（デフォルト: 100）
+    :type max_size: int | None
+    :return: 新しいInputHistory
+    :rtype: InputHistory
+    """
+    return InputHistory(max_size=max_size)

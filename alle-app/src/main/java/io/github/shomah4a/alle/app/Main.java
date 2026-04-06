@@ -102,7 +102,8 @@ public final class Main {
                 core.autoModeMap(),
                 core.syntaxAnalyzerRegistry(),
                 core.frameLayoutStore(),
-                core.bufferManager());
+                core.bufferManager(),
+                core.inputPrompter());
         var stdoutStream =
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
         var stderrStream =
