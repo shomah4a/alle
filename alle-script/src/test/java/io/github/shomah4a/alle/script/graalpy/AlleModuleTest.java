@@ -16,6 +16,7 @@ import io.github.shomah4a.alle.core.mode.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.script.EditorFacade;
 import io.github.shomah4a.alle.script.MessageBufferOutputStream;
@@ -56,7 +57,9 @@ class AlleModuleTest {
                 new Keymap("global"),
                 new ModeRegistry(),
                 new AutoModeMap(TextMode::new),
-                io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins());
+                io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.createWithBuiltins(),
+                new FrameLayoutStore(),
+                bufferManager);
         var stdoutStream =
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000, new SettingsRegistry());

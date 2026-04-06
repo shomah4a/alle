@@ -1,9 +1,11 @@
 package io.github.shomah4a.alle.script;
 
 import io.github.shomah4a.alle.core.Loggable;
+import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
+import io.github.shomah4a.alle.core.constants.BufferNames;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
@@ -13,6 +15,7 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -33,6 +36,8 @@ public class EditorFacade implements Loggable {
     private final ModeRegistry modeRegistry;
     private final AutoModeMap autoModeMap;
     private final SyntaxAnalyzerRegistry syntaxAnalyzerRegistry;
+    private final FrameLayoutStore frameLayoutStore;
+    private final BufferManager bufferManager;
 
     public EditorFacade(
             Frame frame,
@@ -41,7 +46,9 @@ public class EditorFacade implements Loggable {
             Keymap globalKeymap,
             ModeRegistry modeRegistry,
             AutoModeMap autoModeMap,
-            SyntaxAnalyzerRegistry syntaxAnalyzerRegistry) {
+            SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
+            FrameLayoutStore frameLayoutStore,
+            BufferManager bufferManager) {
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
@@ -49,6 +56,8 @@ public class EditorFacade implements Loggable {
         this.modeRegistry = modeRegistry;
         this.autoModeMap = autoModeMap;
         this.syntaxAnalyzerRegistry = syntaxAnalyzerRegistry;
+        this.frameLayoutStore = frameLayoutStore;
+        this.bufferManager = bufferManager;
     }
 
     /**
@@ -194,5 +203,43 @@ public class EditorFacade implements Loggable {
      */
     public SyntaxAnalyzerRegistry.@Nullable LanguageSupport createLanguageSupport(String language) {
         return syntaxAnalyzerRegistry.create(language).orElse(null);
+    }
+
+    /**
+     * 現在のフレーム状態を名前付きで保存する。
+     *
+     * @param name 保存名
+     */
+    public void saveFrameState(String name) {
+        var snapshot = frame.captureSnapshot();
+        frameLayoutStore.save(name, snapshot);
+    }
+
+    /**
+     * 保存済みフレーム状態を名前で復元する。
+     *
+     * @param name 復元対象の保存名
+     * @return 復元に成功した場合true、名前が見つからない場合false
+     */
+    public boolean restoreFrameState(String name) {
+        var snapshot = frameLayoutStore.load(name);
+        if (snapshot.isEmpty()) {
+            return false;
+        }
+        var fallback = bufferManager
+                .findByName(BufferNames.SCRATCH)
+                .orElseThrow(() -> new IllegalStateException("scratch バッファが見つかりません"));
+        frame.restoreSnapshot(snapshot.get(), bufferManager, fallback);
+        return true;
+    }
+
+    /**
+     * 指定名のフレーム状態が保存済みかどうかを返す。
+     *
+     * @param name 確認対象の保存名
+     * @return 保存済みの場合true
+     */
+    public boolean hasFrameState(String name) {
+        return frameLayoutStore.load(name).isPresent();
     }
 }

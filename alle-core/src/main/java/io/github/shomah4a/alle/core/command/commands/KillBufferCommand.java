@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.constants.BufferNames;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.CompletionCandidate;
@@ -33,7 +34,7 @@ public class KillBufferCommand implements Command {
 
     private static final Logger logger = Logger.getLogger(KillBufferCommand.class.getName());
 
-    private static final String SCRATCH_BUFFER_NAME = "*scratch*";
+    private static final String SCRATCH_BUFFER_NAME = BufferNames.SCRATCH;
 
     private static final Completer KILL_CONFIRM_COMPLETER = input -> Lists.immutable
             .of("yes", "no", "save and kill")

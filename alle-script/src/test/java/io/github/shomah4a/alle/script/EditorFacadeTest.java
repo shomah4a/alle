@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.script;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
@@ -15,6 +17,7 @@ import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
+import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import io.github.shomah4a.alle.core.window.Window;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,15 +30,17 @@ class EditorFacadeTest {
 
     @BeforeEach
     void setUp() {
-        buffer = new TextBuffer("test.py", new GapTextModel(), new SettingsRegistry());
+        var settings = new SettingsRegistry();
+        buffer = new TextBuffer("test.py", new GapTextModel(), settings);
         var bufferFacade = new BufferFacade(buffer);
+        var scratchBuffer = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), settings));
         var window = new Window(bufferFacade);
-        var minibuffer = new Window(
-                new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+        var minibuffer = new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), settings)));
         var frame = new Frame(window, minibuffer);
         var bufferManager = new BufferManager();
         bufferManager.add(bufferFacade);
-        messageBuffer = new MessageBuffer("*Messages*", 100, new SettingsRegistry());
+        bufferManager.add(scratchBuffer);
+        messageBuffer = new MessageBuffer("*Messages*", 100, settings);
         facade = new EditorFacade(
                 frame,
                 messageBuffer,
@@ -43,7 +48,9 @@ class EditorFacadeTest {
                 new Keymap("global"),
                 new ModeRegistry(),
                 new AutoModeMap(TextMode::new),
-                new SyntaxAnalyzerRegistry());
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                bufferManager);
     }
 
     @Test
@@ -84,5 +91,31 @@ class EditorFacadeTest {
     void メッセージを表示できる() {
         facade.message("test message");
         assertEquals("test message", messageBuffer.lineText(0));
+    }
+
+    @Test
+    void フレーム状態を保存して存在確認できる() {
+        assertFalse(facade.hasFrameState("layout1"));
+        facade.saveFrameState("layout1");
+        assertTrue(facade.hasFrameState("layout1"));
+    }
+
+    @Test
+    void 保存したフレーム状態を復元できる() {
+        facade.saveFrameState("layout1");
+        assertTrue(facade.restoreFrameState("layout1"));
+    }
+
+    @Test
+    void 存在しないフレーム状態の復元はfalseを返す() {
+        assertFalse(facade.restoreFrameState("nonexistent"));
+    }
+
+    @Test
+    void フレーム状態の保存は同名で上書きできる() {
+        facade.saveFrameState("layout1");
+        facade.saveFrameState("layout1");
+        assertTrue(facade.hasFrameState("layout1"));
+        assertTrue(facade.restoreFrameState("layout1"));
     }
 }

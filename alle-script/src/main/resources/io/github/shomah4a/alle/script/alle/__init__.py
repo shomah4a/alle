@@ -166,3 +166,34 @@ def add_minor_mode_hook(mode_name: str, hook: callable) -> None:
     def wrapper(java_buffer, mode):
         hook(Buffer(java_buffer), mode)
     _require_facade().addMinorModeHook(mode_name, wrapper)
+
+
+def save_frame_state(name: str) -> None:
+    """現在のフレーム状態を名前付きで保存する。
+
+    :param name: 保存名
+    :type name: str
+    """
+    _require_facade().saveFrameState(name)
+
+
+def restore_frame_state(name: str) -> bool:
+    """保存済みフレーム状態を名前で復元する。
+
+    :param name: 復元対象の保存名
+    :type name: str
+    :return: 復元に成功した場合True、名前が見つからない場合False
+    :rtype: bool
+    """
+    return _require_facade().restoreFrameState(name)
+
+
+def has_frame_state(name: str) -> bool:
+    """指定名のフレーム状態が保存済みかどうかを返す。
+
+    :param name: 確認対象の保存名
+    :type name: str
+    :return: 保存済みの場合True
+    :rtype: bool
+    """
+    return _require_facade().hasFrameState(name)

@@ -53,6 +53,7 @@ import io.github.shomah4a.alle.core.command.commands.ToggleTruncateLinesCommand;
 import io.github.shomah4a.alle.core.command.commands.UncommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.UndoCommand;
 import io.github.shomah4a.alle.core.command.commands.YankCommand;
+import io.github.shomah4a.alle.core.constants.BufferNames;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -147,7 +148,7 @@ public final class EditorCore {
             Path homeDirectory) {
 
         // バッファ・ウィンドウ・フレーム
-        var scratchFacade = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), settingsRegistry));
+        var scratchFacade = new BufferFacade(new TextBuffer(BufferNames.SCRATCH, new GapTextModel(), settingsRegistry));
         var window = new Window(scratchFacade);
         var minibuffer =
                 new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), settingsRegistry)));

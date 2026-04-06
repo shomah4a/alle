@@ -97,7 +97,9 @@ public final class Main {
                 core.keymap(),
                 core.modeRegistry(),
                 core.autoModeMap(),
-                core.syntaxAnalyzerRegistry());
+                core.syntaxAnalyzerRegistry(),
+                core.frameLayoutStore(),
+                core.bufferManager());
         var stdoutStream =
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
         var stderrStream =
