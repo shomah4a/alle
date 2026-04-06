@@ -49,6 +49,8 @@ public final class Main {
     public static void main(String[] args) throws IOException {
         // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
         disableFlowControl();
+        // C-z が SIGTSTP でプロセスをサスペンドするのを防ぐ
+        disableSuspend();
 
         var terminal =
                 new UnixTerminal(System.in, System.out, StandardCharsets.UTF_8, UnixLikeTerminal.CtrlCBehaviour.TRAP);
@@ -62,6 +64,7 @@ public final class Main {
         } finally {
             screen.stopScreen();
             restoreFlowControl();
+            restoreSuspend();
         }
     }
 
@@ -190,5 +193,13 @@ public final class Main {
 
     private static void restoreFlowControl() throws IOException {
         new ProcessBuilder("stty", "ixon").inheritIO().start().onExit().join();
+    }
+
+    private static void disableSuspend() throws IOException {
+        new ProcessBuilder("stty", "susp", "undef").inheritIO().start().onExit().join();
+    }
+
+    private static void restoreSuspend() throws IOException {
+        new ProcessBuilder("stty", "susp", "^Z").inheritIO().start().onExit().join();
     }
 }
