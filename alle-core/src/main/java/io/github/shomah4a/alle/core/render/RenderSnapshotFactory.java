@@ -443,10 +443,9 @@ public final class RenderSnapshotFactory {
             return new CursorPosition(rect.left(), rect.top());
         }
 
-        // 視覚行内でのカラム位置
+        // 視覚行内でのカラム位置（視覚行ローカル基準）
         int visualLineStart = VisualLineUtil.visualLineStartOffset(lineText, columns, cursorVisualLine, tabWidth);
-        int col = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset, tabWidth)
-                - DisplayWidthUtil.computeColumnForOffset(lineText, visualLineStart, tabWidth);
+        int col = DisplayWidthUtil.computeColumnWidthInRange(lineText, visualLineStart, cpOffset, tabWidth);
         if (col >= 0 && col < columns) {
             return new CursorPosition(rect.left() + col, rect.top() + visualRow);
         }

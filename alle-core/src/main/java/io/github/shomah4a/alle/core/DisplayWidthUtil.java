@@ -91,6 +91,32 @@ public final class DisplayWidthUtil {
     }
 
     /**
+     * 行テキスト内の [startCp, endCp) 範囲の表示幅を計算する。
+     * startCp のカラムを 0 として累積する視覚行ローカル基準。
+     * 折り返しモードで視覚行内のカラム差分を求める用途に使う。
+     */
+    public static int computeColumnWidthInRange(String lineText, int startCp, int endCp, int tabWidth) {
+        if (endCp <= startCp) {
+            return 0;
+        }
+        int offset = 0;
+        int cpIndex = 0;
+        while (offset < lineText.length() && cpIndex < startCp) {
+            int codePoint = lineText.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            cpIndex++;
+        }
+        int col = 0;
+        while (offset < lineText.length() && cpIndex < endCp) {
+            int codePoint = lineText.codePointAt(offset);
+            col += getDisplayWidth(codePoint, col, tabWidth);
+            offset += Character.charCount(codePoint);
+            cpIndex++;
+        }
+        return col;
+    }
+
+    /**
      * 指定カラムが全角文字やタブの途中に位置する場合、その文字の先頭カラムに丸める。
      * 文字境界上であればそのまま返す。
      *

@@ -204,4 +204,28 @@ class DisplayWidthUtilTest {
     void snapColumnToCharBoundaryで空文字列() {
         assertEquals(0, DisplayWidthUtil.snapColumnToCharBoundary("", 3, TAB8));
     }
+
+    @Test
+    void computeColumnWidthInRangeでASCII文字範囲() {
+        // "abcdef" の cp[1,4) → b, c, d の3カラム
+        assertEquals(3, DisplayWidthUtil.computeColumnWidthInRange("abcdef", 1, 4, TAB8));
+    }
+
+    @Test
+    void computeColumnWidthInRangeは範囲startCpを0として計算する() {
+        // "abc\tX" の cp[3,5) は tab と X。視覚行ローカル基準では
+        // tab@col0 = 幅8、X@col8 = 幅1 → 合計9
+        assertEquals(9, DisplayWidthUtil.computeColumnWidthInRange("abc\tX", 3, 5, TAB8));
+    }
+
+    @Test
+    void computeColumnWidthInRangeで同じstartCpとendCpは0() {
+        assertEquals(0, DisplayWidthUtil.computeColumnWidthInRange("abc", 1, 1, TAB8));
+    }
+
+    @Test
+    void computeColumnWidthInRangeで全角文字範囲() {
+        // "aあb" の cp[1,2) は あ → 2カラム
+        assertEquals(2, DisplayWidthUtil.computeColumnWidthInRange("aあb", 1, 2, TAB8));
+    }
 }

@@ -51,10 +51,9 @@ public class PreviousLineCommand implements Command {
             String lineText = buffer.lineText(currentLine);
             int currentVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
 
-            // 視覚行内でのカラム位置を計算
+            // 視覚行内でのカラム位置を計算（視覚行ローカル基準）
             int vlStartCp = VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine, tabWidth);
-            int cursorCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset, tabWidth)
-                    - DisplayWidthUtil.computeColumnForOffset(lineText, vlStartCp, tabWidth);
+            int cursorCol = DisplayWidthUtil.computeColumnWidthInRange(lineText, vlStartCp, cpOffset, tabWidth);
 
             if (currentVisualLine > 0) {
                 // 同一バッファ行内の前の視覚行へ

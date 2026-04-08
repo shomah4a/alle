@@ -53,10 +53,9 @@ public class NextLineCommand implements Command {
             int currentVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
             int visualLineCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
 
-            // 視覚行内でのカラム位置を計算
+            // 視覚行内でのカラム位置を計算（視覚行ローカル基準）
             int vlStartCp = VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine, tabWidth);
-            int cursorCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset, tabWidth)
-                    - DisplayWidthUtil.computeColumnForOffset(lineText, vlStartCp, tabWidth);
+            int cursorCol = DisplayWidthUtil.computeColumnWidthInRange(lineText, vlStartCp, cpOffset, tabWidth);
 
             if (currentVisualLine < visualLineCount - 1) {
                 // 同一バッファ行内の次の視覚行へ
@@ -81,9 +80,9 @@ public class NextLineCommand implements Command {
     /**
      * 指定カラム位置に最も近いコードポイントオフセットを返す。
      * 範囲内で指定カラムに収まる最大のオフセットを返す。
+     * カラムは startCp を 0 とする視覚行ローカル基準で計算する。
      */
     static int computeCpForColumn(String lineText, int startCp, int endCp, int targetColumn, int tabWidth) {
-        int startCol = DisplayWidthUtil.computeColumnForOffset(lineText, startCp, tabWidth);
         int offset = 0;
         int cpIndex = 0;
 
@@ -95,13 +94,14 @@ public class NextLineCommand implements Command {
         }
 
         int resultCp = startCp;
+        int currentCol = 0;
         while (offset < lineText.length() && cpIndex < endCp) {
             int codePoint = lineText.codePointAt(offset);
-            int currentCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpIndex, tabWidth) - startCol;
             int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, currentCol, tabWidth);
             if (currentCol + displayWidth > targetColumn) {
                 break;
             }
+            currentCol += displayWidth;
             offset += Character.charCount(codePoint);
             cpIndex++;
             resultCp = cpIndex;
