@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
@@ -303,13 +304,14 @@ public class Window {
         int lineIndex = bufferFacade.lineIndexForOffset(currentPoint);
         int lineStart = bufferFacade.lineStartOffset(lineIndex);
         String lineText = bufferFacade.lineText(lineIndex);
-        int cursorColumn = DisplayWidthUtil.computeColumnForOffset(lineText, currentPoint - lineStart);
+        int tabWidth = bufferFacade.getSettings().get(EditorSettings.TAB_WIDTH);
+        int cursorColumn = DisplayWidthUtil.computeColumnForOffset(lineText, currentPoint - lineStart, tabWidth);
 
         if (cursorColumn < displayStartColumn) {
-            displayStartColumn = DisplayWidthUtil.snapColumnToCharBoundary(lineText, cursorColumn);
+            displayStartColumn = DisplayWidthUtil.snapColumnToCharBoundary(lineText, cursorColumn, tabWidth);
         } else if (cursorColumn >= displayStartColumn + visibleColumns) {
             int newStart = cursorColumn - visibleColumns + 1;
-            displayStartColumn = DisplayWidthUtil.snapColumnToCharBoundary(lineText, newStart);
+            displayStartColumn = DisplayWidthUtil.snapColumnToCharBoundary(lineText, newStart, tabWidth);
         }
     }
 

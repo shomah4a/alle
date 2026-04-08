@@ -5,7 +5,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
  * Unicode文字の表示幅を計算するユーティリティ。
- * CJK文字等の全角文字は2カラム、それ以外は1カラムとして扱う。
+ * CJK文字等の全角文字は2カラム、タブ文字はタブストップ境界まで展開、それ以外は1カラムとして扱う。
  */
 public final class DisplayWidthUtil {
 
@@ -31,9 +31,18 @@ public final class DisplayWidthUtil {
 
     /**
      * コードポイントの表示幅を返す。
+     * タブ文字は現在カラム位置から次のタブストップまでの距離を返し、
      * CJK文字等の全角文字は2、それ以外は1。
+     *
+     * @param codePoint 対象コードポイント
+     * @param currentColumn この文字が配置されるカラム位置（視覚行先頭を0とする）
+     * @param tabWidth タブストップ間隔（1以上）
+     * @return 表示カラム幅
      */
-    public static int getDisplayWidth(int codePoint) {
+    public static int getDisplayWidth(int codePoint, int currentColumn, int tabWidth) {
+        if (codePoint == '\t') {
+            return tabWidth - (currentColumn % tabWidth);
+        }
         if (isFullWidth(codePoint)) {
             return 2;
         }
@@ -62,14 +71,19 @@ public final class DisplayWidthUtil {
 
     /**
      * 行内のコードポイントオフセットから画面上のカラム位置を計算する。
+     *
+     * @param lineText 行テキスト
+     * @param codePointOffset 対象コードポイントオフセット
+     * @param tabWidth タブストップ間隔
+     * @return 視覚行先頭を0としたカラム位置
      */
-    public static int computeColumnForOffset(String lineText, int codePointOffset) {
+    public static int computeColumnForOffset(String lineText, int codePointOffset, int tabWidth) {
         int col = 0;
         int offset = 0;
         int cpCount = 0;
         while (offset < lineText.length() && cpCount < codePointOffset) {
             int codePoint = lineText.codePointAt(offset);
-            col += getDisplayWidth(codePoint);
+            col += getDisplayWidth(codePoint, col, tabWidth);
             offset += Character.charCount(codePoint);
             cpCount++;
         }
@@ -77,12 +91,12 @@ public final class DisplayWidthUtil {
     }
 
     /**
-     * 指定カラムが全角文字の途中に位置する場合、その文字の先頭カラムに丸める。
+     * 指定カラムが全角文字やタブの途中に位置する場合、その文字の先頭カラムに丸める。
      * 文字境界上であればそのまま返す。
      *
      * @return 文字先頭カラムに丸めた値
      */
-    public static int snapColumnToCharBoundary(String lineText, int column) {
+    public static int snapColumnToCharBoundary(String lineText, int column, int tabWidth) {
         if (column <= 0) {
             return 0;
         }
@@ -90,7 +104,7 @@ public final class DisplayWidthUtil {
         int offset = 0;
         while (offset < lineText.length()) {
             int codePoint = lineText.codePointAt(offset);
-            int width = getDisplayWidth(codePoint);
+            int width = getDisplayWidth(codePoint, col, tabWidth);
             if (col + width > column) {
                 return col;
             }

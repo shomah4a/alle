@@ -72,9 +72,10 @@ public class ScreenRenderer {
                         0,
                         cols,
                         mb.displayStartColumn(),
+                        mb.tabWidth(),
                         mb.spans().get());
             } else {
-                renderLineAt(mb.text().get(), minibufferRow, 0, cols, mb.displayStartColumn());
+                renderLineAt(mb.text().get(), minibufferRow, 0, cols, mb.displayStartColumn(), mb.tabWidth());
             }
         } else {
             fillBlank(minibufferRow, 0, cols);
@@ -88,6 +89,7 @@ public class ScreenRenderer {
     private void renderWindowSnapshot(RenderSnapshot.WindowSnapshot ws) {
         var rect = ws.rect();
         int displayStartColumn = ws.displayStartColumn();
+        int tabWidth = ws.tabWidth();
         var highlightLine = ws.highlightLine();
 
         for (int row = 0; row < ws.visibleLines().size(); row++) {
@@ -98,7 +100,8 @@ public class ScreenRenderer {
             int effectiveDisplayStartColumn = displayStartColumn;
             if (line.visualLineRange().isPresent()) {
                 var vlr = line.visualLineRange().get();
-                effectiveDisplayStartColumn = DisplayWidthUtil.computeColumnForOffset(line.text(), vlr.startCp());
+                effectiveDisplayStartColumn =
+                        DisplayWidthUtil.computeColumnForOffset(line.text(), vlr.startCp(), tabWidth);
             }
 
             if (line.spans().isPresent()) {
@@ -108,9 +111,10 @@ public class ScreenRenderer {
                         rect.left(),
                         rect.width(),
                         effectiveDisplayStartColumn,
+                        tabWidth,
                         line.spans().get());
             } else {
-                renderLineAt(line.text(), screenRow, rect.left(), rect.width(), effectiveDisplayStartColumn);
+                renderLineAt(line.text(), screenRow, rect.left(), rect.width(), effectiveDisplayStartColumn, tabWidth);
             }
             if (isHighlighted) {
                 applyReverse(screenRow, rect.left(), rect.width());
@@ -139,7 +143,13 @@ public class ScreenRenderer {
     }
 
     private void renderLineWithHighlight(
-            String text, int row, int left, int maxColumns, int displayStartColumn, ListIterable<StyledSpan> spans) {
+            String text,
+            int row,
+            int left,
+            int maxColumns,
+            int displayStartColumn,
+            int tabWidth,
+            ListIterable<StyledSpan> spans) {
         int textCol = 0;
         int charOffset = 0;
         int cpIndex = 0;
@@ -148,7 +158,7 @@ public class ScreenRenderer {
         // displayStartColumn までスキップ
         while (charOffset < text.length() && textCol < displayStartColumn) {
             int codePoint = text.codePointAt(charOffset);
-            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, textCol, tabWidth);
             textCol += displayWidth;
             charOffset += Character.charCount(codePoint);
             cpIndex++;
@@ -167,7 +177,7 @@ public class ScreenRenderer {
             int charCount = Character.charCount(codePoint);
             String ch = text.substring(charOffset, charOffset + charCount);
 
-            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, textCol, tabWidth);
             if (screenCol + displayWidth > maxColumns) {
                 break;
             }
@@ -177,23 +187,36 @@ public class ScreenRenderer {
                 spanIdx++;
             }
 
-            TextCharacter tc;
+            TextColor fg = null;
+            TextColor bg = null;
+            SGR[] sgrs = null;
+            boolean styled = false;
             if (spanIdx < spans.size()
                     && spans.get(spanIdx).start() <= cpIndex
                     && cpIndex < spans.get(spanIdx).end()) {
                 var faceSpec = faceTheme.resolve(spans.get(spanIdx).faceName());
                 var resolved = faceResolver.resolve(faceSpec);
-                tc = TextCharacter.fromString(
-                        ch,
-                        resolved.foreground(),
-                        resolved.background(),
-                        resolved.sgrs().toArray(new SGR[0]))[0];
-            } else {
-                tc = TextCharacter.fromString(ch)[0];
+                fg = resolved.foreground();
+                bg = resolved.background();
+                sgrs = resolved.sgrs().toArray(new SGR[0]);
+                styled = true;
             }
 
-            screen.setCharacter(left + screenCol, row, tc);
+            if (codePoint == '\t') {
+                // タブは displayWidth 個の空白で展開
+                for (int i = 0; i < displayWidth && screenCol + i < maxColumns; i++) {
+                    TextCharacter blank =
+                            styled ? TextCharacter.fromString(" ", fg, bg, sgrs)[0] : TextCharacter.fromString(" ")[0];
+                    screen.setCharacter(left + screenCol + i, row, blank);
+                }
+            } else {
+                TextCharacter tc =
+                        styled ? TextCharacter.fromString(ch, fg, bg, sgrs)[0] : TextCharacter.fromString(ch)[0];
+                screen.setCharacter(left + screenCol, row, tc);
+            }
+
             screenCol += displayWidth;
+            textCol += displayWidth;
             charOffset += charCount;
             cpIndex++;
         }
@@ -202,14 +225,14 @@ public class ScreenRenderer {
         fillBlank(row, left + screenCol, left + maxColumns);
     }
 
-    private void renderLineAt(String text, int row, int left, int maxColumns, int displayStartColumn) {
+    private void renderLineAt(String text, int row, int left, int maxColumns, int displayStartColumn, int tabWidth) {
         int textCol = 0;
         int offset = 0;
 
         // displayStartColumn までスキップ
         while (offset < text.length() && textCol < displayStartColumn) {
             int codePoint = text.codePointAt(offset);
-            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, textCol, tabWidth);
             textCol += displayWidth;
             offset += Character.charCount(codePoint);
         }
@@ -227,14 +250,22 @@ public class ScreenRenderer {
             int charCount = Character.charCount(codePoint);
             String ch = text.substring(offset, offset + charCount);
 
-            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, textCol, tabWidth);
             if (screenCol + displayWidth > maxColumns) {
                 break;
             }
 
-            screen.setCharacter(left + screenCol, row, TextCharacter.fromString(ch)[0]);
+            if (codePoint == '\t') {
+                TextCharacter blank = TextCharacter.fromString(" ")[0];
+                for (int i = 0; i < displayWidth && screenCol + i < maxColumns; i++) {
+                    screen.setCharacter(left + screenCol + i, row, blank);
+                }
+            } else {
+                screen.setCharacter(left + screenCol, row, TextCharacter.fromString(ch)[0]);
+            }
 
             screenCol += displayWidth;
+            textCol += displayWidth;
             offset += charCount;
         }
 
@@ -245,6 +276,7 @@ public class ScreenRenderer {
     private void applyRegionHighlight(RenderSnapshot.WindowSnapshot ws) {
         var rect = ws.rect();
         int displayStartColumn = ws.displayStartColumn();
+        int tabWidth = ws.tabWidth();
         for (int row = 0; row < ws.visibleLines().size(); row++) {
             var line = ws.visibleLines().get(row);
             var lineRegion = line.regionInLine();
@@ -259,7 +291,8 @@ public class ScreenRenderer {
             int effectiveDisplayStartColumn = displayStartColumn;
             if (line.visualLineRange().isPresent()) {
                 var vlr = line.visualLineRange().get();
-                effectiveDisplayStartColumn = DisplayWidthUtil.computeColumnForOffset(line.text(), vlr.startCp());
+                effectiveDisplayStartColumn =
+                        DisplayWidthUtil.computeColumnForOffset(line.text(), vlr.startCp(), tabWidth);
                 // リージョンを視覚行の範囲にクリップ
                 startCp = Math.max(startCp, vlr.startCp());
                 endCp = Math.min(endCp, vlr.endCp());
@@ -269,8 +302,8 @@ public class ScreenRenderer {
             }
 
             // コードポイントインデックスを表示カラムに変換
-            int startCol = DisplayWidthUtil.computeColumnForOffset(line.text(), startCp);
-            int endCol = DisplayWidthUtil.computeColumnForOffset(line.text(), endCp);
+            int startCol = DisplayWidthUtil.computeColumnForOffset(line.text(), startCp, tabWidth);
+            int endCol = DisplayWidthUtil.computeColumnForOffset(line.text(), endCp, tabWidth);
 
             // displayStartColumnを考慮して画面カラムに変換
             int screenStartCol = Math.max(0, startCol - effectiveDisplayStartColumn);

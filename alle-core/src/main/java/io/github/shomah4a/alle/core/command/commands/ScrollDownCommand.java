@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.command.commands;
 import io.github.shomah4a.alle.core.VisualLineUtil;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -53,6 +54,7 @@ public class ScrollDownCommand implements Command {
             window.setPoint(targetLineStart + newColumn);
         } else {
             int columns = window.getViewportSize().columns();
+            int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);
 
             // displayStartLineを視覚行単位で戻す
             int remaining = scrollAmount;
@@ -60,7 +62,7 @@ public class ScrollDownCommand implements Command {
             while (remaining > 0 && newDisplayStart > 0) {
                 newDisplayStart--;
                 String lineText = buffer.lineText(newDisplayStart);
-                int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+                int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
                 remaining -= vlCount;
             }
             if (newDisplayStart < 0) {
@@ -74,7 +76,8 @@ public class ScrollDownCommand implements Command {
             int currentLineStart = buffer.lineStartOffset(currentLine);
             int cpOffset = point - currentLineStart;
             String currentLineText = buffer.lineText(currentLine);
-            int currentVisualLine = VisualLineUtil.computeVisualLineForOffset(currentLineText, columns, cpOffset);
+            int currentVisualLine =
+                    VisualLineUtil.computeVisualLineForOffset(currentLineText, columns, cpOffset, tabWidth);
 
             int visualRemaining = scrollAmount;
             int targetBufferLine = currentLine;
@@ -92,7 +95,7 @@ public class ScrollDownCommand implements Command {
             // 前の行を消費
             while (visualRemaining > 0 && targetBufferLine >= 0) {
                 String lineText = buffer.lineText(targetBufferLine);
-                int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+                int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
                 if (visualRemaining < vlCount) {
                     targetVisualLine = vlCount - 1 - visualRemaining;
                     visualRemaining = 0;
@@ -110,7 +113,7 @@ public class ScrollDownCommand implements Command {
 
             int targetLineStart = buffer.lineStartOffset(targetBufferLine);
             String targetLineText = buffer.lineText(targetBufferLine);
-            int vlStartCp = VisualLineUtil.visualLineStartOffset(targetLineText, columns, targetVisualLine);
+            int vlStartCp = VisualLineUtil.visualLineStartOffset(targetLineText, columns, targetVisualLine, tabWidth);
             int targetLineLength = (int) targetLineText.codePoints().count();
             int newCp = Math.min(vlStartCp, targetLineLength);
             window.setPoint(targetLineStart + newCp);

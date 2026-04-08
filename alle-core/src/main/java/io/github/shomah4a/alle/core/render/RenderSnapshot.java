@@ -30,6 +30,7 @@ public record RenderSnapshot(
      * @param truncateLines trueの場合は切り詰めモード（水平スクロール）、falseは折り返しモード。
      * @param highlightLine ハイライト行（visibleLines内の相対インデックス）。未設定はempty。
      * @param regionRange リージョン範囲。マーク未設定時はempty。
+     * @param tabWidth タブストップ間隔（カラム数）。
      */
     public record WindowSnapshot(
             Rect rect,
@@ -38,7 +39,8 @@ public record RenderSnapshot(
             boolean truncateLines,
             String modeLine,
             OptionalInt highlightLine,
-            Optional<RegionRange> regionRange) {}
+            Optional<RegionRange> regionRange,
+            int tabWidth) {}
 
     /**
      * 行内のリージョン範囲（コードポイント単位の行ローカルオフセット）。
@@ -93,5 +95,5 @@ public record RenderSnapshot(
      * @param spans テキストプロパティfaceによるスタイル情報。未設定はempty。
      */
     public record MinibufferSnapshot(
-            Optional<String> text, int displayStartColumn, Optional<ListIterable<StyledSpan>> spans) {}
+            Optional<String> text, int displayStartColumn, Optional<ListIterable<StyledSpan>> spans, int tabWidth) {}
 }

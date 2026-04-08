@@ -35,6 +35,7 @@ public class BufferLocalSettings {
 
     /**
      * 設定値を5層の優先順位で解決して返す。
+     * 設定がレジストリに登録されていない場合は {@link Setting#defaultValue()} にフォールバックする。
      */
     public <T> T get(Setting<T> setting) {
         // 1. バッファローカル変数
@@ -58,14 +59,16 @@ public class BufferLocalSettings {
             return majorValue.get();
         }
 
-        // 4. エディタグローバル変数
-        Optional<T> globalValue = registry.getGlobal(setting);
-        if (globalValue.isPresent()) {
-            return globalValue.get();
+        // 4. エディタグローバル変数 / 5. エディタデフォルト値
+        // レジストリ未登録の場合は Setting.defaultValue() に直接フォールバックする
+        if (registry.lookup(setting.key()).isPresent()) {
+            Optional<T> globalValue = registry.getGlobal(setting);
+            if (globalValue.isPresent()) {
+                return globalValue.get();
+            }
+            return registry.getDefault(setting);
         }
-
-        // 5. エディタデフォルト値
-        return registry.getDefault(setting);
+        return setting.defaultValue();
     }
 
     /**

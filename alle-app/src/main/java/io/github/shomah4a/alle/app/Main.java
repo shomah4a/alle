@@ -73,6 +73,7 @@ public final class Main {
         var settingsRegistry = new SettingsRegistry();
         settingsRegistry.register(EditorSettings.INDENT_WIDTH);
         settingsRegistry.register(EditorSettings.COMMENT_STRING);
+        settingsRegistry.register(EditorSettings.TAB_WIDTH);
         var bufferIO = new BufferIO(
                 source -> new BufferedReader(Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8)),
                 destination ->

@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.VisualLineUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -56,15 +57,17 @@ public final class RenderSnapshotFactory {
             int bufferRows = rect.height() - 1;
             window.setViewportSize(new ViewportSize(bufferRows, rect.width()));
 
+            var buffer = window.getBuffer();
+            int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);
+
             boolean truncateLines = window.isTruncateLines();
             if (truncateLines) {
                 window.ensurePointVisible(bufferRows);
             } else {
-                ensurePointVisibleWrapped(window, bufferRows, rect.width());
+                ensurePointVisibleWrapped(window, bufferRows, rect.width(), tabWidth);
             }
             window.ensurePointHorizontallyVisible(rect.width());
 
-            var buffer = window.getBuffer();
             int displayStart = window.getDisplayStartLine();
             int displayStartColumn = window.getDisplayStartColumn();
 
@@ -85,6 +88,7 @@ public final class RenderSnapshotFactory {
                         rect.width(),
                         regionStart,
                         regionEnd,
+                        tabWidth,
                         visibleLines);
             }
 
@@ -99,33 +103,43 @@ public final class RenderSnapshotFactory {
                     }
                 } else {
                     highlightLine = computeWrappedHighlightLine(
-                            window, displayStart, pointLine, rect.width(), visibleLines.size());
+                            window, displayStart, pointLine, rect.width(), visibleLines.size(), tabWidth);
                 }
             }
             Optional<RenderSnapshot.RegionRange> regionRange = window.getRegionStart()
                     .flatMap(start -> window.getRegionEnd().map(end -> new RenderSnapshot.RegionRange(start, end)));
             windowSnapshots.add(new RenderSnapshot.WindowSnapshot(
-                    rect, visibleLines, displayStartColumn, truncateLines, modeLine, highlightLine, regionRange));
+                    rect,
+                    visibleLines,
+                    displayStartColumn,
+                    truncateLines,
+                    modeLine,
+                    highlightLine,
+                    regionRange,
+                    tabWidth));
         });
 
         // ミニバッファ / エコーエリア
         RenderSnapshot.MinibufferSnapshot minibufferSnapshot;
+        int defaultTabWidth = EditorSettings.TAB_WIDTH.defaultValue();
         if (frame.isMinibufferActive()) {
             var minibufferWindow = frame.getMinibufferWindow();
             minibufferWindow.ensurePointHorizontallyVisible(cols);
             var mbBuffer = minibufferWindow.getBuffer();
+            int mbTabWidth = mbBuffer.getSettings().get(EditorSettings.TAB_WIDTH);
             String text = mbBuffer.length() > 0 ? mbBuffer.getText() : "";
             var mbFaceSpans = mbBuffer.getFaceSpans(0, mbBuffer.length());
             var mbSpansOpt = mbFaceSpans.isEmpty()
                     ? Optional.<ListIterable<StyledSpan>>empty()
                     : Optional.<ListIterable<StyledSpan>>of(mbFaceSpans);
             minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(
-                    Optional.of(text), minibufferWindow.getDisplayStartColumn(), mbSpansOpt);
+                    Optional.of(text), minibufferWindow.getDisplayStartColumn(), mbSpansOpt, mbTabWidth);
         } else if (messageBuffer.isShowingMessage()) {
             var msg = messageBuffer.getLastMessage();
-            minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(msg, 0, Optional.empty());
+            minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(msg, 0, Optional.empty(), defaultTabWidth);
         } else {
-            minibufferSnapshot = new RenderSnapshot.MinibufferSnapshot(Optional.empty(), 0, Optional.empty());
+            minibufferSnapshot =
+                    new RenderSnapshot.MinibufferSnapshot(Optional.empty(), 0, Optional.empty(), defaultTabWidth);
         }
 
         var cursorPosition = computeActiveCursorPosition(frame, layoutResult, minibufferRow, cols);
@@ -143,11 +157,13 @@ public final class RenderSnapshotFactory {
             Frame frame, LayoutResult layoutResult, int minibufferRow, int cols) {
         var activeWindow = frame.getActiveWindow();
         if (activeWindow == frame.getMinibufferWindow()) {
-            return computeMinibufferCursorPosition(activeWindow, minibufferRow, cols);
+            int tabWidth = activeWindow.getBuffer().getSettings().get(EditorSettings.TAB_WIDTH);
+            return computeMinibufferCursorPosition(activeWindow, minibufferRow, cols, tabWidth);
         }
         var activeRect = layoutResult.windowRects().get(activeWindow);
         if (activeRect != null && activeRect.height() >= 2) {
-            return computeCursorPosition(activeWindow, activeRect);
+            int tabWidth = activeWindow.getBuffer().getSettings().get(EditorSettings.TAB_WIDTH);
+            return computeCursorPosition(activeWindow, activeRect, tabWidth);
         }
         return new CursorPosition(0, 0);
     }
@@ -211,6 +227,7 @@ public final class RenderSnapshotFactory {
             int columns,
             Optional<Integer> regionStart,
             Optional<Integer> regionEnd,
+            int tabWidth,
             MutableList<RenderSnapshot.LineSnapshot> visibleLines) {
         int lineCount = buffer.lineCount();
         var stylerOpt = buffer.getMajorMode().styler();
@@ -230,7 +247,7 @@ public final class RenderSnapshotFactory {
         int visualRowCount = 0;
         for (int lineIndex = displayStart; lineIndex < lineCount && visualRowCount < bufferRows; lineIndex++) {
             String lineText = allLines != null ? allLines.get(lineIndex) : buffer.lineText(lineIndex);
-            var breaks = VisualLineUtil.computeVisualLineBreaks(lineText, columns);
+            var breaks = VisualLineUtil.computeVisualLineBreaks(lineText, columns, tabWidth);
             int visualLineCount = breaks.size() + 1;
 
             Optional<ListIterable<StyledSpan>> spansOpt;
@@ -262,7 +279,7 @@ public final class RenderSnapshotFactory {
      * 折り返しモード時のensurePointVisible。
      * 視覚行数を考慮してdisplayStartLine/displayStartVisualLineを調整する。
      */
-    private static void ensurePointVisibleWrapped(Window window, int visibleRows, int columns) {
+    private static void ensurePointVisibleWrapped(Window window, int visibleRows, int columns, int tabWidth) {
         if (visibleRows <= 0) {
             return;
         }
@@ -281,7 +298,7 @@ public final class RenderSnapshotFactory {
         int visualRowsUsed = 0;
         for (int i = displayStart; i <= currentLine && i < buffer.lineCount(); i++) {
             String lineText = buffer.lineText(i);
-            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
             if (i == displayStart) {
                 // 表示開始行は displayStartVl 分だけスキップ
                 vlCount -= displayStartVl;
@@ -289,7 +306,7 @@ public final class RenderSnapshotFactory {
             if (i == currentLine) {
                 int lineStart = buffer.lineStartOffset(i);
                 int cpOffset = window.getPoint() - lineStart;
-                int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+                int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
                 int effectiveCursorVl = (i == displayStart) ? cursorVisualLine - displayStartVl : cursorVisualLine;
                 visualRowsUsed += effectiveCursorVl + 1;
             } else {
@@ -300,7 +317,7 @@ public final class RenderSnapshotFactory {
         // 表示範囲を超えている場合、displayStartLineを進める
         while (visualRowsUsed > visibleRows && displayStart < currentLine) {
             String lineText = buffer.lineText(displayStart);
-            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns) - displayStartVl;
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth) - displayStartVl;
             visualRowsUsed -= vlCount;
             displayStart++;
             displayStartVl = 0;
@@ -312,7 +329,7 @@ public final class RenderSnapshotFactory {
             String lineText = buffer.lineText(currentLine);
             int lineStart = buffer.lineStartOffset(currentLine);
             int cpOffset = window.getPoint() - lineStart;
-            int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+            int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
             // カーソルの視覚行が画面末尾に来るようにdisplayStartVisualLineを設定
             displayStartVl = cursorVisualLine - visibleRows + 1;
             if (displayStartVl < 0) {
@@ -331,13 +348,13 @@ public final class RenderSnapshotFactory {
      * カーソルのある視覚行のインデックスを返す。
      */
     private static OptionalInt computeWrappedHighlightLine(
-            Window window, int displayStart, int pointLine, int columns, int visibleLinesSize) {
+            Window window, int displayStart, int pointLine, int columns, int visibleLinesSize, int tabWidth) {
         var buffer = window.getBuffer();
         int displayStartVl = window.getDisplayStartVisualLine();
         int visualRow = 0;
         for (int i = displayStart; i < pointLine && i < buffer.lineCount(); i++) {
             String lineText = buffer.lineText(i);
-            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
             if (i == displayStart) {
                 vlCount -= displayStartVl;
             }
@@ -347,7 +364,7 @@ public final class RenderSnapshotFactory {
             String lineText = buffer.lineText(pointLine);
             int lineStart = buffer.lineStartOffset(pointLine);
             int cpOffset = window.getPoint() - lineStart;
-            int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+            int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
             if (pointLine == displayStart) {
                 visualRow += cursorVisualLine - displayStartVl;
             } else {
@@ -380,7 +397,7 @@ public final class RenderSnapshotFactory {
                 dirty, truncate, bufferName, lineIndex + 1, column, modeName, minorModesText);
     }
 
-    private static CursorPosition computeCursorPosition(Window window, Rect rect) {
+    private static CursorPosition computeCursorPosition(Window window, Rect rect, int tabWidth) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int lineIndex = buffer.lineIndexForOffset(point);
@@ -393,7 +410,7 @@ public final class RenderSnapshotFactory {
             if (screenRow < 0 || screenRow >= bufferRows) {
                 return new CursorPosition(rect.left(), rect.top());
             }
-            int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart);
+            int col = DisplayWidthUtil.computeColumnForOffset(buffer.lineText(lineIndex), point - lineStart, tabWidth);
             int screenCol = col - window.getDisplayStartColumn();
             if (screenCol >= 0 && screenCol < rect.width()) {
                 return new CursorPosition(rect.left() + screenCol, rect.top() + screenRow);
@@ -407,7 +424,7 @@ public final class RenderSnapshotFactory {
         int visualRow = 0;
         for (int i = displayStart; i < lineIndex && i < buffer.lineCount(); i++) {
             String lineText = buffer.lineText(i);
-            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int vlCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
             if (i == displayStart) {
                 vlCount -= displayStartVl;
             }
@@ -415,7 +432,7 @@ public final class RenderSnapshotFactory {
         }
         String lineText = buffer.lineText(lineIndex);
         int cpOffset = point - lineStart;
-        int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
+        int cursorVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
         if (lineIndex == displayStart) {
             visualRow += cursorVisualLine - displayStartVl;
         } else {
@@ -427,9 +444,9 @@ public final class RenderSnapshotFactory {
         }
 
         // 視覚行内でのカラム位置
-        int visualLineStart = VisualLineUtil.visualLineStartOffset(lineText, columns, cursorVisualLine);
-        int col = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset)
-                - DisplayWidthUtil.computeColumnForOffset(lineText, visualLineStart);
+        int visualLineStart = VisualLineUtil.visualLineStartOffset(lineText, columns, cursorVisualLine, tabWidth);
+        int col = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset, tabWidth)
+                - DisplayWidthUtil.computeColumnForOffset(lineText, visualLineStart, tabWidth);
         if (col >= 0 && col < columns) {
             return new CursorPosition(rect.left() + col, rect.top() + visualRow);
         }
@@ -568,11 +585,12 @@ public final class RenderSnapshotFactory {
         return result;
     }
 
-    private static CursorPosition computeMinibufferCursorPosition(Window minibufferWindow, int row, int maxColumns) {
+    private static CursorPosition computeMinibufferCursorPosition(
+            Window minibufferWindow, int row, int maxColumns, int tabWidth) {
         var buffer = minibufferWindow.getBuffer();
         int point = minibufferWindow.getPoint();
         String text = buffer.getText();
-        int col = DisplayWidthUtil.computeColumnForOffset(text, point);
+        int col = DisplayWidthUtil.computeColumnForOffset(text, point, tabWidth);
         int screenCol = col - minibufferWindow.getDisplayStartColumn();
         if (screenCol >= 0 && screenCol < maxColumns) {
             return new CursorPosition(screenCol, row);

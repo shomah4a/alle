@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.VisualLineUtil;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -45,29 +46,32 @@ public class NextLineCommand implements Command {
             window.setPoint(nextLineStart + newColumn);
         } else {
             int columns = window.getViewportSize().columns();
+            int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);
             int currentLineStart = buffer.lineStartOffset(currentLine);
             int cpOffset = point - currentLineStart;
             String lineText = buffer.lineText(currentLine);
-            int currentVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset);
-            int visualLineCount = VisualLineUtil.computeVisualLineCount(lineText, columns);
+            int currentVisualLine = VisualLineUtil.computeVisualLineForOffset(lineText, columns, cpOffset, tabWidth);
+            int visualLineCount = VisualLineUtil.computeVisualLineCount(lineText, columns, tabWidth);
 
             // 視覚行内でのカラム位置を計算
-            int vlStartCp = VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine);
-            int cursorCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset)
-                    - DisplayWidthUtil.computeColumnForOffset(lineText, vlStartCp);
+            int vlStartCp = VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine, tabWidth);
+            int cursorCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpOffset, tabWidth)
+                    - DisplayWidthUtil.computeColumnForOffset(lineText, vlStartCp, tabWidth);
 
             if (currentVisualLine < visualLineCount - 1) {
                 // 同一バッファ行内の次の視覚行へ
-                int nextVlStartCp = VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine + 1);
-                int nextVlEndCp = VisualLineUtil.visualLineEndOffset(lineText, columns, currentVisualLine + 1);
-                int newCp = computeCpForColumn(lineText, nextVlStartCp, nextVlEndCp, cursorCol);
+                int nextVlStartCp =
+                        VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine + 1, tabWidth);
+                int nextVlEndCp =
+                        VisualLineUtil.visualLineEndOffset(lineText, columns, currentVisualLine + 1, tabWidth);
+                int newCp = computeCpForColumn(lineText, nextVlStartCp, nextVlEndCp, cursorCol, tabWidth);
                 window.setPoint(currentLineStart + newCp);
             } else if (currentLine < lineCount - 1) {
                 // 次のバッファ行の最初の視覚行へ
                 int nextLineStart = buffer.lineStartOffset(currentLine + 1);
                 String nextLineText = buffer.lineText(currentLine + 1);
-                int nextVlEndCp = VisualLineUtil.visualLineEndOffset(nextLineText, columns, 0);
-                int newCp = computeCpForColumn(nextLineText, 0, nextVlEndCp, cursorCol);
+                int nextVlEndCp = VisualLineUtil.visualLineEndOffset(nextLineText, columns, 0, tabWidth);
+                int newCp = computeCpForColumn(nextLineText, 0, nextVlEndCp, cursorCol, tabWidth);
                 window.setPoint(nextLineStart + newCp);
             }
         }
@@ -78,8 +82,8 @@ public class NextLineCommand implements Command {
      * 指定カラム位置に最も近いコードポイントオフセットを返す。
      * 範囲内で指定カラムに収まる最大のオフセットを返す。
      */
-    static int computeCpForColumn(String lineText, int startCp, int endCp, int targetColumn) {
-        int startCol = DisplayWidthUtil.computeColumnForOffset(lineText, startCp);
+    static int computeCpForColumn(String lineText, int startCp, int endCp, int targetColumn, int tabWidth) {
+        int startCol = DisplayWidthUtil.computeColumnForOffset(lineText, startCp, tabWidth);
         int offset = 0;
         int cpIndex = 0;
 
@@ -93,8 +97,8 @@ public class NextLineCommand implements Command {
         int resultCp = startCp;
         while (offset < lineText.length() && cpIndex < endCp) {
             int codePoint = lineText.codePointAt(offset);
-            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint);
-            int currentCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpIndex) - startCol;
+            int currentCol = DisplayWidthUtil.computeColumnForOffset(lineText, cpIndex, tabWidth) - startCol;
+            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, currentCol, tabWidth);
             if (currentCol + displayWidth > targetColumn) {
                 break;
             }
