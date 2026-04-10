@@ -382,6 +382,12 @@ public final class EditorCore {
                 KeyStroke.of(KeyStroke.ARROW_UP),
                 registry.lookup("previous-line").orElseThrow());
 
+        // PageUp / PageDown
+        keymap.bind(
+                KeyStroke.of(KeyStroke.PAGE_DOWN), registry.lookup("scroll-up").orElseThrow());
+        keymap.bind(
+                KeyStroke.of(KeyStroke.PAGE_UP), registry.lookup("scroll-down").orElseThrow());
+
         // C-q (即時終了)
         keymap.bind(KeyStroke.ctrl('q'), registry.lookup("quit").orElseThrow());
 

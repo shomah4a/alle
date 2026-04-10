@@ -136,6 +136,16 @@ class KeyStrokeTest {
         }
 
         @Test
+        void PageUpキー() {
+            assertEquals("<prior>", KeyStroke.of(KeyStroke.PAGE_UP).displayString());
+        }
+
+        @Test
+        void PageDownキー() {
+            assertEquals("<next>", KeyStroke.of(KeyStroke.PAGE_DOWN).displayString());
+        }
+
+        @Test
         void タブキー() {
             assertEquals("TAB", KeyStroke.of('\t').displayString());
         }

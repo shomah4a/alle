@@ -131,6 +131,24 @@ class KeyStrokeConverterTest {
         }
 
         @Test
+        void PageUpキーをPAGE_UPに変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.PageUp);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of(KeyStroke.PAGE_UP), result.get());
+        }
+
+        @Test
+        void PageDownキーをPAGE_DOWNに変換する() {
+            var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.PageDown);
+            var result = KeyStrokeConverter.convert(lanterna);
+
+            assertTrue(result.isPresent());
+            assertEquals(KeyStroke.of(KeyStroke.PAGE_DOWN), result.get());
+        }
+
+        @Test
         void Tabキーをタブ文字に変換する() {
             var lanterna = new com.googlecode.lanterna.input.KeyStroke(KeyType.Tab);
             var result = KeyStrokeConverter.convert(lanterna);

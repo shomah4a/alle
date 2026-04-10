@@ -47,6 +47,12 @@ public final class KeyStrokeConverter {
             case ArrowRight ->
                 Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
                         modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.ARROW_RIGHT));
+            case PageUp ->
+                Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                        modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.PAGE_UP));
+            case PageDown ->
+                Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(
+                        modifiers, io.github.shomah4a.alle.core.keybind.KeyStroke.PAGE_DOWN));
             case Tab -> Optional.of(new io.github.shomah4a.alle.core.keybind.KeyStroke(modifiers, '\t'));
             case ReverseTab -> {
                 // Lanterna の ReverseTab は isShiftDown()=false のため、明示的に SHIFT を付与する

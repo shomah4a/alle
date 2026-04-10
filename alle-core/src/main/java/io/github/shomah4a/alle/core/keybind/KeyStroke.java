@@ -15,6 +15,8 @@ public record KeyStroke(ImmutableSet<Modifier> modifiers, int keyCode) {
     public static final int ARROW_DOWN = 0xF701;
     public static final int ARROW_LEFT = 0xF702;
     public static final int ARROW_RIGHT = 0xF703;
+    public static final int PAGE_UP = 0xF704;
+    public static final int PAGE_DOWN = 0xF705;
 
     /**
      * 修飾キーなしのキーストロークを生成する。
@@ -80,6 +82,8 @@ public record KeyStroke(ImmutableSet<Modifier> modifiers, int keyCode) {
             case ARROW_DOWN -> "<down>";
             case ARROW_LEFT -> "<left>";
             case ARROW_RIGHT -> "<right>";
+            case PAGE_UP -> "<prior>";
+            case PAGE_DOWN -> "<next>";
             case '\n' -> "RET";
             case ' ' -> "SPC";
             case 0x7F -> "DEL";
