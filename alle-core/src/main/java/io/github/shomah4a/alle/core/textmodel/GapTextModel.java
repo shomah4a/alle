@@ -188,11 +188,8 @@ public class GapTextModel implements TextModel {
                 hi = mid;
             }
         }
-        // lo = charOffset以上の最初の改行インデックス
-        // charOffsetがちょうど改行位置上にある場合、その行の末尾として扱う
-        if (lo < lineBreakOffsets.size() && lineBreakOffsets.get(lo) == charOffset) {
-            return lo;
-        }
+        // lo = charOffset以上の最初の改行インデックス = charOffsetが属する行番号
+        // 改行位置上のオフセットもその行の末尾として扱われる（lo番目の改行 = lo番目の行の終端）
         return lo;
     }
 

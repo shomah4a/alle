@@ -393,4 +393,139 @@ class GapTextModelTest {
             assertEquals("AB", model.getText());
         }
     }
+
+    @Nested
+    class 改行キャッシュ一貫性 {
+
+        @Test
+        void 複数改行を含むテキスト挿入後のlineCountとlineTextが一致する() {
+            var model = create();
+            model.insert(0, "AAA\nBBB\nCCC\nDDD");
+            assertEquals(4, model.lineCount());
+            assertEquals("AAA", model.lineText(0));
+            assertEquals("BBB", model.lineText(1));
+            assertEquals("CCC", model.lineText(2));
+            assertEquals("DDD", model.lineText(3));
+        }
+
+        @Test
+        void 複数行にまたがるdelete後のlineCountとlineTextが一致する() {
+            var model = create();
+            model.insert(0, "AAA\nBBB\nCCC\nDDD");
+            // "BBB\nCCC\n" を削除 → "AAA\nDDD"
+            model.delete(4, 8);
+            assertEquals(2, model.lineCount());
+            assertEquals("AAA", model.lineText(0));
+            assertEquals("DDD", model.lineText(1));
+        }
+
+        @Test
+        void insert後にdelete後にinsertしてもキャッシュが整合する() {
+            var model = create();
+            model.insert(0, "A\nB\nC");
+            assertEquals(3, model.lineCount());
+
+            model.delete(2, 2); // "A\nC"
+            assertEquals(2, model.lineCount());
+            assertEquals("A", model.lineText(0));
+            assertEquals("C", model.lineText(1));
+
+            model.insert(2, "X\nY\n"); // "A\nX\nY\nC"
+            assertEquals(4, model.lineCount());
+            assertEquals("A", model.lineText(0));
+            assertEquals("X", model.lineText(1));
+            assertEquals("Y", model.lineText(2));
+            assertEquals("C", model.lineText(3));
+        }
+
+        @Test
+        void 連続改行の挿入と削除後もキャッシュが整合する() {
+            var model = create();
+            model.insert(0, "\n\n\n");
+            assertEquals(4, model.lineCount());
+            assertEquals("", model.lineText(0));
+            assertEquals("", model.lineText(1));
+            assertEquals("", model.lineText(2));
+            assertEquals("", model.lineText(3));
+
+            model.delete(0, 2); // "\n" が1つ残る
+            assertEquals(2, model.lineCount());
+            assertEquals("", model.lineText(0));
+            assertEquals("", model.lineText(1));
+        }
+
+        @Test
+        void サロゲートペアと改行が混在するケースでキャッシュが整合する() {
+            var model = create();
+            model.insert(0, "😀\nA\n😃B");
+            assertEquals(3, model.lineCount());
+            assertEquals("😀", model.lineText(0));
+            assertEquals("A", model.lineText(1));
+            assertEquals("😃B", model.lineText(2));
+
+            assertEquals(0, model.lineStartOffset(0));
+            assertEquals(2, model.lineStartOffset(1));
+            assertEquals(4, model.lineStartOffset(2));
+        }
+
+        @Test
+        void 全テキスト削除後に再挿入してもキャッシュが整合する() {
+            var model = create();
+            model.insert(0, "A\nB\nC");
+            model.delete(0, model.length());
+            assertEquals(1, model.lineCount());
+            assertEquals("", model.lineText(0));
+
+            model.insert(0, "X\nY");
+            assertEquals(2, model.lineCount());
+            assertEquals("X", model.lineText(0));
+            assertEquals("Y", model.lineText(1));
+        }
+
+        @Test
+        void lineIndexForOffsetがキャッシュベースで正しい値を返す() {
+            var model = create();
+            model.insert(0, "AAA\nBBB\nCCC");
+            // AAA(0-2) \n(3) BBB(4-6) \n(7) CCC(8-10)
+            assertEquals(0, model.lineIndexForOffset(0));
+            assertEquals(0, model.lineIndexForOffset(2));
+            assertEquals(0, model.lineIndexForOffset(3)); // 改行上はその行
+            assertEquals(1, model.lineIndexForOffset(4));
+            assertEquals(1, model.lineIndexForOffset(7)); // 改行上はその行
+            assertEquals(2, model.lineIndexForOffset(8));
+            assertEquals(2, model.lineIndexForOffset(11)); // 末尾
+        }
+
+        @Test
+        void lineStartOffsetがキャッシュベースで正しい値を返す() {
+            var model = create();
+            model.insert(0, "AAA\nBBB\nCCC");
+            assertEquals(0, model.lineStartOffset(0));
+            assertEquals(4, model.lineStartOffset(1));
+            assertEquals(8, model.lineStartOffset(2));
+        }
+
+        @Test
+        void 行の中間に改行を挿入した場合にキャッシュが整合する() {
+            var model = create();
+            model.insert(0, "ABCDEF");
+            model.insert(3, "\n");
+            assertEquals(2, model.lineCount());
+            assertEquals("ABC", model.lineText(0));
+            assertEquals("DEF", model.lineText(1));
+            assertEquals(0, model.lineStartOffset(0));
+            assertEquals(4, model.lineStartOffset(1));
+        }
+
+        @Test
+        void GapModelコンストラクタで既にデータが入っている場合にキャッシュが初期構築される() {
+            var gapModel = new io.github.shomah4a.alle.libs.gapbuffer.GapModel();
+            gapModel.insert(0, "A\nB\nC");
+            var model = new GapTextModel(gapModel);
+            assertEquals(3, model.lineCount());
+            assertEquals("A", model.lineText(0));
+            assertEquals("B", model.lineText(1));
+            assertEquals("C", model.lineText(2));
+        }
+    }
 }
