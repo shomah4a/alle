@@ -177,13 +177,23 @@ public class GapTextModel implements TextModel {
             return lineCount() - 1;
         }
         int charOffset = toCharOffset(offset);
-        int line = 0;
-        for (int i = 0; i < charOffset; i++) {
-            if (gapModel.charAt(i) == '\n') {
-                line++;
+        // キャッシュを二分探索してcharOffsetより前にある改行の数を求める
+        int lo = 0;
+        int hi = lineBreakOffsets.size();
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (lineBreakOffsets.get(mid) < charOffset) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
             }
         }
-        return line;
+        // lo = charOffset以上の最初の改行インデックス
+        // charOffsetがちょうど改行位置上にある場合、その行の末尾として扱う
+        if (lo < lineBreakOffsets.size() && lineBreakOffsets.get(lo) == charOffset) {
+            return lo;
+        }
+        return lo;
     }
 
     @Override
@@ -194,17 +204,9 @@ public class GapTextModel implements TextModel {
         if (lineIndex == 0) {
             return 0;
         }
-        int charLen = gapModel.length();
-        int currentLine = 0;
-        for (int i = 0; i < charLen; i++) {
-            if (gapModel.charAt(i) == '\n') {
-                currentLine++;
-                if (currentLine == lineIndex) {
-                    return charOffsetToCodePointIndex(i + 1);
-                }
-            }
-        }
-        throw new IndexOutOfBoundsException("lineIndex: " + lineIndex);
+        // lineIndex番目の行の先頭 = (lineIndex-1)番目の改行の次の文字
+        int charOffset = lineBreakOffsets.get(lineIndex - 1) + 1;
+        return charOffsetToCodePointIndex(charOffset);
     }
 
     @Override
@@ -212,22 +214,9 @@ public class GapTextModel implements TextModel {
         if (lineIndex < 0 || lineIndex >= lineCount()) {
             throw new IndexOutOfBoundsException("lineIndex: " + lineIndex + ", lineCount: " + lineCount());
         }
-        int charLen = gapModel.length();
-        int currentLine = 0;
-        int lineStart = 0;
-        for (int i = 0; i < charLen; i++) {
-            if (gapModel.charAt(i) == '\n') {
-                if (currentLine == lineIndex) {
-                    return gapModel.substring(lineStart, i);
-                }
-                currentLine++;
-                lineStart = i + 1;
-            }
-        }
-        if (currentLine == lineIndex) {
-            return gapModel.substring(lineStart, charLen);
-        }
-        throw new IndexOutOfBoundsException("lineIndex: " + lineIndex);
+        int lineCharStart = lineIndex == 0 ? 0 : lineBreakOffsets.get(lineIndex - 1) + 1;
+        int lineCharEnd = lineIndex < lineBreakOffsets.size() ? lineBreakOffsets.get(lineIndex) : gapModel.length();
+        return gapModel.substring(lineCharStart, lineCharEnd);
     }
 
     @Override
