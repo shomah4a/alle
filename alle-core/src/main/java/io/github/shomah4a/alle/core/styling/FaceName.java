@@ -90,4 +90,9 @@ public final class FaceName {
 
     // ファイルパスシャドウ
     public static final FaceName FILE_NAME_SHADOW = new FaceName("file-name-shadow", "ファイルパス入力で無効化されたパス部分");
+
+    // diff / バージョン管理
+    public static final FaceName DIFF_ADDED = new FaceName("diff-added", "追加された要素（diff +、VCS add等）");
+    public static final FaceName DIFF_MODIFIED = new FaceName("diff-modified", "変更された要素（VCS modified等）");
+    public static final FaceName DIFF_DELETED = new FaceName("diff-deleted", "削除された要素（diff -、VCS delete等）");
 }

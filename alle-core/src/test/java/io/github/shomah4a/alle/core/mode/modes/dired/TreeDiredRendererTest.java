@@ -96,7 +96,7 @@ class TreeDiredRendererTest {
         void カスタムカラムがmtimeとnameの間に表示される() {
             var entries =
                     Lists.immutable.of(new TreeDiredEntry(Path.of("/p/a.txt"), 0, false, false, false, FILE_ATTRS));
-            var customColumns = Lists.immutable.of(new DiredCustomColumn("git", path -> "M"));
+            var customColumns = Lists.immutable.of(DiredCustomColumn.of("git", path -> "M"));
 
             String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC, customColumns, NO_SUFFIX);
             var lines = text.lines().toList();
@@ -110,7 +110,7 @@ class TreeDiredRendererTest {
             var entries =
                     Lists.immutable.of(new TreeDiredEntry(Path.of("/p/a.txt"), 0, false, false, false, FILE_ATTRS));
             var customColumns = Lists.immutable.of(
-                    new DiredCustomColumn("git", path -> "M"), new DiredCustomColumn("flag", path -> "★"));
+                    DiredCustomColumn.of("git", path -> "M"), DiredCustomColumn.of("flag", path -> "★"));
 
             String text = TreeDiredRenderer.buildText(Path.of("/p"), entries, UTC, customColumns, NO_SUFFIX);
             var lines = text.lines().toList();
@@ -123,7 +123,7 @@ class TreeDiredRendererTest {
             var entries = Lists.immutable.of(
                     new TreeDiredEntry(Path.of("/p/a.txt"), 0, false, false, false, FILE_ATTRS),
                     new TreeDiredEntry(Path.of("/p/b.txt"), 0, false, false, false, FILE_ATTRS));
-            var customColumns = Lists.immutable.of(new DiredCustomColumn("st", path -> {
+            var customColumns = Lists.immutable.of(DiredCustomColumn.of("st", path -> {
                 if (path.getFileName().toString().equals("a.txt")) {
                     return "modified";
                 }

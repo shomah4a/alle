@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.modes.dired.DiredCustomColumn;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredBufferUpdater;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredMode;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
@@ -82,7 +83,28 @@ public class TreeDiredGitMode implements MinorMode {
 
     private void setupCustomColumn(BufferFacade buffer, Path rootDirectory) {
         MapIterable<Path, String> statuses = gitStatusProvider.getFileStatuses(rootDirectory);
-        var column = new DiredCustomColumn("git", path -> statuses.getIfAbsentValue(path, ""));
+        var column = new DiredCustomColumn() {
+            @Override
+            public String header() {
+                return "git";
+            }
+
+            @Override
+            public String renderCell(Path path) {
+                return statuses.getIfAbsentValue(path, "");
+            }
+
+            @Override
+            public Optional<FaceName> face(Path path) {
+                String status = statuses.getIfAbsentValue(path, "");
+                return switch (status) {
+                    case "A" -> Optional.of(FaceName.DIFF_ADDED);
+                    case "M" -> Optional.of(FaceName.DIFF_MODIFIED);
+                    case "D" -> Optional.of(FaceName.DIFF_DELETED);
+                    default -> Optional.empty();
+                };
+            }
+        };
         buffer.setVariable(TreeDiredBufferUpdater.CUSTOM_COLUMNS_KEY, Lists.immutable.of(column));
     }
 

@@ -144,7 +144,7 @@ public final class TreeDiredRenderer {
         // カスタムカラム
         for (int i = 0; i < customColumns.size(); i++) {
             sb.append(' ');
-            String cellValue = customColumns.get(i).renderer().apply(entry.path());
+            String cellValue = customColumns.get(i).renderCell(entry.path());
             sb.append(padRight(cellValue, widths.customWidths.get(i)));
         }
 
@@ -196,6 +196,31 @@ public final class TreeDiredRenderer {
                 buffer.putFace(lineStart, lineStart + lineCodePoints, FaceName.MARKED);
             }
 
+            // カスタムカラムのface適用
+            if (!customColumns.isEmpty()) {
+                // prefix(2) + perm(PERM_WIDTH+1) + owner + space + group + space + size + space +
+                // timestamp(TIMESTAMP_WIDTH)
+                int fixedPartLength = 2
+                        + (PERM_WIDTH + 1)
+                        + widths.ownerWidth
+                        + 1
+                        + widths.groupWidth
+                        + 1
+                        + widths.sizeWidth
+                        + 1
+                        + TIMESTAMP_WIDTH;
+                int customStart = lineStart + fixedPartLength;
+                for (int i = 0; i < customColumns.size(); i++) {
+                    customStart++; // space separator
+                    var face = customColumns.get(i).face(entry.path());
+                    int colWidth = widths.customWidths().get(i);
+                    if (face.isPresent()) {
+                        buffer.putFace(customStart, customStart + colWidth, face.get());
+                    }
+                    customStart += colWidth;
+                }
+            }
+
             if (entry.isDirectory()) {
                 String fileName = entry.path().getFileName().toString() + "/";
                 int fileNameCodePoints = (int) fileName.codePoints().count();
@@ -223,7 +248,7 @@ public final class TreeDiredRenderer {
             maxGroup = Math.max(maxGroup, attrs.group().length());
             maxSize = Math.max(maxSize, String.valueOf(attrs.size()).length());
             for (int i = 0; i < customColumns.size(); i++) {
-                String cellValue = customColumns.get(i).renderer().apply(entry.path());
+                String cellValue = customColumns.get(i).renderCell(entry.path());
                 customWidths.set(i, Math.max(customWidths.get(i), cellValue.length()));
             }
         }

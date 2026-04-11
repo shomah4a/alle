@@ -55,8 +55,8 @@ class TreeDiredGitModeTest {
             assertEquals(1, columnList.size());
             var column = (DiredCustomColumn) columnList.get(0);
             assertEquals("git", column.header());
-            assertEquals("M", column.renderer().apply(Path.of("/repo/a.txt")));
-            assertEquals("", column.renderer().apply(Path.of("/repo/b.txt")));
+            assertEquals("M", column.renderCell(Path.of("/repo/a.txt")));
+            assertEquals("", column.renderCell(Path.of("/repo/b.txt")));
         }
 
         @Test
