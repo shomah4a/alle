@@ -67,6 +67,8 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredInitializer;
+import io.github.shomah4a.alle.core.mode.modes.dired.git.DefaultGitStatusProvider;
+import io.github.shomah4a.alle.core.mode.modes.dired.git.TreeDiredGitInitializer;
 import io.github.shomah4a.alle.core.mode.modes.javascript.JavaScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
 import io.github.shomah4a.alle.core.mode.modes.markdown.MarkdownMode;
@@ -341,6 +343,9 @@ public final class EditorCore {
                 registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry, filePathInputPrompter);
         registry.register(treeDiredCommand);
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
+
+        // Tree Dired Git
+        TreeDiredGitInitializer.initialize(modeRegistry, commandResolver, new DefaultGitStatusProvider());
 
         // Occur
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);

@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -28,6 +29,7 @@ public class TreeDiredCommand implements Command {
     private final Keymap diredKeymap;
     private final CommandRegistry diredCommandRegistry;
     private final FilePathInputPrompter filePathInputPrompter;
+    private final ModeRegistry modeRegistry;
 
     public TreeDiredCommand(
             DirectoryLister directoryLister,
@@ -36,7 +38,8 @@ public class TreeDiredCommand implements Command {
             ZoneId zoneId,
             Keymap diredKeymap,
             CommandRegistry diredCommandRegistry,
-            FilePathInputPrompter filePathInputPrompter) {
+            FilePathInputPrompter filePathInputPrompter,
+            ModeRegistry modeRegistry) {
         this.directoryLister = directoryLister;
         this.workingDirectory = workingDirectory;
         this.directoryHistory = directoryHistory;
@@ -44,6 +47,7 @@ public class TreeDiredCommand implements Command {
         this.diredKeymap = diredKeymap;
         this.diredCommandRegistry = diredCommandRegistry;
         this.filePathInputPrompter = filePathInputPrompter;
+        this.modeRegistry = modeRegistry;
     }
 
     @Override
@@ -95,6 +99,8 @@ public class TreeDiredCommand implements Command {
         var model = new TreeDiredModel(path, directoryLister);
         var mode = new TreeDiredMode(model, diredKeymap, zoneId, diredCommandRegistry);
         bufferFacade.setMajorMode(mode);
+        mode.onEnable(bufferFacade);
+        modeRegistry.runMajorModeHooks(mode.name(), bufferFacade);
 
         // バッファを登録してウィンドウに表示
         context.bufferManager().add(bufferFacade);

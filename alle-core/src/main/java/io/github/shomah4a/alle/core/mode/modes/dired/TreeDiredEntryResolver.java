@@ -11,7 +11,7 @@ import org.eclipse.collections.api.list.MutableList;
 /**
  * カーソル位置から対応する TreeDiredEntry を解決する。
  */
-final class TreeDiredEntryResolver {
+public final class TreeDiredEntryResolver {
 
     private TreeDiredEntryResolver() {}
 
@@ -82,7 +82,7 @@ final class TreeDiredEntryResolver {
      * マーク済みエントリがあればそれを返し、なければカーソル行のエントリを返す。
      * ファイル操作コマンドの対象解決用。
      */
-    static ListIterable<TreeDiredEntry> resolveTargets(Window window, TreeDiredMode mode) {
+    public static ListIterable<TreeDiredEntry> resolveTargets(Window window, TreeDiredMode mode) {
         var markedPaths = mode.getModel().getMarkedPaths();
         if (markedPaths.notEmpty()) {
             ListIterable<TreeDiredEntry> entries = mode.getModel().getVisibleEntries();

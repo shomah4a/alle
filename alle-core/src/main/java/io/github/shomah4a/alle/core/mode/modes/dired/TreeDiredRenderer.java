@@ -38,7 +38,8 @@ public final class TreeDiredRenderer {
             ZoneId zoneId,
             ListIterable<DiredCustomColumn> customColumns,
             String rootSuffix) {
-        String text = buildText(rootDirectory, entries, zoneId, customColumns, rootSuffix);
+        var widths = computeColumnWidths(entries, customColumns);
+        String text = buildTextWithWidths(rootDirectory, entries, zoneId, customColumns, rootSuffix, widths);
 
         int currentLength = buffer.length();
         if (currentLength > 0) {
@@ -50,11 +51,11 @@ public final class TreeDiredRenderer {
         if (textLength > 0) {
             buffer.removeFace(0, textLength);
         }
-        applyFaces(buffer, rootDirectory, entries, zoneId, customColumns, rootSuffix);
+        applyFacesWithWidths(buffer, rootDirectory, entries, zoneId, customColumns, rootSuffix, widths);
     }
 
     /**
-     * ツリー表示のテキストを生成する。
+     * ツリー表示のテキストを生成する。テストから呼ばれる。
      */
     static String buildText(
             Path rootDirectory,
@@ -62,6 +63,17 @@ public final class TreeDiredRenderer {
             ZoneId zoneId,
             ListIterable<DiredCustomColumn> customColumns,
             String rootSuffix) {
+        var widths = computeColumnWidths(entries, customColumns);
+        return buildTextWithWidths(rootDirectory, entries, zoneId, customColumns, rootSuffix, widths);
+    }
+
+    private static String buildTextWithWidths(
+            Path rootDirectory,
+            ListIterable<TreeDiredEntry> entries,
+            ZoneId zoneId,
+            ListIterable<DiredCustomColumn> customColumns,
+            String rootSuffix,
+            ColumnWidths widths) {
         var sb = new StringBuilder();
         sb.append(rootDirectory.toString());
         sb.append(':');
@@ -69,8 +81,6 @@ public final class TreeDiredRenderer {
             sb.append(' ');
             sb.append(rootSuffix);
         }
-
-        var widths = computeColumnWidths(entries, customColumns);
 
         // ヘッダ行
         sb.append('\n');
@@ -153,13 +163,14 @@ public final class TreeDiredRenderer {
         return sb.toString();
     }
 
-    private static void applyFaces(
+    private static void applyFacesWithWidths(
             BufferFacade buffer,
             Path rootDirectory,
             ListIterable<TreeDiredEntry> entries,
             ZoneId zoneId,
             ListIterable<DiredCustomColumn> customColumns,
-            String rootSuffix) {
+            String rootSuffix,
+            ColumnWidths widths) {
         // ヘッダ行（ルートパス行）
         int headerLength = rootDirectory.toString().length() + 1; // +1 for ":"
         if (!rootSuffix.isEmpty()) {
@@ -168,8 +179,6 @@ public final class TreeDiredRenderer {
         if (headerLength > 0) {
             buffer.putFace(0, headerLength, FaceName.HEADING);
         }
-
-        var widths = computeColumnWidths(entries, customColumns);
 
         // カラムヘッダ行をスキップ
         String columnHeader = "  " + formatHeaderLine(widths, customColumns);

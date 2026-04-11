@@ -10,7 +10,7 @@ import org.eclipse.collections.api.list.MutableList;
  * Tree Dired バッファの内容を TreeDiredModel の状態に基づいて更新する。
  * read-only を一時解除し、atomicOperation 内でテキストとfaceを書き換える。
  */
-final class TreeDiredBufferUpdater {
+public final class TreeDiredBufferUpdater {
 
     private TreeDiredBufferUpdater() {}
 
@@ -18,11 +18,11 @@ final class TreeDiredBufferUpdater {
      * バッファ内容をモデルの現在の状態で更新する。
      * カーソル位置はできる限り維持する。
      */
-    static final String CUSTOM_COLUMNS_KEY = "dired-custom-columns";
+    public static final String CUSTOM_COLUMNS_KEY = "dired-custom-columns";
 
-    static final String ROOT_SUFFIX_KEY = "dired-root-suffix";
+    public static final String ROOT_SUFFIX_KEY = "dired-root-suffix";
 
-    static void update(Window window, TreeDiredMode mode) {
+    public static void update(Window window, TreeDiredMode mode) {
         BufferFacade buffer = window.getBuffer();
         TreeDiredModel model = mode.getModel();
         var entries = model.getVisibleEntries();

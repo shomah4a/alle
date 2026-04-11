@@ -94,7 +94,8 @@ public final class TreeDiredInitializer {
                 ZoneId.systemDefault(),
                 diredKeymap,
                 diredCommandRegistry,
-                filePathInputPrompter);
+                filePathInputPrompter,
+                modeRegistry);
     }
 
     private static Keymap createKeymap(

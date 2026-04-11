@@ -80,12 +80,12 @@ public final class ModeCommand {
             var buffer = context.activeWindow().getBuffer();
             boolean enabled = buffer.getMinorModes().anySatisfy(m -> m.name().equals(modeName));
             if (enabled) {
-                modeRegistry.runMinorModeDisableHooks(modeName, buffer);
                 var modeToDisable = buffer.getMinorModes().detect(m -> m.name().equals(modeName));
+                modeRegistry.runMinorModeDisableHooks(modeName, buffer);
                 if (modeToDisable != null) {
                     modeToDisable.onDisable(buffer);
+                    buffer.disableMinorMode(modeToDisable);
                 }
-                buffer.disableMinorMode(factory.get());
                 context.messageBuffer().message(modeName + " mode disabled");
             } else {
                 var mode = factory.get();
