@@ -260,6 +260,89 @@ class GapModelTest {
     }
 
     @Nested
+    class indexOf {
+
+        @Test
+        void 先頭から検索して見つかった位置を返す() {
+            var model = new GapModel();
+            model.insert(0, "Hello\nWorld\n");
+            assertEquals(5, model.indexOf('\n', 0, model.length()));
+        }
+
+        @Test
+        void fromIndexから検索を開始する() {
+            var model = new GapModel();
+            model.insert(0, "Hello\nWorld\n");
+            assertEquals(11, model.indexOf('\n', 6, model.length()));
+        }
+
+        @Test
+        void 見つからない場合はマイナス1を返す() {
+            var model = new GapModel();
+            model.insert(0, "Hello");
+            assertEquals(-1, model.indexOf('\n', 0, model.length()));
+        }
+
+        @Test
+        void 空範囲ではマイナス1を返す() {
+            var model = new GapModel();
+            model.insert(0, "Hello\n");
+            assertEquals(-1, model.indexOf('\n', 3, 3));
+        }
+
+        @Test
+        void gapをまたぐ範囲で検索できる() {
+            var model = new GapModel(4);
+            model.insert(0, "AB\nDE");
+            // gapを中間に移動させる
+            model.insert(2, "C");
+            // "ABC\nDE" でgapが位置3付近にある状態
+            assertEquals(3, model.indexOf('\n', 0, model.length()));
+        }
+
+        @Test
+        void gap後方の区間のみの検索で見つかる() {
+            var model = new GapModel(4);
+            model.insert(0, "ABCDE\n");
+            // gapを先頭に移動
+            model.insert(0, "X");
+            model.delete(0, 1);
+            // gap が先頭付近にある状態で末尾の改行を検索
+            assertEquals(5, model.indexOf('\n', 0, model.length()));
+        }
+
+        @Test
+        void toIndexが排他的に機能する() {
+            var model = new GapModel();
+            model.insert(0, "AB\nCD");
+            assertEquals(-1, model.indexOf('\n', 0, 2));
+            assertEquals(2, model.indexOf('\n', 0, 3));
+        }
+
+        @Test
+        void 範囲外で例外が発生する() {
+            var model = new GapModel();
+            model.insert(0, "Hello");
+            assertThrows(IndexOutOfBoundsException.class, () -> model.indexOf('\n', -1, 3));
+            assertThrows(IndexOutOfBoundsException.class, () -> model.indexOf('\n', 3, 2));
+            assertThrows(IndexOutOfBoundsException.class, () -> model.indexOf('\n', 0, 6));
+        }
+
+        @Test
+        void 挿入削除を繰り返した後でも正しく検索できる() {
+            var model = new GapModel(4);
+            model.insert(0, "A\nB\nC\nD");
+            model.delete(2, 2); // "A\nC\nD"
+            model.insert(2, "X\nY\n"); // "A\nX\nY\nC\nD"
+            assertEquals(1, model.indexOf('\n', 0, model.length()));
+            assertEquals(3, model.indexOf('\n', 2, model.length()));
+            assertEquals(5, model.indexOf('\n', 4, model.length()));
+            assertEquals(7, model.indexOf('\n', 6, model.length()));
+            assertEquals(-1, model.indexOf('\n', 8, model.length()));
+        }
+    }
+
+    @Nested
     class サロゲートペアを含む文字列 {
 
         @Test

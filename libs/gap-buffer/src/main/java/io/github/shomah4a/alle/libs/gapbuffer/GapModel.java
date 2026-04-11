@@ -100,6 +100,51 @@ public class GapModel {
     }
 
     /**
+     * 指定範囲内で指定文字を検索し、最初に見つかった論理オフセットを返す。
+     * 見つからない場合は -1 を返す。
+     *
+     * <p>物理配列上で直接検索するため、charAt ループより効率的。
+     *
+     * @param c         検索する文字
+     * @param fromIndex 検索開始の論理オフセット（含む）
+     * @param toIndex   検索終了の論理オフセット（含まない）
+     * @return 見つかった論理オフセット、見つからない場合は -1
+     * @throws IndexOutOfBoundsException 範囲が不正な場合
+     */
+    public int indexOf(char c, int fromIndex, int toIndex) {
+        int len = length();
+        if (fromIndex < 0 || toIndex < fromIndex || toIndex > len) {
+            throw new IndexOutOfBoundsException(
+                    "Invalid range: [" + fromIndex + ", " + toIndex + ") for length " + len);
+        }
+        if (fromIndex == toIndex) {
+            return -1;
+        }
+
+        // gap より前の区間を検索
+        int searchEnd = Math.min(toIndex, gapStart);
+        for (int i = fromIndex; i < searchEnd; i++) {
+            if (buffer[i] == c) {
+                return i;
+            }
+        }
+
+        // gap より後の区間を検索
+        if (toIndex > gapStart) {
+            int logicalStart = Math.max(fromIndex, gapStart);
+            int physStart = logicalStart + gapSize();
+            int physEnd = toIndex + gapSize();
+            for (int p = physStart; p < physEnd; p++) {
+                if (buffer[p] == c) {
+                    return p - gapSize();
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    /**
      * 指定範囲の部分文字列を返す。
      *
      * @throws IndexOutOfBoundsException 範囲が不正な場合
