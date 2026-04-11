@@ -226,6 +226,20 @@ public class BufferFacade {
         buffer.disableMinorMode(mode);
     }
 
+    // ── バッファ変数 ──
+
+    public Optional<Object> getVariable(String key) {
+        return buffer.getVariable(key);
+    }
+
+    public void setVariable(String key, Object value) {
+        buffer.setVariable(key, value);
+    }
+
+    public void removeVariable(String key) {
+        buffer.removeVariable(key);
+    }
+
     // ── キーマップ ──
 
     public Optional<Keymap> getLocalKeymap() {

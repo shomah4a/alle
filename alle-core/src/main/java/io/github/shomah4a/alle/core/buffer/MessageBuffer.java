@@ -17,7 +17,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.map.MutableMap;
 
 /**
  * メッセージバッファ（*Messages*）。
@@ -34,6 +36,7 @@ public class MessageBuffer implements Buffer {
     private final UndoManager undoManager;
     private final MajorMode majorMode;
     private final BufferLocalSettings settings;
+    private final MutableMap<String, Object> variables;
     private boolean showingMessage;
 
     /**
@@ -50,6 +53,7 @@ public class MessageBuffer implements Buffer {
         this.undoManager = new UndoManager();
         this.majorMode = new TextMode();
         this.settings = new BufferLocalSettings(settingsRegistry, () -> majorMode, Lists.immutable::empty);
+        this.variables = Maps.mutable.empty();
         this.showingMessage = false;
     }
 
@@ -409,6 +413,23 @@ public class MessageBuffer implements Buffer {
     @Override
     public BufferLocalSettings getSettings() {
         return settings;
+    }
+
+    // ── バッファ変数 ──
+
+    @Override
+    public Optional<Object> getVariable(String key) {
+        return locked(() -> Optional.ofNullable(variables.get(key)));
+    }
+
+    @Override
+    public void setVariable(String key, Object value) {
+        lockedVoid(() -> variables.put(key, value));
+    }
+
+    @Override
+    public void removeVariable(String key) {
+        lockedVoid(() -> variables.remove(key));
     }
 
     // ── Undo ──

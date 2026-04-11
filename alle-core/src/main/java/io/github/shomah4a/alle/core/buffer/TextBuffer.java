@@ -16,8 +16,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -39,6 +41,7 @@ public class TextBuffer implements Buffer {
     private final UndoManager undoManager;
     private final TextPropertyStore textPropertyStore;
     private final BufferLocalSettings settings;
+    private final MutableMap<String, Object> variables;
     private boolean dirty;
     private boolean readOnly;
 
@@ -52,6 +55,7 @@ public class TextBuffer implements Buffer {
         this.undoManager = new UndoManager();
         this.textPropertyStore = new TextPropertyStore();
         this.settings = new BufferLocalSettings(settingsRegistry, () -> majorMode, () -> minorModes);
+        this.variables = Maps.mutable.empty();
         this.dirty = false;
     }
 
@@ -184,6 +188,23 @@ public class TextBuffer implements Buffer {
     @Override
     public BufferLocalSettings getSettings() {
         return settings;
+    }
+
+    // ── バッファ変数 ──
+
+    @Override
+    public Optional<Object> getVariable(String key) {
+        return locked(() -> Optional.ofNullable(variables.get(key)));
+    }
+
+    @Override
+    public void setVariable(String key, Object value) {
+        lockedVoid(() -> variables.put(key, value));
+    }
+
+    @Override
+    public void removeVariable(String key) {
+        lockedVoid(() -> variables.remove(key));
     }
 
     // ── Undo ──

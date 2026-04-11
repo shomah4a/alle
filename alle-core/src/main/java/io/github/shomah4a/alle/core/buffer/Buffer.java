@@ -279,6 +279,32 @@ interface Buffer {
      */
     BufferLocalSettings getSettings();
 
+    // ── バッファ変数 ──
+
+    /**
+     * ��ッファ変数を取得する。
+     * 型安全性は呼び出し側の責任とする。
+     *
+     * @param key 変数名
+     * @return 変数値。未設定の場合はempty
+     */
+    Optional<Object> getVariable(String key);
+
+    /**
+     * バッファ変数を設定する。
+     *
+     * @param key 変数名
+     * @param value 変数値
+     */
+    void setVariable(String key, Object value);
+
+    /**
+     * バッファ変数を削除する。
+     *
+     * @param key 変数名
+     */
+    void removeVariable(String key);
+
     // ── Undo ──
 
     /**
