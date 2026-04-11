@@ -116,6 +116,67 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
         }
     }
 
+    @Override
+    public boolean isTracked(Path rootDirectory, Path file) {
+        try {
+            var process = new ProcessBuilder("git", "ls-files", "--error-unmatch", "--", file.toString())
+                    .directory(rootDirectory.toFile())
+                    .redirectErrorStream(true)
+                    .start();
+            int exitCode = process.waitFor();
+            return exitCode == 0;
+        } catch (IOException | InterruptedException e) {
+            logger.log(Level.FINE, "git ls-files の実行に失敗: " + file, e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public void removeFiles(Path rootDirectory, ListIterable<Path> files, boolean force) {
+        if (files.isEmpty()) {
+            return;
+        }
+        var command = Lists.mutable.of("git", "rm");
+        if (force) {
+            command.add("-rf");
+        }
+        command.add("--");
+        for (Path file : files) {
+            command.add(file.toString());
+        }
+        try {
+            var process = new ProcessBuilder(command)
+                    .directory(rootDirectory.toFile())
+                    .redirectErrorStream(true)
+                    .start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            logger.log(Level.FINE, "git rm の実行に失敗: " + rootDirectory, e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    @Override
+    public void moveFile(Path rootDirectory, Path source, Path destination) {
+        try {
+            var process = new ProcessBuilder("git", "mv", "--", source.toString(), destination.toString())
+                    .directory(rootDirectory.toFile())
+                    .redirectErrorStream(true)
+                    .start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            logger.log(Level.FINE, "git mv の実行に失敗: " + source, e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     private static String parseStatusCode(char indexStatus, char workTreeStatus) {
         // イ���デックス側のステータスを優先的に表示
         if (indexStatus == 'A') {

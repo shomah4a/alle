@@ -64,7 +64,7 @@ public final class TreeDiredEntryResolver {
      * 対象エントリの親ディレクトリがすべて同一かどうかを返す。
      * 対象が1件以下の場合は常に true を返す。
      */
-    static boolean hasSameParentDirectory(ListIterable<TreeDiredEntry> targets) {
+    public static boolean hasSameParentDirectory(ListIterable<TreeDiredEntry> targets) {
         if (targets.size() <= 1) {
             return true;
         }

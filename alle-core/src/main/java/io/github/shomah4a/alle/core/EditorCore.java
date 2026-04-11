@@ -54,6 +54,7 @@ import io.github.shomah4a.alle.core.command.commands.UncommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.UndoCommand;
 import io.github.shomah4a.alle.core.command.commands.YankCommand;
 import io.github.shomah4a.alle.core.constants.BufferNames;
+import io.github.shomah4a.alle.core.input.DefaultFileOperations;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -345,7 +346,8 @@ public final class EditorCore {
         findFileCommand.setTreeDiredCommand(treeDiredCommand);
 
         // Tree Dired Git
-        TreeDiredGitInitializer.initialize(modeRegistry, commandResolver, new DefaultGitStatusProvider());
+        TreeDiredGitInitializer.initialize(
+                modeRegistry, commandResolver, new DefaultGitStatusProvider(), new DefaultFileOperations());
 
         // Occur
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);

@@ -35,4 +35,31 @@ public interface GitStatusProvider {
      * @param files ステージング対象のファイルパスリスト
      */
     void stageFiles(Path rootDirectory, ListIterable<Path> files);
+
+    /**
+     * 指定ファイルがgit管理下かどうかを返す。
+     *
+     * @param rootDirectory リポジトリ内のディレクトリ
+     * @param file 判定対象のファイルパス
+     * @return git管理下ならtrue
+     */
+    boolean isTracked(Path rootDirectory, Path file);
+
+    /**
+     * git rm を実行する。
+     *
+     * @param rootDirectory リポジトリ内のディレクトリ
+     * @param files 削除対象のファイルパスリスト
+     * @param force ディレクトリの再帰削除を許可するか
+     */
+    void removeFiles(Path rootDirectory, ListIterable<Path> files, boolean force);
+
+    /**
+     * git mv を実行する。
+     *
+     * @param rootDirectory リポジトリ内のディレクトリ
+     * @param source 移動元パス
+     * @param destination 移動先パス
+     */
+    void moveFile(Path rootDirectory, Path source, Path destination);
 }

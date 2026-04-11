@@ -121,5 +121,20 @@ class TreeDiredGitModeTest {
         public void stageFiles(Path rootDirectory, ListIterable<Path> files) {
             // no-op for test
         }
+
+        @Override
+        public boolean isTracked(Path rootDirectory, Path file) {
+            return false;
+        }
+
+        @Override
+        public void removeFiles(Path rootDirectory, ListIterable<Path> files, boolean force) {
+            // no-op for test
+        }
+
+        @Override
+        public void moveFile(Path rootDirectory, Path source, Path destination) {
+            // no-op for test
+        }
     }
 }
