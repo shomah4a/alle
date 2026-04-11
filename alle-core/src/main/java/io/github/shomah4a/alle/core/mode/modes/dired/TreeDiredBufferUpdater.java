@@ -2,6 +2,8 @@ package io.github.shomah4a.alle.core.mode.modes.dired;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -22,8 +24,11 @@ public final class TreeDiredBufferUpdater {
 
     public static final String ROOT_SUFFIX_KEY = "dired-root-suffix";
 
+    public static final String REFRESH_HOOKS_KEY = "dired-refresh-hooks";
+
     public static void update(Window window, TreeDiredMode mode) {
         BufferFacade buffer = window.getBuffer();
+        runRefreshHooks(buffer);
         TreeDiredModel model = mode.getModel();
         var entries = model.getVisibleEntries();
         var customColumns = resolveCustomColumns(buffer);
@@ -67,4 +72,22 @@ public final class TreeDiredBufferUpdater {
                 .map(v -> (String) v)
                 .orElse("");
     }
+
+    private static void runRefreshHooks(BufferFacade buffer) {
+        var value = buffer.getVariable(REFRESH_HOOKS_KEY).orElse(null);
+        if (!(value instanceof ListIterable<?> list)) {
+            return;
+        }
+        for (Object element : list) {
+            if (element instanceof Runnable runnable) {
+                try {
+                    runnable.run();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "dired refresh hook でエラー", e);
+                }
+            }
+        }
+    }
+
+    private static final Logger logger = Logger.getLogger(TreeDiredBufferUpdater.class.getName());
 }

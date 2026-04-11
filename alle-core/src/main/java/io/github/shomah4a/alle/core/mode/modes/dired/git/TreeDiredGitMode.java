@@ -53,12 +53,14 @@ public class TreeDiredGitMode implements MinorMode {
         Path rootDirectory = diredMode.getModel().getRootDirectory();
         setupCustomColumn(buffer, rootDirectory);
         setupRootSuffix(buffer, rootDirectory);
+        setupRefreshHook(buffer);
     }
 
     @Override
     public void onDisable(BufferFacade buffer) {
         buffer.removeVariable(TreeDiredBufferUpdater.CUSTOM_COLUMNS_KEY);
         buffer.removeVariable(TreeDiredBufferUpdater.ROOT_SUFFIX_KEY);
+        buffer.removeVariable(TreeDiredBufferUpdater.REFRESH_HOOKS_KEY);
     }
 
     /**
@@ -89,5 +91,10 @@ public class TreeDiredGitMode implements MinorMode {
         if (!branch.isEmpty()) {
             buffer.setVariable(TreeDiredBufferUpdater.ROOT_SUFFIX_KEY, "[" + branch + "]");
         }
+    }
+
+    private void setupRefreshHook(BufferFacade buffer) {
+        Runnable hook = () -> refresh(buffer);
+        buffer.setVariable(TreeDiredBufferUpdater.REFRESH_HOOKS_KEY, Lists.immutable.of(hook));
     }
 }
