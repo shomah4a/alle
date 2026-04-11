@@ -1,6 +1,8 @@
 package io.github.shomah4a.alle.core.textmodel;
 
 import io.github.shomah4a.alle.libs.gapbuffer.GapModel;
+import org.eclipse.collections.api.factory.primitive.IntLists;
+import org.eclipse.collections.api.list.primitive.MutableIntList;
 
 /**
  * {@link GapModel}をラップしてコードポイント単位の操作を提供する{@link TextModel}実装。
@@ -9,12 +11,38 @@ public class GapTextModel implements TextModel {
 
     private final GapModel gapModel;
 
+    /**
+     * 改行文字('\n')の論理charオフセットを昇順で保持するキャッシュ。
+     * insert/delete時に差分更新され、行操作メソッドの高速化に使用する。
+     */
+    private final MutableIntList lineBreakOffsets;
+
     public GapTextModel() {
         this.gapModel = new GapModel();
+        this.lineBreakOffsets = IntLists.mutable.empty();
     }
 
     public GapTextModel(GapModel gapModel) {
         this.gapModel = gapModel;
+        this.lineBreakOffsets = buildLineBreakCache(gapModel);
+    }
+
+    /**
+     * GapModelの全文を走査して改行位置キャッシュを構築する。
+     */
+    private static MutableIntList buildLineBreakCache(GapModel model) {
+        MutableIntList offsets = IntLists.mutable.empty();
+        int len = model.length();
+        int pos = 0;
+        while (pos < len) {
+            int found = model.indexOf('\n', pos, len);
+            if (found < 0) {
+                break;
+            }
+            offsets.add(found);
+            pos = found + 1;
+        }
+        return offsets;
     }
 
     @Override
@@ -32,6 +60,7 @@ public class GapTextModel implements TextModel {
     public void insert(int index, String text) {
         int charOffset = toCharOffsetForInsert(index);
         gapModel.insert(charOffset, text);
+        updateCacheAfterInsert(charOffset, text);
     }
 
     @Override
@@ -41,7 +70,86 @@ public class GapTextModel implements TextModel {
         }
         int charStart = toCharOffset(index);
         int charEnd = toCharOffsetForInsert(index + count);
+        updateCacheBeforeDelete(charStart, charEnd - charStart);
         gapModel.delete(charStart, charEnd - charStart);
+    }
+
+    /**
+     * 挿入後にキャッシュを差分更新する。
+     *
+     * @param charOffset 挿入された論理charオフセット
+     * @param text       挿入されたテキスト
+     */
+    private void updateCacheAfterInsert(int charOffset, String text) {
+        int textLen = text.length();
+        if (textLen == 0) {
+            return;
+        }
+
+        // 挿入位置以降の既存改行オフセットをシフト
+        for (int i = 0; i < lineBreakOffsets.size(); i++) {
+            if (lineBreakOffsets.get(i) >= charOffset) {
+                lineBreakOffsets.set(i, lineBreakOffsets.get(i) + textLen);
+            }
+        }
+
+        // 挿入テキスト内の改行を検索してキャッシュに追加
+        int insertIndex = findInsertionPoint(charOffset);
+        int added = 0;
+        for (int i = 0; i < textLen; i++) {
+            if (text.charAt(i) == '\n') {
+                lineBreakOffsets.addAtIndex(insertIndex + added, charOffset + i);
+                added++;
+            }
+        }
+    }
+
+    /**
+     * 削除前にキャッシュを差分更新する。
+     * GapModel.delete の前に呼び出す必要がある（削除範囲の改行情報が必要なため）。
+     *
+     * @param charOffset 削除開始の論理charオフセット
+     * @param charCount  削除するchar数
+     */
+    private void updateCacheBeforeDelete(int charOffset, int charCount) {
+        if (charCount == 0) {
+            return;
+        }
+        int deleteEnd = charOffset + charCount;
+
+        // 削除範囲内の改行を除去し、削除範囲後の改行オフセットをシフト
+        int writeIdx = 0;
+        for (int readIdx = 0; readIdx < lineBreakOffsets.size(); readIdx++) {
+            int offset = lineBreakOffsets.get(readIdx);
+            if (offset >= charOffset && offset < deleteEnd) {
+                // 削除範囲内 — スキップ
+                continue;
+            }
+            int newOffset = offset >= deleteEnd ? offset - charCount : offset;
+            lineBreakOffsets.set(writeIdx, newOffset);
+            writeIdx++;
+        }
+        // 末尾の余分な要素を除去
+        while (lineBreakOffsets.size() > writeIdx) {
+            lineBreakOffsets.removeAtIndex(lineBreakOffsets.size() - 1);
+        }
+    }
+
+    /**
+     * 指定charオフセット以上の最初の要素のインデックスを返す（二分探索）。
+     */
+    private int findInsertionPoint(int charOffset) {
+        int lo = 0;
+        int hi = lineBreakOffsets.size();
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (lineBreakOffsets.get(mid) < charOffset) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        return lo;
     }
 
     @Override
@@ -56,17 +164,7 @@ public class GapTextModel implements TextModel {
 
     @Override
     public int lineCount() {
-        int charLen = gapModel.length();
-        if (charLen == 0) {
-            return 1;
-        }
-        int count = 1;
-        for (int i = 0; i < charLen; i++) {
-            if (gapModel.charAt(i) == '\n') {
-                count++;
-            }
-        }
-        return count;
+        return lineBreakOffsets.size() + 1;
     }
 
     @Override
