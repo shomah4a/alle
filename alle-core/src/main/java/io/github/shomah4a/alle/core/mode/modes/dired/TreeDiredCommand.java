@@ -101,7 +101,10 @@ public class TreeDiredCommand implements Command {
         context.frame().getActiveWindow().setBuffer(bufferFacade);
 
         // 初期レンダリング（read-onlyは設定前に行う）
-        TreeDiredRenderer.render(bufferFacade, model.getRootDirectory(), model.getVisibleEntries(), zoneId);
+        var customColumns = TreeDiredBufferUpdater.resolveCustomColumns(bufferFacade);
+        var rootSuffix = TreeDiredBufferUpdater.resolveRootSuffix(bufferFacade);
+        TreeDiredRenderer.render(
+                bufferFacade, model.getRootDirectory(), model.getVisibleEntries(), zoneId, customColumns, rootSuffix);
         bufferFacade.setReadOnly(true);
         bufferFacade.markClean();
         context.activeWindow().setPoint(0);

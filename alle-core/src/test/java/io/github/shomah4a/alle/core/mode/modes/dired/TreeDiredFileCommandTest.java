@@ -87,7 +87,13 @@ class TreeDiredFileCommandTest {
         var settings = new SettingsRegistry();
         var bufferFacade = new BufferFacade(new TextBuffer("*Dired " + rootDir + "*", new GapTextModel(), settings));
         bufferFacade.setMajorMode(mode);
-        TreeDiredRenderer.render(bufferFacade, rootDir, model.getVisibleEntries(), UTC);
+        TreeDiredRenderer.render(
+                bufferFacade,
+                rootDir,
+                model.getVisibleEntries(),
+                UTC,
+                org.eclipse.collections.api.factory.Lists.immutable.empty(),
+                "");
         bufferFacade.setReadOnly(true);
 
         var window = new Window(bufferFacade);

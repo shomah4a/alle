@@ -6,7 +6,9 @@ import io.github.shomah4a.alle.core.styling.FaceName;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 
 /**
  * TreeDiredModelの状態からバッファの表示テキストを生成し、face を適用する。
@@ -30,8 +32,13 @@ public final class TreeDiredRenderer {
      * バッファは read-only が一時的に解除された状態で呼ばれることを前提とする。
      */
     public static void render(
-            BufferFacade buffer, Path rootDirectory, ListIterable<TreeDiredEntry> entries, ZoneId zoneId) {
-        String text = buildText(rootDirectory, entries, zoneId);
+            BufferFacade buffer,
+            Path rootDirectory,
+            ListIterable<TreeDiredEntry> entries,
+            ZoneId zoneId,
+            ListIterable<DiredCustomColumn> customColumns,
+            String rootSuffix) {
+        String text = buildText(rootDirectory, entries, zoneId, customColumns, rootSuffix);
 
         int currentLength = buffer.length();
         if (currentLength > 0) {
@@ -43,34 +50,43 @@ public final class TreeDiredRenderer {
         if (textLength > 0) {
             buffer.removeFace(0, textLength);
         }
-        applyFaces(buffer, rootDirectory, entries, zoneId);
+        applyFaces(buffer, rootDirectory, entries, zoneId, customColumns, rootSuffix);
     }
 
     /**
      * ツリー表示のテキストを生成する。
      */
-    static String buildText(Path rootDirectory, ListIterable<TreeDiredEntry> entries, ZoneId zoneId) {
+    static String buildText(
+            Path rootDirectory,
+            ListIterable<TreeDiredEntry> entries,
+            ZoneId zoneId,
+            ListIterable<DiredCustomColumn> customColumns,
+            String rootSuffix) {
         var sb = new StringBuilder();
         sb.append(rootDirectory.toString());
         sb.append(':');
+        if (!rootSuffix.isEmpty()) {
+            sb.append(' ');
+            sb.append(rootSuffix);
+        }
 
-        var widths = computeColumnWidths(entries);
+        var widths = computeColumnWidths(entries, customColumns);
 
         // ヘッダ行
         sb.append('\n');
         sb.append("  ");
-        sb.append(formatHeaderLine(widths));
+        sb.append(formatHeaderLine(widths, customColumns));
 
         // エントリ行
         for (TreeDiredEntry entry : entries) {
             sb.append('\n');
             sb.append(entry.isMarked() ? MARKED_PREFIX : UNMARKED_PREFIX);
-            sb.append(formatEntryLine(entry, widths, zoneId));
+            sb.append(formatEntryLine(entry, widths, zoneId, customColumns));
         }
         return sb.toString();
     }
 
-    private static String formatHeaderLine(ColumnWidths widths) {
+    private static String formatHeaderLine(ColumnWidths widths, ListIterable<DiredCustomColumn> customColumns) {
         var sb = new StringBuilder();
         sb.append(padRight("perm", PERM_WIDTH));
         sb.append(' ');
@@ -81,12 +97,17 @@ public final class TreeDiredRenderer {
         sb.append(padLeft("size", widths.sizeWidth));
         sb.append(' ');
         sb.append(padRight("mtime", TIMESTAMP_WIDTH));
+        for (int i = 0; i < customColumns.size(); i++) {
+            sb.append(' ');
+            sb.append(padRight(customColumns.get(i).header(), widths.customWidths.get(i)));
+        }
         sb.append(' ');
         sb.append("name");
         return sb.toString();
     }
 
-    private static String formatEntryLine(TreeDiredEntry entry, ColumnWidths widths, ZoneId zoneId) {
+    private static String formatEntryLine(
+            TreeDiredEntry entry, ColumnWidths widths, ZoneId zoneId, ListIterable<DiredCustomColumn> customColumns) {
         var sb = new StringBuilder();
         FileAttributes attrs = entry.attributes();
 
@@ -110,6 +131,13 @@ public final class TreeDiredRenderer {
         sb.append(' ');
         sb.append(TIMESTAMP_FORMAT.withZone(zoneId).format(attrs.lastModified()));
 
+        // カスタムカラム
+        for (int i = 0; i < customColumns.size(); i++) {
+            sb.append(' ');
+            String cellValue = customColumns.get(i).renderer().apply(entry.path());
+            sb.append(padRight(cellValue, widths.customWidths.get(i)));
+        }
+
         // インデント + マーカー + ファイル名
         sb.append(' ');
         sb.append("  ".repeat(entry.depth()));
@@ -126,17 +154,25 @@ public final class TreeDiredRenderer {
     }
 
     private static void applyFaces(
-            BufferFacade buffer, Path rootDirectory, ListIterable<TreeDiredEntry> entries, ZoneId zoneId) {
+            BufferFacade buffer,
+            Path rootDirectory,
+            ListIterable<TreeDiredEntry> entries,
+            ZoneId zoneId,
+            ListIterable<DiredCustomColumn> customColumns,
+            String rootSuffix) {
         // ヘッダ行（ルートパス行）
         int headerLength = rootDirectory.toString().length() + 1; // +1 for ":"
+        if (!rootSuffix.isEmpty()) {
+            headerLength += 1 + rootSuffix.length(); // +1 for space
+        }
         if (headerLength > 0) {
             buffer.putFace(0, headerLength, FaceName.HEADING);
         }
 
-        var widths = computeColumnWidths(entries);
+        var widths = computeColumnWidths(entries, customColumns);
 
         // カラムヘッダ行をスキップ
-        String columnHeader = "  " + formatHeaderLine(widths);
+        String columnHeader = "  " + formatHeaderLine(widths, customColumns);
         int offset = headerLength + 1 + (int) columnHeader.codePoints().count(); // +1 for newline
 
         // 各エントリの行を走査してfaceを適用
@@ -144,7 +180,7 @@ public final class TreeDiredRenderer {
             offset++; // 改行分
             int lineStart = offset;
             String prefix = entry.isMarked() ? MARKED_PREFIX : UNMARKED_PREFIX;
-            String lineContent = prefix + formatEntryLine(entry, widths, zoneId);
+            String lineContent = prefix + formatEntryLine(entry, widths, zoneId, customColumns);
             int lineCodePoints = (int) lineContent.codePoints().count();
 
             if (entry.isMarked()) {
@@ -163,17 +199,26 @@ public final class TreeDiredRenderer {
         }
     }
 
-    private static ColumnWidths computeColumnWidths(ListIterable<TreeDiredEntry> entries) {
+    private static ColumnWidths computeColumnWidths(
+            ListIterable<TreeDiredEntry> entries, ListIterable<DiredCustomColumn> customColumns) {
         int maxOwner = "owner".length();
         int maxGroup = "group".length();
         int maxSize = "size".length();
+        MutableList<Integer> customWidths = Lists.mutable.withInitialCapacity(customColumns.size());
+        for (int i = 0; i < customColumns.size(); i++) {
+            customWidths.add(customColumns.get(i).header().length());
+        }
         for (TreeDiredEntry entry : entries) {
             FileAttributes attrs = entry.attributes();
             maxOwner = Math.max(maxOwner, attrs.owner().length());
             maxGroup = Math.max(maxGroup, attrs.group().length());
             maxSize = Math.max(maxSize, String.valueOf(attrs.size()).length());
+            for (int i = 0; i < customColumns.size(); i++) {
+                String cellValue = customColumns.get(i).renderer().apply(entry.path());
+                customWidths.set(i, Math.max(customWidths.get(i), cellValue.length()));
+            }
         }
-        return new ColumnWidths(maxOwner, maxGroup, maxSize);
+        return new ColumnWidths(maxOwner, maxGroup, maxSize, customWidths);
     }
 
     private static String padRight(String s, int width) {
@@ -190,5 +235,5 @@ public final class TreeDiredRenderer {
         return " ".repeat(width - s.length()) + s;
     }
 
-    private record ColumnWidths(int ownerWidth, int groupWidth, int sizeWidth) {}
+    private record ColumnWidths(int ownerWidth, int groupWidth, int sizeWidth, ListIterable<Integer> customWidths) {}
 }
