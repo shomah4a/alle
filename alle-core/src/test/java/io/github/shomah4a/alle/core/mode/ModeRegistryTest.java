@@ -270,4 +270,64 @@ class ModeRegistryTest {
             assertEquals(Lists.mutable.of("pre-registered"), executed);
         }
     }
+
+    @Nested
+    class モード無効化フック {
+
+        private BufferFacade dummyBuffer() {
+            return new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
+        }
+
+        @Test
+        void メジャーモード無効化フックにバッファとモード名が渡される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeDisableHook("TestMode", (buf, mode) -> {
+                executed.add(buf.getName() + ":" + mode);
+            });
+
+            registry.runMajorModeDisableHooks("TestMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("test:TestMode"), executed);
+        }
+
+        @Test
+        void マイナーモード無効化フックが実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMinorModeDisableHook("TestMinor", (buf, mode) -> executed.add("disable-hook"));
+
+            registry.runMinorModeDisableHooks("TestMinor", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("disable-hook"), executed);
+        }
+
+        @Test
+        void 複数の無効化フックが登録順に実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMinorModeDisableHook("TestMinor", (buf, mode) -> executed.add("hook1"));
+            registry.addMinorModeDisableHook("TestMinor", (buf, mode) -> executed.add("hook2"));
+
+            registry.runMinorModeDisableHooks("TestMinor", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("hook1", "hook2"), executed);
+        }
+
+        @Test
+        void 無効化フック未登録のモードではrunDisableHooksが何もしない() {
+            registry.runMajorModeDisableHooks("Nonexistent", dummyBuffer());
+            // 例外が発生しないことを確認
+        }
+
+        @Test
+        void 無効化フック内の例外が他のフックの実行を妨げない() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMinorModeDisableHook("TestMinor", (buf, mode) -> {
+                throw new RuntimeException("intentional error");
+            });
+            registry.addMinorModeDisableHook("TestMinor", (buf, mode) -> executed.add("after-error"));
+
+            registry.runMinorModeDisableHooks("TestMinor", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("after-error"), executed);
+        }
+    }
 }

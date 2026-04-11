@@ -30,6 +30,10 @@ public class ModeRegistry {
             Maps.mutable.empty();
     private final MutableMap<String, MutableList<BiConsumer<BufferFacade, String>>> minorModeHooks =
             Maps.mutable.empty();
+    private final MutableMap<String, MutableList<BiConsumer<BufferFacade, String>>> majorModeDisableHooks =
+            Maps.mutable.empty();
+    private final MutableMap<String, MutableList<BiConsumer<BufferFacade, String>>> minorModeDisableHooks =
+            Maps.mutable.empty();
     private @Nullable CommandRegistry commandRegistry;
 
     /**
@@ -160,6 +164,60 @@ public class ModeRegistry {
      */
     public void runMinorModeHooks(String modeName, BufferFacade buffer) {
         var hooks = minorModeHooks.get(modeName);
+        if (hooks != null) {
+            runHooks(modeName, buffer, hooks);
+        }
+    }
+
+    // ── 無効化フック管理 ──
+
+    /**
+     * メジャーモード無効化時のフックを追加する。
+     * モード登録の有無に関係なく呼べる。
+     * フック関数は (BufferFacade buffer, String modeName) を受け取る。
+     *
+     * @param modeName フックを紐付けるモード名
+     * @param hook 無効化時に実行される関数
+     */
+    public void addMajorModeDisableHook(String modeName, BiConsumer<BufferFacade, String> hook) {
+        majorModeDisableHooks.getIfAbsentPut(modeName, Lists.mutable::empty).add(hook);
+    }
+
+    /**
+     * マイナーモード無効化時のフックを追加する。
+     * モード登録の有無に関係なく呼べる。
+     * フック関数は (BufferFacade buffer, String modeName) を受け取る。
+     *
+     * @param modeName フックを紐付けるモード名
+     * @param hook 無効化時に実行される関数
+     */
+    public void addMinorModeDisableHook(String modeName, BiConsumer<BufferFacade, String> hook) {
+        minorModeDisableHooks.getIfAbsentPut(modeName, Lists.mutable::empty).add(hook);
+    }
+
+    /**
+     * メジャーモード無効化時のフックを実行する。
+     * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
+     *
+     * @param modeName 無効化されるモードの名前
+     * @param buffer 対象バッファ
+     */
+    public void runMajorModeDisableHooks(String modeName, BufferFacade buffer) {
+        var hooks = majorModeDisableHooks.get(modeName);
+        if (hooks != null) {
+            runHooks(modeName, buffer, hooks);
+        }
+    }
+
+    /**
+     * マイナーモード無効化時のフックを実行する。
+     * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
+     *
+     * @param modeName 無効化されるモードの名前
+     * @param buffer 対象バッファ
+     */
+    public void runMinorModeDisableHooks(String modeName, BufferFacade buffer) {
+        var hooks = minorModeDisableHooks.get(modeName);
         if (hooks != null) {
             runHooks(modeName, buffer, hooks);
         }

@@ -39,7 +39,11 @@ public final class ModeCommand {
         public CompletableFuture<Void> execute(CommandContext context) {
             var mode = factory.get();
             var buffer = context.activeWindow().getBuffer();
+            var oldMode = buffer.getMajorMode();
+            modeRegistry.runMajorModeDisableHooks(oldMode.name(), buffer);
+            oldMode.onDisable(buffer);
             buffer.setMajorMode(mode);
+            mode.onEnable(buffer);
             modeRegistry.runMajorModeHooks(mode.name(), buffer);
             context.messageBuffer().message(mode.name() + " mode");
             return CompletableFuture.completedFuture(null);
@@ -76,10 +80,17 @@ public final class ModeCommand {
             var buffer = context.activeWindow().getBuffer();
             boolean enabled = buffer.getMinorModes().anySatisfy(m -> m.name().equals(modeName));
             if (enabled) {
+                modeRegistry.runMinorModeDisableHooks(modeName, buffer);
+                var modeToDisable = buffer.getMinorModes().detect(m -> m.name().equals(modeName));
+                if (modeToDisable != null) {
+                    modeToDisable.onDisable(buffer);
+                }
                 buffer.disableMinorMode(factory.get());
                 context.messageBuffer().message(modeName + " mode disabled");
             } else {
-                buffer.enableMinorMode(factory.get());
+                var mode = factory.get();
+                buffer.enableMinorMode(mode);
+                mode.onEnable(buffer);
                 modeRegistry.runMinorModeHooks(modeName, buffer);
                 context.messageBuffer().message(modeName + " mode enabled");
             }

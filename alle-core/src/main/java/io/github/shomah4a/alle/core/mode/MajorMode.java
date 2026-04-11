@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode;
 
+import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.setting.ModeSettings;
@@ -55,4 +56,16 @@ public interface MajorMode {
     default Optional<CommandRegistry> commandRegistry() {
         return Optional.empty();
     }
+
+    /**
+     * モードが有効化された直後に呼ばれるライフサイクルコールバック。
+     * モード自身のセットアップ処理を記述する。
+     */
+    default void onEnable(BufferFacade buffer) {}
+
+    /**
+     * モードが���効化される直前に呼ばれるライフサイクルコールバック。
+     * モード自身のクリーンアップ処理を記述する。
+     */
+    default void onDisable(BufferFacade buffer) {}
 }
