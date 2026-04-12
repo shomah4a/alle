@@ -84,6 +84,7 @@ import io.github.shomah4a.alle.core.search.ISearchHistory;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.statusline.BuiltinStatusLineSlots;
 import io.github.shomah4a.alle.core.statusline.CachingGitBranchProvider;
+import io.github.shomah4a.alle.core.statusline.CurrentTimeSlot;
 import io.github.shomah4a.alle.core.statusline.DefaultGitBranchProvider;
 import io.github.shomah4a.alle.core.statusline.GitStatusSlot;
 import io.github.shomah4a.alle.core.statusline.StatusLineGroup;
@@ -282,6 +283,7 @@ public final class EditorCore {
         var gitStatusSlot = new GitStatusSlot(gitBranchProvider);
         var miscInfo = (StatusLineGroup) statusLineRegistry.lookup("misc-info").orElseThrow();
         miscInfo.addChild(gitStatusSlot);
+        miscInfo.addChild(new CurrentTimeSlot(java.time.Clock.system(java.time.ZoneId.of("Asia/Tokyo"))));
         var statusLineRenderer = new StatusLineRenderer(statusLineRegistry, warningBuffer);
 
         return new EditorCore(
