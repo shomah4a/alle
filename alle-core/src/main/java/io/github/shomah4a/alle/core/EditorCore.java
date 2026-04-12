@@ -75,6 +75,7 @@ import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
 import io.github.shomah4a.alle.core.mode.modes.makefile.MakefileMode;
 import io.github.shomah4a.alle.core.mode.modes.markdown.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.modes.occur.OccurInitializer;
+import io.github.shomah4a.alle.core.mode.modes.shellscript.ShellScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.mode.modes.yaml.YamlMode;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
@@ -196,6 +197,12 @@ public final class EditorCore {
                 "yml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
         autoModeMap.register(
                 "yaml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
+        autoModeMap.register(
+                "sh",
+                () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
+        autoModeMap.register(
+                "bash",
+                () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
 
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
@@ -237,6 +244,9 @@ public final class EditorCore {
         modeRegistry.registerMajorMode(
                 "yaml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
         modeRegistry.registerMajorMode("makefile", MakefileMode::new);
+        modeRegistry.registerMajorMode(
+                "shell-script",
+                () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
 
         // キーマップ
         var keymap = createKeymap(registry);

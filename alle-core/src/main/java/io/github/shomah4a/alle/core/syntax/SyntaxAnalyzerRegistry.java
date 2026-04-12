@@ -9,6 +9,7 @@ import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
+import org.treesitter.TreeSitterBash;
 import org.treesitter.TreeSitterJavascript;
 import org.treesitter.TreeSitterJson;
 import org.treesitter.TreeSitterPython;
@@ -92,6 +93,10 @@ public class SyntaxAnalyzerRegistry {
     /** YAML用の括弧系ノードタイプ名。フロースタイルの括弧のみ対象とする。 */
     private static final ImmutableSet<String> YAML_BRACKET_TYPES = Sets.immutable.with("flow_mapping", "flow_sequence");
 
+    /** Bash用の括弧系ノードタイプ名。 */
+    private static final ImmutableSet<String> BASH_BRACKET_TYPES =
+            Sets.immutable.with("compound_statement", "subshell", "command_substitution");
+
     /**
      * 組み込み言語を登録済みのレジストリを生成する。
      *
@@ -122,6 +127,11 @@ public class SyntaxAnalyzerRegistry {
                 "yaml",
                 new TreeSitterLanguageConfig(
                         new TreeSitterYaml(), yamlQuery, DefaultCaptureMapping.INSTANCE, YAML_BRACKET_TYPES));
+        String bashQuery = HighlightQueryLoader.load("bash");
+        registry.register(
+                "bash",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterBash(), bashQuery, DefaultCaptureMapping.INSTANCE, BASH_BRACKET_TYPES));
         return registry;
     }
 }
