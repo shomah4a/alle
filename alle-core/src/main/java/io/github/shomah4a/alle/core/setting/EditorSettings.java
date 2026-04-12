@@ -22,4 +22,10 @@ public final class EditorSettings {
      * コメント文字列。デフォルト "# "。
      */
     public static final Setting<String> COMMENT_STRING = Setting.of("comment-string", String.class, "# ");
+
+    /**
+     * インデントにタブ文字を使用するかどうか。デフォルト false（スペースを使用）。
+     * true の場合、インデント挿入時にスペースの代わりにタブ文字を使用する。
+     */
+    public static final Setting<Boolean> INDENT_TABS_MODE = Setting.of("indent-tabs-mode", Boolean.class, false);
 }

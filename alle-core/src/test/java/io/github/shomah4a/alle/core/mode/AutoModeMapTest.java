@@ -32,7 +32,7 @@ class AutoModeMapTest {
 
     @Test
     void 拡張子なしのファイルからデフォルトモードが返る() {
-        var mode = autoModeMap.resolve("Makefile");
+        var mode = autoModeMap.resolve("LICENSE");
         assertEquals("text", mode.name());
     }
 
@@ -49,11 +49,43 @@ class AutoModeMapTest {
         assertEquals("Stub", mode.name());
     }
 
+    @Test
+    void ファイル名完全一致で登録したモードが返る() {
+        autoModeMap.registerFileName("Makefile", StubMode::new);
+        var mode = autoModeMap.resolve("Makefile");
+        assertEquals("Stub", mode.name());
+    }
+
+    @Test
+    void ファイル名マッチは拡張子マッチより優先される() {
+        autoModeMap.register("java", () -> new StubMode("ext"));
+        autoModeMap.registerFileName("build.java", () -> new StubMode("filename"));
+        var mode = autoModeMap.resolve("build.java");
+        assertEquals("filename", mode.name());
+    }
+
+    @Test
+    void パス付きファイル名でもファイル名マッチが動作する() {
+        autoModeMap.registerFileName("Makefile", StubMode::new);
+        var mode = autoModeMap.resolve("src/sub/Makefile");
+        assertEquals("Stub", mode.name());
+    }
+
     private static class StubMode implements MajorMode {
+
+        private final String modeName;
+
+        StubMode() {
+            this("Stub");
+        }
+
+        StubMode(String modeName) {
+            this.modeName = modeName;
+        }
 
         @Override
         public String name() {
-            return "Stub";
+            return modeName;
         }
 
         @Override

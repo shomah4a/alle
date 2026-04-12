@@ -72,6 +72,7 @@ import io.github.shomah4a.alle.core.mode.modes.dired.git.DefaultGitStatusProvide
 import io.github.shomah4a.alle.core.mode.modes.dired.git.TreeDiredGitInitializer;
 import io.github.shomah4a.alle.core.mode.modes.javascript.JavaScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
+import io.github.shomah4a.alle.core.mode.modes.makefile.MakefileMode;
 import io.github.shomah4a.alle.core.mode.modes.markdown.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.modes.occur.OccurInitializer;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
@@ -178,6 +179,10 @@ public final class EditorCore {
         var autoModeMap = new AutoModeMap(TextMode::new);
         autoModeMap.register("md", MarkdownMode::new);
         autoModeMap.register("markdown", MarkdownMode::new);
+        autoModeMap.register("mk", MakefileMode::new);
+        autoModeMap.registerFileName("Makefile", MakefileMode::new);
+        autoModeMap.registerFileName("makefile", MakefileMode::new);
+        autoModeMap.registerFileName("GNUmakefile", MakefileMode::new);
         autoModeMap.register(
                 "js",
                 () -> new JavaScriptMode(
@@ -231,6 +236,7 @@ public final class EditorCore {
                 "json", () -> new JsonMode(syntaxAnalyzerRegistry.create("json").orElseThrow()));
         modeRegistry.registerMajorMode(
                 "yaml", () -> new YamlMode(syntaxAnalyzerRegistry.create("yaml").orElseThrow()));
+        modeRegistry.registerMajorMode("makefile", MakefileMode::new);
 
         // キーマップ
         var keymap = createKeymap(registry);
