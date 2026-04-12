@@ -7,10 +7,9 @@ import java.time.format.DateTimeFormatter;
 /**
  * 現在時刻を表示するステータスラインスロット。
  * 時刻取得はClockを経由し、テスタビリティを確保する。
+ * フォーマット文字列は {@link StatusLineSettings#TIME_FORMAT} 設定で変更可能。
  */
 public final class CurrentTimeSlot implements StatusLineElement {
-
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final Clock clock;
 
@@ -25,6 +24,8 @@ public final class CurrentTimeSlot implements StatusLineElement {
 
     @Override
     public String render(StatusLineContext context) {
-        return " " + ZonedDateTime.now(clock).format(FORMATTER);
+        String pattern = context.buffer().getSettings().get(StatusLineSettings.TIME_FORMAT);
+        var formatter = DateTimeFormatter.ofPattern(pattern);
+        return " " + ZonedDateTime.now(clock).format(formatter);
     }
 }
