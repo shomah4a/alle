@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.tree.sitter.json)
     implementation(libs.tree.sitter.yaml)
     implementation(libs.tree.sitter.bash)
+    implementation(libs.caffeine)
 }
 
 // Tree-sitter ハイライトクエリのダウンロード

@@ -82,6 +82,13 @@ import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchHistory;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.statusline.BuiltinStatusLineSlots;
+import io.github.shomah4a.alle.core.statusline.CachingGitBranchProvider;
+import io.github.shomah4a.alle.core.statusline.DefaultGitBranchProvider;
+import io.github.shomah4a.alle.core.statusline.GitStatusSlot;
+import io.github.shomah4a.alle.core.statusline.StatusLineGroup;
+import io.github.shomah4a.alle.core.statusline.StatusLineRegistry;
+import io.github.shomah4a.alle.core.statusline.StatusLineRenderer;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -109,6 +116,7 @@ public final class EditorCore {
     private final SyntaxAnalyzerRegistry syntaxAnalyzerRegistry;
     private final FrameLayoutStore frameLayoutStore;
     private final InputPrompter inputPrompter;
+    private final StatusLineRenderer statusLineRenderer;
 
     private EditorCore(
             Frame frame,
@@ -122,7 +130,8 @@ public final class EditorCore {
             AutoModeMap autoModeMap,
             SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
             FrameLayoutStore frameLayoutStore,
-            InputPrompter inputPrompter) {
+            InputPrompter inputPrompter,
+            StatusLineRenderer statusLineRenderer) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -135,6 +144,7 @@ public final class EditorCore {
         this.syntaxAnalyzerRegistry = syntaxAnalyzerRegistry;
         this.frameLayoutStore = frameLayoutStore;
         this.inputPrompter = inputPrompter;
+        this.statusLineRenderer = statusLineRenderer;
     }
 
     /**
@@ -265,6 +275,15 @@ public final class EditorCore {
                 settingsRegistry,
                 commandResolver);
 
+        // ステータスライン
+        var statusLineRegistry = new StatusLineRegistry();
+        BuiltinStatusLineSlots.registerAll(statusLineRegistry);
+        var gitBranchProvider = new CachingGitBranchProvider(new DefaultGitBranchProvider());
+        var gitStatusSlot = new GitStatusSlot(gitBranchProvider);
+        var miscInfo = (StatusLineGroup) statusLineRegistry.lookup("misc-info").orElseThrow();
+        miscInfo.addChild(gitStatusSlot);
+        var statusLineRenderer = new StatusLineRenderer(statusLineRegistry, warningBuffer);
+
         return new EditorCore(
                 frame,
                 bufferManager,
@@ -277,7 +296,8 @@ public final class EditorCore {
                 autoModeMap,
                 syntaxAnalyzerRegistry,
                 frameLayoutStore,
-                inputPrompter);
+                inputPrompter,
+                statusLineRenderer);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -513,5 +533,9 @@ public final class EditorCore {
 
     public InputPrompter inputPrompter() {
         return inputPrompter;
+    }
+
+    public StatusLineRenderer statusLineRenderer() {
+        return statusLineRenderer;
     }
 }

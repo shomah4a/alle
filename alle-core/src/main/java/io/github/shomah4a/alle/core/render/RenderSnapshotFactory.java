@@ -5,6 +5,9 @@ import io.github.shomah4a.alle.core.VisualLineUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
+import io.github.shomah4a.alle.core.statusline.StatusLineContext;
+import io.github.shomah4a.alle.core.statusline.StatusLineRenderer;
+import io.github.shomah4a.alle.core.statusline.StatusLineSettings;
 import io.github.shomah4a.alle.core.styling.StyledSpan;
 import io.github.shomah4a.alle.core.styling.SyntaxStyler;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -18,6 +21,7 @@ import java.util.OptionalInt;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Frameの状態からimmutableな描画スナップショットを生成するファクトリ。
@@ -42,6 +46,19 @@ public final class RenderSnapshotFactory {
      * @return 描画スナップショット
      */
     public static RenderSnapshot create(Frame frame, MessageBuffer messageBuffer, int cols, int rows) {
+        return create(frame, messageBuffer, cols, rows, null);
+    }
+
+    /**
+     * StatusLineRenderer を指定してスナップショットを生成する。
+     * rendererがnullの場合はフォールバック（従来のハードコード生成）を使用する。
+     */
+    public static RenderSnapshot create(
+            Frame frame,
+            MessageBuffer messageBuffer,
+            int cols,
+            int rows,
+            @Nullable StatusLineRenderer statusLineRenderer) {
         int windowAreaRows = rows - 1;
         int minibufferRow = rows - 1;
 
@@ -92,7 +109,7 @@ public final class RenderSnapshotFactory {
                         visibleLines);
             }
 
-            String modeLine = buildModeLineText(window);
+            String modeLine = buildModeLineText(window, statusLineRenderer);
             OptionalInt highlightLine = OptionalInt.empty();
             if (window.isHighlightPointLine()) {
                 int pointLine = buffer.lineIndexForOffset(window.getPoint());
@@ -377,7 +394,17 @@ public final class RenderSnapshotFactory {
         return OptionalInt.empty();
     }
 
-    private static String buildModeLineText(Window window) {
+    private static String buildModeLineText(Window window, @Nullable StatusLineRenderer statusLineRenderer) {
+        if (statusLineRenderer != null) {
+            var buffer = window.getBuffer();
+            var context = new StatusLineContext(window, buffer);
+            var format = buffer.getSettings().get(StatusLineSettings.FORMAT);
+            return statusLineRenderer.render(format.entries(), context);
+        }
+        return buildModeLineTextFallback(window);
+    }
+
+    private static String buildModeLineTextFallback(Window window) {
         var buffer = window.getBuffer();
         int point = window.getPoint();
         int lineIndex = buffer.lineIndexForOffset(point);

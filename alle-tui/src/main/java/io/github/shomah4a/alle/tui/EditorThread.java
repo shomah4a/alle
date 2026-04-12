@@ -6,6 +6,7 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.render.RenderSnapshotFactory;
+import io.github.shomah4a.alle.core.statusline.StatusLineRenderer;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,7 @@ class EditorThread implements Runnable, Loggable {
     private final Frame frame;
     private final MessageBuffer messageBuffer;
     private final SnapshotExchanger exchanger;
+    private final StatusLineRenderer statusLineRenderer;
 
     EditorThread(
             BlockingQueue<KeyStroke> keyQueue,
@@ -32,13 +34,15 @@ class EditorThread implements Runnable, Loggable {
             CommandLoop commandLoop,
             Frame frame,
             MessageBuffer messageBuffer,
-            SnapshotExchanger exchanger) {
+            SnapshotExchanger exchanger,
+            StatusLineRenderer statusLineRenderer) {
         this.keyQueue = keyQueue;
         this.screen = screen;
         this.commandLoop = commandLoop;
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.exchanger = exchanger;
+        this.statusLineRenderer = statusLineRenderer;
     }
 
     @Override
@@ -72,7 +76,8 @@ class EditorThread implements Runnable, Loggable {
         if (size.getRows() < 3) {
             return;
         }
-        var snapshot = RenderSnapshotFactory.create(frame, messageBuffer, size.getColumns(), size.getRows());
+        var snapshot = RenderSnapshotFactory.create(
+                frame, messageBuffer, size.getColumns(), size.getRows(), statusLineRenderer);
         exchanger.publish(snapshot);
     }
 

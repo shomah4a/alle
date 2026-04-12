@@ -129,8 +129,14 @@ public final class Main {
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
 
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
-        var runner =
-                new EditorRunner(inputSource, screen, renderer, core.commandLoop(), core.frame(), core.messageBuffer());
+        var runner = new EditorRunner(
+                inputSource,
+                screen,
+                renderer,
+                core.commandLoop(),
+                core.frame(),
+                core.messageBuffer(),
+                core.statusLineRenderer());
 
         try {
             runner.run();

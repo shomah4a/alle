@@ -18,6 +18,7 @@ tree-sitter-javascript = "0.25.0"
 tree-sitter-json = "0.24.8"
 tree-sitter-yaml = "0.5.0a"
 tree-sitter-bash = "0.25.1"
+caffeine = "3.2.0"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -38,6 +39,7 @@ tree-sitter-javascript = { module = "io.github.bonede:tree-sitter-javascript", v
 tree-sitter-json = { module = "io.github.bonede:tree-sitter-json", version.ref = "tree-sitter-json" }
 tree-sitter-yaml = { module = "io.github.bonede:tree-sitter-yaml", version.ref = "tree-sitter-yaml" }
 tree-sitter-bash = { module = "io.github.bonede:tree-sitter-bash", version.ref = "tree-sitter-bash" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
