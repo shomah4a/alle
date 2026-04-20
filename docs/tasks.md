@@ -101,3 +101,9 @@
   - プレフィックス引数（`C-u 数字` / フォーマット文字列プロンプト）の基盤が必要
 - `string-insert-rectangle`: 文字列を矩形として行毎に挿入する派生
 - CUA 互換の rectangle-mark-mode: 矩形選択モード
+
+### UndoManager の失敗時ロールバック機能
+- 複数行編集コマンド（`comment-region`, `indent-region`, 矩形コマンド等）で編集途中に `ReadOnlyBufferException` が発生した場合、一部の行だけ変更済みで残る問題がある
+- 現状の `UndoManager#withTransaction` は履歴を破棄するがバッファ内容はロールバックしない
+- TextChange を逆順に再適用する形でバッファもロールバックするよう拡張する
+- これにより「read-only 範囲を跨ぐ編集は全体失敗」を保証できる
