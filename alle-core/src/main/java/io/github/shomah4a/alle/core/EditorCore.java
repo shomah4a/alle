@@ -214,6 +214,20 @@ public final class EditorCore {
         autoModeMap.register(
                 "bash",
                 () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
+        autoModeMap.registerShebang(
+                "sh",
+                () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
+        autoModeMap.registerShebang(
+                "bash",
+                () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
+        autoModeMap.registerShebang(
+                "node",
+                () -> new JavaScriptMode(
+                        syntaxAnalyzerRegistry.create("javascript").orElseThrow()));
+        autoModeMap.registerShebang(
+                "nodejs",
+                () -> new JavaScriptMode(
+                        syntaxAnalyzerRegistry.create("javascript").orElseThrow()));
 
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
