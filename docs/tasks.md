@@ -95,3 +95,9 @@
 - `case-fold-search` / `case-replace` によるケース保持（ADR 0125 で未対応）
 - セッション全体を 1 undo 単位にまとめる対応（現状は 1 置換 1 undo）
   - `UndoManager` に `UndoTransaction beginTransaction()` 型の API を足すのが前提
+
+### rectangle 系コマンドの v1 スコープ外対応（ADR 0126）
+- `rectangle-number-lines` (`C-x r N`): 矩形各行の左端に連番を挿入
+  - プレフィックス引数（`C-u 数字` / フォーマット文字列プロンプト）の基盤が必要
+- `string-insert-rectangle`: 文字列を矩形として行毎に挿入する派生
+- CUA 互換の rectangle-mark-mode: 矩形選択モード

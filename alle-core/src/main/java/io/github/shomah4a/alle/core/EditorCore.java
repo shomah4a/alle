@@ -508,7 +508,8 @@ public final class EditorCore {
         ctrlXRMap.bind(KeyStroke.of('o'), registry.lookup("open-rectangle").orElseThrow());
         ctrlXRMap.bind(KeyStroke.of('c'), registry.lookup("clear-rectangle").orElseThrow());
         ctrlXRMap.bind(KeyStroke.of('t'), registry.lookup("string-rectangle").orElseThrow());
-        ctrlXRMap.bind(KeyStroke.meta('w'), registry.lookup("copy-rectangle-as-kill").orElseThrow());
+        ctrlXRMap.bind(
+                KeyStroke.meta('w'), registry.lookup("copy-rectangle-as-kill").orElseThrow());
         ctrlXMap.bindPrefix(KeyStroke.of('r'), ctrlXRMap);
 
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);

@@ -97,8 +97,7 @@ class StringRectangleCommandTest {
     }
 
     private static CommandContext fixedPromptContext(String response) {
-        InputPrompter prompter = (msg, hist) ->
-                CompletableFuture.completedFuture(new PromptResult.Confirmed(response));
+        InputPrompter prompter = (msg, hist) -> CompletableFuture.completedFuture(new PromptResult.Confirmed(response));
         return buildContext(prompter);
     }
 

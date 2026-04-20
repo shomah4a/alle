@@ -177,8 +177,7 @@ final class RectangleGeometry {
      * 行末が目的カラムに届かない場合は末尾にスペースを補填する。
      * 目的カラムがタブや全角文字の中央に落ちる場合はその文字をスペース展開する。
      */
-    static PaddedInsertPoint paddedInsertPoint(
-            BufferFacade buffer, int lineIndex, int targetColumn, int tabWidth) {
+    static PaddedInsertPoint paddedInsertPoint(BufferFacade buffer, int lineIndex, int targetColumn, int tabWidth) {
         String original = buffer.lineText(lineIndex);
         StringBuilder sb = new StringBuilder();
         int offset = 0;
@@ -244,8 +243,7 @@ final class RectangleGeometry {
      * 矩形の各行を replacement の対応行で置き換える。
      * replacement が矩形の行数より少ない場合、余る行は空文字列で置換される（= 削除と同等）。
      */
-    static void replaceRectangle(
-            BufferFacade buffer, Rectangle rect, ListIterable<String> replacement, int tabWidth) {
+    static void replaceRectangle(BufferFacade buffer, Rectangle rect, ListIterable<String> replacement, int tabWidth) {
         int lineCount = rect.lineCount();
         int replacementSize = replacement.size();
         for (int i = lineCount - 1; i >= 0; i--) {
@@ -288,8 +286,7 @@ final class RectangleGeometry {
      * バッファ末尾を超える行は改行を追加してから挿入する。
      * point 位置のカラムを基準とし、行末より右の場合はスペース padding する。
      */
-    static void insertRectangleAtPoint(
-            BufferFacade buffer, int pointOffset, ListIterable<String> lines, int tabWidth) {
+    static void insertRectangleAtPoint(BufferFacade buffer, int pointOffset, ListIterable<String> lines, int tabWidth) {
         if (lines.isEmpty()) {
             return;
         }

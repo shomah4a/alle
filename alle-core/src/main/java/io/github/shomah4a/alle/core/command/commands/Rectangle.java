@@ -9,12 +9,10 @@ public record Rectangle(int startLine, int endLine, int leftCol, int rightCol) {
 
     public Rectangle {
         if (startLine < 0 || endLine < startLine) {
-            throw new IllegalArgumentException(
-                    "invalid line range: startLine=" + startLine + " endLine=" + endLine);
+            throw new IllegalArgumentException("invalid line range: startLine=" + startLine + " endLine=" + endLine);
         }
         if (leftCol < 0 || rightCol < leftCol) {
-            throw new IllegalArgumentException(
-                    "invalid column range: leftCol=" + leftCol + " rightCol=" + rightCol);
+            throw new IllegalArgumentException("invalid column range: leftCol=" + leftCol + " rightCol=" + rightCol);
         }
     }
 

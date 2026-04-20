@@ -48,21 +48,16 @@ public class StringRectangleCommand implements Command {
         }
         // プロンプト開始前に矩形座標を確定してキャプチャ
         var rect = rectOpt.get();
-        return context.inputPrompter()
-                .prompt("String rectangle: ", history)
-                .thenAccept(result -> {
-                    if (!(result instanceof PromptResult.Confirmed confirmed)) {
-                        return;
-                    }
-                    applyStringRectangle(window.getBuffer(), rect, confirmed.value(), tabWidth);
-                });
+        return context.inputPrompter().prompt("String rectangle: ", history).thenAccept(result -> {
+            if (!(result instanceof PromptResult.Confirmed confirmed)) {
+                return;
+            }
+            applyStringRectangle(window.getBuffer(), rect, confirmed.value(), tabWidth);
+        });
     }
 
     private static void applyStringRectangle(
-            io.github.shomah4a.alle.core.buffer.BufferFacade buffer,
-            Rectangle rect,
-            String replacement,
-            int tabWidth) {
+            io.github.shomah4a.alle.core.buffer.BufferFacade buffer, Rectangle rect, String replacement, int tabWidth) {
         // 非同期コールバック内。CommandLoop の withTransaction は閉じているため
         // 明示的に atomicOperation + withTransaction で 1 undo 単位にまとめる。
         buffer.atomicOperation(b -> {

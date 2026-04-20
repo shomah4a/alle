@@ -71,8 +71,7 @@ public class NextLineCommand implements Command {
                 int nextLineStart = buffer.lineStartOffset(currentLine + 1);
                 String nextLineText = buffer.lineText(currentLine + 1);
                 int nextVlEndCp = VisualLineUtil.visualLineEndOffset(nextLineText, columns, 0, tabWidth);
-                int newCp = DisplayWidthUtil.computeOffsetForColumn(
-                        nextLineText, 0, nextVlEndCp, cursorCol, tabWidth);
+                int newCp = DisplayWidthUtil.computeOffsetForColumn(nextLineText, 0, nextVlEndCp, cursorCol, tabWidth);
                 window.setPoint(nextLineStart + newCp);
             }
         }

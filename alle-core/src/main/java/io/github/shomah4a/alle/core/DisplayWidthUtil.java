@@ -128,8 +128,7 @@ public final class DisplayWidthUtil {
      * @param tabWidth タブストップ間隔
      * @return targetColumn に到達または超えない最大のコードポイントオフセット
      */
-    public static int computeOffsetForColumn(
-            String lineText, int startCp, int endCp, int targetColumn, int tabWidth) {
+    public static int computeOffsetForColumn(String lineText, int startCp, int endCp, int targetColumn, int tabWidth) {
         int offset = 0;
         int cpIndex = 0;
 
