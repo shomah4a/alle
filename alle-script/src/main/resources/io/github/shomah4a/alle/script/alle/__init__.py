@@ -87,7 +87,9 @@ def global_set_key(keystrokes: list[Any], command: CommandBase) -> None:
 
 def register_major_mode(
     mode_class: type[MajorModeBase],
+    *,
     extensions: list[str] | None = None,
+    shebangs: list[str] | None = None,
 ) -> None:
     """メジャーモードを登録する。同名のモードが既に存在する場合は上書きする。
 
@@ -96,6 +98,9 @@ def register_major_mode(
     :param extensions: 関連付けるファイル拡張子のリスト（ドットなし）。
         指定した場合、拡張子→モード名のマッピングも自動登録する。
     :type extensions: list[str] | None
+    :param shebangs: 関連付ける shebang インタプリタ名のリスト（basename、例: "python3"）。
+        指定した場合、shebang→モード名のマッピングも自動登録する。
+    :type shebangs: list[str] | None
 
     使用例:
 
@@ -103,15 +108,23 @@ def register_major_mode(
     >>> class PythonMode(MajorModeBase):
     ...     def name(self):
     ...         return "python"
-    >>> alle.register_major_mode(PythonMode, extensions=["py", "pyw"])
+    >>> alle.register_major_mode(
+    ...     PythonMode,
+    ...     extensions=["py", "pyw"],
+    ...     shebangs=["python", "python3"],
+    ... )
     """
     facade = _require_facade()
     factory = _make_major_mode_factory(mode_class)
     facade.registerMajorMode(factory)
-    if extensions:
+    if extensions or shebangs:
         mode_name = mode_class().name()
-        for ext in extensions:
-            facade.registerAutoMode(ext, mode_name)
+        if extensions:
+            for ext in extensions:
+                facade.registerAutoMode(ext, mode_name)
+        if shebangs:
+            for command in shebangs:
+                facade.registerAutoModeShebang(command, mode_name)
 
 
 def register_minor_mode(mode_class: type[MinorModeBase]) -> None:

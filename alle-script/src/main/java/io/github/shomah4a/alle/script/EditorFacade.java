@@ -203,6 +203,21 @@ public class EditorFacade implements Loggable {
     }
 
     /**
+     * shebangインタプリタ名とメジャーモード名のマッピングを登録する。
+     * 指定されたモード名がModeRegistryに登録されていない場合は例外をスローする。
+     *
+     * @param command shebangインタプリタのbasename（例: "python3"）
+     * @param modeName モード名
+     * @throws IllegalArgumentException 指定されたモード名が未登録の場合
+     */
+    public void registerAutoModeShebang(String command, String modeName) {
+        Supplier<MajorMode> factory = modeRegistry
+                .lookupMajorMode(modeName)
+                .orElseThrow(() -> new IllegalArgumentException("メジャーモード '" + modeName + "' は登録されていません"));
+        autoModeMap.registerShebang(command, factory);
+    }
+
+    /**
      * 指定言語の言語サポート（スタイラーとアナライザー）を生成する。
      * 同一セッションを共有するスタイラーとアナライザーの組を返す。
      * 未対応の言語の場合はnullを返す。

@@ -13,5 +13,9 @@ from alle.modes.python import PythonMode
 
 def register_modes() -> None:
     """組み込みモードを一括登録する。"""
-    alle.register_major_mode(PythonMode, extensions=["py", "pyw"])
+    alle.register_major_mode(
+        PythonMode,
+        extensions=["py", "pyw"],
+        shebangs=["python", "python2", "python3"],
+    )
     alle.register_minor_mode(ElectricPairMode)
