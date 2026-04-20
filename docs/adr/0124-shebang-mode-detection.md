@@ -47,8 +47,8 @@ Emacs の `interpreter-mode-alist` に準拠する（拡張子ベースの `auto
 
 ### 呼び出し側の統一
 
-- `FindFileCommand` と `TreeDiredFindFileOrToggleCommand` の両方で同じ解決ロジックを使う。
-- 重複を避けるため、`AutoModeMap.resolve(BufferFacade)` のヘルパとして `BufferFacade.getName()` と `lineText(0)` の取得を1箇所にまとめる。
+- `FindFileCommand` と `TreeDiredFindFileOrToggleCommand` の両方で同じ解決ロジック（`resolve(fileName, firstLineSupplier)`）を使う。
+- 呼び出し箇所が2箇所のみのため、`BufferFacade.lineText(0)` を返す小さなラムダを各所で直接書き、共通ヘルパの導入は見送る。将来呼び出し箇所が増えた場合はヘルパ化を検討する。
 
 ### EditorCore への shebang 登録
 

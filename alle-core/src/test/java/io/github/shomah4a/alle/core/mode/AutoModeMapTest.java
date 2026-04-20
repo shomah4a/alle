@@ -168,6 +168,13 @@ class AutoModeMapTest {
         assertEquals("ruby", mode.name());
     }
 
+    @Test
+    void envの後がオプションと変数設定のみの場合はデフォルトモードが返る() {
+        autoModeMap.registerShebang("python3", () -> new StubMode("python3"));
+        var mode = autoModeMap.resolve("tool", () -> "#!/usr/bin/env -S FOO=bar");
+        assertEquals("text", mode.name());
+    }
+
     private static class StubMode implements MajorMode {
 
         private final String modeName;
