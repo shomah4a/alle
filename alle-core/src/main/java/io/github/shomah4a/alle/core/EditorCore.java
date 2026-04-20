@@ -65,6 +65,7 @@ import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.keybind.Modifier;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredInitializer;
@@ -81,6 +82,8 @@ import io.github.shomah4a.alle.core.mode.modes.yaml.YamlMode;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchHistory;
+import io.github.shomah4a.alle.core.search.QueryReplaceCommand;
+import io.github.shomah4a.alle.core.search.QueryReplaceRegexpCommand;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.statusline.BuiltinStatusLineSlots;
 import io.github.shomah4a.alle.core.statusline.CachingGitBranchProvider;
@@ -386,6 +389,13 @@ public final class EditorCore {
         registry.register(new ISearchForwardCommand(isearchHistory));
         registry.register(new ISearchBackwardCommand(isearchHistory));
 
+        var queryReplaceFromHistory = new InputHistory();
+        var queryReplaceToHistory = new InputHistory();
+        registry.register(new QueryReplaceCommand(queryReplaceFromHistory, queryReplaceToHistory));
+        var queryReplaceRegexpFromHistory = new InputHistory();
+        var queryReplaceRegexpToHistory = new InputHistory();
+        registry.register(new QueryReplaceRegexpCommand(queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory));
+
         // Frame state save/restore
         var frameStateHistory = new InputHistory();
         registry.register(new SaveFrameStateCommand(frameLayoutStore, frameStateHistory));
@@ -492,6 +502,12 @@ public final class EditorCore {
         // C-s / C-r (i-search)
         keymap.bind(KeyStroke.ctrl('s'), registry.lookup("isearch-forward").orElseThrow());
         keymap.bind(KeyStroke.ctrl('r'), registry.lookup("isearch-backward").orElseThrow());
+
+        // M-% / C-M-% (query-replace / query-replace-regexp)
+        keymap.bind(KeyStroke.meta('%'), registry.lookup("query-replace").orElseThrow());
+        keymap.bind(
+                KeyStroke.of('%', Modifier.CTRL, Modifier.META),
+                registry.lookup("query-replace-regexp").orElseThrow());
 
         // C-c プレフィックスキーマップ
         var ctrlCMap = new Keymap("C-c");

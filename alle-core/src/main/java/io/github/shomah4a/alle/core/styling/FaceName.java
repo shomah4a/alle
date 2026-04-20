@@ -87,6 +87,7 @@ public final class FaceName {
 
     // 検索
     public static final FaceName ISEARCH_MATCH = new FaceName("isearch-match", "インクリメンタルサーチのマッチ箇所");
+    public static final FaceName QUERY_REPLACE_MATCH = new FaceName("query-replace-match", "対話型置換で確認待ちのマッチ箇所");
 
     // ファイルパスシャドウ
     public static final FaceName FILE_NAME_SHADOW = new FaceName("file-name-shadow", "ファイルパス入力で無効化されたパス部分");

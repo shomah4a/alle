@@ -43,6 +43,9 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.WARNING, FaceSpec.ofForeground("red"))
             .withKeyValue(
                     FaceName.ISEARCH_MATCH, new FaceSpec("black", "yellow", Sets.immutable.with(FaceAttribute.BOLD)))
+            .withKeyValue(
+                    FaceName.QUERY_REPLACE_MATCH,
+                    new FaceSpec("black", "yellow", Sets.immutable.with(FaceAttribute.BOLD)))
             .withKeyValue(FaceName.FILE_NAME_SHADOW, FaceSpec.ofForeground("black_bright"))
             .withKeyValue(FaceName.DIFF_ADDED, FaceSpec.ofForeground("green"))
             .withKeyValue(FaceName.DIFF_MODIFIED, FaceSpec.ofForeground("yellow"))
