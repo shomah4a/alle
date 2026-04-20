@@ -8,17 +8,21 @@ import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.command.KillRing;
+import io.github.shomah4a.alle.core.command.RectangleKillRing;
 import io.github.shomah4a.alle.core.command.ShutdownHandler;
 import io.github.shomah4a.alle.core.command.commands.BackwardCharCommand;
 import io.github.shomah4a.alle.core.command.commands.BackwardDeleteCharCommand;
 import io.github.shomah4a.alle.core.command.commands.BeginningOfLineCommand;
+import io.github.shomah4a.alle.core.command.commands.ClearRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.CommentDwimCommand;
 import io.github.shomah4a.alle.core.command.commands.CommentOrUncommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.CommentRegionCommand;
+import io.github.shomah4a.alle.core.command.commands.CopyRectangleAsKillCommand;
 import io.github.shomah4a.alle.core.command.commands.CopyRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.DedentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.DeleteCharCommand;
 import io.github.shomah4a.alle.core.command.commands.DeleteOtherWindowsCommand;
+import io.github.shomah4a.alle.core.command.commands.DeleteRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.DeleteWindowCommand;
 import io.github.shomah4a.alle.core.command.commands.EndOfLineCommand;
 import io.github.shomah4a.alle.core.command.commands.ExecuteCommandCommand;
@@ -29,10 +33,12 @@ import io.github.shomah4a.alle.core.command.commands.IndentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.KeyboardQuitCommand;
 import io.github.shomah4a.alle.core.command.commands.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.KillLineCommand;
+import io.github.shomah4a.alle.core.command.commands.KillRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.KillRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.MarkWholeBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.NewlineCommand;
 import io.github.shomah4a.alle.core.command.commands.NextLineCommand;
+import io.github.shomah4a.alle.core.command.commands.OpenRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.OtherWindowCommand;
 import io.github.shomah4a.alle.core.command.commands.PreviousLineCommand;
 import io.github.shomah4a.alle.core.command.commands.ProcessQuitCommand;
@@ -48,11 +54,13 @@ import io.github.shomah4a.alle.core.command.commands.SelfInsertCommand;
 import io.github.shomah4a.alle.core.command.commands.SetMarkCommand;
 import io.github.shomah4a.alle.core.command.commands.SplitWindowBelowCommand;
 import io.github.shomah4a.alle.core.command.commands.SplitWindowRightCommand;
+import io.github.shomah4a.alle.core.command.commands.StringRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.SwitchBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.ToggleTruncateLinesCommand;
 import io.github.shomah4a.alle.core.command.commands.UncommentRegionCommand;
 import io.github.shomah4a.alle.core.command.commands.UndoCommand;
 import io.github.shomah4a.alle.core.command.commands.YankCommand;
+import io.github.shomah4a.alle.core.command.commands.YankRectangleCommand;
 import io.github.shomah4a.alle.core.constants.BufferNames;
 import io.github.shomah4a.alle.core.input.DefaultFileOperations;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
@@ -401,6 +409,17 @@ public final class EditorCore {
         registry.register(new QueryReplaceRegexpCommand(
                 "replace-regexp", queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory));
 
+        // Rectangle commands (C-x r プレフィックス)
+        var rectangleKillRing = new RectangleKillRing();
+        registry.register(new KillRectangleCommand(rectangleKillRing));
+        registry.register(new DeleteRectangleCommand());
+        registry.register(new CopyRectangleAsKillCommand(rectangleKillRing));
+        registry.register(new YankRectangleCommand(rectangleKillRing));
+        registry.register(new OpenRectangleCommand());
+        registry.register(new ClearRectangleCommand());
+        var stringRectangleHistory = new InputHistory();
+        registry.register(new StringRectangleCommand(stringRectangleHistory));
+
         // Frame state save/restore
         var frameStateHistory = new InputHistory();
         registry.register(new SaveFrameStateCommand(frameLayoutStore, frameStateHistory));
@@ -480,6 +499,18 @@ public final class EditorCore {
         ctrlXMap.bind(KeyStroke.of('0'), registry.lookup("delete-window").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('d'), registry.lookup("tree-dired").orElseThrow());
         ctrlXMap.bind(KeyStroke.of('h'), registry.lookup("mark-whole-buffer").orElseThrow());
+
+        // C-x r 矩形系
+        var ctrlXRMap = new Keymap("C-x r");
+        ctrlXRMap.bind(KeyStroke.of('k'), registry.lookup("kill-rectangle").orElseThrow());
+        ctrlXRMap.bind(KeyStroke.of('d'), registry.lookup("delete-rectangle").orElseThrow());
+        ctrlXRMap.bind(KeyStroke.of('y'), registry.lookup("yank-rectangle").orElseThrow());
+        ctrlXRMap.bind(KeyStroke.of('o'), registry.lookup("open-rectangle").orElseThrow());
+        ctrlXRMap.bind(KeyStroke.of('c'), registry.lookup("clear-rectangle").orElseThrow());
+        ctrlXRMap.bind(KeyStroke.of('t'), registry.lookup("string-rectangle").orElseThrow());
+        ctrlXRMap.bind(KeyStroke.meta('w'), registry.lookup("copy-rectangle-as-kill").orElseThrow());
+        ctrlXMap.bindPrefix(KeyStroke.of('r'), ctrlXRMap);
+
         keymap.bindPrefix(KeyStroke.ctrl('x'), ctrlXMap);
 
         // C-SPC (mark)
