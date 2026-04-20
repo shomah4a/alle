@@ -89,3 +89,9 @@
 - 同一メソッドシグネチャ (name(), keymap()) を持つが共通親がない
 - 意味論的に異なる概念なので現時点では不要
 - 共通化が必要になった時点で検討
+
+### query-replace の Emacs 互換拡張
+- `^` キーによる直前マッチへの後退（ADR 0125 で未対応）
+- `case-fold-search` / `case-replace` によるケース保持（ADR 0125 で未対応）
+- セッション全体を 1 undo 単位にまとめる対応（現状は 1 置換 1 undo）
+  - `UndoManager` に `UndoTransaction beginTransaction()` 型の API を足すのが前提
