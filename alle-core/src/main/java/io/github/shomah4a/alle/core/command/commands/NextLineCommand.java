@@ -63,49 +63,19 @@ public class NextLineCommand implements Command {
                         VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine + 1, tabWidth);
                 int nextVlEndCp =
                         VisualLineUtil.visualLineEndOffset(lineText, columns, currentVisualLine + 1, tabWidth);
-                int newCp = computeCpForColumn(lineText, nextVlStartCp, nextVlEndCp, cursorCol, tabWidth);
+                int newCp = DisplayWidthUtil.computeOffsetForColumn(
+                        lineText, nextVlStartCp, nextVlEndCp, cursorCol, tabWidth);
                 window.setPoint(currentLineStart + newCp);
             } else if (currentLine < lineCount - 1) {
                 // 次のバッファ行の最初の視覚行へ
                 int nextLineStart = buffer.lineStartOffset(currentLine + 1);
                 String nextLineText = buffer.lineText(currentLine + 1);
                 int nextVlEndCp = VisualLineUtil.visualLineEndOffset(nextLineText, columns, 0, tabWidth);
-                int newCp = computeCpForColumn(nextLineText, 0, nextVlEndCp, cursorCol, tabWidth);
+                int newCp = DisplayWidthUtil.computeOffsetForColumn(
+                        nextLineText, 0, nextVlEndCp, cursorCol, tabWidth);
                 window.setPoint(nextLineStart + newCp);
             }
         }
         return CompletableFuture.completedFuture(null);
-    }
-
-    /**
-     * 指定カラム位置に最も近いコードポイントオフセットを返す。
-     * 範囲内で指定カラムに収まる最大のオフセットを返す。
-     * カラムは startCp を 0 とする視覚行ローカル基準で計算する。
-     */
-    static int computeCpForColumn(String lineText, int startCp, int endCp, int targetColumn, int tabWidth) {
-        int offset = 0;
-        int cpIndex = 0;
-
-        // startCpまでスキップ
-        while (offset < lineText.length() && cpIndex < startCp) {
-            int codePoint = lineText.codePointAt(offset);
-            offset += Character.charCount(codePoint);
-            cpIndex++;
-        }
-
-        int resultCp = startCp;
-        int currentCol = 0;
-        while (offset < lineText.length() && cpIndex < endCp) {
-            int codePoint = lineText.codePointAt(offset);
-            int displayWidth = DisplayWidthUtil.getDisplayWidth(codePoint, currentCol, tabWidth);
-            if (currentCol + displayWidth > targetColumn) {
-                break;
-            }
-            currentCol += displayWidth;
-            offset += Character.charCount(codePoint);
-            cpIndex++;
-            resultCp = cpIndex;
-        }
-        return Math.min(resultCp, endCp);
     }
 }

@@ -61,8 +61,8 @@ public class PreviousLineCommand implements Command {
                         VisualLineUtil.visualLineStartOffset(lineText, columns, currentVisualLine - 1, tabWidth);
                 int prevVlEndCp =
                         VisualLineUtil.visualLineEndOffset(lineText, columns, currentVisualLine - 1, tabWidth);
-                int newCp =
-                        NextLineCommand.computeCpForColumn(lineText, prevVlStartCp, prevVlEndCp, cursorCol, tabWidth);
+                int newCp = DisplayWidthUtil.computeOffsetForColumn(
+                        lineText, prevVlStartCp, prevVlEndCp, cursorCol, tabWidth);
                 window.setPoint(currentLineStart + newCp);
             } else if (currentLine > 0) {
                 // 前のバッファ行の最後の視覚行へ
@@ -73,7 +73,7 @@ public class PreviousLineCommand implements Command {
                 int lastVl = prevVisualLineCount - 1;
                 int lastVlStartCp = VisualLineUtil.visualLineStartOffset(prevLineText, columns, lastVl, tabWidth);
                 int lastVlEndCp = VisualLineUtil.visualLineEndOffset(prevLineText, columns, lastVl, tabWidth);
-                int newCp = NextLineCommand.computeCpForColumn(
+                int newCp = DisplayWidthUtil.computeOffsetForColumn(
                         prevLineText, lastVlStartCp, lastVlEndCp, cursorCol, tabWidth);
                 window.setPoint(prevLineStart + newCp);
             }

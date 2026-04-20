@@ -117,6 +117,45 @@ public final class DisplayWidthUtil {
     }
 
     /**
+     * 行テキストの [startCp, endCp) 範囲内で、指定表示カラムに最も近いコードポイントオフセットを返す。
+     * カラムは startCp を 0 とする視覚行ローカル基準で計算する。
+     * 指定カラムがタブや全角文字の途中に位置する場合、その文字の手前で止める。
+     *
+     * @param lineText 行テキスト
+     * @param startCp 計算開始コードポイントオフセット
+     * @param endCp 計算終了コードポイントオフセット（排他的）
+     * @param targetColumn startCp を 0 とした目標カラム位置
+     * @param tabWidth タブストップ間隔
+     * @return targetColumn に到達または超えない最大のコードポイントオフセット
+     */
+    public static int computeOffsetForColumn(
+            String lineText, int startCp, int endCp, int targetColumn, int tabWidth) {
+        int offset = 0;
+        int cpIndex = 0;
+
+        while (offset < lineText.length() && cpIndex < startCp) {
+            int codePoint = lineText.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            cpIndex++;
+        }
+
+        int resultCp = startCp;
+        int currentCol = 0;
+        while (offset < lineText.length() && cpIndex < endCp) {
+            int codePoint = lineText.codePointAt(offset);
+            int displayWidth = getDisplayWidth(codePoint, currentCol, tabWidth);
+            if (currentCol + displayWidth > targetColumn) {
+                break;
+            }
+            currentCol += displayWidth;
+            offset += Character.charCount(codePoint);
+            cpIndex++;
+            resultCp = cpIndex;
+        }
+        return Math.min(resultCp, endCp);
+    }
+
+    /**
      * 指定カラムが全角文字やタブの途中に位置する場合、その文字の先頭カラムに丸める。
      * 文字境界上であればそのまま返す。
      *

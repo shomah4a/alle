@@ -228,4 +228,54 @@ class DisplayWidthUtilTest {
         // "aあb" の cp[1,2) は あ → 2カラム
         assertEquals(2, DisplayWidthUtil.computeColumnWidthInRange("aあb", 1, 2, TAB8));
     }
+
+    @Test
+    void computeOffsetForColumnでASCII文字列の目的カラムに到達() {
+        // "abcdef" で targetColumn=3 → cp=3
+        assertEquals(3, DisplayWidthUtil.computeOffsetForColumn("abcdef", 0, 6, 3, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnで全角文字途中は手前で止まる() {
+        // "aあb" で targetColumn=2 → あ の途中 → cp=1（あを超えない）
+        assertEquals(1, DisplayWidthUtil.computeOffsetForColumn("aあb", 0, 3, 2, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnで全角文字境界に到達() {
+        // "aあb" で targetColumn=3 → あ の後 → cp=2
+        assertEquals(2, DisplayWidthUtil.computeOffsetForColumn("aあb", 0, 3, 3, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnでタブ途中は手前で止まる() {
+        // "a\tb" で targetColumn=4 → タブ途中 → cp=1（タブを超えない）
+        assertEquals(1, DisplayWidthUtil.computeOffsetForColumn("a\tb", 0, 3, 4, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnで目的カラムが範囲を超える場合はendCpを返す() {
+        assertEquals(6, DisplayWidthUtil.computeOffsetForColumn("abcdef", 0, 6, 100, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnでstartCp基準でカラムを計算する() {
+        // "abc\tX" の cp[3,5) は tab と X
+        // startCp=3 を 0 基準として targetColumn=8 → tab の後 → cp=4
+        assertEquals(4, DisplayWidthUtil.computeOffsetForColumn("abc\tX", 3, 5, 8, TAB8));
+        // targetColumn=9 → X の後 → cp=5
+        assertEquals(5, DisplayWidthUtil.computeOffsetForColumn("abc\tX", 3, 5, 9, TAB8));
+        // targetColumn=7 → tab の途中 → cp=3（tab を超えない）
+        assertEquals(3, DisplayWidthUtil.computeOffsetForColumn("abc\tX", 3, 5, 7, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnで空文字列は0を返す() {
+        assertEquals(0, DisplayWidthUtil.computeOffsetForColumn("", 0, 0, 5, TAB8));
+    }
+
+    @Test
+    void computeOffsetForColumnでtargetColumn0は開始位置を返す() {
+        assertEquals(2, DisplayWidthUtil.computeOffsetForColumn("abcdef", 2, 6, 0, TAB8));
+    }
 }
