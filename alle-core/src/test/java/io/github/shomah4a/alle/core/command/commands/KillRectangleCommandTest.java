@@ -240,6 +240,96 @@ class KillRectangleCommandTest {
     }
 
     @Test
+    void killRectangleは1つのundo単位にまとまる() {
+        var ring = new RectangleKillRing();
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
+        var buffer = window.getBuffer();
+        window.insert("foo\nbar\nbaz\n");
+        window.setMark(0);
+        window.setPoint(10);
+
+        int sizeBefore = buffer.getUndoManager().undoSize();
+
+        buffer.getUndoManager().withTransaction(() -> {
+            new KillRectangleCommand(ring).execute(context).join();
+        });
+
+        int sizeAfter = buffer.getUndoManager().undoSize();
+        org.junit.jupiter.api.Assertions.assertEquals(
+                sizeBefore + 1, sizeAfter, "kill-rectangle は 1 undo 単位にまとまる必要がある");
+
+        // 実際に 1 回の undo で復元できる
+        new UndoCommand().execute(context).join();
+        assertEquals("foo\nbar\nbaz\n", buffer.getText());
+    }
+
+    @Test
+    void killRectangleはCommandLoop経由でも1undoで戻る() throws Exception {
+        // CommandLoop を介した実機に近い流れで undo 数を検証する。
+        var settings = new io.github.shomah4a.alle.core.setting.SettingsRegistry();
+        var textBuffer = new io.github.shomah4a.alle.core.buffer.TextBuffer(
+                "test", new io.github.shomah4a.alle.core.textmodel.GapTextModel(), settings);
+        var bufferFacade = new io.github.shomah4a.alle.core.buffer.BufferFacade(textBuffer);
+        var window = new io.github.shomah4a.alle.core.window.Window(bufferFacade);
+        var minibuffer = new io.github.shomah4a.alle.core.window.Window(
+                new io.github.shomah4a.alle.core.buffer.BufferFacade(new io.github.shomah4a.alle.core.buffer.TextBuffer(
+                        "*Minibuffer*", new io.github.shomah4a.alle.core.textmodel.GapTextModel(), settings)));
+        var frame = new io.github.shomah4a.alle.core.window.Frame(window, minibuffer);
+        var bufferManager = new io.github.shomah4a.alle.core.buffer.BufferManager();
+        bufferManager.add(bufferFacade);
+
+        var ring = new RectangleKillRing();
+        var killCommand = new KillRectangleCommand(ring);
+        var registry = new io.github.shomah4a.alle.core.command.CommandRegistry();
+        registry.register(killCommand);
+
+        // C-x r k プレフィックス構成を実機同様に組む
+        var rMap = new io.github.shomah4a.alle.core.keybind.Keymap("C-x r");
+        rMap.bind(io.github.shomah4a.alle.core.keybind.KeyStroke.of('k'), killCommand);
+        var ctrlXMap = new io.github.shomah4a.alle.core.keybind.Keymap("C-x");
+        ctrlXMap.bindPrefix(io.github.shomah4a.alle.core.keybind.KeyStroke.of('r'), rMap);
+        var keymap = new io.github.shomah4a.alle.core.keybind.Keymap("global");
+        keymap.bindPrefix(io.github.shomah4a.alle.core.keybind.KeyStroke.ctrl('x'), ctrlXMap);
+        var keyResolver = new io.github.shomah4a.alle.core.keybind.KeyResolver();
+        keyResolver.addKeymap(keymap);
+
+        java.util.Iterator<io.github.shomah4a.alle.core.keybind.KeyStroke> it =
+                java.util.Collections.<io.github.shomah4a.alle.core.keybind.KeyStroke>emptyList()
+                        .iterator();
+        io.github.shomah4a.alle.core.input.InputSource inputSource =
+                () -> it.hasNext() ? java.util.Optional.of(it.next()) : java.util.Optional.empty();
+
+        var loop = new io.github.shomah4a.alle.core.command.CommandLoop(
+                inputSource,
+                keyResolver,
+                frame,
+                bufferManager,
+                (msg, hist) -> java.util.concurrent.CompletableFuture.completedFuture(
+                        new io.github.shomah4a.alle.core.input.PromptResult.Cancelled()),
+                new io.github.shomah4a.alle.core.command.KillRing(),
+                new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, settings),
+                new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, settings),
+                settings,
+                new io.github.shomah4a.alle.core.command.CommandResolver(registry));
+
+        window.insert("foo\nbar\nbaz\n");
+        window.setMark(0);
+        window.setPoint(10);
+
+        int sizeBefore = bufferFacade.getUndoManager().undoSize();
+        // C-x r k の 3 段キー
+        loop.processKey(io.github.shomah4a.alle.core.keybind.KeyStroke.ctrl('x'));
+        loop.processKey(io.github.shomah4a.alle.core.keybind.KeyStroke.of('r'));
+        loop.processKey(io.github.shomah4a.alle.core.keybind.KeyStroke.of('k'));
+        int sizeAfter = bufferFacade.getUndoManager().undoSize();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                sizeBefore + 1, sizeAfter, "CommandLoop 経由でも kill-rectangle は 1 undo にまとまる必要がある");
+        assertEquals("o\nr\nz\n", bufferFacade.getText());
+    }
+
+    @Test
     void マルチバイト行とASCII行が混在する矩形() {
         var context = TestCommandContextFactory.createDefault();
         var window = context.frame().getActiveWindow();
