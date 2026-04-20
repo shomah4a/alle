@@ -52,17 +52,24 @@ public class StringRectangleCommand implements Command {
             if (!(result instanceof PromptResult.Confirmed confirmed)) {
                 return;
             }
-            applyStringRectangle(window.getBuffer(), rect, confirmed.value(), tabWidth);
+            applyStringRectangle(window, window.getBuffer(), rect, confirmed.value(), tabWidth);
         });
     }
 
     private static void applyStringRectangle(
-            io.github.shomah4a.alle.core.buffer.BufferFacade buffer, Rectangle rect, String replacement, int tabWidth) {
+            io.github.shomah4a.alle.core.window.Window window,
+            io.github.shomah4a.alle.core.buffer.BufferFacade buffer,
+            Rectangle rect,
+            String replacement,
+            int tabWidth) {
         // 非同期コールバック内。CommandLoop の withTransaction は閉じているため
         // 明示的に atomicOperation + withTransaction で 1 undo 単位にまとめる。
         buffer.atomicOperation(b -> {
             b.getUndoManager().withTransaction(() -> {
                 if (replacement.isEmpty()) {
+                    if (rect.width() == 0) {
+                        return;
+                    }
                     RectangleGeometry.deleteRectangle(b, rect, tabWidth);
                 } else {
                     MutableList<String> lines = Lists.mutable.empty();
@@ -71,6 +78,7 @@ public class StringRectangleCommand implements Command {
                     }
                     RectangleGeometry.replaceRectangle(b, rect, lines, tabWidth);
                 }
+                window.setPoint(RectangleGeometry.topLeftOffset(b, rect, tabWidth));
                 b.markDirty();
             });
             return null;

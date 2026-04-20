@@ -33,7 +33,11 @@ public class CopyRectangleAsKillCommand implements Command {
             context.messageBuffer().message("No region active");
             return CompletableFuture.completedFuture(null);
         }
-        var lines = RectangleGeometry.extractRectangle(buffer, rectOpt.get(), tabWidth);
+        var rect = rectOpt.get();
+        if (rect.width() == 0) {
+            return CompletableFuture.completedFuture(null);
+        }
+        var lines = RectangleGeometry.extractRectangle(buffer, rect, tabWidth);
         rectangleKillRing.put(lines);
         return CompletableFuture.completedFuture(null);
     }

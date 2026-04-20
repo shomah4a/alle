@@ -27,7 +27,11 @@ public class OpenRectangleCommand implements Command {
             context.messageBuffer().message("No region active");
             return CompletableFuture.completedFuture(null);
         }
-        RectangleGeometry.openRectangle(buffer, rectOpt.get(), tabWidth);
+        var rect = rectOpt.get();
+        if (rect.width() == 0) {
+            return CompletableFuture.completedFuture(null);
+        }
+        RectangleGeometry.openRectangle(buffer, rect, tabWidth);
         buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }

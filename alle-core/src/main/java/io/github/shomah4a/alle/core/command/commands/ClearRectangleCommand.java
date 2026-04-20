@@ -26,7 +26,12 @@ public class ClearRectangleCommand implements Command {
             context.messageBuffer().message("No region active");
             return CompletableFuture.completedFuture(null);
         }
-        RectangleGeometry.clearRectangle(buffer, rectOpt.get(), tabWidth);
+        var rect = rectOpt.get();
+        if (rect.width() == 0) {
+            return CompletableFuture.completedFuture(null);
+        }
+        RectangleGeometry.clearRectangle(buffer, rect, tabWidth);
+        window.setPoint(RectangleGeometry.topLeftOffset(buffer, rect, tabWidth));
         buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }

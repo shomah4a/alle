@@ -49,22 +49,20 @@ class CopyRectangleAsKillCommandTest {
     }
 
     @Test
-    void 全角文字を含む矩形は境界をスペース展開() {
+    void 全角境界を跨ぐ矩形は跨ぎ文字を含めて保存() {
         var ring = new RectangleKillRing();
         var context = TestCommandContextFactory.createDefault();
         var window = context.frame().getActiveWindow();
         // "aあb" と "xyz" の 2 行
         window.insert("aあb\nxyz\n");
-        // mark=行0 col=0, point=行1 col=2
-        // bufferの "あ" は cp1, b は cp2。
         window.setMark(0);
-        // 行1 (xyz) の col=2 → cp offset 2 → バッファ全体で (4 + 2) = 6
+        // 行1 (xyz) の col=2 → offset = (4 + 2) = 6
         window.setPoint(6);
         new CopyRectangleAsKillCommand(ring).execute(context).join();
 
         var saved = ring.current().orElseThrow();
-        // 行0 "aあb" の col[0, 2) → "a " (a そのまま, あの境界でスペース展開)
+        // 行0 "aあb" の col[0, 2) → 右境界 col 2 はあの中央。E 案ではあを含めて "aあ"
         // 行1 "xyz" の col[0, 2) → "xy"
-        assertEquals(Lists.immutable.of("a ", "xy"), saved);
+        assertEquals(Lists.immutable.of("aあ", "xy"), saved);
     }
 }

@@ -34,9 +34,13 @@ public class KillRectangleCommand implements Command {
             return CompletableFuture.completedFuture(null);
         }
         var rect = rectOpt.get();
+        if (rect.width() == 0) {
+            return CompletableFuture.completedFuture(null);
+        }
         var lines = RectangleGeometry.extractRectangle(buffer, rect, tabWidth);
         rectangleKillRing.put(lines);
         RectangleGeometry.deleteRectangle(buffer, rect, tabWidth);
+        window.setPoint(RectangleGeometry.topLeftOffset(buffer, rect, tabWidth));
         buffer.markDirty();
         return CompletableFuture.completedFuture(null);
     }

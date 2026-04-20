@@ -12,10 +12,12 @@ import org.eclipse.collections.api.list.MutableList;
 /**
  * 矩形編集のジオメトリ計算ヘルパー。
  *
- * <p>表示カラム ↔ コードポイントオフセット変換、境界が全角文字やタブの中央に落ちるケースで
- * スペース展開した行テキストを構築する処理を提供する。
+ * <p>表示カラム単位（タブは TAB_WIDTH で展開、全角文字は 2）で矩形を定義するが、
+ * 境界が全角文字やタブの中央に落ちる場合はその文字を矩形に含める（外側にスナップ）。
+ * これにより元のタブ/全角文字は破壊されない。
  *
- * <p>すべての座標系は表示カラム単位（タブは TAB_WIDTH で展開、全角文字は 2）。
+ * <p>各行で実際に切り出されるコードポイント範囲は行ごとに異なりうる
+ * （跨ぎ文字がある行は指定より広くなる）。
  */
 final class RectangleGeometry {
 
@@ -57,13 +59,12 @@ final class RectangleGeometry {
     }
 
     /**
-     * 行テキスト内で指定表示カラムを含む区間のコードポイントオフセットと
-     * 区間の左端・右端の実カラムを返す。
+     * 行テキスト内で targetColumn に対応するコードポイントオフセットを、
+     * 「targetColumn 以下の最大の文字境界」として返す（round down）。
      *
-     * <p>カラムがタブや全角文字の中央に落ちる場合、その文字全体を覆う区間を返す。
-     * 行がカラムに届かない場合、末端位置と行末カラムを返す。
+     * <p>targetColumn がタブや全角文字の中央に落ちる場合、その文字の手前（左端）を返す。
      */
-    static CellBoundary cellAtColumn(String lineText, int targetColumn, int tabWidth) {
+    static int columnRoundDown(String lineText, int targetColumn, int tabWidth) {
         int offset = 0;
         int cpIndex = 0;
         int col = 0;
@@ -71,149 +72,51 @@ final class RectangleGeometry {
             int codePoint = lineText.codePointAt(offset);
             int width = DisplayWidthUtil.getDisplayWidth(codePoint, col, tabWidth);
             if (col + width > targetColumn) {
-                // targetColumn がこの文字に含まれる
-                return new CellBoundary(cpIndex, cpIndex + 1, col, col + width);
+                break;
             }
             col += width;
             offset += Character.charCount(codePoint);
             cpIndex++;
-            if (col == targetColumn) {
-                // 境界上 → 次の文字の手前
-                return new CellBoundary(cpIndex, cpIndex, col, col);
+            if (col >= targetColumn) {
+                break;
             }
         }
-        // 行末を超える: 末端カラムを padding する
-        return new CellBoundary(cpIndex, cpIndex, col, col);
+        return cpIndex;
     }
 
     /**
-     * 行 lineIndex に対して矩形範囲 [leftCol, rightCol) を切り出すための「展開済み行テキスト」を返す。
+     * 行テキスト内で targetColumn に対応するコードポイントオフセットを、
+     * 「targetColumn 以上の最小の文字境界」として返す（round up）。
      *
-     * <p>境界がタブや全角文字の中央に落ちる場合、その文字をスペースに展開する。
-     * 行末が leftCol に届かない場合は末尾にスペースを補填する。
-     *
-     * <p>返り値は展開後の行テキスト本体と、leftCol/rightCol に対応するコードポイントオフセット。
+     * <p>targetColumn がタブや全角文字の中央に落ちる場合、その文字の右端を返す。
+     * 行末に達して targetColumn に届かない場合は行末を返す。
      */
-    static PaddedLine paddedLineForRectangle(
-            BufferFacade buffer, int lineIndex, int leftCol, int rightCol, int tabWidth) {
-        String original = buffer.lineText(lineIndex);
-        return buildPaddedLine(original, leftCol, rightCol, tabWidth);
-    }
-
-    /**
-     * 文字列版。行テキストのみに依存するロジックをテストしやすくするために分離。
-     */
-    static PaddedLine buildPaddedLine(String lineText, int leftCol, int rightCol, int tabWidth) {
-        StringBuilder sb = new StringBuilder();
+    static int columnRoundUp(String lineText, int targetColumn, int tabWidth) {
         int offset = 0;
         int cpIndex = 0;
         int col = 0;
-        int leftCp = -1;
-        int rightCp = -1;
-
-        while (offset < lineText.length()) {
+        while (offset < lineText.length() && col < targetColumn) {
             int codePoint = lineText.codePointAt(offset);
             int width = DisplayWidthUtil.getDisplayWidth(codePoint, col, tabWidth);
-            boolean crossesLeft = col < leftCol && col + width > leftCol;
-            boolean crossesRight = col < rightCol && col + width > rightCol;
-
-            if (col == leftCol && leftCp == -1) {
-                leftCp = cpIndex;
-            }
-            if (col == rightCol && rightCp == -1) {
-                rightCp = cpIndex;
-            }
-
-            if (crossesLeft || crossesRight) {
-                // 境界を跨ぐ文字はスペース展開
-                for (int i = 0; i < width; i++) {
-                    int c = col + i;
-                    if (c == leftCol && leftCp == -1) {
-                        leftCp = cpIndex;
-                    }
-                    if (c == rightCol && rightCp == -1) {
-                        rightCp = cpIndex;
-                    }
-                    sb.append(' ');
-                    cpIndex++;
-                }
-                col += width;
-                offset += Character.charCount(codePoint);
-            } else {
-                sb.appendCodePoint(codePoint);
-                col += width;
-                offset += Character.charCount(codePoint);
-                cpIndex++;
-            }
-        }
-
-        // 行末を越えた境界は末尾スペース padding で埋める
-        while (col < leftCol || col < rightCol) {
-            if (col == leftCol && leftCp == -1) {
-                leftCp = cpIndex;
-            }
-            if (col == rightCol && rightCp == -1) {
-                rightCp = cpIndex;
-            }
-            if (col >= leftCol && col >= rightCol) {
-                break;
-            }
-            sb.append(' ');
-            col++;
+            col += width;
+            offset += Character.charCount(codePoint);
             cpIndex++;
         }
-        if (leftCp == -1) {
-            leftCp = cpIndex;
-        }
-        if (rightCp == -1) {
-            rightCp = cpIndex;
-        }
-
-        return new PaddedLine(sb.toString(), leftCp, rightCp);
+        return cpIndex;
     }
 
     /**
-     * 指定行の point から挿入するカラム位置でスペース padding し、挿入ポイントのコードポイントオフセットを返す。
-     * 行末が目的カラムに届かない場合は末尾にスペースを補填する。
-     * 目的カラムがタブや全角文字の中央に落ちる場合はその文字をスペース展開する。
+     * 行 lineIndex の矩形境界に対応するコードポイントオフセット範囲を返す。
+     * 左は round down、右は round up した結果。
      */
-    static PaddedInsertPoint paddedInsertPoint(BufferFacade buffer, int lineIndex, int targetColumn, int tabWidth) {
-        String original = buffer.lineText(lineIndex);
-        StringBuilder sb = new StringBuilder();
-        int offset = 0;
-        int cpIndex = 0;
-        int col = 0;
-        while (offset < original.length() && col < targetColumn) {
-            int codePoint = original.codePointAt(offset);
-            int width = DisplayWidthUtil.getDisplayWidth(codePoint, col, tabWidth);
-            if (col + width > targetColumn) {
-                for (int i = 0; i < width; i++) {
-                    sb.append(' ');
-                }
-                col += width;
-                offset += Character.charCount(codePoint);
-                cpIndex += width;
-                break;
-            }
-            sb.appendCodePoint(codePoint);
-            col += width;
-            offset += Character.charCount(codePoint);
-            cpIndex += 1;
+    static CpRange cpRangeForLine(BufferFacade buffer, int lineIndex, Rectangle rect, int tabWidth) {
+        String lineText = buffer.lineText(lineIndex);
+        int leftCp = columnRoundDown(lineText, rect.leftCol(), tabWidth);
+        int rightCp = columnRoundUp(lineText, rect.rightCol(), tabWidth);
+        if (rightCp < leftCp) {
+            rightCp = leftCp;
         }
-        StringBuilder paddingSuffix = new StringBuilder();
-        while (col < targetColumn) {
-            paddingSuffix.append(' ');
-            col++;
-        }
-        int insertCp = cpIndex + paddingSuffix.length();
-        sb.append(paddingSuffix);
-        // 残り
-        while (offset < original.length()) {
-            int codePoint = original.codePointAt(offset);
-            sb.appendCodePoint(codePoint);
-            offset += Character.charCount(codePoint);
-        }
-        return new PaddedInsertPoint(sb.toString(), insertCp);
+        return new CpRange(leftCp, rightCp);
     }
 
     /**
@@ -222,26 +125,29 @@ final class RectangleGeometry {
     static ImmutableList<String> extractRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
         MutableList<String> lines = Lists.mutable.empty();
         for (int li = rect.startLine(); li <= rect.endLine(); li++) {
-            var padded = paddedLineForRectangle(buffer, li, rect.leftCol(), rect.rightCol(), tabWidth);
-            lines.add(codePointSubstring(padded.text(), padded.leftCp(), padded.rightCp()));
+            String lineText = buffer.lineText(li);
+            var range = cpRangeForLine(buffer, li, rect, tabWidth);
+            lines.add(codePointSubstring(lineText, range.leftCp(), range.rightCp()));
         }
         return lines.toImmutable();
     }
 
     /**
-     * 矩形を削除する。各行は矩形範囲を除去した新しい行テキストで置き換えられる。
-     * 境界がタブ/全角文字の中央に落ちる場合、その文字はスペース展開される（破壊的）。
+     * 矩形を削除する。各行の矩形範囲 (外側スナップ後) を除去する。
      */
     static void deleteRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
         for (int li = rect.endLine(); li >= rect.startLine(); li--) {
-            String newLine = buildReplacedLine(buffer, li, rect.leftCol(), rect.rightCol(), "", tabWidth);
-            replaceLineText(buffer, li, newLine);
+            var range = cpRangeForLine(buffer, li, rect, tabWidth);
+            if (range.rightCp() > range.leftCp()) {
+                int lineStart = buffer.lineStartOffset(li);
+                buffer.deleteText(lineStart + range.leftCp(), range.rightCp() - range.leftCp());
+            }
         }
     }
 
     /**
      * 矩形の各行を replacement の対応行で置き換える。
-     * replacement が矩形の行数より少ない場合、余る行は空文字列で置換される（= 削除と同等）。
+     * replacement が矩形の行数より少ない場合、余る行は空文字列で置換される。
      */
     static void replaceRectangle(BufferFacade buffer, Rectangle rect, ListIterable<String> replacement, int tabWidth) {
         int lineCount = rect.lineCount();
@@ -249,42 +155,65 @@ final class RectangleGeometry {
         for (int i = lineCount - 1; i >= 0; i--) {
             int li = rect.startLine() + i;
             String rep = i < replacementSize ? replacement.get(i) : "";
-            String newLine = buildReplacedLine(buffer, li, rect.leftCol(), rect.rightCol(), rep, tabWidth);
-            replaceLineText(buffer, li, newLine);
+            var range = cpRangeForLine(buffer, li, rect, tabWidth);
+            int lineStart = buffer.lineStartOffset(li);
+            if (range.rightCp() > range.leftCp()) {
+                buffer.deleteText(lineStart + range.leftCp(), range.rightCp() - range.leftCp());
+            }
+            if (!rep.isEmpty()) {
+                // 行が leftCol に届かない場合は先に padding してから挿入
+                padLineToColumn(buffer, li, rect.leftCol(), tabWidth);
+                int refreshedLeftCp = columnRoundDown(buffer.lineText(li), rect.leftCol(), tabWidth);
+                buffer.insertText(lineStart + refreshedLeftCp, rep);
+            }
         }
     }
 
     /**
-     * 矩形範囲をスペースで埋める（右側テキストは動かさない = 幅は保持）。
+     * 矩形範囲をスペースで埋める（右側テキストは動かさない = 実矩形幅を保持）。
+     *
+     * <p>跨ぎ文字を含めて削除した後、削除された実カラム幅分のスペースを挿入する。
+     * これにより右側テキストの視覚的位置が保たれる。
      */
     static void clearRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
-        String spaces = " ".repeat(rect.width());
-        MutableList<String> replacement = Lists.mutable.empty();
-        for (int i = 0; i < rect.lineCount(); i++) {
-            replacement.add(spaces);
+        for (int li = rect.endLine(); li >= rect.startLine(); li--) {
+            String lineText = buffer.lineText(li);
+            int leftCp = columnRoundDown(lineText, rect.leftCol(), tabWidth);
+            int rightCp = columnRoundUp(lineText, rect.rightCol(), tabWidth);
+            int leftColActual = DisplayWidthUtil.computeColumnForOffset(lineText, leftCp, tabWidth);
+            int rightColActual = DisplayWidthUtil.computeColumnForOffset(lineText, rightCp, tabWidth);
+            int actualWidth = rightColActual - leftColActual;
+            int lineStart = buffer.lineStartOffset(li);
+            if (rightCp > leftCp) {
+                buffer.deleteText(lineStart + leftCp, rightCp - leftCp);
+            }
+            // 行が leftCol に届かない場合は末尾 padding してから width 分のスペースを追加
+            if (actualWidth == 0) {
+                actualWidth = rect.width();
+            }
+            padLineToColumn(buffer, li, rect.leftCol(), tabWidth);
+            int insertCp = columnRoundDown(buffer.lineText(li), rect.leftCol(), tabWidth);
+            if (actualWidth > 0) {
+                buffer.insertText(lineStart + insertCp, " ".repeat(actualWidth));
+            }
         }
-        replaceRectangle(buffer, rect, replacement, tabWidth);
     }
 
     /**
-     * 矩形範囲に同サイズの空白を挿入する（右側テキストを右に押し出す）。
+     * 矩形範囲と同サイズの空白を挿入する（右側テキストを右に押し出す）。
+     * 挿入位置が跨ぎ文字の中央なら、その文字の右側（外側スナップ右）に挿入する。
      */
     static void openRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
         String spaces = " ".repeat(rect.width());
         for (int li = rect.endLine(); li >= rect.startLine(); li--) {
-            var padded = paddedInsertPoint(buffer, li, rect.leftCol(), tabWidth);
-            int totalCp = codePointCount(padded.text());
-            String newLine = codePointSubstring(padded.text(), 0, padded.insertCp())
-                    + spaces
-                    + codePointSubstring(padded.text(), padded.insertCp(), totalCp);
-            replaceLineText(buffer, li, newLine);
+            insertAtColumnRightSnap(buffer, li, rect.leftCol(), spaces, tabWidth);
         }
     }
 
     /**
      * 現在の point の行を左上として、lines を矩形として挿入する。
+     * 挿入位置が跨ぎ文字の中央なら、その文字の右側に挿入する（yank の仕様）。
      * バッファ末尾を超える行は改行を追加してから挿入する。
-     * point 位置のカラムを基準とし、行末より右の場合はスペース padding する。
      */
     static void insertRectangleAtPoint(BufferFacade buffer, int pointOffset, ListIterable<String> lines, int tabWidth) {
         if (lines.isEmpty()) {
@@ -299,44 +228,50 @@ final class RectangleGeometry {
         for (int i = 0; i < lines.size(); i++) {
             int li = startLine + i;
             if (li >= buffer.lineCount()) {
-                // バッファ末尾を超えたら改行を追加
                 buffer.insertText(buffer.length(), "\n");
             }
-            var padded = paddedInsertPoint(buffer, li, startCol, tabWidth);
-            int totalCp = codePointCount(padded.text());
-            String newLine = codePointSubstring(padded.text(), 0, padded.insertCp())
-                    + lines.get(i)
-                    + codePointSubstring(padded.text(), padded.insertCp(), totalCp);
-            replaceLineText(buffer, li, newLine);
+            insertAtColumnRightSnap(buffer, li, startCol, lines.get(i), tabWidth);
         }
     }
 
     /**
-     * 行テキストを newText で置き換える（行末改行は触らない）。
+     * 指定行・指定カラムにテキストを挿入する（右スナップ = 跨ぎ文字の後ろに挿入）。
+     * 行がそのカラムに届かない場合は末尾にスペース padding してから挿入する。
      */
-    private static void replaceLineText(BufferFacade buffer, int lineIndex, String newText) {
+    static void insertAtColumnRightSnap(BufferFacade buffer, int lineIndex, int col, String text, int tabWidth) {
+        padLineToColumn(buffer, lineIndex, col, tabWidth);
+        String lineText = buffer.lineText(lineIndex);
+        int insertCp = columnRoundUp(lineText, col, tabWidth);
         int lineStart = buffer.lineStartOffset(lineIndex);
-        String oldText = buffer.lineText(lineIndex);
-        int oldCpLen = codePointCount(oldText);
-        if (oldCpLen > 0) {
-            buffer.deleteText(lineStart, oldCpLen);
-        }
-        if (!newText.isEmpty()) {
-            buffer.insertText(lineStart, newText);
+        if (!text.isEmpty()) {
+            buffer.insertText(lineStart + insertCp, text);
         }
     }
 
     /**
-     * 行 lineIndex の矩形範囲 [leftCol, rightCol) を replacement で置き換えた行テキストを構築する。
-     * 境界がタブ/全角文字の中央に落ちる場合はスペース展開する。
+     * 行の末尾カラムが target 未満なら、target に届くまで末尾にスペースを追加する。
      */
-    private static String buildReplacedLine(
-            BufferFacade buffer, int lineIndex, int leftCol, int rightCol, String replacement, int tabWidth) {
-        var padded = paddedLineForRectangle(buffer, lineIndex, leftCol, rightCol, tabWidth);
-        int totalCp = codePointCount(padded.text());
-        return codePointSubstring(padded.text(), 0, padded.leftCp())
-                + replacement
-                + codePointSubstring(padded.text(), padded.rightCp(), totalCp);
+    static void padLineToColumn(BufferFacade buffer, int lineIndex, int targetCol, int tabWidth) {
+        String lineText = buffer.lineText(lineIndex);
+        int lineLength = codePointCount(lineText);
+        int endCol = DisplayWidthUtil.computeColumnForOffset(lineText, lineLength, tabWidth);
+        if (endCol < targetCol) {
+            int lineStart = buffer.lineStartOffset(lineIndex);
+            String padding = " ".repeat(targetCol - endCol);
+            buffer.insertText(lineStart + lineLength, padding);
+        }
+    }
+
+    /**
+     * 矩形の左上（startLine, leftCol）に対応するバッファオフセットを返す。
+     * leftCol がタブや全角文字の中央に落ちる場合、外側スナップ（手前の文字境界）を採用する。
+     * 行が leftCol に届かない場合は行末を返す。
+     */
+    static int topLeftOffset(BufferFacade buffer, Rectangle rect, int tabWidth) {
+        int li = rect.startLine();
+        String lineText = buffer.lineText(li);
+        int leftCp = columnRoundDown(lineText, rect.leftCol(), tabWidth);
+        return buffer.lineStartOffset(li) + leftCp;
     }
 
     private static int codePointCount(String s) {
@@ -350,24 +285,7 @@ final class RectangleGeometry {
     }
 
     /**
-     * cellAtColumn の戻り値。
-     * @param leftCp  含む文字の左境界コードポイントオフセット
-     * @param rightCp 含む文字の右境界コードポイントオフセット（leftCp==rightCp なら境界上）
-     * @param leftCol 実カラム（leftCp 位置）
-     * @param rightCol 実カラム（rightCp 位置）
+     * 行内のコードポイントオフセット範囲 [leftCp, rightCp)。
      */
-    record CellBoundary(int leftCp, int rightCp, int leftCol, int rightCol) {}
-
-    /**
-     * paddedLineForRectangle / buildPaddedLine の戻り値。
-     * text は matrix 展開後の行テキスト。leftCp と rightCp は text 内の
-     * 矩形列範囲を示すコードポイントオフセット。
-     */
-    record PaddedLine(String text, int leftCp, int rightCp) {}
-
-    /**
-     * paddedInsertPoint の戻り値。
-     * text は padding 後の行テキスト。insertCp は text 内の挿入コードポイントオフセット。
-     */
-    record PaddedInsertPoint(String text, int insertCp) {}
+    record CpRange(int leftCp, int rightCp) {}
 }

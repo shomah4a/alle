@@ -96,6 +96,38 @@ class StringRectangleCommandTest {
         assertEquals("XYZcd\nXYZgh\n", window.getBuffer().getText());
     }
 
+    @Test
+    void タブを跨ぐ矩形を文字列で置き換えるとタブごと置換() {
+        var context = fixedPromptContext("X");
+        var window = context.activeWindow();
+        window.insert("a\tb\n");
+        // col[0, 3) → 右境界 col 3 はタブ中央 → 広げて col 8 → "a\t" を削除、"X" を挿入
+        // 結果: "Xb"
+        // ただし setMark/setPoint でタブ中央は指せない。代わりに入力位置を調整。
+        // col 0 (mark offset 0), col 8 (point offset 2) で col[0, 8) → "a\t" 全体削除
+        // それを "X" で置換 → "Xb"
+        window.setMark(0);
+        window.setPoint(2);
+
+        new StringRectangleCommand(new InputHistory()).execute(context).join();
+
+        assertEquals("Xb\n", window.getBuffer().getText());
+    }
+
+    @Test
+    void 全角を跨ぐ矩形を文字列で置き換えると全角ごと置換() {
+        var context = fixedPromptContext("X");
+        var window = context.activeWindow();
+        window.insert("aあb\n");
+        // col[0, 3) → あ境界上 (col 3 は b の手前) → "aあ" を "X" で置換
+        window.setMark(0);
+        window.setPoint(2); // cp 2 は b の手前 = col 3
+
+        new StringRectangleCommand(new InputHistory()).execute(context).join();
+
+        assertEquals("Xb\n", window.getBuffer().getText());
+    }
+
     private static CommandContext fixedPromptContext(String response) {
         InputPrompter prompter = (msg, hist) -> CompletableFuture.completedFuture(new PromptResult.Confirmed(response));
         return buildContext(prompter);

@@ -42,6 +42,30 @@ class OpenRectangleCommandTest {
     }
 
     @Test
+    void タブ中央への_openRectangle_はタブの後ろに空白を挿入() {
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
+        window.insert("a\tb\n");
+        // col[3, 5) を open-rectangle → 左境界 col 3 はタブ中央
+        // 右スナップ挿入で col 8 (タブの後) に 2 スペース挿入 → "a\t  b"
+        var rect = new Rectangle(0, 0, 3, 5);
+        RectangleGeometry.openRectangle(window.getBuffer(), rect, 8);
+        assertEquals("a\t  b\n", window.getBuffer().getText());
+    }
+
+    @Test
+    void 全角中央への_openRectangle_は全角の後ろに空白を挿入() {
+        var context = TestCommandContextFactory.createDefault();
+        var window = context.frame().getActiveWindow();
+        window.insert("aあb\n");
+        // col[2, 4) を open-rectangle → 左境界 col 2 はあの中央
+        // 右スナップで col 3 (あの後) に 2 スペース挿入 → "aあ  b"
+        var rect = new Rectangle(0, 0, 2, 4);
+        RectangleGeometry.openRectangle(window.getBuffer(), rect, 8);
+        assertEquals("aあ  b\n", window.getBuffer().getText());
+    }
+
+    @Test
     void 行が目的カラムに届かない場合は末尾にスペース補填してから挿入() {
         var context = TestCommandContextFactory.createDefault();
         var window = context.frame().getActiveWindow();
