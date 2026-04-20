@@ -107,3 +107,14 @@
 - 現状の `UndoManager#withTransaction` は履歴を破棄するがバッファ内容はロールバックしない
 - TextChange を逆順に再適用する形でバッファもロールバックするよう拡張する
 - これにより「read-only 範囲を跨ぐ編集は全体失敗」を保証できる
+
+### 非同期プロンプトを挟むコマンドの undo transaction 対応
+- `CommandLoop.handleEntry` は `command.execute(context)` を `UndoManager#withTransaction` で包むが、`withTransaction` は `action.run()` 完了時点で transaction を閉じる
+- そのため `InputPrompter#prompt` を介す非同期コマンド（M-x, find-file 等）内部で複数バッファ変更を行うと、prompt 完了後のコールバック内編集はすべて transaction 外で record される → 行単位に undo が積まれる
+- 具体的に `M-x kill-rectangle` / `M-x comment-region` / `M-x indent-region` 等で 1 undo にまとまらない問題が発生する
+- 矩形の`string-rectangle`は自前で `atomicOperation + withTransaction` を張って回避しているが、本来はこれがなくても動くべき
+- 方針案: `UndoManager` に acquire/release 型 API (`UndoTransaction beginTransaction()` + `AutoCloseable`) を追加し、参照カウントでネスト・非同期に対応する
+  - `CommandLoop.handleEntry` は `begin` して、future チェーンの `whenComplete` で `close` する
+  - これによりコマンド側は何も変えずに 1 undo にまとまる
+  - query-replace セッション全体を 1 undo にまとめる対応もこの仕組みで実現できる
+- 影響範囲: 矩形 7 コマンド、`comment-region`/`uncomment-region`/`comment-or-uncomment-region`、`indent-region`/`dedent-region`、query-replace セッション全体
