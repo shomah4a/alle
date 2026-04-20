@@ -18,6 +18,13 @@ Emacs の `query-replace` (M-%) / `query-replace-regexp` (C-M-%) に相当する
 - `query-replace` — リテラル文字列置換
 - `query-replace-regexp` — 正規表現置換
 
+実装は対話版のみだが、Emacs 互換として以下の別名も登録し、同じ対話型置換コマンドに割り当てる。履歴は対応するコマンド同士で共有する:
+
+- `replace-string` → `query-replace` と同じ実装を共有
+- `replace-regexp` → `query-replace-regexp` と同じ実装を共有
+
+これは Emacs における `replace-string` / `replace-regexp`（本来は非対話）を対話型として提供する方針であり、純粋な Emacs 互換からは逸脱する。Emacs 本来の非対話版が必要になった時点で別コマンドとして切り出す（TODO）。
+
 ### 起動フロー
 
 1. ミニバッファで FROM をプロンプト

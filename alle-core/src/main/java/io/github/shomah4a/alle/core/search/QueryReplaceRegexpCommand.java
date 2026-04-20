@@ -15,17 +15,27 @@ import java.util.regex.PatternSyntaxException;
  */
 public class QueryReplaceRegexpCommand implements Command {
 
+    private final String commandName;
     private final InputHistory fromHistory;
     private final InputHistory toHistory;
 
     public QueryReplaceRegexpCommand(InputHistory fromHistory, InputHistory toHistory) {
+        this("query-replace-regexp", fromHistory, toHistory);
+    }
+
+    /**
+     * コマンド名を指定するコンストラクタ。
+     * Emacs 互換の別名登録（{@code replace-regexp} 等）用。動作は同じ対話型置換。
+     */
+    public QueryReplaceRegexpCommand(String commandName, InputHistory fromHistory, InputHistory toHistory) {
+        this.commandName = commandName;
         this.fromHistory = fromHistory;
         this.toHistory = toHistory;
     }
 
     @Override
     public String name() {
-        return "query-replace-regexp";
+        return commandName;
     }
 
     @Override

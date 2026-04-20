@@ -190,6 +190,34 @@ class QueryReplaceCommandTest {
     }
 
     @Nested
+    class エイリアス {
+
+        @Test
+        void replace_stringという名前でも起動できる() {
+            var s = setup("foo bar foo", "foo", "X");
+            var cmd = new QueryReplaceCommand("replace-string", new InputHistory(), new InputHistory());
+
+            assertEquals("replace-string", cmd.name());
+
+            cmd.execute(s.context).join();
+
+            assertNotNull(s.controller.currentKeymap);
+        }
+
+        @Test
+        void replace_regexpという名前でも起動できる() {
+            var s = setup("abc 123", "\\d+", "N");
+            var cmd = new QueryReplaceRegexpCommand("replace-regexp", new InputHistory(), new InputHistory());
+
+            assertEquals("replace-regexp", cmd.name());
+
+            cmd.execute(s.context).join();
+
+            assertNotNull(s.controller.currentKeymap);
+        }
+    }
+
+    @Nested
     class QueryReplaceRegexp {
 
         @Test

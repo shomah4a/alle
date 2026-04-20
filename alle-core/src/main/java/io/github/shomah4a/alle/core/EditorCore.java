@@ -392,9 +392,14 @@ public final class EditorCore {
         var queryReplaceFromHistory = new InputHistory();
         var queryReplaceToHistory = new InputHistory();
         registry.register(new QueryReplaceCommand(queryReplaceFromHistory, queryReplaceToHistory));
+        // Emacs 互換の別名。実装は query-replace と共通、履歴も共有する。
+        registry.register(new QueryReplaceCommand("replace-string", queryReplaceFromHistory, queryReplaceToHistory));
+
         var queryReplaceRegexpFromHistory = new InputHistory();
         var queryReplaceRegexpToHistory = new InputHistory();
         registry.register(new QueryReplaceRegexpCommand(queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory));
+        registry.register(new QueryReplaceRegexpCommand(
+                "replace-regexp", queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory));
 
         // Frame state save/restore
         var frameStateHistory = new InputHistory();
