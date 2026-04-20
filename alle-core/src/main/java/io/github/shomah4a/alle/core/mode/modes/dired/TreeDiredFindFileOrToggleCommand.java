@@ -79,7 +79,8 @@ public class TreeDiredFindFileOrToggleCommand implements Command {
                     path.getFileName().toString(), new GapTextModel(), context.settingsRegistry(), path));
         }
 
-        var majorMode = autoModeMap.resolve(bufferFacade.getName());
+        var finalBufferFacade = bufferFacade;
+        var majorMode = autoModeMap.resolve(bufferFacade.getName(), () -> finalBufferFacade.lineText(0));
         bufferFacade.setMajorMode(majorMode);
         modeRegistry.runMajorModeHooks(majorMode.name(), bufferFacade);
         context.bufferManager().add(bufferFacade);

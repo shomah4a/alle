@@ -114,7 +114,8 @@ public class FindFileCommand implements Command {
                     path.getFileName().toString(), new GapTextModel(), context.settingsRegistry(), path));
         }
 
-        var majorMode = autoModeMap.resolve(bufferFacade.getName());
+        var targetBuffer = bufferFacade;
+        var majorMode = autoModeMap.resolve(bufferFacade.getName(), () -> targetBuffer.lineText(0));
         bufferFacade.setMajorMode(majorMode);
         modeRegistry.runMajorModeHooks(majorMode.name(), bufferFacade);
         context.bufferManager().add(bufferFacade);
