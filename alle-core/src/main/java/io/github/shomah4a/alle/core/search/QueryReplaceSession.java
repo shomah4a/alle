@@ -138,18 +138,24 @@ public class QueryReplaceSession {
      * 現在のマッチを置換し、次のマッチへ進む（y / SPC）。
      * CommandLoop が本セッションを呼ぶコマンドの execute を withTransaction で
      * 包むため、ここでは個別にトランザクションを開始しない。1 コマンド = 1 undo 単位。
+     * 途中で例外が発生した場合はセッションを終了し overriding keymap を解放する。
      */
     public void replaceCurrent() {
         if (finished || currentMatch == null) {
             return;
         }
-        ReplaceMatch match = currentMatch;
-        buffer.atomicOperation(buf -> {
-            performReplacement(match);
-            buf.markDirty();
-            return null;
-        });
-        moveToNext();
+        try {
+            ReplaceMatch match = currentMatch;
+            buffer.atomicOperation(buf -> {
+                performReplacement(match);
+                buf.markDirty();
+                return null;
+            });
+            moveToNext();
+        } catch (RuntimeException ex) {
+            finishInternal(false);
+            throw ex;
+        }
     }
 
     /**
@@ -167,21 +173,27 @@ public class QueryReplaceSession {
      * 現在位置以降の全マッチを無確認で置換する（!）。
      * CommandLoop が `!` コマンドの execute 全体を withTransaction で包むため、
      * このループ中のすべての置換が 1 undo 単位にまとまる。
+     * 途中で例外が発生した場合はセッションを終了し overriding keymap を解放する。
      */
     public void replaceAllRemaining() {
         if (finished) {
             return;
         }
-        buffer.atomicOperation(buf -> {
-            while (currentMatch != null) {
-                performReplacement(currentMatch);
-                var next = findNext();
-                currentMatch = next.orElse(null);
-            }
-            buf.markDirty();
-            return null;
-        });
-        finish();
+        try {
+            buffer.atomicOperation(buf -> {
+                while (currentMatch != null) {
+                    performReplacement(currentMatch);
+                    var next = findNext();
+                    currentMatch = next.orElse(null);
+                }
+                buf.markDirty();
+                return null;
+            });
+            finish();
+        } catch (RuntimeException ex) {
+            finishInternal(false);
+            throw ex;
+        }
     }
 
     /**
