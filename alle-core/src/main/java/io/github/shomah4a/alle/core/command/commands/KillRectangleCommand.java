@@ -1,0 +1,43 @@
+package io.github.shomah4a.alle.core.command.commands;
+
+import io.github.shomah4a.alle.core.command.Command;
+import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.RectangleKillRing;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * mark〜point で決まる矩形範囲を削除して RectangleKillRing に保存するコマンド。
+ * Emacs の kill-rectangle (C-x r k) に相当する。
+ */
+public class KillRectangleCommand implements Command {
+
+    private final RectangleKillRing rectangleKillRing;
+
+    public KillRectangleCommand(RectangleKillRing rectangleKillRing) {
+        this.rectangleKillRing = rectangleKillRing;
+    }
+
+    @Override
+    public String name() {
+        return "kill-rectangle";
+    }
+
+    @Override
+    public CompletableFuture<Void> execute(CommandContext context) {
+        var window = context.activeWindow();
+        var buffer = window.getBuffer();
+        int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);
+        var rectOpt = RectangleGeometry.fromRegion(window, tabWidth);
+        if (rectOpt.isEmpty()) {
+            context.messageBuffer().message("No region active");
+            return CompletableFuture.completedFuture(null);
+        }
+        var rect = rectOpt.get();
+        var lines = RectangleGeometry.extractRectangle(buffer, rect, tabWidth);
+        rectangleKillRing.put(lines);
+        RectangleGeometry.deleteRectangle(buffer, rect, tabWidth);
+        buffer.markDirty();
+        return CompletableFuture.completedFuture(null);
+    }
+}
