@@ -4,6 +4,10 @@ import io.github.shomah4a.alle.core.DisplayWidthUtil;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.Optional;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
 
 /**
  * 矩形編集のジオメトリ計算ヘルパー。
@@ -211,6 +215,141 @@ final class RectangleGeometry {
             offset += Character.charCount(codePoint);
         }
         return new PaddedInsertPoint(sb.toString(), insertCp);
+    }
+
+    /**
+     * 矩形の内容を行毎の文字列として取り出す（非破壊）。
+     */
+    static ImmutableList<String> extractRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
+        MutableList<String> lines = Lists.mutable.empty();
+        for (int li = rect.startLine(); li <= rect.endLine(); li++) {
+            var padded = paddedLineForRectangle(buffer, li, rect.leftCol(), rect.rightCol(), tabWidth);
+            lines.add(codePointSubstring(padded.text(), padded.leftCp(), padded.rightCp()));
+        }
+        return lines.toImmutable();
+    }
+
+    /**
+     * 矩形を削除する。各行は矩形範囲を除去した新しい行テキストで置き換えられる。
+     * 境界がタブ/全角文字の中央に落ちる場合、その文字はスペース展開される（破壊的）。
+     */
+    static void deleteRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
+        for (int li = rect.endLine(); li >= rect.startLine(); li--) {
+            String newLine = buildReplacedLine(buffer, li, rect.leftCol(), rect.rightCol(), "", tabWidth);
+            replaceLineText(buffer, li, newLine);
+        }
+    }
+
+    /**
+     * 矩形の各行を replacement の対応行で置き換える。
+     * replacement が矩形の行数より少ない場合、余る行は空文字列で置換される（= 削除と同等）。
+     */
+    static void replaceRectangle(
+            BufferFacade buffer, Rectangle rect, ListIterable<String> replacement, int tabWidth) {
+        int lineCount = rect.lineCount();
+        int replacementSize = replacement.size();
+        for (int i = lineCount - 1; i >= 0; i--) {
+            int li = rect.startLine() + i;
+            String rep = i < replacementSize ? replacement.get(i) : "";
+            String newLine = buildReplacedLine(buffer, li, rect.leftCol(), rect.rightCol(), rep, tabWidth);
+            replaceLineText(buffer, li, newLine);
+        }
+    }
+
+    /**
+     * 矩形範囲をスペースで埋める（右側テキストは動かさない = 幅は保持）。
+     */
+    static void clearRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
+        String spaces = " ".repeat(rect.width());
+        MutableList<String> replacement = Lists.mutable.empty();
+        for (int i = 0; i < rect.lineCount(); i++) {
+            replacement.add(spaces);
+        }
+        replaceRectangle(buffer, rect, replacement, tabWidth);
+    }
+
+    /**
+     * 矩形範囲に同サイズの空白を挿入する（右側テキストを右に押し出す）。
+     */
+    static void openRectangle(BufferFacade buffer, Rectangle rect, int tabWidth) {
+        String spaces = " ".repeat(rect.width());
+        for (int li = rect.endLine(); li >= rect.startLine(); li--) {
+            var padded = paddedInsertPoint(buffer, li, rect.leftCol(), tabWidth);
+            int totalCp = codePointCount(padded.text());
+            String newLine = codePointSubstring(padded.text(), 0, padded.insertCp())
+                    + spaces
+                    + codePointSubstring(padded.text(), padded.insertCp(), totalCp);
+            replaceLineText(buffer, li, newLine);
+        }
+    }
+
+    /**
+     * 現在の point の行を左上として、lines を矩形として挿入する。
+     * バッファ末尾を超える行は改行を追加してから挿入する。
+     * point 位置のカラムを基準とし、行末より右の場合はスペース padding する。
+     */
+    static void insertRectangleAtPoint(
+            BufferFacade buffer, int pointOffset, ListIterable<String> lines, int tabWidth) {
+        if (lines.isEmpty()) {
+            return;
+        }
+        int startLine = buffer.lineIndexForOffset(pointOffset);
+        int startLineStart = buffer.lineStartOffset(startLine);
+        String startLineText = buffer.lineText(startLine);
+        int cpOffset = pointOffset - startLineStart;
+        int startCol = DisplayWidthUtil.computeColumnForOffset(startLineText, cpOffset, tabWidth);
+
+        for (int i = 0; i < lines.size(); i++) {
+            int li = startLine + i;
+            if (li >= buffer.lineCount()) {
+                // バッファ末尾を超えたら改行を追加
+                buffer.insertText(buffer.length(), "\n");
+            }
+            var padded = paddedInsertPoint(buffer, li, startCol, tabWidth);
+            int totalCp = codePointCount(padded.text());
+            String newLine = codePointSubstring(padded.text(), 0, padded.insertCp())
+                    + lines.get(i)
+                    + codePointSubstring(padded.text(), padded.insertCp(), totalCp);
+            replaceLineText(buffer, li, newLine);
+        }
+    }
+
+    /**
+     * 行テキストを newText で置き換える（行末改行は触らない）。
+     */
+    private static void replaceLineText(BufferFacade buffer, int lineIndex, String newText) {
+        int lineStart = buffer.lineStartOffset(lineIndex);
+        String oldText = buffer.lineText(lineIndex);
+        int oldCpLen = codePointCount(oldText);
+        if (oldCpLen > 0) {
+            buffer.deleteText(lineStart, oldCpLen);
+        }
+        if (!newText.isEmpty()) {
+            buffer.insertText(lineStart, newText);
+        }
+    }
+
+    /**
+     * 行 lineIndex の矩形範囲 [leftCol, rightCol) を replacement で置き換えた行テキストを構築する。
+     * 境界がタブ/全角文字の中央に落ちる場合はスペース展開する。
+     */
+    private static String buildReplacedLine(
+            BufferFacade buffer, int lineIndex, int leftCol, int rightCol, String replacement, int tabWidth) {
+        var padded = paddedLineForRectangle(buffer, lineIndex, leftCol, rightCol, tabWidth);
+        int totalCp = codePointCount(padded.text());
+        return codePointSubstring(padded.text(), 0, padded.leftCp())
+                + replacement
+                + codePointSubstring(padded.text(), padded.rightCp(), totalCp);
+    }
+
+    private static int codePointCount(String s) {
+        return s.codePointCount(0, s.length());
+    }
+
+    private static String codePointSubstring(String s, int startCp, int endCp) {
+        int startIdx = s.offsetByCodePoints(0, startCp);
+        int endIdx = s.offsetByCodePoints(0, endCp);
+        return s.substring(startIdx, endIdx);
     }
 
     /**
