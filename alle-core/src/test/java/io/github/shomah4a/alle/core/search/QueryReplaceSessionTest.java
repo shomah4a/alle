@@ -185,13 +185,14 @@ class QueryReplaceSessionTest {
         }
 
         @Test
-        void 置換が1件のundo単位で取り消せる() {
+        void 外側withTransaction経由なら1undo単位で取り消せる() {
+            // CommandLoop が command.execute を withTransaction で包むのを模倣する
             var window = windowOf("foo bar foo");
             var buffer = window.getBuffer();
             var session = literal(window, messageBuffer, controller, "foo", "baz");
             session.start();
 
-            session.replaceCurrent();
+            buffer.getUndoManager().withTransaction(session::replaceCurrent);
             assertEquals("baz bar foo", buffer.getText());
 
             var inverse = buffer.getUndoManager().undo().orElseThrow();
@@ -263,13 +264,14 @@ class QueryReplaceSessionTest {
         }
 
         @Test
-        void 一括置換は1undo単位にまとまる() {
+        void 外側withTransaction経由なら一括置換は1undo単位にまとまる() {
+            // CommandLoop 経由で呼ばれた時の挙動を模倣する
             var window = windowOf("foo foo foo");
             var buffer = window.getBuffer();
             var session = literal(window, messageBuffer, controller, "foo", "X");
             session.start();
 
-            session.replaceAllRemaining();
+            buffer.getUndoManager().withTransaction(session::replaceAllRemaining);
             assertEquals("X X X", buffer.getText());
 
             var inverse = buffer.getUndoManager().undo().orElseThrow();
@@ -376,6 +378,36 @@ class QueryReplaceSessionTest {
 
             assertEquals("abab abab", window.getBuffer().getText());
             assertEquals(2, session.getReplacedCount());
+        }
+    }
+
+    @Nested
+    class CommandLoop互換性 {
+
+        // CommandLoop は command.execute を UndoManager#withTransaction で包む。
+        // セッションが内部でさらに withTransaction を開くと IllegalStateException になるため、
+        // 外側で withTransaction を張った状態で y / ! を呼んでも例外が出ないことを確認する。
+
+        @Test
+        void 外側withTransaction中にreplaceCurrentが例外を投げない() {
+            var window = windowOf("foo bar foo");
+            var session = literal(window, messageBuffer, controller, "foo", "X");
+            session.start();
+
+            window.getBuffer().getUndoManager().withTransaction(session::replaceCurrent);
+
+            assertEquals("X bar foo", window.getBuffer().getText());
+        }
+
+        @Test
+        void 外側withTransaction中にreplaceAllRemainingが例外を投げない() {
+            var window = windowOf("foo bar foo");
+            var session = literal(window, messageBuffer, controller, "foo", "X");
+            session.start();
+
+            window.getBuffer().getUndoManager().withTransaction(session::replaceAllRemaining);
+
+            assertEquals("X bar X", window.getBuffer().getText());
         }
     }
 

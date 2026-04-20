@@ -136,6 +136,8 @@ public class QueryReplaceSession {
 
     /**
      * 現在のマッチを置換し、次のマッチへ進む（y / SPC）。
+     * CommandLoop が本セッションを呼ぶコマンドの execute を withTransaction で
+     * 包むため、ここでは個別にトランザクションを開始しない。1 コマンド = 1 undo 単位。
      */
     public void replaceCurrent() {
         if (finished || currentMatch == null) {
@@ -143,7 +145,7 @@ public class QueryReplaceSession {
         }
         ReplaceMatch match = currentMatch;
         buffer.atomicOperation(buf -> {
-            buf.getUndoManager().withTransaction(() -> performReplacement(match));
+            performReplacement(match);
             buf.markDirty();
             return null;
         });
@@ -163,20 +165,19 @@ public class QueryReplaceSession {
 
     /**
      * 現在位置以降の全マッチを無確認で置換する（!）。
-     * セッション内の残りの置換を 1 undo 単位にまとめる。
+     * CommandLoop が `!` コマンドの execute 全体を withTransaction で包むため、
+     * このループ中のすべての置換が 1 undo 単位にまとまる。
      */
     public void replaceAllRemaining() {
         if (finished) {
             return;
         }
         buffer.atomicOperation(buf -> {
-            buf.getUndoManager().withTransaction(() -> {
-                while (currentMatch != null) {
-                    performReplacement(currentMatch);
-                    var next = findNext();
-                    currentMatch = next.orElse(null);
-                }
-            });
+            while (currentMatch != null) {
+                performReplacement(currentMatch);
+                var next = findNext();
+                currentMatch = next.orElse(null);
+            }
             buf.markDirty();
             return null;
         });
@@ -345,7 +346,7 @@ public class QueryReplaceSession {
     }
 
     private void updatePrompt() {
-        messageBuffer.message("Query replacing " + from + " with " + toTemplate + ": (y, n, !)");
+        messageBuffer.message("Query replacing " + from + " with " + toTemplate + " (y, n, !, C-g to quit)");
     }
 
     private Keymap createKeymap() {

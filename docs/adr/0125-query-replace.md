@@ -85,8 +85,10 @@ Emacs 互換で以下のエスケープを独自に解釈する。`Matcher#appen
 
 ### undo 単位
 
-1 置換（y / SPC または ! の各ループ）ごとに `UndoManager#withTransaction` で1 undo 単位を作る。
-Emacs は query-replace 全体を1 undo 単位にするが、現行 `UndoManager` のトランザクション API が Runnable ベースで「開始/終了」型 API を持たないため、セッション全体の統合 undo は見送る。将来 `UndoManager` に `UndoTransaction beginTransaction()` 型 API を足した時点で統合する（TODO）。
+1 対話コマンド（y / n / !）あたり 1 undo 単位とする。
+`CommandLoop.handleEntry` が全コマンドの `execute` を `UndoManager#withTransaction` で包むため、セッション側は個別にトランザクションを張らない。`!` の一括置換ループは 1 コマンド内で動作するため、まとめて 1 undo 単位になる。
+
+Emacs では query-replace セッション全体を 1 undo 単位にするが、現行 `UndoManager` のトランザクション API が Runnable ベースでネストを許さない開始/終了型 API を持たないため、セッション全体の統合 undo は見送る。`UndoManager` に `UndoTransaction beginTransaction()` 型 API を足した時点で統合する（TODO）。
 
 ### キーバインド
 
