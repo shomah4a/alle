@@ -63,7 +63,8 @@ class GraalPyEngineTest {
 
     @Test
     void バインドしたJavaオブジェクトのメソッドを呼べる() {
-        var sb = new StringBuilder("hello");
+        var sb = new StringBuilder();
+        sb.append("hello");
         engine.bind("sb", sb);
         engine.eval("sb.append(' world')");
         assertEquals("hello world", sb.toString());
