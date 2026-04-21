@@ -187,7 +187,7 @@ class QueryReplaceSessionTest {
 
         @Test
         void 外側withTransaction経由なら1undo単位で取り消せる() {
-            // CommandLoop が command.execute を withTransaction で包むのを模倣する
+            // TransactionalCommand が execute 内で withTransaction を呼ぶのを模倣する
             var window = windowOf("foo bar foo");
             var buffer = window.getBuffer();
             var session = literal(window, messageBuffer, controller, "foo", "baz");
@@ -271,7 +271,7 @@ class QueryReplaceSessionTest {
 
         @Test
         void 外側withTransaction経由なら一括置換は1undo単位にまとまる() {
-            // CommandLoop 経由で呼ばれた時の挙動を模倣する
+            // TransactionalCommand が execute 内で withTransaction を呼ぶのを模倣する
             var window = windowOf("foo foo foo");
             var buffer = window.getBuffer();
             var session = literal(window, messageBuffer, controller, "foo", "X");
@@ -393,10 +393,10 @@ class QueryReplaceSessionTest {
     }
 
     @Nested
-    class CommandLoop互換性 {
+    class TransactionalCommand互換性 {
 
-        // CommandLoop は command.execute を UndoManager#withTransaction で包む。
-        // セッションの replace 操作は withTransaction 内で呼ばれても正常動作することを確認する。
+        // TransactionalCommand は execute 内で UndoManager#withTransaction を呼ぶ。
+        // セッションの replace 操作は withTransaction 内で呼ばれて���正常動作することを確認する。
 
         @Test
         void 外側withTransaction中にreplaceCurrentが例外を投げない() {

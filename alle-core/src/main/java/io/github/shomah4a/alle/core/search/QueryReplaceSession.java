@@ -136,8 +136,8 @@ public class QueryReplaceSession {
 
     /**
      * 現在のマッチを置換し、次のマッチへ進む（y / SPC）。
-     * CommandLoop が本セッションを呼ぶコマンドの execute を withTransaction で
-     * 包むため、ここでは個別にトランザクションを開始しない。1 コマンド = 1 undo 単位。
+     * 呼び出し元の {@link QueryReplaceYesCommand} が {@link io.github.shomah4a.alle.core.command.TransactionalCommand}
+     * としてトランザクションを管理するため、ここでは個別にトランザクションを開始しない。1 コマンド = 1 undo 単位。
      * 途中で例外が発生した場合はセッションを終了し overriding keymap を解放する。
      */
     public void replaceCurrent() {
@@ -171,8 +171,8 @@ public class QueryReplaceSession {
 
     /**
      * 現在位置以降の全マッチを無確認で置換する（!）。
-     * CommandLoop が `!` コマンドの execute 全体を withTransaction で包むため、
-     * このループ中のすべての置換が 1 undo 単位にまとまる。
+     * 呼び出し元の {@link QueryReplaceAllCommand} が {@link io.github.shomah4a.alle.core.command.TransactionalCommand}
+     * としてトランザクションを管理するため、このループ中のすべての置換が 1 undo 単位にまとまる。
      * 途中で例外が発生した場合はセッションを終了し overriding keymap を解放する。
      */
     public void replaceAllRemaining() {
@@ -236,7 +236,7 @@ public class QueryReplaceSession {
     }
 
     /**
-     * トランザクション内で現在のマッチを置換する。呼び出し側が withTransaction 済みである前提。
+     * トランザクション内で現在のマッチを置換する。呼び出し元コマンドが TransactionalCommand である前提。
      * Face のハイライトはバッファ変更時に自動で外れるため別途除去する必要はない。
      */
     private void performReplacement(ReplaceMatch match) {

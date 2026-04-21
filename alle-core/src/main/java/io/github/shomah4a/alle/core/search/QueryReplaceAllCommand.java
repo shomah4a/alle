@@ -1,13 +1,13 @@
 package io.github.shomah4a.alle.core.search;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * query-replace 対話中に以降の全マッチを無確認で置換するコマンド（!）。
  */
-public class QueryReplaceAllCommand implements Command {
+public class QueryReplaceAllCommand implements TransactionalCommand {
 
     private final QueryReplaceSession session;
 
@@ -21,7 +21,7 @@ public class QueryReplaceAllCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         session.replaceAllRemaining();
         return CompletableFuture.completedFuture(null);
     }

@@ -56,7 +56,7 @@ public class UndoManager {
      * 最新の変更を取り消す。記録された逆操作を返す。
      * undoスタックが空の場合はemptyを返す。
      */
-    public Optional<TextChange> undo() {
+    public synchronized Optional<TextChange> undo() {
         if (undoStack.isEmpty()) {
             return Optional.empty();
         }
@@ -69,7 +69,7 @@ public class UndoManager {
      * 直前のundoをやり直す。逆操作のさらに逆操作を返す。
      * redoスタックが空の場合はemptyを返す。
      */
-    public Optional<TextChange> redo() {
+    public synchronized Optional<TextChange> redo() {
         if (redoStack.isEmpty()) {
             return Optional.empty();
         }
