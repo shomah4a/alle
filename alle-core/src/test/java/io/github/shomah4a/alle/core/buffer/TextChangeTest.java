@@ -199,12 +199,15 @@ class TextChangeTest {
             var buffer = createBuffer("aaa\nbbb\nccc\n");
             var undoManager = ((TextBuffer) buffer).getUndoManager();
 
-            undoManager.withTransaction(() -> {
-                // 末尾行から処理（offset降順）
-                buffer.insertText(8, "// "); // "ccc" の先頭
-                buffer.insertText(4, "// "); // "bbb" の先頭
-                buffer.insertText(0, "// "); // "aaa" の先頭
-            });
+            undoManager
+                    .withTransaction(() -> {
+                        // 末尾行から処理（offset降順）
+                        buffer.insertText(8, "// "); // "ccc" の先頭
+                        buffer.insertText(4, "// "); // "bbb" の先頭
+                        buffer.insertText(0, "// "); // "aaa" の先頭
+                        return java.util.concurrent.CompletableFuture.completedFuture(null);
+                    })
+                    .join();
 
             assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
             assertEquals(1, undoManager.undoSize());
@@ -222,11 +225,14 @@ class TextChangeTest {
             var buffer = createBuffer("// aaa\n// bbb\n// ccc\n");
             var undoManager = ((TextBuffer) buffer).getUndoManager();
 
-            undoManager.withTransaction(() -> {
-                buffer.deleteText(14, 3); // 3行目の"// "
-                buffer.deleteText(7, 3); // 2行目の"// "
-                buffer.deleteText(0, 3); // 1行目の"// "
-            });
+            undoManager
+                    .withTransaction(() -> {
+                        buffer.deleteText(14, 3); // 3行目の"// "
+                        buffer.deleteText(7, 3); // 2行目の"// "
+                        buffer.deleteText(0, 3); // 1行目の"// "
+                        return java.util.concurrent.CompletableFuture.completedFuture(null);
+                    })
+                    .join();
 
             assertEquals("aaa\nbbb\nccc\n", buffer.getText());
             assertEquals(1, undoManager.undoSize());
@@ -243,11 +249,14 @@ class TextChangeTest {
             var buffer = createBuffer("aaa\nbbb\nccc\n");
             var undoManager = ((TextBuffer) buffer).getUndoManager();
 
-            undoManager.withTransaction(() -> {
-                buffer.insertText(8, "// ");
-                buffer.insertText(4, "// ");
-                buffer.insertText(0, "// ");
-            });
+            undoManager
+                    .withTransaction(() -> {
+                        buffer.insertText(8, "// ");
+                        buffer.insertText(4, "// ");
+                        buffer.insertText(0, "// ");
+                        return java.util.concurrent.CompletableFuture.completedFuture(null);
+                    })
+                    .join();
 
             assertEquals("// aaa\n// bbb\n// ccc\n", buffer.getText());
 

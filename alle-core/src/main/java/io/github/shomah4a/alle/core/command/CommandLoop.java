@@ -222,21 +222,19 @@ public class CommandLoop {
                         overridingKeymapController);
                 try {
                     var buffer = context.activeWindow().getBuffer();
-                    buffer.getUndoManager().withTransaction(() -> {
-                        command.execute(context)
-                                .thenRun(() -> {
-                                    lastCommand = thisCommand;
-                                    if (!command.keepsRegionActive()) {
-                                        context.activeWindow().clearMark();
-                                    }
-                                    onAsyncCommandComplete.run();
-                                })
-                                .exceptionally(ex -> {
-                                    var cause = ex.getCause() != null ? ex.getCause() : ex;
-                                    handleCommandError(command, context, cause);
-                                    onAsyncCommandComplete.run();
-                                    return null;
-                                });
+                    var transactionFuture = buffer.getUndoManager()
+                            .withTransaction(() -> command.execute(context).thenRun(() -> {
+                                lastCommand = thisCommand;
+                                if (!command.keepsRegionActive()) {
+                                    context.activeWindow().clearMark();
+                                }
+                                onAsyncCommandComplete.run();
+                            }));
+                    var unused = transactionFuture.exceptionally(ex -> {
+                        var cause = ex.getCause() != null ? ex.getCause() : ex;
+                        handleCommandError(command, context, cause);
+                        onAsyncCommandComplete.run();
+                        return null;
                     });
                 } catch (ReadOnlyBufferException ex) {
                     messageBuffer.message("Text is read-only");

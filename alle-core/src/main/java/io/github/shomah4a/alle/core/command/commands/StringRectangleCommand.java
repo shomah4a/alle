@@ -7,7 +7,6 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
 
 /**
  * mark〜point で決まる矩形範囲の各行を、プロンプトで入力した文字列で置き換えるコマンド。
@@ -20,8 +19,8 @@ import org.eclipse.collections.api.list.MutableList;
  * 影響を受けない。
  *
  * <p>実編集は {@link io.github.shomah4a.alle.core.buffer.BufferFacade#atomicOperation}
- * の内側で {@link io.github.shomah4a.alle.core.buffer.UndoManager#withTransaction}
- * を使い 1 undo 単位にまとめる。
+ * でアトミックに適用する。undo の 1 単位化は呼び出し元（CommandLoop / ExecuteCommandCommand）
+ * の {@link io.github.shomah4a.alle.core.buffer.UndoManager#withTransaction} が担う。
  */
 public class StringRectangleCommand implements Command {
 
@@ -62,25 +61,21 @@ public class StringRectangleCommand implements Command {
             Rectangle rect,
             String replacement,
             int tabWidth) {
-        // 非同期コールバック内。CommandLoop の withTransaction は閉じているため
-        // 明示的に atomicOperation + withTransaction で 1 undo 単位にまとめる。
         buffer.atomicOperation(b -> {
-            b.getUndoManager().withTransaction(() -> {
-                if (replacement.isEmpty()) {
-                    if (rect.width() == 0) {
-                        return;
-                    }
-                    RectangleGeometry.deleteRectangle(b, rect, tabWidth);
-                } else {
-                    MutableList<String> lines = Lists.mutable.empty();
-                    for (int i = 0; i < rect.lineCount(); i++) {
-                        lines.add(replacement);
-                    }
-                    RectangleGeometry.replaceRectangle(b, rect, lines, tabWidth);
+            if (replacement.isEmpty()) {
+                if (rect.width() == 0) {
+                    return null;
                 }
-                window.setPoint(RectangleGeometry.topLeftOffset(b, rect, tabWidth));
-                b.markDirty();
-            });
+                RectangleGeometry.deleteRectangle(b, rect, tabWidth);
+            } else {
+                var lines = Lists.mutable.<String>empty();
+                for (int i = 0; i < rect.lineCount(); i++) {
+                    lines.add(replacement);
+                }
+                RectangleGeometry.replaceRectangle(b, rect, lines, tabWidth);
+            }
+            window.setPoint(RectangleGeometry.topLeftOffset(b, rect, tabWidth));
+            b.markDirty();
             return null;
         });
     }

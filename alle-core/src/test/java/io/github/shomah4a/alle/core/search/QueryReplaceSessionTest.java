@@ -14,6 +14,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -192,7 +193,12 @@ class QueryReplaceSessionTest {
             var session = literal(window, messageBuffer, controller, "foo", "baz");
             session.start();
 
-            buffer.getUndoManager().withTransaction(session::replaceCurrent);
+            buffer.getUndoManager()
+                    .withTransaction(() -> {
+                        session.replaceCurrent();
+                        return CompletableFuture.completedFuture(null);
+                    })
+                    .join();
             assertEquals("baz bar foo", buffer.getText());
 
             var inverse = buffer.getUndoManager().undo().orElseThrow();
@@ -271,7 +277,12 @@ class QueryReplaceSessionTest {
             var session = literal(window, messageBuffer, controller, "foo", "X");
             session.start();
 
-            buffer.getUndoManager().withTransaction(session::replaceAllRemaining);
+            buffer.getUndoManager()
+                    .withTransaction(() -> {
+                        session.replaceAllRemaining();
+                        return CompletableFuture.completedFuture(null);
+                    })
+                    .join();
             assertEquals("X X X", buffer.getText());
 
             var inverse = buffer.getUndoManager().undo().orElseThrow();
@@ -385,8 +396,7 @@ class QueryReplaceSessionTest {
     class CommandLoop互換性 {
 
         // CommandLoop は command.execute を UndoManager#withTransaction で包む。
-        // セッションが内部でさらに withTransaction を開くと IllegalStateException になるため、
-        // 外側で withTransaction を張った状態で y / ! を呼んでも例外が出ないことを確認する。
+        // セッションの replace 操作は withTransaction 内で呼ばれても正常動作することを確認する。
 
         @Test
         void 外側withTransaction中にreplaceCurrentが例外を投げない() {
@@ -394,7 +404,13 @@ class QueryReplaceSessionTest {
             var session = literal(window, messageBuffer, controller, "foo", "X");
             session.start();
 
-            window.getBuffer().getUndoManager().withTransaction(session::replaceCurrent);
+            window.getBuffer()
+                    .getUndoManager()
+                    .withTransaction(() -> {
+                        session.replaceCurrent();
+                        return CompletableFuture.completedFuture(null);
+                    })
+                    .join();
 
             assertEquals("X bar foo", window.getBuffer().getText());
         }
@@ -405,7 +421,13 @@ class QueryReplaceSessionTest {
             var session = literal(window, messageBuffer, controller, "foo", "X");
             session.start();
 
-            window.getBuffer().getUndoManager().withTransaction(session::replaceAllRemaining);
+            window.getBuffer()
+                    .getUndoManager()
+                    .withTransaction(() -> {
+                        session.replaceAllRemaining();
+                        return CompletableFuture.completedFuture(null);
+                    })
+                    .join();
 
             assertEquals("X bar X", window.getBuffer().getText());
         }

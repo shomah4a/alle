@@ -102,6 +102,11 @@ public class BufferFacade {
      * @param action トランザクション内で実行する操作
      */
     public void withUndoTransaction(Runnable action) {
-        buffer.getUndoManager().withTransaction(action);
+        buffer.getUndoManager()
+                .withTransaction(() -> {
+                    action.run();
+                    return java.util.concurrent.CompletableFuture.completedFuture(null);
+                })
+                .join();
     }
 }

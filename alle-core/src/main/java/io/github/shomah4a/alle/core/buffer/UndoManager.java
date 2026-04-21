@@ -1,6 +1,10 @@
 package io.github.shomah4a.alle.core.buffer;
 
+import java.util.ArrayDeque;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.jspecify.annotations.Nullable;
@@ -8,6 +12,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * バッファのundo/redo履歴を管理する。
  * テキスト変更の逆操作をスタックに記録し、undo/redoを提供する。
+ *
+ * <p>トランザクションはキューイングにより直列化される。
+ * 先行トランザクションが完了するまで後続のトランザクションは実行されない。
  */
 public class UndoManager {
 
@@ -15,6 +22,12 @@ public class UndoManager {
     private final MutableList<TextChange> redoStack;
     private boolean recording;
     private @Nullable MutableList<TextChange> transactionBuffer;
+    private final Queue<PendingTransaction> transactionQueue = new ArrayDeque<>();
+
+    /**
+     * キューイング待ちのトランザクションを表す。
+     */
+    private record PendingTransaction(Supplier<CompletableFuture<Void>> action, CompletableFuture<Void> result) {}
 
     public UndoManager() {
         this.undoStack = Lists.mutable.empty();
@@ -27,7 +40,7 @@ public class UndoManager {
      * トランザクション中はバッファに溜め、トランザクション外ではundoスタックに直接積む。
      * 通常の編集操作ではredoスタックをクリアする。
      */
-    public void record(TextChange change) {
+    public synchronized void record(TextChange change) {
         if (!recording) {
             return;
         }
@@ -82,29 +95,71 @@ public class UndoManager {
 
     /**
      * 複数のバッファ編集を1つのundo単位にまとめるトランザクション内でactionを実行する。
-     * action内で発生するrecord()はバッファリングされ、action完了時にCompoundとして
-     * 1つのエントリにまとめてundoスタックに積まれる。
-     * ネストは禁止（IllegalStateException）。
-     * action内で例外が発生した場合、バッファリングされた記録は破棄される。
+     * actionは{@link CompletableFuture}を返し、futureの完了時にトランザクションがコミットされる。
+     * 同期的なコマンドは{@code CompletableFuture.completedFuture(null)}を返せばよい。
      *
-     * @throws IllegalStateException トランザクションがネストされた場合
+     * <p>トランザクションはキューイングにより直列化される。先行トランザクションの実行中に
+     * 呼び出された場合、先行トランザクションの完了後に実行される。
+     *
+     * <p>action内で発生するrecord()はバッファリングされ、future完了時にCompoundとして
+     * 1つのエントリにまとめてundoスタックに積まれる。
+     * actionの同期例外またはfutureの異常完了時、バッファリングされた記録は破棄される。
      */
-    public void withTransaction(Runnable action) {
-        if (transactionBuffer != null) {
-            throw new IllegalStateException("トランザクションのネストは許可されていない");
-        }
-        transactionBuffer = Lists.mutable.empty();
-        try {
-            action.run();
-            if (!transactionBuffer.isEmpty()) {
-                var compound =
-                        new TextChange.Compound(transactionBuffer.toReversed().toImmutable());
-                undoStack.add(compound);
-                redoStack.clear();
+    public CompletableFuture<Void> withTransaction(Supplier<CompletableFuture<Void>> action) {
+        var result = new CompletableFuture<Void>();
+        synchronized (this) {
+            if (transactionBuffer != null) {
+                transactionQueue.add(new PendingTransaction(action, result));
+                return result;
             }
-        } finally {
-            transactionBuffer = null;
+            transactionBuffer = Lists.mutable.empty();
         }
+        executeTransaction(action, result);
+        return result;
+    }
+
+    private void executeTransaction(Supplier<CompletableFuture<Void>> action, CompletableFuture<Void> result) {
+        CompletableFuture<Void> actionFuture;
+        try {
+            actionFuture = action.get();
+        } catch (Exception e) {
+            commitOrRollback(e);
+            result.completeExceptionally(e);
+            drainQueue();
+            return;
+        }
+        var unused = actionFuture.handle((v, ex) -> {
+            commitOrRollback(ex);
+            if (ex != null) {
+                result.completeExceptionally(ex);
+            } else {
+                result.complete(null);
+            }
+            drainQueue();
+            return null;
+        });
+    }
+
+    private synchronized void commitOrRollback(@Nullable Throwable ex) {
+        if (ex == null && transactionBuffer != null && !transactionBuffer.isEmpty()) {
+            var compound =
+                    new TextChange.Compound(transactionBuffer.toReversed().toImmutable());
+            undoStack.add(compound);
+            redoStack.clear();
+        }
+        transactionBuffer = null;
+    }
+
+    private void drainQueue() {
+        PendingTransaction next;
+        synchronized (this) {
+            next = transactionQueue.poll();
+            if (next == null) {
+                return;
+            }
+            transactionBuffer = Lists.mutable.empty();
+        }
+        executeTransaction(next.action(), next.result());
     }
 
     /**

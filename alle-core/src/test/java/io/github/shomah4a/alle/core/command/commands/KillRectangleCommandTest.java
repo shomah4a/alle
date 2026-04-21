@@ -251,9 +251,9 @@ class KillRectangleCommandTest {
 
         int sizeBefore = buffer.getUndoManager().undoSize();
 
-        buffer.getUndoManager().withTransaction(() -> {
-            new KillRectangleCommand(ring).execute(context).join();
-        });
+        buffer.getUndoManager()
+                .withTransaction(() -> new KillRectangleCommand(ring).execute(context))
+                .join();
 
         int sizeAfter = buffer.getUndoManager().undoSize();
         org.junit.jupiter.api.Assertions.assertEquals(
