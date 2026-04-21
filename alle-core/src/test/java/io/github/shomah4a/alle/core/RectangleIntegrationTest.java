@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
+import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
@@ -27,8 +28,7 @@ class RectangleIntegrationTest {
 
     private static final InputSource EMPTY_INPUT = Optional::empty;
 
-    @Test
-    void killRectangleを_CxRk_経由で実行すると1undoで戻る() {
+    private EditorCore createCore(InputPrompter prompter) {
         var settings = new SettingsRegistry();
         settings.register(EditorSettings.INDENT_WIDTH);
         settings.register(EditorSettings.COMMENT_STRING);
@@ -38,32 +38,31 @@ class RectangleIntegrationTest {
                 destination -> new BufferedWriter(new StringWriter()),
                 settings);
 
-        var core = EditorCore.create(
+        return EditorCore.create(
                 EMPTY_INPUT,
-                frame -> (msg, hist) -> CompletableFuture.completedFuture(new PromptResult.Cancelled()),
+                frame -> prompter,
                 bufferIO,
                 dir -> Lists.immutable.<DirectoryEntry>empty(),
                 () -> {},
                 settings,
                 Path.of("/tmp"));
+    }
+
+    private static void typeText(io.github.shomah4a.alle.core.command.CommandLoop loop, String text) {
+        for (int i = 0; i < text.length(); i++) {
+            loop.processKey(KeyStroke.of(text.charAt(i)));
+        }
+    }
+
+    @Test
+    void killRectangleを_CxRk_経由で実行すると1undoで戻る() {
+        var core = createCore((msg, hist) -> CompletableFuture.completedFuture(new PromptResult.Cancelled()));
 
         var window = core.frame().getActiveWindow();
         var buffer = window.getBuffer();
 
-        // self-insert で "foo\nbar\nbaz\n" 相当を入力する
         var loop = core.commandLoop();
-        for (char c : "foo".toCharArray()) {
-            loop.processKey(KeyStroke.of(c));
-        }
-        loop.processKey(KeyStroke.of('\n'));
-        for (char c : "bar".toCharArray()) {
-            loop.processKey(KeyStroke.of(c));
-        }
-        loop.processKey(KeyStroke.of('\n'));
-        for (char c : "baz".toCharArray()) {
-            loop.processKey(KeyStroke.of(c));
-        }
-        loop.processKey(KeyStroke.of('\n'));
+        typeText(loop, "foo\nbar\nbaz\n");
 
         assertEquals("foo\nbar\nbaz\n", buffer.getText());
 
@@ -85,5 +84,35 @@ class RectangleIntegrationTest {
                 sizeBefore + 1,
                 sizeAfter,
                 "kill-rectangle は 1 undo にまとまる必要がある (実際の増分: " + (sizeAfter - sizeBefore) + ")");
+    }
+
+    @Test
+    void killRectangleを_Mx経由で実行すると1undoで戻る() {
+        var core = createCore(
+                (msg, hist) -> CompletableFuture.completedFuture(new PromptResult.Confirmed("kill-rectangle")));
+
+        var window = core.frame().getActiveWindow();
+        var buffer = window.getBuffer();
+
+        var loop = core.commandLoop();
+        typeText(loop, "foo\nbar\nbaz\n");
+
+        assertEquals("foo\nbar\nbaz\n", buffer.getText());
+
+        window.setMark(0);
+        window.setPoint(10);
+
+        int sizeBefore = buffer.getUndoManager().undoSize();
+
+        // M-x → "kill-rectangle" (prompter が即座に返す)
+        loop.processKey(KeyStroke.meta('x'));
+
+        int sizeAfter = buffer.getUndoManager().undoSize();
+
+        assertEquals("o\nr\nz\n", buffer.getText());
+        assertEquals(
+                sizeBefore + 1,
+                sizeAfter,
+                "M-x kill-rectangle は 1 undo にまとまる必要がある (実際の増分: " + (sizeAfter - sizeBefore) + ")");
     }
 }

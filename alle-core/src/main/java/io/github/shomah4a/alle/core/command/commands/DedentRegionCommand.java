@@ -1,14 +1,14 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * 選択範囲の各行をインデント1レベル減少するコマンド。
  */
-public class DedentRegionCommand implements Command {
+public class DedentRegionCommand implements TransactionalCommand {
 
     @Override
     public String name() {
@@ -16,7 +16,7 @@ public class DedentRegionCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         var regionStart = window.getRegionStart();

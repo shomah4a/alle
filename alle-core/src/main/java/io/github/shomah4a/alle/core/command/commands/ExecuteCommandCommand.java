@@ -31,7 +31,9 @@ public class ExecuteCommandCommand implements Command {
 
     /**
      * 指定された名前のコマンドをカレントバッファのモードスコープで検索し実行する。
-     * コマンド実行全体を1つのundoトランザクションとして包む。
+     * 解決されたコマンドの {@code execute} をそのまま呼び出す。
+     * {@link io.github.shomah4a.alle.core.command.TransactionalCommand} であれば
+     * コマンド自身がトランザクションを管理する。
      *
      * @throws IllegalArgumentException 指定された名前のコマンドが存在しない場合
      */
@@ -41,7 +43,7 @@ public class ExecuteCommandCommand implements Command {
         if (command.isEmpty()) {
             throw new IllegalArgumentException("コマンド '" + commandName + "' は登録されていません");
         }
-        return buffer.getUndoManager().withTransaction(() -> command.get().execute(context));
+        return command.get().execute(context);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
  * 全行がコメント済みならコメント解除、そうでなければコメントアウトする。
  * コメント文字列はバッファの設定（COMMENT_STRING）から取得する。
  */
-public class CommentOrUncommentRegionCommand implements Command {
+public class CommentOrUncommentRegionCommand implements TransactionalCommand {
 
     @Override
     public String name() {
@@ -18,7 +18,7 @@ public class CommentOrUncommentRegionCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         var regionStart = window.getRegionStart();

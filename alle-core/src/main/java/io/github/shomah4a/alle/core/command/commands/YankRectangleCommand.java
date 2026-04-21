@@ -1,8 +1,8 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.RectangleKillRing;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
  * Emacs の yank-rectangle (C-x r y) に相当する。
  * 未保存の場合は何もしない。
  */
-public class YankRectangleCommand implements Command {
+public class YankRectangleCommand implements TransactionalCommand {
 
     private final RectangleKillRing rectangleKillRing;
 
@@ -25,7 +25,7 @@ public class YankRectangleCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         var rectOpt = rectangleKillRing.current();

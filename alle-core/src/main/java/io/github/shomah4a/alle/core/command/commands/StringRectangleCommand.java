@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
@@ -19,10 +19,10 @@ import org.eclipse.collections.api.factory.Lists;
  * 影響を受けない。
  *
  * <p>実編集は {@link io.github.shomah4a.alle.core.buffer.BufferFacade#atomicOperation}
- * でアトミックに適用する。undo の 1 単位化は呼び出し元（CommandLoop / ExecuteCommandCommand）
- * の {@link io.github.shomah4a.alle.core.buffer.UndoManager#withTransaction} が担う。
+ * でアトミックに適用する。{@link TransactionalCommand} によりプロンプト完了後の編集も
+ * 1つのundo単位にまとまる。
  */
-public class StringRectangleCommand implements Command {
+public class StringRectangleCommand implements TransactionalCommand {
 
     private final InputHistory history;
 
@@ -36,7 +36,7 @@ public class StringRectangleCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);

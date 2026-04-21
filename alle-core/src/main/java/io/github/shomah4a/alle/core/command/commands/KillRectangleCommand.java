@@ -1,8 +1,8 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.RectangleKillRing;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
  * mark〜point で決まる矩形範囲を削除して RectangleKillRing に保存するコマンド。
  * Emacs の kill-rectangle (C-x r k) に相当する。
  */
-public class KillRectangleCommand implements Command {
+public class KillRectangleCommand implements TransactionalCommand {
 
     private final RectangleKillRing rectangleKillRing;
 
@@ -24,7 +24,7 @@ public class KillRectangleCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);

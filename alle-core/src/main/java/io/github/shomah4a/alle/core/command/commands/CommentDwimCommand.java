@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
  * コメント文字列はバッファの設定（COMMENT_STRING）から取得する。
  * 行がコメント行ならコメント文字列を削除し、そうでなければ挿入する。
  */
-public class CommentDwimCommand implements Command {
+public class CommentDwimCommand implements TransactionalCommand {
 
     @Override
     public String name() {
@@ -19,7 +19,7 @@ public class CommentDwimCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
 

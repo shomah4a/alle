@@ -1,7 +1,7 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
+import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
  * 矩形右側のテキストは右に押し出される。
  * Emacs の open-rectangle (C-x r o) に相当する。
  */
-public class OpenRectangleCommand implements Command {
+public class OpenRectangleCommand implements TransactionalCommand {
 
     @Override
     public String name() {
@@ -18,7 +18,7 @@ public class OpenRectangleCommand implements Command {
     }
 
     @Override
-    public CompletableFuture<Void> execute(CommandContext context) {
+    public CompletableFuture<Void> executeInTransaction(CommandContext context) {
         var window = context.activeWindow();
         var buffer = window.getBuffer();
         int tabWidth = buffer.getSettings().get(EditorSettings.TAB_WIDTH);
