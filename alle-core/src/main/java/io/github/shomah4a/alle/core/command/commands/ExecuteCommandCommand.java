@@ -31,6 +31,7 @@ public class ExecuteCommandCommand implements Command {
 
     /**
      * 指定された名前のコマンドをカレントバッファのモードスコープで検索し実行する。
+     * コマンド実行全体を1つのundoトランザクションとして包む。
      *
      * @throws IllegalArgumentException 指定された名前のコマンドが存在しない場合
      */
@@ -40,7 +41,7 @@ public class ExecuteCommandCommand implements Command {
         if (command.isEmpty()) {
             throw new IllegalArgumentException("コマンド '" + commandName + "' は登録されていません");
         }
-        return command.get().execute(context);
+        return buffer.getUndoManager().withTransaction(() -> command.get().execute(context));
     }
 
     @Override
