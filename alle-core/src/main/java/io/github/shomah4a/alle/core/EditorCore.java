@@ -70,6 +70,7 @@ import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.input.ShutdownRequestable;
 import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.io.FileOpenService;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
@@ -129,6 +130,7 @@ public final class EditorCore {
     private final FrameLayoutStore frameLayoutStore;
     private final InputPrompter inputPrompter;
     private final StatusLineRenderer statusLineRenderer;
+    private final FileOpenService fileOpenService;
 
     private EditorCore(
             Frame frame,
@@ -143,7 +145,8 @@ public final class EditorCore {
             SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
             FrameLayoutStore frameLayoutStore,
             InputPrompter inputPrompter,
-            StatusLineRenderer statusLineRenderer) {
+            StatusLineRenderer statusLineRenderer,
+            FileOpenService fileOpenService) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -157,6 +160,7 @@ public final class EditorCore {
         this.frameLayoutStore = frameLayoutStore;
         this.inputPrompter = inputPrompter;
         this.statusLineRenderer = statusLineRenderer;
+        this.fileOpenService = fileOpenService;
     }
 
     /**
@@ -250,6 +254,9 @@ public final class EditorCore {
         // フレームレイアウトストア
         var frameLayoutStore = new FrameLayoutStore();
 
+        // ファイルオープンサービス
+        var fileOpenService = new FileOpenService(bufferIO, autoModeMap, modeRegistry, settingsRegistry);
+
         // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
         var commandResolver = new CommandResolver();
@@ -264,7 +271,8 @@ public final class EditorCore {
                 settingsRegistry,
                 filePathInputPrompter,
                 frameLayoutStore,
-                scratchFacade);
+                scratchFacade,
+                fileOpenService);
         commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
@@ -324,7 +332,8 @@ public final class EditorCore {
                 syntaxAnalyzerRegistry,
                 frameLayoutStore,
                 inputPrompter,
-                statusLineRenderer);
+                statusLineRenderer,
+                fileOpenService);
     }
 
     private static CommandRegistry createCommandRegistry(
@@ -338,7 +347,8 @@ public final class EditorCore {
             SettingsRegistry settingsRegistry,
             FilePathInputPrompter filePathInputPrompter,
             FrameLayoutStore frameLayoutStore,
-            BufferFacade scratchBuffer) {
+            BufferFacade scratchBuffer,
+            FileOpenService fileOpenService) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -360,10 +370,8 @@ public final class EditorCore {
         registry.register(new CommentOrUncommentRegionCommand());
         var filePathHistory = new InputHistory();
         var findFileCommand = new FindFileCommand(
-                bufferIO,
+                fileOpenService,
                 Path.of("").toAbsolutePath(),
-                autoModeMap,
-                modeRegistry,
                 filePathHistory,
                 path -> Files.isDirectory(path),
                 filePathInputPrompter);
@@ -606,5 +614,9 @@ public final class EditorCore {
 
     public StatusLineRenderer statusLineRenderer() {
         return statusLineRenderer;
+    }
+
+    public FileOpenService fileOpenService() {
+        return fileOpenService;
     }
 }
