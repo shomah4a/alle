@@ -309,7 +309,22 @@ class KillRectangleCommandTest {
                 new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Messages*", 100, settings),
                 new io.github.shomah4a.alle.core.buffer.MessageBuffer("*Warnings*", 100, settings),
                 settings,
-                new io.github.shomah4a.alle.core.command.CommandResolver(registry));
+                new io.github.shomah4a.alle.core.command.CommandResolver(registry),
+                new io.github.shomah4a.alle.core.io.PathOpenService(
+                        new io.github.shomah4a.alle.core.io.BufferIO(
+                                source -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                destination -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                settings),
+                        new io.github.shomah4a.alle.core.mode.AutoModeMap(
+                                io.github.shomah4a.alle.core.mode.modes.text.TextMode::new),
+                        new io.github.shomah4a.alle.core.mode.ModeRegistry(),
+                        settings,
+                        path -> false,
+                        (pathString, bufferManager2, frame2) -> {}));
 
         window.insert("foo\nbar\nbaz\n");
         window.setMark(0);

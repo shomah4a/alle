@@ -6,7 +6,12 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -24,6 +29,23 @@ public final class TestCommandContextFactory {
             (message, history) -> CompletableFuture.completedFuture(new PromptResult.Cancelled());
 
     private static final SettingsRegistry SETTINGS_REGISTRY = new SettingsRegistry();
+
+    private static final BufferIO STUB_BUFFER_IO = new BufferIO(
+            source -> {
+                throw new java.io.IOException("stub");
+            },
+            destination -> {
+                throw new java.io.IOException("stub");
+            },
+            SETTINGS_REGISTRY);
+
+    private static final PathOpenService NOOP_PATH_OPEN_SERVICE = new PathOpenService(
+            STUB_BUFFER_IO,
+            new AutoModeMap(TextMode::new),
+            new ModeRegistry(),
+            SETTINGS_REGISTRY,
+            path -> false,
+            (pathString, bufferManager, frame) -> {});
 
     private TestCommandContextFactory() {}
 
@@ -58,7 +80,8 @@ public final class TestCommandContextFactory {
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
                 SETTINGS_REGISTRY,
                 new CommandResolver(new CommandRegistry()),
-                new NoOpOverridingKeymapController());
+                new NoOpOverridingKeymapController(),
+                NOOP_PATH_OPEN_SERVICE);
     }
 
     /**
@@ -78,7 +101,8 @@ public final class TestCommandContextFactory {
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
                 SETTINGS_REGISTRY,
                 new CommandResolver(new CommandRegistry()),
-                new NoOpOverridingKeymapController());
+                new NoOpOverridingKeymapController(),
+                NOOP_PATH_OPEN_SERVICE);
     }
 
     /**
@@ -99,7 +123,8 @@ public final class TestCommandContextFactory {
                 new MessageBuffer("*Warnings*", 100, SETTINGS_REGISTRY),
                 SETTINGS_REGISTRY,
                 new CommandResolver(new CommandRegistry()),
-                new NoOpOverridingKeymapController());
+                new NoOpOverridingKeymapController(),
+                NOOP_PATH_OPEN_SERVICE);
     }
 
     /**

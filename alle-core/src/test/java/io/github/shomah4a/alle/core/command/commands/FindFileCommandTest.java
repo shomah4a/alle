@@ -17,6 +17,7 @@ import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.io.BufferReader;
 import io.github.shomah4a.alle.core.io.BufferWriter;
 import io.github.shomah4a.alle.core.io.LineEnding;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
@@ -44,16 +45,17 @@ class FindFileCommandTest {
     private final MutableMap<String, String> storage = Maps.mutable.empty();
     private final DirectoryLister stubLister = directory -> Lists.immutable.<DirectoryEntry>empty();
     private final AutoModeMap autoModeMap = new AutoModeMap(TextMode::new);
+    private final SettingsRegistry settingsRegistry = new SettingsRegistry();
     private Frame frame;
     private BufferManager bufferManager;
-    private BufferIO bufferIO;
+    private PathOpenService pathOpenService;
 
     @BeforeEach
     void setUp() {
-        var buffer = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), new SettingsRegistry()));
+        var buffer = new BufferFacade(new TextBuffer("*scratch*", new GapTextModel(), settingsRegistry));
         var window = new Window(buffer);
-        var minibuffer = new Window(
-                new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), new SettingsRegistry())));
+        var minibuffer =
+                new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), settingsRegistry)));
         frame = new Frame(window, minibuffer);
         bufferManager = new BufferManager();
         bufferManager.add(buffer);
@@ -65,7 +67,9 @@ class FindFileCommandTest {
             return new StringReader(storage.get(source));
         };
         BufferWriter writer = destination -> new StringWriter();
-        bufferIO = new BufferIO(reader, writer, new SettingsRegistry());
+        var bufferIO = new BufferIO(reader, writer, settingsRegistry);
+        pathOpenService = new PathOpenService(
+                bufferIO, autoModeMap, new ModeRegistry(), settingsRegistry, path -> false, (pathString, bm, f) -> {});
     }
 
     /**
@@ -129,13 +133,7 @@ class FindFileCommandTest {
         void 指定パスのファイルを読み込みバッファに表示する() {
             storage.put("/tmp/hello.txt", "Hello\nWorld");
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter("/tmp/hello.txt"));
+                    pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter("/tmp/hello.txt"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -152,13 +150,7 @@ class FindFileCommandTest {
         void 読み込んだバッファがBufferManagerに追加される() {
             storage.put("/tmp/hello.txt", "Hello");
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter("/tmp/hello.txt"));
+                    pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter("/tmp/hello.txt"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -171,13 +163,7 @@ class FindFileCommandTest {
         void CRLFファイルのLineEndingがバッファに保持される() {
             storage.put("/tmp/crlf.txt", "Hello\r\nWorld");
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter("/tmp/crlf.txt"));
+                    pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter("/tmp/crlf.txt"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -192,13 +178,7 @@ class FindFileCommandTest {
         @Test
         void 空バッファがファイルパス付きで作成される() {
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter("/tmp/new.txt"));
+                    pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter("/tmp/new.txt"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -218,13 +198,7 @@ class FindFileCommandTest {
         void 既存バッファに切り替わる() {
             storage.put("/tmp/hello.txt", "Hello");
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter("/tmp/hello.txt"));
+                    pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter("/tmp/hello.txt"));
 
             // 1回目: ファイルを開く
             var context1 = TestCommandContextFactory.create(frame, bufferManager);
@@ -244,43 +218,11 @@ class FindFileCommandTest {
     }
 
     @Nested
-    class パス正規化 {
-
-        @Test
-        void 相対パスが絶対パスに変換される() {
-            var normalized = FindFileCommand.normalizePath("hello.txt");
-
-            assertTrue(normalized.isAbsolute());
-        }
-
-        @Test
-        void 親ディレクトリ参照が解決される() {
-            var normalized = FindFileCommand.normalizePath("/tmp/foo/../bar.txt");
-
-            assertEquals(Path.of("/tmp/bar.txt"), normalized);
-        }
-
-        @Test
-        void 冗長なスラッシュが除去される() {
-            var normalized = FindFileCommand.normalizePath("/tmp//hello.txt");
-
-            assertEquals(Path.of("/tmp/hello.txt"), normalized);
-        }
-    }
-
-    @Nested
     class キャンセル {
 
         @Test
         void キャンセル時は何も変わらない() {
-            var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    cancellingPrompter());
+            var cmd = new FindFileCommand(pathOpenService, Path.of("/test"), new InputHistory(), cancellingPrompter());
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -296,21 +238,12 @@ class FindFileCommandTest {
         @Test
         void HOME外のファイルパス付きバッファからの実行では絶対パスのまま起点になる() {
             var fileBuffer = new BufferFacade(new TextBuffer(
-                    "Main.java",
-                    new GapTextModel(),
-                    new SettingsRegistry(),
-                    Path.of("/home/user/project/src/Main.java")));
+                    "Main.java", new GapTextModel(), settingsRegistry, Path.of("/home/user/project/src/Main.java")));
             frame.getActiveWindow().setBuffer(fileBuffer);
 
             var capturedInitialValue = new AtomicReference<String>();
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/working"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    capturingPrompter(capturedInitialValue));
+                    pathOpenService, Path.of("/working"), new InputHistory(), capturingPrompter(capturedInitialValue));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -323,13 +256,7 @@ class FindFileCommandTest {
         void ファイルパスなしバッファからの実行ではworkingDirectoryが起点になる() {
             var capturedInitialValue = new AtomicReference<String>();
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/working"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    capturingPrompter(capturedInitialValue));
+                    pathOpenService, Path.of("/working"), new InputHistory(), capturingPrompter(capturedInitialValue));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -343,14 +270,8 @@ class FindFileCommandTest {
 
         @Test
         void 空文字列で確定した場合は何も変わらない() {
-            var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter(""));
+            var cmd =
+                    new FindFileCommand(pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter(""));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -368,19 +289,13 @@ class FindFileCommandTest {
             var fileBuffer = new BufferFacade(new TextBuffer(
                     "Main.java",
                     new GapTextModel(),
-                    new SettingsRegistry(),
+                    settingsRegistry,
                     Path.of("/home/testuser/project/src/Main.java")));
             frame.getActiveWindow().setBuffer(fileBuffer);
 
             var capturedInitialValue = new AtomicReference<String>();
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/working"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    capturingPrompter(capturedInitialValue));
+                    pathOpenService, Path.of("/working"), new InputHistory(), capturingPrompter(capturedInitialValue));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();
@@ -393,13 +308,7 @@ class FindFileCommandTest {
             storage.put("/home/testuser/hello.txt", "Hello");
             // FilePathInputPrompter が ~ を展開するので、確定値は ~/hello.txt
             var cmd = new FindFileCommand(
-                    bufferIO,
-                    Path.of("/test"),
-                    autoModeMap,
-                    new ModeRegistry(),
-                    new InputHistory(),
-                    path -> false,
-                    confirmingPrompter("~/hello.txt"));
+                    pathOpenService, Path.of("/test"), new InputHistory(), confirmingPrompter("~/hello.txt"));
             var context = TestCommandContextFactory.create(frame, bufferManager);
 
             cmd.execute(context).join();

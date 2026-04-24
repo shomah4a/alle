@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.command;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -36,7 +37,16 @@ public record CommandContext(
         MessageBuffer warningBuffer,
         SettingsRegistry settingsRegistry,
         CommandResolver commandResolver,
-        OverridingKeymapController overridingKeymapController) {
+        OverridingKeymapController overridingKeymapController,
+        PathOpenService pathOpenService) {
+
+    /**
+     * 指定パスを開く。
+     * ファイルの場合はバッファに読み込み、ディレクトリの場合はTree Diredで開く。
+     */
+    public void openPath(String pathString) {
+        pathOpenService.open(pathString, bufferManager, frame);
+    }
 
     /**
      * 名前を指定して別のコマンドを実行する。

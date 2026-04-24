@@ -17,7 +17,12 @@ import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.keybind.Keymap;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -85,7 +90,21 @@ class OccurCommandTest {
                 new MessageBuffer("*Warnings*", 100, settings),
                 settings,
                 new CommandResolver(registry),
-                new NoOpOverridingKeymapController());
+                new NoOpOverridingKeymapController(),
+                new PathOpenService(
+                        new BufferIO(
+                                source -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                destination -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                settings),
+                        new AutoModeMap(TextMode::new),
+                        new ModeRegistry(),
+                        settings,
+                        path -> false,
+                        (pathString, bm, f) -> {}));
 
         var occurCommand =
                 new OccurCommand(new InputHistory(), new Keymap("occur-test"), new CommandRegistry(), settings);
@@ -170,7 +189,8 @@ class OccurCommandTest {
                     s.context.warningBuffer(),
                     s.context.settingsRegistry(),
                     s.context.commandResolver(),
-                    s.context.overridingKeymapController());
+                    s.context.overridingKeymapController(),
+                    s.context.pathOpenService());
 
             // 2回目: "bar" で検索
             s.command.execute(context2).join();

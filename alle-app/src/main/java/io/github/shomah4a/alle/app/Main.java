@@ -60,7 +60,7 @@ public final class Main {
         Screen screen = new TerminalScreen(terminal);
         try {
             screen.startScreen();
-            run(screen);
+            run(screen, args);
         } finally {
             screen.stopScreen();
             restoreFlowControl();
@@ -68,7 +68,7 @@ public final class Main {
         }
     }
 
-    private static void run(Screen screen) throws IOException {
+    private static void run(Screen screen, String[] args) throws IOException {
         var inputSource = new TerminalInputSource(screen);
         var settingsRegistry = new SettingsRegistry();
         settingsRegistry.register(EditorSettings.INDENT_WIDTH);
@@ -127,6 +127,11 @@ public final class Main {
                 .bind(
                         KeyStroke.meta(':'),
                         core.commandRegistry().lookup("eval-expression").orElseThrow());
+
+        // コマンドライン引数で指定されたファイルを開く
+        if (args.length > 0) {
+            core.pathOpenService().open(args[0], core.bufferManager(), core.frame());
+        }
 
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(

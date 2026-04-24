@@ -8,6 +8,11 @@ import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.io.PathOpenService;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -46,7 +51,21 @@ class HandleErrorTest {
                 warningBuffer,
                 new SettingsRegistry(),
                 new CommandResolver(new CommandRegistry()),
-                new NoOpOverridingKeymapController());
+                new NoOpOverridingKeymapController(),
+                new PathOpenService(
+                        new BufferIO(
+                                source -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                destination -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                new SettingsRegistry()),
+                        new AutoModeMap(TextMode::new),
+                        new ModeRegistry(),
+                        new SettingsRegistry(),
+                        path -> false,
+                        (pathString, bm, f) -> {}));
     }
 
     @Test
