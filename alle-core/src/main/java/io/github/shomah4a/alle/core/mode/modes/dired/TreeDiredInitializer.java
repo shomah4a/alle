@@ -7,11 +7,10 @@ import io.github.shomah4a.alle.core.input.DefaultShellCommandExecutor;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
-import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
-import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import java.nio.file.Path;
 import java.time.ZoneId;
 
@@ -23,21 +22,27 @@ public final class TreeDiredInitializer {
     private TreeDiredInitializer() {}
 
     /**
+     * 初期化の結果。
+     */
+    public record InitResult(TreeDiredCommand treeDiredCommand, DiredOpenService diredOpenService) {}
+
+    /**
      * TreeDiredモードのコマンド群・キーマップを構築し、CommandResolverへ登録する。
      *
-     * @return グローバルレジストリへ登録すべきTreeDiredCommand
+     * @return TreeDiredCommandとDiredOpenService
      */
-    public static TreeDiredCommand initialize(
+    public static InitResult initialize(
             CommandRegistry globalRegistry,
             CommandResolver commandResolver,
-            BufferIO bufferIO,
             DirectoryLister directoryLister,
-            AutoModeMap autoModeMap,
             ModeRegistry modeRegistry,
+            SettingsRegistry settingsRegistry,
             FilePathInputPrompter filePathInputPrompter) {
 
+        var zoneId = ZoneId.systemDefault();
+
         var toggleCommand = new TreeDiredToggleCommand();
-        var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand(bufferIO, autoModeMap, modeRegistry);
+        var findFileOrToggleCommand = new TreeDiredFindFileOrToggleCommand();
         var upDirectoryCommand = new TreeDiredUpDirectoryCommand();
         var refreshCommand = new TreeDiredRefreshCommand();
         var markCommand = new TreeDiredMarkCommand();
@@ -86,16 +91,14 @@ public final class TreeDiredInitializer {
                 chownCommand,
                 shellCommand);
 
+        var diredOpenService = new DiredOpenService(
+                directoryLister, zoneId, diredKeymap, diredCommandRegistry, modeRegistry, settingsRegistry);
+
         var diredHistory = new InputHistory();
-        return new TreeDiredCommand(
-                directoryLister,
-                Path.of("").toAbsolutePath(),
-                diredHistory,
-                ZoneId.systemDefault(),
-                diredKeymap,
-                diredCommandRegistry,
-                filePathInputPrompter,
-                modeRegistry);
+        var treeDiredCommand = new TreeDiredCommand(
+                diredOpenService, Path.of("").toAbsolutePath(), diredHistory, filePathInputPrompter);
+
+        return new InitResult(treeDiredCommand, diredOpenService);
     }
 
     private static Keymap createKeymap(

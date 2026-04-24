@@ -16,9 +16,14 @@ import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.command.KillRing;
 import io.github.shomah4a.alle.core.command.NoOpOverridingKeymapController;
+import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.KeymapEntry;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -245,9 +250,23 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new CommandResolver(new CommandRegistry()));
+                    new CommandResolver(new CommandRegistry()),
+                    new PathOpenService(
+                            new BufferIO(
+                                    source -> {
+                                        throw new java.io.IOException("stub");
+                                    },
+                                    destination -> {
+                                        throw new java.io.IOException("stub");
+                                    },
+                                    new SettingsRegistry()),
+                            new AutoModeMap(TextMode::new),
+                            new ModeRegistry(),
+                            new SettingsRegistry(),
+                            path -> false,
+                            (pathString, bm, f) -> {}));
 
-            // ミニバッファがアクティブな状態でキー入力
+            // ミニバッファがアクティ��な状態でキー入力
             loop.processKey(KeyStroke.of('t'));
             loop.processKey(KeyStroke.of('e'));
             loop.processKey(KeyStroke.of('s'));
@@ -273,7 +292,21 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Messages*", 100, new SettingsRegistry()),
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
-                    new CommandResolver(new CommandRegistry()));
+                    new CommandResolver(new CommandRegistry()),
+                    new PathOpenService(
+                            new BufferIO(
+                                    source -> {
+                                        throw new java.io.IOException("stub");
+                                    },
+                                    destination -> {
+                                        throw new java.io.IOException("stub");
+                                    },
+                                    new SettingsRegistry()),
+                            new AutoModeMap(TextMode::new),
+                            new ModeRegistry(),
+                            new SettingsRegistry(),
+                            path -> false,
+                            (pathString, bm, f) -> {}));
 
             loop.processKey(KeyStroke.of('a'));
             loop.processKey(KeyStroke.of('b'));
@@ -730,7 +763,21 @@ class MinibufferInputPrompterTest {
                     new MessageBuffer("*Warnings*", 100, new SettingsRegistry()),
                     new SettingsRegistry(),
                     new CommandResolver(new CommandRegistry()),
-                    new NoOpOverridingKeymapController());
+                    new NoOpOverridingKeymapController(),
+                    new PathOpenService(
+                            new BufferIO(
+                                    source -> {
+                                        throw new java.io.IOException("stub");
+                                    },
+                                    destination -> {
+                                        throw new java.io.IOException("stub");
+                                    },
+                                    new SettingsRegistry()),
+                            new AutoModeMap(TextMode::new),
+                            new ModeRegistry(),
+                            new SettingsRegistry(),
+                            path -> false,
+                            (pathString, bm, f) -> {}));
             binding.command().execute(context).join();
         }
     }

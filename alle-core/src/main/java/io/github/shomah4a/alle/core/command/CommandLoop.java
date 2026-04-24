@@ -5,6 +5,7 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.ReadOnlyBufferException;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
@@ -46,6 +47,7 @@ public class CommandLoop {
     private final MessageBuffer warningBuffer;
     private final SettingsRegistry settingsRegistry;
     private final CommandResolver commandResolver;
+    private final PathOpenService pathOpenService;
     private volatile Runnable onAsyncCommandComplete = () -> {};
     private Optional<String> lastCommand = Optional.empty();
     private @Nullable PendingPrefix pendingPrefix;
@@ -78,7 +80,8 @@ public class CommandLoop {
             MessageBuffer messageBuffer,
             MessageBuffer warningBuffer,
             SettingsRegistry settingsRegistry,
-            CommandResolver commandResolver) {
+            CommandResolver commandResolver,
+            PathOpenService pathOpenService) {
         this.inputSource = inputSource;
         this.keyResolver = keyResolver;
         this.frame = frame;
@@ -89,6 +92,7 @@ public class CommandLoop {
         this.warningBuffer = warningBuffer;
         this.settingsRegistry = settingsRegistry;
         this.commandResolver = commandResolver;
+        this.pathOpenService = pathOpenService;
     }
 
     /**
@@ -219,7 +223,8 @@ public class CommandLoop {
                         warningBuffer,
                         settingsRegistry,
                         commandResolver,
-                        overridingKeymapController);
+                        overridingKeymapController,
+                        pathOpenService);
                 try {
                     var unused = command.execute(context)
                             .thenRun(() -> {

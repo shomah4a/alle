@@ -70,7 +70,7 @@ import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.InputSource;
 import io.github.shomah4a.alle.core.input.ShutdownRequestable;
 import io.github.shomah4a.alle.core.io.BufferIO;
-import io.github.shomah4a.alle.core.io.FileOpenService;
+import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.keybind.KeyResolver;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
@@ -130,7 +130,7 @@ public final class EditorCore {
     private final FrameLayoutStore frameLayoutStore;
     private final InputPrompter inputPrompter;
     private final StatusLineRenderer statusLineRenderer;
-    private final FileOpenService fileOpenService;
+    private final PathOpenService pathOpenService;
 
     private EditorCore(
             Frame frame,
@@ -146,7 +146,7 @@ public final class EditorCore {
             FrameLayoutStore frameLayoutStore,
             InputPrompter inputPrompter,
             StatusLineRenderer statusLineRenderer,
-            FileOpenService fileOpenService) {
+            PathOpenService pathOpenService) {
         this.frame = frame;
         this.bufferManager = bufferManager;
         this.messageBuffer = messageBuffer;
@@ -160,7 +160,7 @@ public final class EditorCore {
         this.frameLayoutStore = frameLayoutStore;
         this.inputPrompter = inputPrompter;
         this.statusLineRenderer = statusLineRenderer;
-        this.fileOpenService = fileOpenService;
+        this.pathOpenService = pathOpenService;
     }
 
     /**
@@ -254,13 +254,10 @@ public final class EditorCore {
         // フレームレイアウトストア
         var frameLayoutStore = new FrameLayoutStore();
 
-        // ファイルオープンサービス
-        var fileOpenService = new FileOpenService(bufferIO, autoModeMap, modeRegistry, settingsRegistry);
-
         // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
         var commandResolver = new CommandResolver();
-        var registry = createCommandRegistry(
+        var createResult = createCommandRegistry(
                 bufferIO,
                 directoryLister,
                 autoModeMap,
@@ -271,8 +268,9 @@ public final class EditorCore {
                 settingsRegistry,
                 filePathInputPrompter,
                 frameLayoutStore,
-                scratchFacade,
-                fileOpenService);
+                scratchFacade);
+        var registry = createResult.registry();
+        var pathOpenService = createResult.pathOpenService();
         commandResolver.setGlobalRegistry(registry);
 
         // モード登録（コマンド自動登録のためCommandRegistry設定後に行う）
@@ -307,7 +305,8 @@ public final class EditorCore {
                 messageBuffer,
                 warningBuffer,
                 settingsRegistry,
-                commandResolver);
+                commandResolver,
+                pathOpenService);
 
         // ステータスライン
         var statusLineRegistry = new StatusLineRegistry();
@@ -333,10 +332,12 @@ public final class EditorCore {
                 frameLayoutStore,
                 inputPrompter,
                 statusLineRenderer,
-                fileOpenService);
+                pathOpenService);
     }
 
-    private static CommandRegistry createCommandRegistry(
+    record CommandRegistryResult(CommandRegistry registry, PathOpenService pathOpenService) {}
+
+    private static CommandRegistryResult createCommandRegistry(
             BufferIO bufferIO,
             DirectoryLister directoryLister,
             AutoModeMap autoModeMap,
@@ -347,8 +348,7 @@ public final class EditorCore {
             SettingsRegistry settingsRegistry,
             FilePathInputPrompter filePathInputPrompter,
             FrameLayoutStore frameLayoutStore,
-            BufferFacade scratchBuffer,
-            FileOpenService fileOpenService) {
+            BufferFacade scratchBuffer) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -369,13 +369,6 @@ public final class EditorCore {
         registry.register(new UncommentRegionCommand());
         registry.register(new CommentOrUncommentRegionCommand());
         var filePathHistory = new InputHistory();
-        var findFileCommand = new FindFileCommand(
-                fileOpenService,
-                Path.of("").toAbsolutePath(),
-                filePathHistory,
-                path -> Files.isDirectory(path),
-                filePathInputPrompter);
-        registry.register(findFileCommand);
         registry.register(new SaveBufferCommand(bufferIO, filePathInputPrompter, filePathHistory));
         registry.register(new RevertBufferCommand(bufferIO));
         var bufferHistory = new InputHistory();
@@ -433,11 +426,22 @@ public final class EditorCore {
         registry.register(new SaveFrameStateCommand(frameLayoutStore, frameStateHistory));
         registry.register(new RestoreFrameStateCommand(frameLayoutStore, frameStateHistory, () -> scratchBuffer));
 
-        // Tree Dired
-        var treeDiredCommand = TreeDiredInitializer.initialize(
-                registry, commandResolver, bufferIO, directoryLister, autoModeMap, modeRegistry, filePathInputPrompter);
-        registry.register(treeDiredCommand);
-        findFileCommand.setTreeDiredCommand(treeDiredCommand);
+        // Tree Dired → DiredOpenService → PathOpenService → FindFileCommand の順で構築
+        var diredResult = TreeDiredInitializer.initialize(
+                registry, commandResolver, directoryLister, modeRegistry, settingsRegistry, filePathInputPrompter);
+        registry.register(diredResult.treeDiredCommand());
+
+        var pathOpenService = new PathOpenService(
+                bufferIO,
+                autoModeMap,
+                modeRegistry,
+                settingsRegistry,
+                path -> Files.isDirectory(path),
+                diredResult.diredOpenService()::openDired);
+
+        var findFileCommand = new FindFileCommand(
+                pathOpenService, Path.of("").toAbsolutePath(), filePathHistory, filePathInputPrompter);
+        registry.register(findFileCommand);
 
         // Tree Dired Git
         TreeDiredGitInitializer.initialize(
@@ -447,7 +451,7 @@ public final class EditorCore {
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
         registry.register(occurCommand);
 
-        return registry;
+        return new CommandRegistryResult(registry, pathOpenService);
     }
 
     private static Keymap createKeymap(CommandRegistry registry) {
@@ -616,7 +620,7 @@ public final class EditorCore {
         return statusLineRenderer;
     }
 
-    public FileOpenService fileOpenService() {
-        return fileOpenService;
+    public PathOpenService pathOpenService() {
+        return pathOpenService;
     }
 }

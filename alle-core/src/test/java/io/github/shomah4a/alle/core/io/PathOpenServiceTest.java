@@ -17,20 +17,21 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class FileOpenServiceTest {
+class PathOpenServiceTest {
 
     private final MutableMap<String, String> storage = Maps.mutable.empty();
     private final AutoModeMap autoModeMap = new AutoModeMap(TextMode::new);
     private final SettingsRegistry settingsRegistry = new SettingsRegistry();
     private Frame frame;
     private BufferManager bufferManager;
-    private FileOpenService service;
+    private PathOpenService service;
 
     @BeforeEach
     void setUp() {
@@ -50,7 +51,8 @@ class FileOpenServiceTest {
         };
         BufferWriter writer = destination -> new StringWriter();
         var bufferIO = new BufferIO(reader, writer, settingsRegistry);
-        service = new FileOpenService(bufferIO, autoModeMap, new ModeRegistry(), settingsRegistry);
+        service = new PathOpenService(
+                bufferIO, autoModeMap, new ModeRegistry(), settingsRegistry, path -> false, (pathString, bm, f) -> {});
     }
 
     @Nested
@@ -60,7 +62,7 @@ class FileOpenServiceTest {
         void 指定パスのファイルを読み込みバッファに表示する() {
             storage.put("/tmp/hello.txt", "Hello\nWorld");
 
-            service.openFile("/tmp/hello.txt", bufferManager, frame);
+            service.open("/tmp/hello.txt", bufferManager, frame);
 
             assertEquals("hello.txt", frame.getActiveWindow().getBuffer().getName());
             assertEquals("Hello\nWorld", frame.getActiveWindow().getBuffer().getText());
@@ -73,7 +75,7 @@ class FileOpenServiceTest {
         void 読み込んだバッファがBufferManagerに追加される() {
             storage.put("/tmp/hello.txt", "Hello");
 
-            service.openFile("/tmp/hello.txt", bufferManager, frame);
+            service.open("/tmp/hello.txt", bufferManager, frame);
 
             assertEquals(2, bufferManager.size());
             assertTrue(bufferManager.findByName("hello.txt").isPresent());
@@ -83,7 +85,7 @@ class FileOpenServiceTest {
         void CRLFファイルのLineEndingがバッファに保持される() {
             storage.put("/tmp/crlf.txt", "Hello\r\nWorld");
 
-            service.openFile("/tmp/crlf.txt", bufferManager, frame);
+            service.open("/tmp/crlf.txt", bufferManager, frame);
 
             assertEquals(LineEnding.CRLF, frame.getActiveWindow().getBuffer().getLineEnding());
         }
@@ -92,7 +94,7 @@ class FileOpenServiceTest {
         void メジャーモードが自動設定される() {
             storage.put("/tmp/test.txt", "hello");
 
-            service.openFile("/tmp/test.txt", bufferManager, frame);
+            service.open("/tmp/test.txt", bufferManager, frame);
 
             assertEquals(
                     "text", frame.getActiveWindow().getBuffer().getMajorMode().name());
@@ -104,7 +106,7 @@ class FileOpenServiceTest {
 
         @Test
         void 空バッファがファイルパス付きで作成される() {
-            service.openFile("/tmp/new.txt", bufferManager, frame);
+            service.open("/tmp/new.txt", bufferManager, frame);
 
             assertEquals("new.txt", frame.getActiveWindow().getBuffer().getName());
             assertEquals("", frame.getActiveWindow().getBuffer().getText());
@@ -121,13 +123,13 @@ class FileOpenServiceTest {
         void 既存バッファに切り替わる() {
             storage.put("/tmp/hello.txt", "Hello");
 
-            service.openFile("/tmp/hello.txt", bufferManager, frame);
+            service.open("/tmp/hello.txt", bufferManager, frame);
 
             // バッファにテキスト追加
             frame.getActiveWindow().getBuffer().insertText(5, "!");
 
             // 同じファイルを開く
-            service.openFile("/tmp/hello.txt", bufferManager, frame);
+            service.open("/tmp/hello.txt", bufferManager, frame);
 
             // 新しいバッファが作られず、既存のバッファ（編集済み）が使われる
             assertEquals(2, bufferManager.size());
@@ -142,7 +144,7 @@ class FileOpenServiceTest {
         void 何も変わらない() {
             var beforeName = frame.getActiveWindow().getBuffer().getName();
 
-            service.openFile("", bufferManager, frame);
+            service.open("", bufferManager, frame);
 
             assertEquals(beforeName, frame.getActiveWindow().getBuffer().getName());
             assertEquals(1, bufferManager.size());
@@ -156,9 +158,36 @@ class FileOpenServiceTest {
         void 末尾スラッシュが除去されて正規化される() {
             storage.put("/tmp/hello.txt", "Hello");
 
-            service.openFile("/tmp/hello.txt/", bufferManager, frame);
+            service.open("/tmp/hello.txt/", bufferManager, frame);
 
             assertEquals("hello.txt", frame.getActiveWindow().getBuffer().getName());
+        }
+    }
+
+    @Nested
+    class ディレクトリ判定 {
+
+        @Test
+        void ディレクトリの場合はDirectoryOpenerに委譲される() {
+            var called = new AtomicBoolean(false);
+            var dirService = new PathOpenService(
+                    new BufferIO(
+                            source -> {
+                                throw new IOException("stub");
+                            },
+                            destination -> {
+                                throw new IOException("stub");
+                            },
+                            settingsRegistry),
+                    autoModeMap,
+                    new ModeRegistry(),
+                    settingsRegistry,
+                    path -> true,
+                    (pathString, bm, f) -> called.set(true));
+
+            dirService.open("/tmp/somedir", bufferManager, frame);
+
+            assertTrue(called.get());
         }
     }
 
@@ -167,21 +196,21 @@ class FileOpenServiceTest {
 
         @Test
         void 相対パスが絶対パスに変換される() {
-            var normalized = FileOpenService.normalizePath("hello.txt");
+            var normalized = PathOpenService.normalizePath("hello.txt");
 
             assertTrue(normalized.isAbsolute());
         }
 
         @Test
         void 親ディレクトリ参照が解決される() {
-            var normalized = FileOpenService.normalizePath("/tmp/foo/../bar.txt");
+            var normalized = PathOpenService.normalizePath("/tmp/foo/../bar.txt");
 
             assertEquals(Path.of("/tmp/bar.txt"), normalized);
         }
 
         @Test
         void 冗長なスラッシュが除去される() {
-            var normalized = FileOpenService.normalizePath("/tmp//hello.txt");
+            var normalized = PathOpenService.normalizePath("/tmp//hello.txt");
 
             assertEquals(Path.of("/tmp/hello.txt"), normalized);
         }

@@ -10,6 +10,11 @@ import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.input.InputPrompter;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.io.PathOpenService;
+import io.github.shomah4a.alle.core.mode.AutoModeMap;
+import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -58,7 +63,21 @@ class CommandContextDelegateTest {
                 new MessageBuffer("*Warnings*", 100, SETTINGS),
                 SETTINGS,
                 new CommandResolver(registry),
-                new NoOpOverridingKeymapController());
+                new NoOpOverridingKeymapController(),
+                new PathOpenService(
+                        new BufferIO(
+                                source -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                destination -> {
+                                    throw new java.io.IOException("stub");
+                                },
+                                SETTINGS),
+                        new AutoModeMap(TextMode::new),
+                        new ModeRegistry(),
+                        SETTINGS,
+                        path -> false,
+                        (pathString, bm, f) -> {}));
     }
 
     @Nested

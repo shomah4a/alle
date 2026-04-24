@@ -130,7 +130,7 @@ public final class Main {
 
         // コマンドライン引数で指定されたファイルを開く
         if (args.length > 0) {
-            core.fileOpenService().openFile(args[0], core.bufferManager(), core.frame());
+            core.pathOpenService().open(args[0], core.bufferManager(), core.frame());
         }
 
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
