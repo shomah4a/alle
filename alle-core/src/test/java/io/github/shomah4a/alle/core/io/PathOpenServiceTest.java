@@ -18,6 +18,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 import org.junit.jupiter.api.BeforeEach;
@@ -188,6 +189,29 @@ class PathOpenServiceTest {
             dirService.open("/tmp/somedir", bufferManager, frame);
 
             assertTrue(called.get());
+        }
+
+        @Test
+        void ルートディレクトリがDirectoryOpenerに正しく委譲される() {
+            var receivedPath = new AtomicReference<String>();
+            var dirService = new PathOpenService(
+                    new BufferIO(
+                            source -> {
+                                throw new IOException("stub");
+                            },
+                            destination -> {
+                                throw new IOException("stub");
+                            },
+                            settingsRegistry),
+                    autoModeMap,
+                    new ModeRegistry(),
+                    settingsRegistry,
+                    path -> true,
+                    (pathString, bm, f) -> receivedPath.set(pathString));
+
+            dirService.open("/", bufferManager, frame);
+
+            assertEquals("/", receivedPath.get());
         }
     }
 

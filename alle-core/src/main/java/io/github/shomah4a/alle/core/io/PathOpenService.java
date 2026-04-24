@@ -69,12 +69,11 @@ public class PathOpenService {
         if (pathString.isEmpty()) {
             return;
         }
-        String trimmed = pathString.endsWith("/") ? pathString.substring(0, pathString.length() - 1) : pathString;
-        var path = normalizePath(trimmed);
+        var path = normalizePath(pathString);
 
         // ディレクトリの場合はDiredで開く
         if (directoryChecker.test(path)) {
-            directoryOpener.openDirectory(trimmed, bufferManager, frame);
+            directoryOpener.openDirectory(path.toString(), bufferManager, frame);
             return;
         }
 
