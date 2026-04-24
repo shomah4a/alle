@@ -26,6 +26,10 @@ class BufferNameUniquifier {
 
         for (BufferFacade buffer : buffers) {
             buffer.getFilePath().ifPresent(path -> {
+                // ルートパス "/" は getFileName() が null を返すためスキップ
+                if (path.getFileName() == null) {
+                    return;
+                }
                 String fileName = path.getFileName().toString();
                 groups.getIfAbsentPut(fileName, Lists.mutable::empty).add(buffer);
             });
