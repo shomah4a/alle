@@ -26,11 +26,19 @@ MutableList を返す場合は ListIterable を使うなど。
 private static final Logger logger = Logger.getLogger(MyClass.class.getName());
 logger.log(Level.WARNING, "message", e);
 
+// NG: SLF4J の LoggerFactory を直接使用
+private static final Logger logger = LoggerFactory.getLogger(MyClass.class);
+
 // OK: Loggable を implements して logger() を使う
 public class MyClass implements Loggable {
     void doSomething() {
         logger().warn("message", e);
     }
+}
+
+// OK: static メソッドや final class など implements できない場合は Loggable.createLogger を使う
+public final class MyUtility {
+    private static final Logger logger = Loggable.createLogger(MyUtility.class);
 }
 ```
 
