@@ -113,18 +113,24 @@ class DisplayWidthUtilTest {
     }
 
     @Test
-    void isFullWidthでU2E80未満の非ASCII文字はfalse() {
+    void isFullWidthで早期リターン閾値未満の非ASCII文字はfalse() {
         // ラテン拡張 (U+00C0)
         assertFalse(DisplayWidthUtil.isFullWidth(0x00C0));
         // アラビア文字 (U+0627)
         assertFalse(DisplayWidthUtil.isFullWidth(0x0627));
-        // U+2E7F (CJK Radicals Supplement の直前)
-        assertFalse(DisplayWidthUtil.isFullWidth(0x2E7F));
+        // U+10FF (HANGUL_JAMO の直前)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x10FF));
+    }
+
+    @Test
+    void isFullWidthでHANGUL_JAMOブロックはtrue() {
+        // U+1100 (HANGUL_JAMO の先頭、早期リターン閾値の境界)
+        assertTrue(DisplayWidthUtil.isFullWidth(0x1100));
     }
 
     @Test
     void isFullWidthでCJK部首補助ブロックはtrue() {
-        // U+2E80 (CJK Radicals Supplement の先頭、早期リターン閾値の境界)
+        // U+2E80 (CJK Radicals Supplement の先頭)
         assertTrue(DisplayWidthUtil.isFullWidth(0x2E80));
     }
 
