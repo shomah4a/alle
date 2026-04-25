@@ -1,7 +1,9 @@
 package io.github.shomah4a.alle.core.server;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -18,11 +20,14 @@ public class ServerSession {
     private static final Logger logger = Logger.getLogger(ServerSession.class.getName());
 
     private final SocketChannel channel;
+    private final PrintWriter writer;
     private final Path filePath;
     private final CompletableFuture<Void> completion;
 
     public ServerSession(SocketChannel channel, Path filePath) {
         this.channel = channel;
+        this.writer = new PrintWriter(
+                new OutputStreamWriter(Channels.newOutputStream(channel), StandardCharsets.UTF_8), true);
         this.filePath = filePath;
         this.completion = new CompletableFuture<>();
     }
@@ -66,18 +71,11 @@ public class ServerSession {
     }
 
     private void sendResponse(ServerProtocol.Response response) {
-        var line = ServerProtocol.encode(response) + "\n";
-        var buffer = ByteBuffer.wrap(line.getBytes(StandardCharsets.UTF_8));
-        try {
-            while (buffer.hasRemaining()) {
-                channel.write(buffer);
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "クライアントへのレスポンス送信に失敗: " + line.trim(), e);
-        }
+        writer.println(ServerProtocol.encode(response));
     }
 
     private void closeChannel() {
+        writer.close();
         try {
             channel.close();
         } catch (IOException e) {

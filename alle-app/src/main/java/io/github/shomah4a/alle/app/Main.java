@@ -16,6 +16,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.server.ServerEditCommand;
 import io.github.shomah4a.alle.core.server.ServerManager;
 import io.github.shomah4a.alle.core.server.ServerMinorMode;
+import io.github.shomah4a.alle.core.server.ServerStartCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.styling.DefaultFaceTheme;
@@ -148,20 +149,16 @@ public final class Main {
 
         var actionQueue = new java.util.concurrent.LinkedBlockingQueue<Runnable>();
 
-        // サーバー起動
+        // server-start コマンドの登録
         var serverManager = new ServerManager();
         var serverEditCommand = new ServerEditCommand(bufferIO, serverManager);
-        try {
-            serverManager.start(
-                    actionQueue,
-                    core.pathOpenService(),
-                    core.bufferManager(),
-                    core.frame(),
-                    () -> new ServerMinorMode(serverEditCommand));
-            msg.message("Server started: " + ServerManager.resolveSocketPath());
-        } catch (IOException e) {
-            msg.message("Server start failed: " + e.getMessage());
-        }
+        var serverStartCommand = new ServerStartCommand(() -> serverManager.start(
+                actionQueue,
+                core.pathOpenService(),
+                core.bufferManager(),
+                core.frame(),
+                () -> new ServerMinorMode(serverEditCommand)));
+        core.commandRegistry().register(serverStartCommand);
 
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(

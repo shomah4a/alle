@@ -110,7 +110,7 @@ class ServerEditCommandTest {
 
         // クライアント側でFINISHEDを受信
         var received = readFromChannel(pair.client());
-        assertTrue(received.contains("FINISHED"));
+        assertTrue(received.contains("\"type\":\"finished\""));
 
         // バッファが kill された
         assertFalse(bufferManager.findByName("COMMIT_EDITMSG").isPresent());

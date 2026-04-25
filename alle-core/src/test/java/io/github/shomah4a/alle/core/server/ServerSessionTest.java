@@ -32,7 +32,7 @@ class ServerSessionTest {
             assertTrue(session.completion().isDone());
 
             var received = readLine(pair.client());
-            assertTrue(received.contains("FINISHED"));
+            assertTrue(received.contains("\"type\":\"finished\""));
         }
     }
 
@@ -44,7 +44,8 @@ class ServerSessionTest {
             session.sendOpened("test.txt");
 
             var received = readLine(pair.client());
-            assertTrue(received.contains("OPENED test.txt"));
+            assertTrue(received.contains("\"type\":\"opened\""));
+            assertTrue(received.contains("\"buffer\":\"test.txt\""));
         }
     }
 
@@ -58,7 +59,8 @@ class ServerSessionTest {
             assertTrue(session.completion().isCompletedExceptionally());
 
             var received = readLine(pair.client());
-            assertTrue(received.contains("ERROR something failed"));
+            assertTrue(received.contains("\"type\":\"error\""));
+            assertTrue(received.contains("\"message\":\"something failed\""));
         }
     }
 

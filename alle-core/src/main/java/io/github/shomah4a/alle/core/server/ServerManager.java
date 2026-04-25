@@ -8,7 +8,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
-import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
@@ -65,10 +65,14 @@ public class ServerManager implements Closeable, ServerSessionLookup {
             throws IOException {
         socketPath = resolveSocketPath();
 
-        // 親ディレクトリを作成
+        // 親ディレクトリを owner-only パーミッションで作成
         var parentDir = socketPath.getParent();
         if (parentDir != null) {
-            Files.createDirectories(parentDir);
+            var ownerOnly = java.nio.file.attribute.PosixFilePermissions.asFileAttribute(
+                    java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
+            if (!Files.exists(parentDir)) {
+                Files.createDirectories(parentDir, ownerOnly);
+            }
         }
 
         // stale socket detection
@@ -118,7 +122,9 @@ public class ServerManager implements Closeable, ServerSessionLookup {
             Frame frame,
             java.util.function.Supplier<MinorMode> serverMinorModeFactory) {
         try {
-            var requestLine = readLine(clientChannel);
+            var reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(Channels.newInputStream(clientChannel), StandardCharsets.UTF_8));
+            var requestLine = reader.readLine();
             if (requestLine == null) {
                 clientChannel.close();
                 return;
@@ -126,8 +132,8 @@ public class ServerManager implements Closeable, ServerSessionLookup {
 
             var requestOpt = ServerProtocol.parseRequest(requestLine);
             if (requestOpt.isEmpty()) {
-                sendResponse(clientChannel, new ServerProtocol.Response.ServerError("invalid request"));
-                clientChannel.close();
+                var session = new ServerSession(clientChannel, Path.of(""));
+                session.notifyError("invalid request");
                 return;
             }
 
@@ -150,30 +156,6 @@ public class ServerManager implements Closeable, ServerSessionLookup {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-        }
-    }
-
-    private @Nullable String readLine(SocketChannel channel) throws IOException {
-        var buffer = ByteBuffer.allocate(4096);
-        var bytesRead = channel.read(buffer);
-        if (bytesRead <= 0) {
-            return null;
-        }
-        buffer.flip();
-        var content = StandardCharsets.UTF_8.decode(buffer).toString();
-        // 改行を除去
-        return content.stripTrailing();
-    }
-
-    private void sendResponse(SocketChannel channel, ServerProtocol.Response response) {
-        var line = ServerProtocol.encode(response) + "\n";
-        var buffer = ByteBuffer.wrap(line.getBytes(StandardCharsets.UTF_8));
-        try {
-            while (buffer.hasRemaining()) {
-                channel.write(buffer);
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "レスポンスの送信に失敗", e);
         }
     }
 
