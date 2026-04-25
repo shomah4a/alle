@@ -204,27 +204,33 @@ public final class RenderSnapshotFactory {
                 allLines.add(buffer.lineText(i));
             }
             var allSpans = styler.styleDocument(allLines);
+            int lineStart = buffer.lineStartOffset(displayStart);
             for (int row = 0; row < bufferRows; row++) {
                 int lineIndex = displayStart + row;
                 if (lineIndex < lineCount) {
                     String lineText = allLines.get(lineIndex);
+                    int cpCount = (int) lineText.codePoints().count();
                     var spans = allSpans.get(lineIndex);
-                    var merged = mergeWithTextPropertyFace(buffer, lineIndex, spans);
-                    var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+                    var merged = mergeWithTextPropertyFace(buffer, lineStart, cpCount, spans);
+                    var lineRegion = computeLineRegion(lineStart, cpCount, regionStart, regionEnd);
                     visibleLines.add(RenderSnapshot.LineSnapshot.truncated(lineText, Optional.of(merged), lineRegion));
+                    lineStart += cpCount + 1;
                 }
             }
         } else {
+            int lineStart = buffer.lineStartOffset(displayStart);
             for (int row = 0; row < bufferRows; row++) {
                 int lineIndex = displayStart + row;
                 if (lineIndex < lineCount) {
                     String lineText = buffer.lineText(lineIndex);
-                    var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineIndex);
+                    int cpCount = (int) lineText.codePoints().count();
+                    var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineStart, cpCount);
                     var spansOpt = faceSpans.isEmpty()
                             ? Optional.<ListIterable<StyledSpan>>empty()
                             : Optional.<ListIterable<StyledSpan>>of(faceSpans);
-                    var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
+                    var lineRegion = computeLineRegion(lineStart, cpCount, regionStart, regionEnd);
                     visibleLines.add(RenderSnapshot.LineSnapshot.truncated(lineText, spansOpt, lineRegion));
+                    lineStart += cpCount + 1;
                 }
             }
         }
@@ -262,24 +268,25 @@ public final class RenderSnapshotFactory {
         }
 
         int visualRowCount = 0;
+        int lineStart = buffer.lineStartOffset(displayStart);
         for (int lineIndex = displayStart; lineIndex < lineCount && visualRowCount < bufferRows; lineIndex++) {
             String lineText = allLines != null ? allLines.get(lineIndex) : buffer.lineText(lineIndex);
+            int cpCount = (int) lineText.codePoints().count();
             var breaks = VisualLineUtil.computeVisualLineBreaks(lineText, columns, tabWidth);
             int visualLineCount = breaks.size() + 1;
 
             Optional<ListIterable<StyledSpan>> spansOpt;
             if (allSpans != null) {
-                var merged = mergeWithTextPropertyFace(buffer, lineIndex, allSpans.get(lineIndex));
+                var merged = mergeWithTextPropertyFace(buffer, lineStart, cpCount, allSpans.get(lineIndex));
                 spansOpt = Optional.of(merged);
             } else {
-                var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineIndex);
+                var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineStart, cpCount);
                 spansOpt = faceSpans.isEmpty()
                         ? Optional.<ListIterable<StyledSpan>>empty()
                         : Optional.<ListIterable<StyledSpan>>of(faceSpans);
             }
 
-            var lineRegion = computeLineRegion(buffer, lineIndex, regionStart, regionEnd);
-            int cpCount = (int) lineText.codePoints().count();
+            var lineRegion = computeLineRegion(lineStart, cpCount, regionStart, regionEnd);
 
             // 表示開始行の場合はdisplayStartVl分だけ先頭の視覚行をスキップ
             int startVl = (lineIndex == displayStart) ? displayStartVl : 0;
@@ -289,6 +296,8 @@ public final class RenderSnapshotFactory {
                 visibleLines.add(RenderSnapshot.LineSnapshot.wrapped(lineText, spansOpt, lineRegion, startCp, endCp));
                 visualRowCount++;
             }
+            // 次の行の開始オフセット = 現在行の開始 + コードポイント数 + 改行文字(1)
+            lineStart += cpCount + 1;
         }
     }
 
@@ -482,9 +491,12 @@ public final class RenderSnapshotFactory {
     /**
      * 指定行内のリージョン範囲（コードポイント単位の行ローカルオフセット）を計算する。
      * リージョンが行と重ならない場合はemptyを返す。
+     *
+     * @param lineStart 行のバッファ内コードポイントオフセット（事前計算済み）
+     * @param cpCount 行のコードポイント数（事前計算済み）
      */
     private static Optional<RenderSnapshot.LineRegion> computeLineRegion(
-            BufferFacade buffer, int lineIndex, Optional<Integer> regionStart, Optional<Integer> regionEnd) {
+            int lineStart, int cpCount, Optional<Integer> regionStart, Optional<Integer> regionEnd) {
         if (regionStart.isEmpty() || regionEnd.isEmpty()) {
             return Optional.empty();
         }
@@ -493,9 +505,7 @@ public final class RenderSnapshotFactory {
         if (rStart == rEnd) {
             return Optional.empty();
         }
-        int lineStart = buffer.lineStartOffset(lineIndex);
-        int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
-        int lineEnd = lineStart + lineLength;
+        int lineEnd = lineStart + cpCount;
 
         // リージョンと行の交差を計算
         int overlapStart = Math.max(rStart, lineStart);
@@ -508,11 +518,13 @@ public final class RenderSnapshotFactory {
 
     /**
      * テキストプロパティのfaceSpansを行ローカル座標に変換して取得する。
+     *
+     * @param lineStart 行のバッファ内コードポイントオフセット（事前計算済み）
+     * @param cpCount 行のコードポイント数（事前計算済み）
      */
-    private static ListIterable<StyledSpan> getTextPropertyFaceSpansForLine(BufferFacade buffer, int lineIndex) {
-        int lineStart = buffer.lineStartOffset(lineIndex);
-        int lineLength = (int) buffer.lineText(lineIndex).codePoints().count();
-        int lineEnd = lineStart + lineLength;
+    private static ListIterable<StyledSpan> getTextPropertyFaceSpansForLine(
+            BufferFacade buffer, int lineStart, int cpCount) {
+        int lineEnd = lineStart + cpCount;
         var bufferSpans = buffer.getFaceSpans(lineStart, lineEnd);
         if (bufferSpans.isEmpty()) {
             return bufferSpans;
@@ -533,8 +545,8 @@ public final class RenderSnapshotFactory {
      * SyntaxStylerスパンの隙間やスパン外にあるfaceスパンも正しく出力する。
      */
     private static ListIterable<StyledSpan> mergeWithTextPropertyFace(
-            BufferFacade buffer, int lineIndex, ListIterable<StyledSpan> stylerSpans) {
-        var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineIndex);
+            BufferFacade buffer, int lineStart, int cpCount, ListIterable<StyledSpan> stylerSpans) {
+        var faceSpans = getTextPropertyFaceSpansForLine(buffer, lineStart, cpCount);
         if (faceSpans.isEmpty()) {
             return stylerSpans;
         }
