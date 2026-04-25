@@ -16,6 +16,7 @@ public class CachingGitBranchProvider implements GitBranchProvider {
 
     private final GitBranchProvider delegate;
     private final Cache<Path, Optional<GitBranchInfo>> cache;
+    private final Cache<Path, Optional<Path>> gitRootCache;
     private final GitRootResolver gitRootResolver;
 
     /**
@@ -29,16 +30,22 @@ public class CachingGitBranchProvider implements GitBranchProvider {
         this.delegate = delegate;
         this.cache =
                 Caffeine.newBuilder().expireAfterWrite(ttl).maximumSize(maxSize).build();
+        this.gitRootCache =
+                Caffeine.newBuilder().expireAfterWrite(ttl).maximumSize(maxSize).build();
         this.gitRootResolver = gitRootResolver;
     }
 
     @Override
     public Optional<GitBranchInfo> getBranch(Path filePath) {
-        Path cacheKey = gitRootResolver.resolve(filePath);
-        if (cacheKey == null) {
+        Path parent = filePath.getParent();
+        if (parent == null) {
             return Optional.empty();
         }
-        return cache.get(cacheKey, k -> delegate.getBranch(filePath));
+        Optional<Path> gitRoot = gitRootCache.get(parent, k -> Optional.ofNullable(gitRootResolver.resolve(filePath)));
+        if (gitRoot.isEmpty()) {
+            return Optional.empty();
+        }
+        return cache.get(gitRoot.get(), k -> delegate.getBranch(filePath));
     }
 
     private static @Nullable Path resolveGitRoot(Path filePath) {
