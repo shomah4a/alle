@@ -133,6 +133,7 @@ public final class Main {
             core.pathOpenService().open(args[0], core.bufferManager(), core.frame());
         }
 
+        var actionQueue = new java.util.concurrent.LinkedBlockingQueue<Runnable>();
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(
                 inputSource,
@@ -141,7 +142,8 @@ public final class Main {
                 core.commandLoop(),
                 core.frame(),
                 core.messageBuffer(),
-                core.statusLineRenderer());
+                core.statusLineRenderer(),
+                actionQueue);
 
         try {
             runner.run();

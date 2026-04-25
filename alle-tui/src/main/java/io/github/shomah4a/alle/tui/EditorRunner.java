@@ -7,6 +7,7 @@ import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.statusline.StatusLineRenderer;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -24,6 +25,7 @@ public class EditorRunner {
     private final Frame frame;
     private final MessageBuffer messageBuffer;
     private final StatusLineRenderer statusLineRenderer;
+    private final BlockingQueue<Runnable> actionQueue;
 
     public EditorRunner(
             TerminalInputSource inputSource,
@@ -32,7 +34,8 @@ public class EditorRunner {
             CommandLoop commandLoop,
             Frame frame,
             MessageBuffer messageBuffer,
-            StatusLineRenderer statusLineRenderer) {
+            StatusLineRenderer statusLineRenderer,
+            BlockingQueue<Runnable> actionQueue) {
         this.inputSource = inputSource;
         this.screen = screen;
         this.renderer = renderer;
@@ -40,6 +43,7 @@ public class EditorRunner {
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.statusLineRenderer = statusLineRenderer;
+        this.actionQueue = actionQueue;
     }
 
     /**
@@ -58,7 +62,15 @@ public class EditorRunner {
         renderThreadHandle.start();
 
         var logicThread = new Thread(
-                new EditorThread(keyQueue, screen, commandLoop, frame, messageBuffer, exchanger, statusLineRenderer),
+                new EditorThread(
+                        keyQueue,
+                        actionQueue,
+                        screen,
+                        commandLoop,
+                        frame,
+                        messageBuffer,
+                        exchanger,
+                        statusLineRenderer),
                 "editor-logic");
         logicThread.setDaemon(true);
         logicThread.start();
