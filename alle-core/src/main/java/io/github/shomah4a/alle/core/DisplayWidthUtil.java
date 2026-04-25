@@ -54,6 +54,12 @@ public final class DisplayWidthUtil {
      * East Asian Width が Wide (W) または Fullwidth (F) の場合にtrueを返す。
      */
     public static boolean isFullWidth(int codePoint) {
+        // FULL_WIDTH_BLOCKS に含まれるブロックの最小開始位置は U+1100 (HANGUL_JAMO)。
+        // それ未満のコードポイントは全角ブロックに属さないため、
+        // Character.UnicodeBlock.of() のバイナリサーチを回避できる。
+        if (codePoint < 0x1100) {
+            return false;
+        }
         Character.UnicodeBlock block = Character.UnicodeBlock.of(codePoint);
         if (block == null) {
             return false;

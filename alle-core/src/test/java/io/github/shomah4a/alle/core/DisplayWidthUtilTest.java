@@ -113,6 +113,28 @@ class DisplayWidthUtilTest {
     }
 
     @Test
+    void isFullWidthで早期リターン閾値未満の非ASCII文字はfalse() {
+        // ラテン拡張 (U+00C0)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x00C0));
+        // アラビア文字 (U+0627)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x0627));
+        // U+10FF (HANGUL_JAMO の直前)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x10FF));
+    }
+
+    @Test
+    void isFullWidthでHANGUL_JAMOブロックはtrue() {
+        // U+1100 (HANGUL_JAMO の先頭、早期リターン閾値の境界)
+        assertTrue(DisplayWidthUtil.isFullWidth(0x1100));
+    }
+
+    @Test
+    void isFullWidthでCJK部首補助ブロックはtrue() {
+        // U+2E80 (CJK Radicals Supplement の先頭)
+        assertTrue(DisplayWidthUtil.isFullWidth(0x2E80));
+    }
+
+    @Test
     void computeColumnForOffsetでASCII文字列のカラム計算() {
         assertEquals(0, DisplayWidthUtil.computeColumnForOffset("hello", 0, TAB8));
         assertEquals(3, DisplayWidthUtil.computeColumnForOffset("hello", 3, TAB8));
