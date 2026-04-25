@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command.commands;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
@@ -10,17 +11,13 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 
 /**
  * バッファの内容をファイルから再読み込みするコマンド。
  * バッファが変更されている場合はユーザーに確認を求める。
  */
-public class RevertBufferCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(RevertBufferCommand.class.getName());
+public class RevertBufferCommand implements Command, Loggable {
 
     private static final Completer YES_NO_COMPLETER = input ->
             Lists.immutable.of("yes", "no").select(s -> s.startsWith(input)).collect(CompletionCandidate::terminal);
@@ -71,7 +68,7 @@ public class RevertBufferCommand implements Command {
             bufferIO.reload(buffer);
         } catch (IOException e) {
             var message = "バッファの再読み込みに失敗: " + buffer.getName();
-            logger.log(Level.WARNING, message, e);
+            logger().warn(message, e);
             context.handleError(message, e);
             return;
         }

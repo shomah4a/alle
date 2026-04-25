@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.io;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
@@ -11,8 +12,6 @@ import io.github.shomah4a.alle.core.window.Frame;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * パスを開くサービス。
@@ -21,7 +20,7 @@ import java.util.logging.Logger;
  * FindFileCommand、TreeDiredFindFileOrToggleCommand、起動時のファイルオープンなど、
  * 複数の箇所から利用される。
  */
-public class PathOpenService {
+public class PathOpenService implements Loggable {
 
     /**
      * ディレクトリを開く処理の委譲先。
@@ -29,8 +28,6 @@ public class PathOpenService {
     public interface DirectoryOpener {
         void openDirectory(String pathString, BufferManager bufferManager, Frame frame);
     }
-
-    private static final Logger logger = Logger.getLogger(PathOpenService.class.getName());
 
     private final BufferIO bufferIO;
     private final AutoModeMap autoModeMap;
@@ -90,7 +87,7 @@ public class PathOpenService {
             var loadResult = bufferIO.load(path);
             bufferFacade = loadResult.bufferFacade();
         } catch (IOException e) {
-            logger.log(Level.FINE, "ファイルが存在しないため空バッファを作成: " + path, e);
+            logger().debug("ファイルが存在しないため空バッファを作成: {}", path, e);
             bufferFacade = new BufferFacade(
                     new TextBuffer(path.getFileName().toString(), new GapTextModel(), settingsRegistry, path));
         }

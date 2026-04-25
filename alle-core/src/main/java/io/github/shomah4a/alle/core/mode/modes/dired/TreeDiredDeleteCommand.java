@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode.modes.dired;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.FileOperations;
@@ -8,8 +9,6 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -17,9 +16,7 @@ import org.eclipse.collections.api.list.ListIterable;
  * 対象にディレクトリが含まれる場合は (r)ecursive / (f)iles only / (n)o の3択で確認する。
  * ファイルのみの場合は y/n で確認する。
  */
-public class TreeDiredDeleteCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(TreeDiredDeleteCommand.class.getName());
+public class TreeDiredDeleteCommand implements Command, Loggable {
 
     private final FileOperations fileOperations;
     private final InputHistory confirmHistory;
@@ -88,7 +85,7 @@ public class TreeDiredDeleteCommand implements Command {
                 fileOperations.delete(entry.path());
                 successCount++;
             } catch (IOException e) {
-                logger.log(Level.WARNING, "削除に失敗: " + entry.path(), e);
+                logger().warn("削除に失敗: " + entry.path(), e);
                 context.handleError("削除に失敗: " + entry.path().getFileName() + " - " + e.getMessage(), e);
             }
         }

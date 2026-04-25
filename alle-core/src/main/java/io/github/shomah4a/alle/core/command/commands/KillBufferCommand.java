@@ -1,28 +1,20 @@
 package io.github.shomah4a.alle.core.command.commands;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.buffer.BufferKiller;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
-import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
-import io.github.shomah4a.alle.core.constants.BufferNames;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.CompletionCandidate;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
-import io.github.shomah4a.alle.core.textmodel.GapTextModel;
-import io.github.shomah4a.alle.core.window.BufferIdentifier;
-import io.github.shomah4a.alle.core.window.Window;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ImmutableList;
-import org.eclipse.collections.api.set.ImmutableSet;
 
 /**
  * バッファを削除するコマンド。
@@ -30,11 +22,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
  * デフォルトは現在のバッファ。削除後は他のウィンドウで表示されていない
  * バッファに切り替える。*scratch*を削除した場合はサイレントに再作成する。
  */
-public class KillBufferCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(KillBufferCommand.class.getName());
-
-    private static final String SCRATCH_BUFFER_NAME = BufferNames.SCRATCH;
+public class KillBufferCommand implements Command, Loggable {
 
     private static final Completer KILL_CONFIRM_COMPLETER = input -> Lists.immutable
             .of("yes", "no", "save and kill")
@@ -126,7 +114,7 @@ public class KillBufferCommand implements Command {
             bufferIO.save(target);
         } catch (IOException e) {
             var message = "バッファの保存に失敗: " + bufferName;
-            logger.log(Level.WARNING, message, e);
+            logger().warn(message, e);
             context.handleError(message, e);
             return CompletableFuture.completedFuture(null);
         }
@@ -135,66 +123,6 @@ public class KillBufferCommand implements Command {
     }
 
     private void doKill(CommandContext context, BufferManager bufferManager, String bufferName, BufferFacade target) {
-        // kill対象の識別子を事前に作成（remove前にバッファ情報が必要）
-        var targetIdentifier = BufferIdentifier.of(target);
-
-        bufferManager.remove(bufferName);
-
-        // *scratch* を削除した場合はサイレントに再作成
-        if (SCRATCH_BUFFER_NAME.equals(bufferName)) {
-            bufferManager.add(new BufferFacade(
-                    new TextBuffer(SCRATCH_BUFFER_NAME, new GapTextModel(), context.settingsRegistry())));
-        }
-
-        // 切り替え先を決定: 履歴を優先し、なければ他のウィンドウで表示されていないバッファ
-        var allWindows = context.frame().getWindowTree().windows();
-        var fallbackReplacement = findReplacementBuffer(bufferManager, allWindows, target);
-
-        // 削除対象を表示中の全ウィンドウを切り替え
-        for (var window : allWindows) {
-            if (window.getBuffer().equals(target)) {
-                var replacement =
-                        resolveFirstHistoryBuffer(window, bufferManager, target).orElse(fallbackReplacement);
-                window.setBuffer(replacement);
-            }
-        }
-
-        // 全ウィンドウの履歴からkill対象を除去
-        for (var window : allWindows) {
-            window.removeFromBufferHistory(targetIdentifier);
-        }
-    }
-
-    private static Optional<BufferFacade> resolveFirstHistoryBuffer(
-            Window window, BufferManager bufferManager, BufferFacade excluded) {
-        for (var entry : window.getBufferHistory()) {
-            var found = bufferManager.findByIdentifier(entry.identifier());
-            if (found.isPresent() && !found.get().equals(excluded)) {
-                return found;
-            }
-        }
-        return Optional.empty();
-    }
-
-    private BufferFacade findReplacementBuffer(
-            BufferManager bufferManager, ImmutableList<Window> allWindows, BufferFacade excluded) {
-        // 現在ウィンドウで表示されているバッファのセット（削除対象を除く）
-        ImmutableSet<BufferFacade> displayedBuffers =
-                allWindows.collect(Window::getBuffer).toSet().toImmutable().newWithout(excluded);
-
-        // 他のウィンドウで表示されていないバッファを優先
-        var candidate = bufferManager.getBuffers().detect(b -> !b.equals(excluded) && !displayedBuffers.contains(b));
-        if (candidate != null) {
-            return candidate;
-        }
-
-        // なければ削除対象以外の任意のバッファ
-        var fallback = bufferManager.getBuffers().detect(b -> !b.equals(excluded));
-        if (fallback != null) {
-            return fallback;
-        }
-
-        // ここには到達しない（size <= 1 のガードがあるため）
-        throw new IllegalStateException("代替バッファが見つかりません");
+        BufferKiller.kill(bufferManager, context.frame(), bufferName, target, context.settingsRegistry());
     }
 }

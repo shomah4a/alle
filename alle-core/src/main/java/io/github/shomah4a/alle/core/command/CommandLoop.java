@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.ReadOnlyBufferException;
@@ -13,8 +14,6 @@ import io.github.shomah4a.alle.core.keybind.KeymapEntry;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.jspecify.annotations.Nullable;
@@ -33,9 +32,7 @@ record OverridingKeymapState(Keymap keymap, Runnable onUnboundKeyExit) {}
  * processKeyは1キーにつき1回の状態遷移で即座にreturnする（非ブロッキング）。
  * プレフィックスキーの場合は内部状態として保持し、次のprocessKey呼び出しで解決する。
  */
-public class CommandLoop {
-
-    private static final Logger logger = Logger.getLogger(CommandLoop.class.getName());
+public class CommandLoop implements Loggable {
 
     private final InputSource inputSource;
     private final KeyResolver keyResolver;
@@ -260,7 +257,7 @@ public class CommandLoop {
             messageBuffer.message("Text is read-only");
         } else {
             var message = "コマンド実行中にエラーが発生: " + command.name();
-            logger.log(Level.WARNING, message, ex);
+            logger().warn(message, ex);
             context.handleError(message, ex);
         }
     }

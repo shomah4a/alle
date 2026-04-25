@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.input;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
@@ -13,7 +14,6 @@ import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.list.ListIterable;
 import org.jspecify.annotations.Nullable;
 
@@ -22,9 +22,7 @@ import org.jspecify.annotations.Nullable;
  * プロンプト文字列をミニバッファに表示し、ユーザーの入力を受け付ける。
  * RETで確定、C-gでキャンセル。入力中もメインのCommandLoopは動き続ける。
  */
-public class MinibufferInputPrompter implements InputPrompter {
-
-    private static final Logger logger = Logger.getLogger(MinibufferInputPrompter.class.getName());
+public class MinibufferInputPrompter implements InputPrompter, Loggable {
 
     private static final String COMPLETIONS_BUFFER_NAME = "*Completions*";
 
@@ -70,7 +68,7 @@ public class MinibufferInputPrompter implements InputPrompter {
             @Nullable Completer completer,
             @Nullable InputUpdateListener updateListener) {
         if (activeFuture != null && !activeFuture.isDone()) {
-            logger.warning("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
+            logger().warn("別のプロンプトがアクティブなため後続のプロンプトをキャンセルしました: " + message);
             return CompletableFuture.completedFuture(new PromptResult.Cancelled());
         }
         var future = new CompletableFuture<PromptResult>();

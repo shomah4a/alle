@@ -21,6 +21,7 @@ class EditorThread implements Runnable, Loggable {
     private static final long POLL_TIMEOUT_MS = 200;
 
     private final BlockingQueue<KeyStroke> keyQueue;
+    private final BlockingQueue<Runnable> actionQueue;
     private final Screen screen;
     private final CommandLoop commandLoop;
     private final Frame frame;
@@ -30,6 +31,7 @@ class EditorThread implements Runnable, Loggable {
 
     EditorThread(
             BlockingQueue<KeyStroke> keyQueue,
+            BlockingQueue<Runnable> actionQueue,
             Screen screen,
             CommandLoop commandLoop,
             Frame frame,
@@ -37,6 +39,7 @@ class EditorThread implements Runnable, Loggable {
             SnapshotExchanger exchanger,
             StatusLineRenderer statusLineRenderer) {
         this.keyQueue = keyQueue;
+        this.actionQueue = actionQueue;
         this.screen = screen;
         this.commandLoop = commandLoop;
         this.frame = frame;
@@ -54,6 +57,9 @@ class EditorThread implements Runnable, Loggable {
             publishSnapshot();
 
             while (true) {
+                // アクションキューをノンブロッキングに全件取り出して実行
+                drainActions();
+
                 var keyStroke = keyQueue.poll(POLL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
                 if (keyStroke == null) {
                     publishSnapshot();
@@ -68,6 +74,22 @@ class EditorThread implements Runnable, Loggable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger().warn("ロジックスレッドが割り込みで終了しました");
+        }
+    }
+
+    private void drainActions() {
+        boolean executed = false;
+        Runnable action;
+        while ((action = actionQueue.poll()) != null) {
+            try {
+                action.run();
+                executed = true;
+            } catch (RuntimeException e) {
+                logger().warn("アクション実行中にエラーが発生しました", e);
+            }
+        }
+        if (executed) {
+            publishSnapshot();
         }
     }
 

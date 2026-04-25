@@ -12,4 +12,11 @@ public interface Loggable {
     default Logger logger() {
         return LoggerFactory.getLogger(this.getClass());
     }
+
+    /**
+     * static メソッドやユーティリティクラスなど Loggable を implements できない箇所で使う。
+     */
+    static Logger createLogger(Class<?> clazz) {
+        return LoggerFactory.getLogger(clazz);
+    }
 }

@@ -13,6 +13,10 @@ import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.MinibufferInputPrompter;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.server.ServerEditCommand;
+import io.github.shomah4a.alle.core.server.ServerManager;
+import io.github.shomah4a.alle.core.server.ServerMinorMode;
+import io.github.shomah4a.alle.core.server.ServerStartCommand;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.styling.DefaultFaceTheme;
@@ -36,6 +40,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -47,6 +55,28 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
+        var options = new Options();
+        options.addOption("c", "client", false, "クライアントモードで起動する");
+
+        CommandLine cmd;
+        try {
+            cmd = new DefaultParser().parse(options, args);
+        } catch (ParseException e) {
+            System.err.println("alle: " + e.getMessage());
+            System.exit(1);
+            return;
+        }
+
+        if (cmd.hasOption("client")) {
+            var remaining = cmd.getArgs();
+            if (remaining.length < 1) {
+                System.err.println("Usage: alle --client <file>");
+                System.exit(1);
+            }
+            ClientMain.run(remaining[0]);
+            return;
+        }
+
         // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
         disableFlowControl();
         // C-z が SIGTSTP でプロセスをサスペンドするのを防ぐ
@@ -60,7 +90,7 @@ public final class Main {
         Screen screen = new TerminalScreen(terminal);
         try {
             screen.startScreen();
-            run(screen, args);
+            run(screen, cmd.getArgs());
         } finally {
             screen.stopScreen();
             restoreFlowControl();
@@ -133,6 +163,19 @@ public final class Main {
             core.pathOpenService().open(args[0], core.bufferManager(), core.frame());
         }
 
+        var actionQueue = new java.util.concurrent.LinkedBlockingQueue<Runnable>();
+
+        // server-start コマンドの登録
+        var serverManager = new ServerManager();
+        var serverEditCommand = new ServerEditCommand(bufferIO, serverManager);
+        var serverStartCommand = new ServerStartCommand(() -> serverManager.start(
+                actionQueue,
+                core.pathOpenService(),
+                core.bufferManager(),
+                core.frame(),
+                () -> new ServerMinorMode(serverEditCommand)));
+        core.commandRegistry().register(serverStartCommand);
+
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(
                 inputSource,
@@ -141,13 +184,15 @@ public final class Main {
                 core.commandLoop(),
                 core.frame(),
                 core.messageBuffer(),
-                core.statusLineRenderer());
+                core.statusLineRenderer(),
+                actionQueue);
 
         try {
             runner.run();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
+            serverManager.close();
             scriptEngine.close();
             scriptEngineFactory.close();
         }
