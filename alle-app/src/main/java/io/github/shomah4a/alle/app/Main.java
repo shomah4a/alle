@@ -13,6 +13,9 @@ import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.MinibufferInputPrompter;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
+import io.github.shomah4a.alle.core.server.ServerEditCommand;
+import io.github.shomah4a.alle.core.server.ServerManager;
+import io.github.shomah4a.alle.core.server.ServerMinorMode;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.styling.DefaultFaceTheme;
@@ -47,6 +50,16 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
+        // --client モード
+        if (args.length > 0 && "--client".equals(args[0])) {
+            if (args.length < 2) {
+                System.err.println("Usage: alle --client <file>");
+                System.exit(1);
+            }
+            ClientMain.run(args[1]);
+            return;
+        }
+
         // C-s/C-q がフロー制御（XON/XOFF）に奪われるのを防ぐ
         disableFlowControl();
         // C-z が SIGTSTP でプロセスをサスペンドするのを防ぐ
@@ -134,6 +147,22 @@ public final class Main {
         }
 
         var actionQueue = new java.util.concurrent.LinkedBlockingQueue<Runnable>();
+
+        // サーバー起動
+        var serverManager = new ServerManager();
+        var serverEditCommand = new ServerEditCommand(bufferIO, serverManager);
+        try {
+            serverManager.start(
+                    actionQueue,
+                    core.pathOpenService(),
+                    core.bufferManager(),
+                    core.frame(),
+                    () -> new ServerMinorMode(serverEditCommand, core.keymap()));
+            msg.message("Server started: " + ServerManager.resolveSocketPath());
+        } catch (IOException e) {
+            msg.message("Server start failed: " + e.getMessage());
+        }
+
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(
                 inputSource,
@@ -150,6 +179,7 @@ public final class Main {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
+            serverManager.close();
             scriptEngine.close();
             scriptEngineFactory.close();
         }
