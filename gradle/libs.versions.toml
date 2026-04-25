@@ -20,6 +20,7 @@ tree-sitter-yaml = "0.5.0a"
 tree-sitter-bash = "0.25.1"
 caffeine = "3.2.3"
 jackson = "2.18.3"
+commons-cli = "1.9.0"
 
 [libraries]
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -42,6 +43,7 @@ tree-sitter-yaml = { module = "io.github.bonede:tree-sitter-yaml", version.ref =
 tree-sitter-bash = { module = "io.github.bonede:tree-sitter-bash", version.ref = "tree-sitter-bash" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" }
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

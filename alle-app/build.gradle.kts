@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":alle-tui"))
     implementation(project(":alle-script"))
     implementation(libs.lanterna)
+    implementation(libs.commons.cli)
     runtimeOnly(libs.logback.classic)
 }
 

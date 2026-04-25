@@ -40,6 +40,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -51,13 +55,25 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws IOException {
-        // --client モード
-        if (args.length > 0 && "--client".equals(args[0])) {
-            if (args.length < 2) {
+        var options = new Options();
+        options.addOption("c", "client", false, "クライアントモードで起動する");
+
+        CommandLine cmd;
+        try {
+            cmd = new DefaultParser().parse(options, args);
+        } catch (ParseException e) {
+            System.err.println("alle: " + e.getMessage());
+            System.exit(1);
+            return;
+        }
+
+        if (cmd.hasOption("client")) {
+            var remaining = cmd.getArgs();
+            if (remaining.length < 1) {
                 System.err.println("Usage: alle --client <file>");
                 System.exit(1);
             }
-            ClientMain.run(args[1]);
+            ClientMain.run(remaining[0]);
             return;
         }
 
@@ -74,7 +90,7 @@ public final class Main {
         Screen screen = new TerminalScreen(terminal);
         try {
             screen.startScreen();
-            run(screen, args);
+            run(screen, cmd.getArgs());
         } finally {
             screen.stopScreen();
             restoreFlowControl();
