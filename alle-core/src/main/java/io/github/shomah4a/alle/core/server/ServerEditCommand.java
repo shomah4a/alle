@@ -4,7 +4,6 @@ import io.github.shomah4a.alle.core.buffer.BufferKiller;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.io.BufferIO;
-import io.github.shomah4a.alle.core.mode.MinorMode;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -66,7 +65,7 @@ public class ServerEditCommand implements Command {
         }
 
         // server マイナーモードを無効化
-        buffer.disableMinorMode((MinorMode) serverModeOpt);
+        buffer.disableMinorMode(serverModeOpt);
 
         // バッファを kill (バッファが1つしかない場合は kill しない)
         var bufferManager = context.bufferManager();

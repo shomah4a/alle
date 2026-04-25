@@ -90,7 +90,7 @@ class ServerEditCommandTest {
     void serverモード付きバッファを保存してセッションに完了通知しバッファをkillする() throws IOException {
         // server マイナーモードを有効化
         var serverEditCmd = new ServerEditCommand(bufferIO, sessionLookup);
-        var serverMode = new ServerMinorMode(serverEditCmd, new io.github.shomah4a.alle.core.keybind.Keymap("C-x"));
+        var serverMode = new ServerMinorMode(serverEditCmd);
         targetBuffer.enableMinorMode(serverMode);
 
         // セッションを登録
@@ -129,7 +129,7 @@ class ServerEditCommandTest {
         bufferManager.remove("*scratch*");
         assertEquals(1, bufferManager.size());
 
-        var serverMode = new ServerMinorMode(cmd, new io.github.shomah4a.alle.core.keybind.Keymap("C-x"));
+        var serverMode = new ServerMinorMode(cmd);
         targetBuffer.enableMinorMode(serverMode);
 
         var pair = createSocketPair();

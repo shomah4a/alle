@@ -135,9 +135,10 @@ public class ServerManager implements Closeable, ServerSessionLookup {
             if (request instanceof ServerProtocol.Request.Open open) {
                 var filePath = PathOpenService.normalizePath(open.absolutePath());
                 var session = new ServerSession(clientChannel, filePath);
-                sessions.put(filePath, session);
 
+                // sessions の操作もロジックスレッドに統一する (スレッドセーフティ)
                 actionQueue.put(() -> {
+                    sessions.put(filePath, session);
                     pathOpenService.open(open.absolutePath(), bufferManager, frame);
                     var buffer = frame.getActiveWindow().getBuffer();
                     buffer.enableMinorMode(serverMinorModeFactory.get());

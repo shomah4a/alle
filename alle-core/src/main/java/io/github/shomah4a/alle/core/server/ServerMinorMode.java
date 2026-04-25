@@ -20,9 +20,8 @@ public class ServerMinorMode implements MinorMode {
      * ServerMinorMode を構築する。
      *
      * @param serverEditCommand server-edit コマンド
-     * @param globalCtrlXMap グローバルの C-x キーマップ (C-x # をバインドするため)
      */
-    public ServerMinorMode(ServerEditCommand serverEditCommand, Keymap globalCtrlXMap) {
+    public ServerMinorMode(ServerEditCommand serverEditCommand) {
         this.commandRegistry = new CommandRegistry();
         commandRegistry.register(serverEditCommand);
 

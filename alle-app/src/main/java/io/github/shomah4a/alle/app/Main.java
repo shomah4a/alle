@@ -157,7 +157,7 @@ public final class Main {
                     core.pathOpenService(),
                     core.bufferManager(),
                     core.frame(),
-                    () -> new ServerMinorMode(serverEditCommand, core.keymap()));
+                    () -> new ServerMinorMode(serverEditCommand));
             msg.message("Server started: " + ServerManager.resolveSocketPath());
         } catch (IOException e) {
             msg.message("Server start failed: " + e.getMessage());
