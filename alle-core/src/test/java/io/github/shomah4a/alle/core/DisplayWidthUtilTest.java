@@ -113,6 +113,22 @@ class DisplayWidthUtilTest {
     }
 
     @Test
+    void isFullWidthでU2E80未満の非ASCII文字はfalse() {
+        // ラテン拡張 (U+00C0)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x00C0));
+        // アラビア文字 (U+0627)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x0627));
+        // U+2E7F (CJK Radicals Supplement の直前)
+        assertFalse(DisplayWidthUtil.isFullWidth(0x2E7F));
+    }
+
+    @Test
+    void isFullWidthでCJK部首補助ブロックはtrue() {
+        // U+2E80 (CJK Radicals Supplement の先頭、早期リターン閾値の境界)
+        assertTrue(DisplayWidthUtil.isFullWidth(0x2E80));
+    }
+
+    @Test
     void computeColumnForOffsetでASCII文字列のカラム計算() {
         assertEquals(0, DisplayWidthUtil.computeColumnForOffset("hello", 0, TAB8));
         assertEquals(3, DisplayWidthUtil.computeColumnForOffset("hello", 3, TAB8));
