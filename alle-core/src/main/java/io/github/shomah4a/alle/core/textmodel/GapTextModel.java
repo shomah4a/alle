@@ -17,14 +17,22 @@ public class GapTextModel implements TextModel {
      */
     private final MutableIntList lineBreakOffsets;
 
+    /**
+     * コードポイント数のキャッシュ。
+     * insert/delete時に差分更新され、length()をO(1)にする。
+     */
+    private int codePointLength;
+
     public GapTextModel() {
         this.gapModel = new GapModel();
         this.lineBreakOffsets = IntLists.mutable.empty();
+        this.codePointLength = 0;
     }
 
     public GapTextModel(GapModel gapModel) {
         this.gapModel = gapModel;
         this.lineBreakOffsets = buildLineBreakCache(gapModel);
+        this.codePointLength = Character.codePointCount(new CharSequenceView(), 0, gapModel.length());
     }
 
     /**
@@ -47,7 +55,7 @@ public class GapTextModel implements TextModel {
 
     @Override
     public int length() {
-        return Character.codePointCount(new CharSequenceView(), 0, gapModel.length());
+        return codePointLength;
     }
 
     @Override
@@ -61,6 +69,7 @@ public class GapTextModel implements TextModel {
         int charOffset = toCharOffsetForInsert(index);
         gapModel.insert(charOffset, text);
         updateCacheAfterInsert(charOffset, text);
+        codePointLength += Character.codePointCount(text, 0, text.length());
     }
 
     @Override
@@ -72,6 +81,7 @@ public class GapTextModel implements TextModel {
         int charEnd = toCharOffsetForInsert(index + count);
         updateCacheBeforeDelete(charStart, charEnd - charStart);
         gapModel.delete(charStart, charEnd - charStart);
+        codePointLength -= count;
     }
 
     /**
