@@ -83,6 +83,13 @@ EditorThread に `BlockingQueue<Runnable>` を追加する。
 (代替バッファ選択、ウィンドウ切り替え、*scratch* 再作成) が必要である。
 `KillBufferCommand` の `doKill` をユーティリティクラスに切り出して共用する。
 
+### スレッドセーフティ
+
+`ServerManager` のセッション管理マップ (`MutableMap<Path, ServerSession>`) への操作は
+すべてロジックスレッド (EditorThread) 上で実行する。
+accept スレッドでセッションを作成した後、`sessions.put` を含むすべての操作を
+`actionQueue` 経由でロジックスレッドに委譲することで、同期なしでスレッドセーフティを実現する。
+
 ## モジュール配置
 
 - `alle-core/server/`: ServerProtocol, ServerSession, ServerMinorMode, ServerEditCommand, ServerManager
