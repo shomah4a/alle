@@ -1,13 +1,12 @@
 package io.github.shomah4a.alle.core.mode;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.ModeCommand;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
@@ -20,9 +19,7 @@ import org.jspecify.annotations.Nullable;
  * CommandRegistryが設定されている場合、モード登録時にモード切り替えコマンドも自動登録する。
  * モード有効化時のフック関数も管理する。
  */
-public class ModeRegistry {
-
-    private static final Logger logger = Logger.getLogger(ModeRegistry.class.getName());
+public class ModeRegistry implements Loggable {
 
     private final MutableMap<String, Supplier<MajorMode>> majorModes = Maps.mutable.empty();
     private final MutableMap<String, Supplier<MinorMode>> minorModes = Maps.mutable.empty();
@@ -228,7 +225,7 @@ public class ModeRegistry {
             try {
                 hook.accept(buffer, modeName);
             } catch (Exception e) {
-                logger.log(Level.WARNING, modeName + " モードフック実行中にエラー", e);
+                logger().warn(modeName + " モードフック実行中にエラー", e);
             }
         }
     }

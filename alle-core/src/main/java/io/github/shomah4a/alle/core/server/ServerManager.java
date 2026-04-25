@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.server;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.io.PathOpenService;
 import io.github.shomah4a.alle.core.mode.MinorMode;
@@ -16,8 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 import org.jspecify.annotations.Nullable;
@@ -27,9 +26,9 @@ import org.jspecify.annotations.Nullable;
  * accept スレッドで接続を受け付け、アクションキュー経由でロジックスレッドに
  * ファイルオープンとマイナーモード付与を依頼する。
  */
-public class ServerManager implements Closeable, ServerSessionLookup {
+public class ServerManager implements Closeable, ServerSessionLookup, Loggable {
 
-    private static final Logger logger = Logger.getLogger(ServerManager.class.getName());
+    private static final org.slf4j.Logger staticLogger = Loggable.createLogger(ServerManager.class);
 
     private final MutableMap<Path, ServerSession> sessions = Maps.mutable.empty();
     private volatile @Nullable ServerSocketChannel serverChannel;
@@ -88,7 +87,7 @@ public class ServerManager implements Closeable, ServerSessionLookup {
         acceptThread.setDaemon(true);
         acceptThread.start();
 
-        logger.info("サーバーを起動しました: " + socketPath);
+        logger().info("サーバーを起動しました: " + socketPath);
     }
 
     private void acceptLoop(
@@ -109,7 +108,7 @@ public class ServerManager implements Closeable, ServerSessionLookup {
                 if (Thread.currentThread().isInterrupted()) {
                     break;
                 }
-                logger.log(Level.WARNING, "クライアント接続の受け付けに失敗", e);
+                logger().warn("クライアント接続の受け付けに失敗", e);
             }
         }
     }
@@ -152,7 +151,7 @@ public class ServerManager implements Closeable, ServerSessionLookup {
                 });
             }
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.WARNING, "クライアントリクエストの処理に失敗", e);
+            logger().warn("クライアントリクエストの処理に失敗", e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -187,7 +186,7 @@ public class ServerManager implements Closeable, ServerSessionLookup {
             try {
                 serverChannel.close();
             } catch (IOException e) {
-                logger.log(Level.FINE, "サーバーソケットのクローズに失敗", e);
+                logger().debug("サーバーソケットのクローズに失敗", e);
             }
         }
 
@@ -196,11 +195,11 @@ public class ServerManager implements Closeable, ServerSessionLookup {
             try {
                 Files.deleteIfExists(socketPath);
             } catch (IOException e) {
-                logger.log(Level.WARNING, "ソケットファイルの削除に失敗: " + socketPath, e);
+                logger().warn("ソケットファイルの削除に失敗: " + socketPath, e);
             }
         }
 
-        logger.info("サーバーを停止しました");
+        logger().info("サーバーを停止しました");
     }
 
     /**
@@ -222,7 +221,7 @@ public class ServerManager implements Closeable, ServerSessionLookup {
                 throw e;
             }
             // 接続できなかった → stale socket
-            logger.info("stale ソケットファイルを削除します: " + socketPath);
+            staticLogger.info("stale ソケットファイルを削除します: {}", socketPath);
             Files.deleteIfExists(socketPath);
         }
     }

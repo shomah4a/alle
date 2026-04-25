@@ -1,22 +1,19 @@
 package io.github.shomah4a.alle.core.server;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferKiller;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * server-edit コマンド (C-x #)。
  * Emacs の server-edit に相当する。
  * バッファを保存し、クライアントに完了を通知し、server マイナーモードを無効化してバッファを kill する。
  */
-public class ServerEditCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(ServerEditCommand.class.getName());
+public class ServerEditCommand implements Command, Loggable {
 
     private final BufferIO bufferIO;
     private final ServerSessionLookup sessionLookup;
@@ -48,7 +45,7 @@ public class ServerEditCommand implements Command {
                 bufferIO.save(buffer);
             } catch (IOException e) {
                 var message = "バッファの保存に失敗: " + buffer.getName();
-                logger.log(Level.WARNING, message, e);
+                logger().warn(message, e);
                 context.handleError(message, e);
                 return CompletableFuture.completedFuture(null);
             }

@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode.modes.dired;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
@@ -11,8 +12,6 @@ import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -28,9 +27,8 @@ import org.eclipse.collections.api.list.ListIterable;
  *
  * <p>ファイルパスはシングルクォートでエスケープされ、スペースや特殊文字を含むパスでも安全に扱われる。
  */
-public class TreeDiredShellCommand implements Command {
+public class TreeDiredShellCommand implements Command, Loggable {
 
-    private static final Logger logger = Logger.getLogger(TreeDiredShellCommand.class.getName());
     private static final String OUTPUT_BUFFER_NAME = "*Shell Command Output*";
 
     private final ShellCommandExecutor executor;
@@ -105,7 +103,7 @@ public class TreeDiredShellCommand implements Command {
 
         return executeAndStream(commandTemplate, quotedPaths, workingDirectory, hasStar, hasQuestion, outputBuffer)
                 .exceptionally(ex -> {
-                    logger.log(Level.WARNING, "シェルコマンドの実行に失敗", ex);
+                    logger().warn("シェルコマンドの実行に失敗", ex);
                     context.handleError("シェルコマンドの実行に失敗: " + ex.getMessage(), ex);
                     return null;
                 });

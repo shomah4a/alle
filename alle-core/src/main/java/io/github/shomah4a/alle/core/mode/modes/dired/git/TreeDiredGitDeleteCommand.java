@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode.modes.dired.git;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.FileOperations;
@@ -11,17 +12,13 @@ import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredMode;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
  * git管理下のファイルはgit rmで、管理外は通常のファイル削除で処理する。
  */
-public class TreeDiredGitDeleteCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(TreeDiredGitDeleteCommand.class.getName());
+public class TreeDiredGitDeleteCommand implements Command, Loggable {
 
     private final GitStatusProvider gitStatusProvider;
     private final FileOperations fileOperations;
@@ -114,7 +111,7 @@ public class TreeDiredGitDeleteCommand implements Command {
                 fileOperations.delete(entry.path());
                 successCount++;
             } catch (IOException e) {
-                logger.log(Level.WARNING, "削除に失敗: " + entry.path(), e);
+                logger().warn("削除に失敗: " + entry.path(), e);
                 context.handleError("削除に失敗: " + entry.path().getFileName() + " - " + e.getMessage(), e);
             }
         }

@@ -1,9 +1,8 @@
 package io.github.shomah4a.alle.core.input;
 
+import io.github.shomah4a.alle.core.Loggable;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -13,9 +12,7 @@ import org.eclipse.collections.api.list.ListIterable;
  * ディレクトリ候補は継続補完（partial）、ファイル候補は確定可能（terminal）として返す。
  * ~ で始まるパスはHOMEディレクトリに展開して補完し、候補も ~ 形式で返す。
  */
-public class FilePathCompleter implements Completer {
-
-    private static final Logger logger = Logger.getLogger(FilePathCompleter.class.getName());
+public class FilePathCompleter implements Completer, Loggable {
 
     private final DirectoryLister directoryLister;
     private final Path homeDirectory;
@@ -41,7 +38,7 @@ public class FilePathCompleter implements Completer {
             try {
                 return toCompletionCandidates(directoryLister.list(directory), useTilde);
             } catch (IOException e) {
-                logger.log(Level.FINE, "ディレクトリ一覧の取得に失敗: " + directory, e);
+                logger().debug("ディレクトリ一覧の取得に失敗: " + directory, e);
                 return Lists.immutable.empty();
             }
         }
@@ -56,7 +53,7 @@ public class FilePathCompleter implements Completer {
         try {
             entries = directoryLister.list(parent);
         } catch (IOException e) {
-            logger.log(Level.FINE, "ディレクトリ一覧の取得に失敗: " + parent, e);
+            logger().debug("ディレクトリ一覧の取得に失敗: " + parent, e);
             return Lists.immutable.empty();
         }
 

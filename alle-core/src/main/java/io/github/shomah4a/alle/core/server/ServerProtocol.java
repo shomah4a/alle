@@ -3,9 +3,9 @@ package io.github.shomah4a.alle.core.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.shomah4a.alle.core.Loggable;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
 
 /**
  * サーバー/クライアント間の JSON Lines プロトコル。
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public final class ServerProtocol {
 
-    private static final Logger logger = Logger.getLogger(ServerProtocol.class.getName());
+    private static final Logger logger = Loggable.createLogger(ServerProtocol.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private ServerProtocol() {}
@@ -117,7 +117,7 @@ public final class ServerProtocol {
         try {
             return Optional.of(MAPPER.readTree(line));
         } catch (JsonProcessingException e) {
-            logger.log(Level.FINE, "JSON パースに失敗: " + line, e);
+            logger.debug("JSON パースに失敗: {}", line, e);
             return Optional.empty();
         }
     }

@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.mode.modes.dired;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.FileOperations;
@@ -9,8 +10,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -19,9 +18,7 @@ import org.eclipse.collections.api.list.ListIterable;
  * 複数エントリの場合はコピー先ディレクトリを、単一エントリの場合はコピー先パスを入力させる。
  * 対象にディレクトリが含まれる場合は再帰コピーの確認を行う。
  */
-public class TreeDiredCopyCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(TreeDiredCopyCommand.class.getName());
+public class TreeDiredCopyCommand implements Command, Loggable {
 
     private final FileOperations fileOperations;
     private final InputHistory copyHistory;
@@ -106,7 +103,7 @@ public class TreeDiredCopyCommand implements Command {
                 fileOperations.copy(entry.path(), destination);
                 successCount++;
             } catch (IOException e) {
-                logger.log(Level.WARNING, "コピーに失敗: " + entry.path(), e);
+                logger().warn("コピーに失敗: " + entry.path(), e);
                 context.handleError("コピーに失敗: " + entry.path().getFileName() + " - " + e.getMessage(), e);
             }
         }

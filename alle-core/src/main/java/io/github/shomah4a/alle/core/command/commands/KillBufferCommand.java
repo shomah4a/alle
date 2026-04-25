@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.command.commands;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferKiller;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
@@ -13,8 +14,6 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 
 /**
@@ -23,9 +22,7 @@ import org.eclipse.collections.api.factory.Lists;
  * デフォルトは現在のバッファ。削除後は他のウィンドウで表示されていない
  * バッファに切り替える。*scratch*を削除した場合はサイレントに再作成する。
  */
-public class KillBufferCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(KillBufferCommand.class.getName());
+public class KillBufferCommand implements Command, Loggable {
 
     private static final Completer KILL_CONFIRM_COMPLETER = input -> Lists.immutable
             .of("yes", "no", "save and kill")
@@ -117,7 +114,7 @@ public class KillBufferCommand implements Command {
             bufferIO.save(target);
         } catch (IOException e) {
             var message = "バッファの保存に失敗: " + bufferName;
-            logger.log(Level.WARNING, message, e);
+            logger().warn(message, e);
             context.handleError(message, e);
             return CompletableFuture.completedFuture(null);
         }

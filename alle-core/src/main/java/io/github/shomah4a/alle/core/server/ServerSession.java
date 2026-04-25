@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.server;
 
+import io.github.shomah4a.alle.core.Loggable;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -8,16 +9,12 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * 1つのクライアント接続を表すセッション。
  * クライアントへのレスポンス送信と、編集完了通知を管理する。
  */
-public class ServerSession {
-
-    private static final Logger logger = Logger.getLogger(ServerSession.class.getName());
+public class ServerSession implements Loggable {
 
     private final SocketChannel channel;
     private final PrintWriter writer;
@@ -79,7 +76,7 @@ public class ServerSession {
         try {
             channel.close();
         } catch (IOException e) {
-            logger.log(Level.FINE, "チャネルのクローズに失敗", e);
+            logger().debug("チャネルのクローズに失敗", e);
         }
     }
 }

@@ -1,12 +1,11 @@
 package io.github.shomah4a.alle.core.mode.modes.dired.git;
 
+import io.github.shomah4a.alle.core.Loggable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
@@ -16,9 +15,7 @@ import org.eclipse.collections.api.map.MutableMap;
 /**
  * git��マンドを実行してリポジトリ情報を取得する実装。
  */
-public class DefaultGitStatusProvider implements GitStatusProvider {
-
-    private static final Logger logger = Logger.getLogger(DefaultGitStatusProvider.class.getName());
+public class DefaultGitStatusProvider implements GitStatusProvider, Loggable {
 
     @Override
     public MapIterable<Path, String> getFileStatuses(Path rootDirectory) {
@@ -48,7 +45,7 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
             }
             process.waitFor();
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "git status の実行に失敗: " + rootDirectory, e);
+            logger().debug("git status の実行に失敗: " + rootDirectory, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -85,7 +82,7 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
                 }
             }
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "git branch の取得に失敗: " + rootDirectory, e);
+            logger().debug("git branch の取得に失敗: " + rootDirectory, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -109,7 +106,7 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
                     .start();
             process.waitFor();
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "git add の実行に失敗: " + rootDirectory, e);
+            logger().debug("git add の実行に失敗: " + rootDirectory, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -126,7 +123,7 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
             int exitCode = process.waitFor();
             return exitCode == 0;
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "git ls-files の実行に失敗: " + file, e);
+            logger().debug("git ls-files の実行に失敗: " + file, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -154,7 +151,7 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
                     .start();
             process.waitFor();
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "git rm の実行に失敗: " + rootDirectory, e);
+            logger().debug("git rm の実行に失敗: " + rootDirectory, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -170,7 +167,7 @@ public class DefaultGitStatusProvider implements GitStatusProvider {
                     .start();
             process.waitFor();
         } catch (IOException | InterruptedException e) {
-            logger.log(Level.FINE, "git mv の実行に失敗: " + source, e);
+            logger().debug("git mv の実行に失敗: " + source, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }

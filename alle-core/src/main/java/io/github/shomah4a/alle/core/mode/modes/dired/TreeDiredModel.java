@@ -1,11 +1,10 @@
 package io.github.shomah4a.alle.core.mode.modes.dired;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.input.DirectoryEntry;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
@@ -17,9 +16,7 @@ import org.eclipse.collections.api.set.SetIterable;
  * ツリー表示のディレクトリ状態を管理するモデル。
  * 展開済みディレクトリのセットを保持し、表示すべきエントリのリストを生成する。
  */
-public class TreeDiredModel {
-
-    private static final Logger logger = Logger.getLogger(TreeDiredModel.class.getName());
+public class TreeDiredModel implements Loggable {
 
     private Path rootDirectory;
     private final MutableSet<Path> expandedDirectories;
@@ -135,7 +132,7 @@ public class TreeDiredModel {
         try {
             children = directoryLister.list(directory);
         } catch (IOException e) {
-            logger.log(Level.FINE, "ディレクトリの読み取りに失敗: " + directory, e);
+            logger().debug("ディレクトリの読み取りに失敗: " + directory, e);
             return;
         }
 

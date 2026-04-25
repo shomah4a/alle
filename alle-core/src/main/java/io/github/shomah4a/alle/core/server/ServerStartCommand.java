@@ -1,20 +1,17 @@
 package io.github.shomah4a.alle.core.server;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * server-start コマンド。
  * Emacs の server-start に相当する。
  * サーバーソケットを開始し、クライアントからの接続を受け付ける。
  */
-public class ServerStartCommand implements Command {
-
-    private static final Logger logger = Logger.getLogger(ServerStartCommand.class.getName());
+public class ServerStartCommand implements Command, Loggable {
 
     private final ServerStarter serverStarter;
 
@@ -42,7 +39,7 @@ public class ServerStartCommand implements Command {
             context.messageBuffer().message("Server started: " + ServerManager.resolveSocketPath());
         } catch (IOException e) {
             var message = "Server start failed: " + e.getMessage();
-            logger.log(Level.WARNING, message, e);
+            logger().warn(message, e);
             context.messageBuffer().message(message);
         }
         return CompletableFuture.completedFuture(null);

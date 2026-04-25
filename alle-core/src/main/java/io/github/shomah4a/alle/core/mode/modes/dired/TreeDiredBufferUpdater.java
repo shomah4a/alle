@@ -1,9 +1,8 @@
 package io.github.shomah4a.alle.core.mode.modes.dired;
 
+import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.window.Window;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -83,11 +82,11 @@ public final class TreeDiredBufferUpdater {
                 try {
                     runnable.run();
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "dired refresh hook でエラー", e);
+                    logger.warn("dired refresh hook でエラー", e);
                 }
             }
         }
     }
 
-    private static final Logger logger = Logger.getLogger(TreeDiredBufferUpdater.class.getName());
+    private static final org.slf4j.Logger logger = Loggable.createLogger(TreeDiredBufferUpdater.class);
 }
