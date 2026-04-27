@@ -28,6 +28,7 @@ import io.github.shomah4a.alle.script.ScriptResult;
 import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.FaceResolver;
+import io.github.shomah4a.alle.tui.RedrawDisplayCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
 import java.io.BufferedReader;
@@ -40,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
@@ -177,8 +179,8 @@ public final class Main {
         core.commandRegistry().register(serverStartCommand);
 
         // redraw-display コマンド (C-l)
-        var fullRedrawRequested = new java.util.concurrent.atomic.AtomicBoolean(false);
-        var redrawCommand = new io.github.shomah4a.alle.tui.RedrawDisplayCommand(fullRedrawRequested);
+        var fullRedrawRequested = new AtomicBoolean(false);
+        var redrawCommand = new RedrawDisplayCommand(fullRedrawRequested);
         core.commandRegistry().register(redrawCommand);
         core.keymap()
                 .bind(

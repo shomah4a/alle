@@ -24,6 +24,14 @@ class RenderThread implements Runnable, Loggable {
         this.fullRedrawRequested = fullRedrawRequested;
     }
 
+    /**
+     * フル再描画リクエストの有無に応じてリフレッシュタイプを決定する。
+     * リクエストがあれば消費してCOMPLETEを返し、なければDELTAを返す。
+     */
+    static Screen.RefreshType resolveRefreshType(AtomicBoolean fullRedrawRequested) {
+        return fullRedrawRequested.compareAndSet(true, false) ? Screen.RefreshType.COMPLETE : Screen.RefreshType.DELTA;
+    }
+
     @Override
     public void run() {
         try {
@@ -34,10 +42,7 @@ class RenderThread implements Runnable, Loggable {
                 }
                 screen.doResizeIfNecessary();
                 renderer.renderSnapshot(snapshot);
-                var refreshType = fullRedrawRequested.compareAndSet(true, false)
-                        ? Screen.RefreshType.COMPLETE
-                        : Screen.RefreshType.DELTA;
-                screen.refresh(refreshType);
+                screen.refresh(resolveRefreshType(fullRedrawRequested));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
