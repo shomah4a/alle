@@ -176,6 +176,15 @@ public final class Main {
                 () -> new ServerMinorMode(serverEditCommand)));
         core.commandRegistry().register(serverStartCommand);
 
+        // redraw-display コマンド (C-l)
+        var fullRedrawRequested = new java.util.concurrent.atomic.AtomicBoolean(false);
+        var redrawCommand = new io.github.shomah4a.alle.tui.RedrawDisplayCommand(fullRedrawRequested);
+        core.commandRegistry().register(redrawCommand);
+        core.keymap()
+                .bind(
+                        KeyStroke.ctrl('l'),
+                        core.commandRegistry().lookup("redraw-display").orElseThrow());
+
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(
                 inputSource,
@@ -185,7 +194,8 @@ public final class Main {
                 core.frame(),
                 core.messageBuffer(),
                 core.statusLineRenderer(),
-                actionQueue);
+                actionQueue,
+                fullRedrawRequested);
 
         try {
             runner.run();

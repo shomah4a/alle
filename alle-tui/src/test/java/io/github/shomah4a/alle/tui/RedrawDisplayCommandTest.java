@@ -68,12 +68,15 @@ class RedrawDisplayCommandTest {
     private static CommandContext createContext() {
         var buffer = new TextBuffer("*scratch*", new GapTextModel(), SETTINGS);
         var window = new Window(new BufferFacade(buffer));
-        var minibuffer = new Window(new BufferFacade(
-                new TextBuffer("*Minibuffer*", new GapTextModel(), SETTINGS)));
+        var minibuffer = new Window(new BufferFacade(new TextBuffer("*Minibuffer*", new GapTextModel(), SETTINGS)));
         var frame = new Frame(window, minibuffer);
         var stubBufferIO = new BufferIO(
-                source -> { throw new java.io.IOException("stub"); },
-                destination -> { throw new java.io.IOException("stub"); },
+                source -> {
+                    throw new java.io.IOException("stub");
+                },
+                destination -> {
+                    throw new java.io.IOException("stub");
+                },
                 SETTINGS);
         var pathOpenService = new PathOpenService(
                 stubBufferIO,
@@ -86,7 +89,9 @@ class RedrawDisplayCommandTest {
                 frame,
                 new BufferManager(),
                 window,
-                (prompt, history) -> { throw new UnsupportedOperationException(); },
+                (prompt, history) -> {
+                    throw new UnsupportedOperationException();
+                },
                 Lists.immutable.empty(),
                 Optional.of("redraw-display"),
                 Optional.empty(),

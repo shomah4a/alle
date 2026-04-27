@@ -9,6 +9,7 @@ import io.github.shomah4a.alle.core.window.Frame;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 入力・ロジック・描画の3スレッドを管理する。
@@ -26,6 +27,7 @@ public class EditorRunner {
     private final MessageBuffer messageBuffer;
     private final StatusLineRenderer statusLineRenderer;
     private final BlockingQueue<Runnable> actionQueue;
+    private final AtomicBoolean fullRedrawRequested;
 
     public EditorRunner(
             TerminalInputSource inputSource,
@@ -35,7 +37,8 @@ public class EditorRunner {
             Frame frame,
             MessageBuffer messageBuffer,
             StatusLineRenderer statusLineRenderer,
-            BlockingQueue<Runnable> actionQueue) {
+            BlockingQueue<Runnable> actionQueue,
+            AtomicBoolean fullRedrawRequested) {
         this.inputSource = inputSource;
         this.screen = screen;
         this.renderer = renderer;
@@ -44,6 +47,7 @@ public class EditorRunner {
         this.messageBuffer = messageBuffer;
         this.statusLineRenderer = statusLineRenderer;
         this.actionQueue = actionQueue;
+        this.fullRedrawRequested = fullRedrawRequested;
     }
 
     /**
@@ -56,7 +60,7 @@ public class EditorRunner {
         var keyQueue = new LinkedBlockingQueue<KeyStroke>();
         var exchanger = new SnapshotExchanger();
 
-        var renderThread = new RenderThread(exchanger, screen, renderer);
+        var renderThread = new RenderThread(exchanger, screen, renderer, fullRedrawRequested);
         var renderThreadHandle = new Thread(renderThread, "editor-render");
         renderThreadHandle.setDaemon(true);
         renderThreadHandle.start();
