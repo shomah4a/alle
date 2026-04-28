@@ -28,6 +28,7 @@ import io.github.shomah4a.alle.script.ScriptResult;
 import io.github.shomah4a.alle.script.graalpy.GraalPyEngineFactory;
 import io.github.shomah4a.alle.tui.EditorRunner;
 import io.github.shomah4a.alle.tui.FaceResolver;
+import io.github.shomah4a.alle.tui.RedrawDisplayCommand;
 import io.github.shomah4a.alle.tui.ScreenRenderer;
 import io.github.shomah4a.alle.tui.TerminalInputSource;
 import java.io.BufferedReader;
@@ -40,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
@@ -176,6 +178,15 @@ public final class Main {
                 () -> new ServerMinorMode(serverEditCommand)));
         core.commandRegistry().register(serverStartCommand);
 
+        // redraw-display コマンド (C-l)
+        var fullRedrawRequested = new AtomicBoolean(false);
+        var redrawCommand = new RedrawDisplayCommand(fullRedrawRequested);
+        core.commandRegistry().register(redrawCommand);
+        core.keymap()
+                .bind(
+                        KeyStroke.ctrl('l'),
+                        core.commandRegistry().lookup("redraw-display").orElseThrow());
+
         var renderer = new ScreenRenderer(screen, new DefaultFaceTheme(), new FaceResolver());
         var runner = new EditorRunner(
                 inputSource,
@@ -185,7 +196,8 @@ public final class Main {
                 core.frame(),
                 core.messageBuffer(),
                 core.statusLineRenderer(),
-                actionQueue);
+                actionQueue,
+                fullRedrawRequested);
 
         try {
             runner.run();
