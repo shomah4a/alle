@@ -4,12 +4,11 @@ import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.FileOperations;
+import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
-import io.github.shomah4a.alle.core.input.PromptResult;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
-import org.eclipse.collections.api.factory.Lists;
 
 /**
  * tree-dired 内でディレクトリを作成するコマンド。
@@ -20,10 +19,13 @@ public class TreeDiredMakeDirectoryCommand implements Command, Loggable {
 
     private final FileOperations fileOperations;
     private final InputHistory history;
+    private final FilePathInputPrompter filePathInputPrompter;
 
-    public TreeDiredMakeDirectoryCommand(FileOperations fileOperations, InputHistory history) {
+    public TreeDiredMakeDirectoryCommand(
+            FileOperations fileOperations, InputHistory history, FilePathInputPrompter filePathInputPrompter) {
         this.fileOperations = fileOperations;
         this.history = history;
+        this.filePathInputPrompter = filePathInputPrompter;
     }
 
     @Override
@@ -40,10 +42,10 @@ public class TreeDiredMakeDirectoryCommand implements Command, Loggable {
 
         String initialDir = resolveInitialDirectory(context, diredMode);
 
-        return context.inputPrompter()
-                .prompt("Create directory: ", initialDir, history, text -> Lists.immutable.empty())
+        return filePathInputPrompter
+                .prompt("Create directory: ", initialDir, history)
                 .thenAccept(result -> {
-                    if (result instanceof PromptResult.Confirmed confirmed) {
+                    if (result instanceof io.github.shomah4a.alle.core.input.PromptResult.Confirmed confirmed) {
                         var path = Path.of(confirmed.value()).toAbsolutePath().normalize();
                         try {
                             fileOperations.createDirectories(path);
@@ -62,13 +64,13 @@ public class TreeDiredMakeDirectoryCommand implements Command, Loggable {
         if (entryOpt.isPresent()) {
             var entry = entryOpt.get();
             if (entry.isDirectory()) {
-                return entry.path().toString() + "/";
+                return entry.path().toString();
             }
             Path parent = entry.path().getParent();
             if (parent != null) {
-                return parent.toString() + "/";
+                return parent.toString();
             }
         }
-        return diredMode.getModel().getRootDirectory().toString() + "/";
+        return diredMode.getModel().getRootDirectory().toString();
     }
 }

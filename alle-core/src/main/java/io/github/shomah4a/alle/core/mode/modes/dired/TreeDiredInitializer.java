@@ -49,15 +49,17 @@ public final class TreeDiredInitializer {
         var unmarkCommand = new TreeDiredUnmarkCommand();
         var toggleMarkCommand = new TreeDiredToggleMarkCommand();
         var fileOperations = new DefaultFileOperations();
+        var filePathHistory = new InputHistory();
         var diredConfirmHistory = new InputHistory();
-        var copyCommand = new TreeDiredCopyCommand(fileOperations, new InputHistory(), diredConfirmHistory);
-        var renameCommand = new TreeDiredRenameCommand(fileOperations, new InputHistory());
+        var copyCommand = new TreeDiredCopyCommand(fileOperations, filePathHistory, diredConfirmHistory);
+        var renameCommand = new TreeDiredRenameCommand(fileOperations, filePathHistory);
         var deleteCommand = new TreeDiredDeleteCommand(fileOperations, diredConfirmHistory);
         var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
         var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
         var shellCommandExecutor = new DefaultShellCommandExecutor();
         var shellCommand = new TreeDiredShellCommand(shellCommandExecutor, new InputHistory());
-        var makeDirectoryCommand = new TreeDiredMakeDirectoryCommand(fileOperations, new InputHistory());
+        var makeDirectoryCommand =
+                new TreeDiredMakeDirectoryCommand(fileOperations, filePathHistory, filePathInputPrompter);
         var killBufferCmd = globalRegistry.lookup("kill-buffer").orElseThrow();
 
         var diredCommandRegistry = new CommandRegistry();
