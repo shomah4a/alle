@@ -10,6 +10,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
+import io.github.shomah4a.alle.core.command.CommandAlias;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
@@ -214,7 +215,8 @@ class QueryReplaceCommandTest {
         @Test
         void replace_stringという名前でも起動できる() {
             var s = setup("foo bar foo", "foo", "X");
-            var cmd = new QueryReplaceCommand("replace-string", new InputHistory(), new InputHistory());
+            var original = new QueryReplaceCommand(new InputHistory(), new InputHistory());
+            var cmd = new CommandAlias("replace-string", original);
 
             assertEquals("replace-string", cmd.name());
 
@@ -226,7 +228,8 @@ class QueryReplaceCommandTest {
         @Test
         void replace_regexpという名前でも起動できる() {
             var s = setup("abc 123", "\\d+", "N");
-            var cmd = new QueryReplaceRegexpCommand("replace-regexp", new InputHistory(), new InputHistory());
+            var original = new QueryReplaceRegexpCommand(new InputHistory(), new InputHistory());
+            var cmd = new CommandAlias("replace-regexp", original);
 
             assertEquals("replace-regexp", cmd.name());
 
