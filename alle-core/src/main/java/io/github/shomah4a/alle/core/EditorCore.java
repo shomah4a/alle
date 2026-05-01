@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
+import io.github.shomah4a.alle.core.command.CommandAlias;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
@@ -35,6 +36,7 @@ import io.github.shomah4a.alle.core.command.commands.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.KillLineCommand;
 import io.github.shomah4a.alle.core.command.commands.KillRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.KillRegionCommand;
+import io.github.shomah4a.alle.core.command.commands.MakeDirectoryCommand;
 import io.github.shomah4a.alle.core.command.commands.MarkWholeBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.NewlineCommand;
 import io.github.shomah4a.alle.core.command.commands.NextLineCommand;
@@ -450,6 +452,12 @@ public final class EditorCore {
         // Occur
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
         registry.register(occurCommand);
+
+        // make-directory / mkdir
+        var makeDirectoryCommand = new MakeDirectoryCommand(
+                new DefaultFileOperations(), Path.of("").toAbsolutePath(), new InputHistory(), filePathInputPrompter);
+        registry.register(makeDirectoryCommand);
+        registry.register(new CommandAlias("mkdir", makeDirectoryCommand));
 
         return new CommandRegistryResult(registry, pathOpenService);
     }
