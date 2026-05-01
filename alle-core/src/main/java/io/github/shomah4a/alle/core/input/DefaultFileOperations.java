@@ -56,6 +56,11 @@ public class DefaultFileOperations implements FileOperations {
         Files.setPosixFilePermissions(path, permSet);
     }
 
+    @Override
+    public void createDirectories(Path path) throws IOException {
+        Files.createDirectories(path);
+    }
+
     private void copyDirectory(Path source, Path target) throws IOException {
         Files.walkFileTree(source, new SimpleFileVisitor<>() {
             @Override
