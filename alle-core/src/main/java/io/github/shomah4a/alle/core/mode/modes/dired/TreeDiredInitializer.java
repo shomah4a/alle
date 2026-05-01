@@ -49,14 +49,17 @@ public final class TreeDiredInitializer {
         var unmarkCommand = new TreeDiredUnmarkCommand();
         var toggleMarkCommand = new TreeDiredToggleMarkCommand();
         var fileOperations = new DefaultFileOperations();
+        var filePathHistory = new InputHistory();
         var diredConfirmHistory = new InputHistory();
-        var copyCommand = new TreeDiredCopyCommand(fileOperations, new InputHistory(), diredConfirmHistory);
-        var renameCommand = new TreeDiredRenameCommand(fileOperations, new InputHistory());
+        var copyCommand = new TreeDiredCopyCommand(fileOperations, filePathHistory, diredConfirmHistory);
+        var renameCommand = new TreeDiredRenameCommand(fileOperations, filePathHistory);
         var deleteCommand = new TreeDiredDeleteCommand(fileOperations, diredConfirmHistory);
         var chmodCommand = new TreeDiredChmodCommand(fileOperations, new InputHistory());
         var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
         var shellCommandExecutor = new DefaultShellCommandExecutor();
         var shellCommand = new TreeDiredShellCommand(shellCommandExecutor, new InputHistory());
+        var makeDirectoryCommand =
+                new TreeDiredMakeDirectoryCommand(fileOperations, filePathHistory, filePathInputPrompter);
         var killBufferCmd = globalRegistry.lookup("kill-buffer").orElseThrow();
 
         var diredCommandRegistry = new CommandRegistry();
@@ -73,6 +76,7 @@ public final class TreeDiredInitializer {
         diredCommandRegistry.register(chmodCommand);
         diredCommandRegistry.register(chownCommand);
         diredCommandRegistry.register(shellCommand);
+        diredCommandRegistry.register(makeDirectoryCommand);
         commandResolver.registerModeCommands("tree-dired", diredCommandRegistry);
 
         var diredKeymap = createKeymap(
@@ -89,7 +93,8 @@ public final class TreeDiredInitializer {
                 deleteCommand,
                 chmodCommand,
                 chownCommand,
-                shellCommand);
+                shellCommand,
+                makeDirectoryCommand);
 
         var diredOpenService = new DiredOpenService(
                 directoryLister, zoneId, diredKeymap, diredCommandRegistry, modeRegistry, settingsRegistry);
@@ -115,7 +120,8 @@ public final class TreeDiredInitializer {
             TreeDiredDeleteCommand deleteCommand,
             TreeDiredChmodCommand chmodCommand,
             TreeDiredChownCommand chownCommand,
-            TreeDiredShellCommand shellCommand) {
+            TreeDiredShellCommand shellCommand,
+            TreeDiredMakeDirectoryCommand makeDirectoryCommand) {
         var keymap = new Keymap("tree-dired");
         keymap.setDefaultCommand(new TreeDiredNoOpCommand());
         keymap.bind(KeyStroke.of('\t'), toggleCommand);
@@ -133,6 +139,7 @@ public final class TreeDiredInitializer {
         keymap.bind(KeyStroke.of('M'), chmodCommand);
         keymap.bind(KeyStroke.of('O'), chownCommand);
         keymap.bind(KeyStroke.of('!'), shellCommand);
+        keymap.bind(KeyStroke.of('+'), makeDirectoryCommand);
         return keymap;
     }
 }

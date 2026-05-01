@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
 import io.github.shomah4a.alle.core.buffer.MessageBuffer;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
+import io.github.shomah4a.alle.core.command.CommandAlias;
 import io.github.shomah4a.alle.core.command.CommandLoop;
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.command.CommandResolver;
@@ -35,6 +36,7 @@ import io.github.shomah4a.alle.core.command.commands.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.KillLineCommand;
 import io.github.shomah4a.alle.core.command.commands.KillRectangleCommand;
 import io.github.shomah4a.alle.core.command.commands.KillRegionCommand;
+import io.github.shomah4a.alle.core.command.commands.MakeDirectoryCommand;
 import io.github.shomah4a.alle.core.command.commands.MarkWholeBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.NewlineCommand;
 import io.github.shomah4a.alle.core.command.commands.NextLineCommand;
@@ -402,15 +404,16 @@ public final class EditorCore {
 
         var queryReplaceFromHistory = new InputHistory();
         var queryReplaceToHistory = new InputHistory();
-        registry.register(new QueryReplaceCommand(queryReplaceFromHistory, queryReplaceToHistory));
-        // Emacs 互換の別名。実装は query-replace と共通、履歴も共有する。
-        registry.register(new QueryReplaceCommand("replace-string", queryReplaceFromHistory, queryReplaceToHistory));
+        var queryReplaceCommand = new QueryReplaceCommand(queryReplaceFromHistory, queryReplaceToHistory);
+        registry.register(queryReplaceCommand);
+        registry.register(new CommandAlias("replace-string", queryReplaceCommand));
 
         var queryReplaceRegexpFromHistory = new InputHistory();
         var queryReplaceRegexpToHistory = new InputHistory();
-        registry.register(new QueryReplaceRegexpCommand(queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory));
-        registry.register(new QueryReplaceRegexpCommand(
-                "replace-regexp", queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory));
+        var queryReplaceRegexpCommand =
+                new QueryReplaceRegexpCommand(queryReplaceRegexpFromHistory, queryReplaceRegexpToHistory);
+        registry.register(queryReplaceRegexpCommand);
+        registry.register(new CommandAlias("replace-regexp", queryReplaceRegexpCommand));
 
         // Rectangle commands (C-x r プレフィックス)
         var rectangleKillRing = new RectangleKillRing();
@@ -456,6 +459,12 @@ public final class EditorCore {
         // Shell command
         var shellCommandHistory = new InputHistory();
         registry.register(new ShellCommandCommand(new DefaultShellCommandExecutor(), shellCommandHistory));
+
+        // make-directory / mkdir
+        var makeDirectoryCommand = new MakeDirectoryCommand(
+                new DefaultFileOperations(), Path.of("").toAbsolutePath(), new InputHistory(), filePathInputPrompter);
+        registry.register(makeDirectoryCommand);
+        registry.register(new CommandAlias("mkdir", makeDirectoryCommand));
 
         return new CommandRegistryResult(registry, pathOpenService);
     }

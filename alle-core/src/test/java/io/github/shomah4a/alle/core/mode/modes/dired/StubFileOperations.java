@@ -38,4 +38,9 @@ class StubFileOperations implements FileOperations {
     public void setPermissions(Path path, String permissions) throws IOException {
         operations.add("chmod:" + path + ":" + permissions);
     }
+
+    @Override
+    public void createDirectories(Path path) throws IOException {
+        operations.add("mkdir:" + path);
+    }
 }

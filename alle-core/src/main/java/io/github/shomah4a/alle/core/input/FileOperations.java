@@ -54,4 +54,14 @@ public interface FileOperations {
      * @throws IOException 変更に失敗した場合
      */
     void setPermissions(Path path, String permissions) throws IOException;
+
+    /**
+     * ディレクトリを再帰的に作成する。
+     * 親ディレクトリが存在しない場合は合わせて作成する（mkdir -p 相当）。
+     * 既にディレクトリが存在する場合は何もしない。
+     *
+     * @param path 作成するディレクトリのパス
+     * @throws IOException 作成に失敗した場合
+     */
+    void createDirectories(Path path) throws IOException;
 }
