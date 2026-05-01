@@ -2,7 +2,6 @@ package io.github.shomah4a.alle.core.mode.modes.dired;
 
 import io.github.shomah4a.alle.core.Loggable;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
-import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.command.Command;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -10,7 +9,6 @@ import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.input.ShellCommandExecutor;
 import io.github.shomah4a.alle.core.input.ShellOutputBufferHelper;
 import io.github.shomah4a.alle.core.styling.FaceName;
-import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.list.ListIterable;
@@ -98,8 +96,8 @@ public class TreeDiredShellCommand implements Command, Loggable {
         diredMode.getModel().clearMarks();
         TreeDiredBufferUpdater.update(context.activeWindow(), diredMode);
 
-        var outputBuffer = getOrCreateOutputBuffer(context);
-        ShellOutputBufferHelper.clearBuffer(outputBuffer);
+        var outputBuffer = ShellOutputBufferHelper.getOrCreateAndClear(
+                OUTPUT_BUFFER_NAME, context.bufferManager(), context.settingsRegistry());
         context.frame().getActiveWindow().setBuffer(outputBuffer);
 
         return executeAndStream(commandTemplate, quotedPaths, workingDirectory, hasStar, hasQuestion, outputBuffer)
@@ -177,17 +175,5 @@ public class TreeDiredShellCommand implements Command, Loggable {
             return firstParent;
         }
         return diredMode.getModel().getRootDirectory();
-    }
-
-    private BufferFacade getOrCreateOutputBuffer(CommandContext context) {
-        var existing = context.bufferManager().findByName(OUTPUT_BUFFER_NAME);
-        if (existing.isPresent()) {
-            return existing.get();
-        }
-        var textBuffer = new TextBuffer(OUTPUT_BUFFER_NAME, new GapTextModel(), context.settingsRegistry());
-        var bufferFacade = new BufferFacade(textBuffer);
-        bufferFacade.setReadOnly(true);
-        context.bufferManager().add(bufferFacade);
-        return bufferFacade;
     }
 }
