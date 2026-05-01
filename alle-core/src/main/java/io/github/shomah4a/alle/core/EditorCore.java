@@ -52,6 +52,7 @@ import io.github.shomah4a.alle.core.command.commands.ScrollDownCommand;
 import io.github.shomah4a.alle.core.command.commands.ScrollUpCommand;
 import io.github.shomah4a.alle.core.command.commands.SelfInsertCommand;
 import io.github.shomah4a.alle.core.command.commands.SetMarkCommand;
+import io.github.shomah4a.alle.core.command.commands.ShellCommandCommand;
 import io.github.shomah4a.alle.core.command.commands.SplitWindowBelowCommand;
 import io.github.shomah4a.alle.core.command.commands.SplitWindowRightCommand;
 import io.github.shomah4a.alle.core.command.commands.StringRectangleCommand;
@@ -63,6 +64,7 @@ import io.github.shomah4a.alle.core.command.commands.YankCommand;
 import io.github.shomah4a.alle.core.command.commands.YankRectangleCommand;
 import io.github.shomah4a.alle.core.constants.BufferNames;
 import io.github.shomah4a.alle.core.input.DefaultFileOperations;
+import io.github.shomah4a.alle.core.input.DefaultShellCommandExecutor;
 import io.github.shomah4a.alle.core.input.DirectoryLister;
 import io.github.shomah4a.alle.core.input.FilePathInputPrompter;
 import io.github.shomah4a.alle.core.input.InputHistory;
@@ -451,6 +453,10 @@ public final class EditorCore {
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
         registry.register(occurCommand);
 
+        // Shell command
+        var shellCommandHistory = new InputHistory();
+        registry.register(new ShellCommandCommand(new DefaultShellCommandExecutor(), shellCommandHistory));
+
         return new CommandRegistryResult(registry, pathOpenService);
     }
 
@@ -551,6 +557,9 @@ public final class EditorCore {
         // C-s / C-r (i-search)
         keymap.bind(KeyStroke.ctrl('s'), registry.lookup("isearch-forward").orElseThrow());
         keymap.bind(KeyStroke.ctrl('r'), registry.lookup("isearch-backward").orElseThrow());
+
+        // M-! (shell-command)
+        keymap.bind(KeyStroke.meta('!'), registry.lookup("shell-command").orElseThrow());
 
         // M-% / C-M-% (query-replace / query-replace-regexp)
         keymap.bind(KeyStroke.meta('%'), registry.lookup("query-replace").orElseThrow());
