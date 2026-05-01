@@ -57,6 +57,7 @@ public final class TreeDiredInitializer {
         var chownCommand = new TreeDiredChownCommand(fileOperations, new InputHistory());
         var shellCommandExecutor = new DefaultShellCommandExecutor();
         var shellCommand = new TreeDiredShellCommand(shellCommandExecutor, new InputHistory());
+        var makeDirectoryCommand = new TreeDiredMakeDirectoryCommand(fileOperations, new InputHistory());
         var killBufferCmd = globalRegistry.lookup("kill-buffer").orElseThrow();
 
         var diredCommandRegistry = new CommandRegistry();
@@ -73,6 +74,7 @@ public final class TreeDiredInitializer {
         diredCommandRegistry.register(chmodCommand);
         diredCommandRegistry.register(chownCommand);
         diredCommandRegistry.register(shellCommand);
+        diredCommandRegistry.register(makeDirectoryCommand);
         commandResolver.registerModeCommands("tree-dired", diredCommandRegistry);
 
         var diredKeymap = createKeymap(
@@ -89,7 +91,8 @@ public final class TreeDiredInitializer {
                 deleteCommand,
                 chmodCommand,
                 chownCommand,
-                shellCommand);
+                shellCommand,
+                makeDirectoryCommand);
 
         var diredOpenService = new DiredOpenService(
                 directoryLister, zoneId, diredKeymap, diredCommandRegistry, modeRegistry, settingsRegistry);
@@ -115,7 +118,8 @@ public final class TreeDiredInitializer {
             TreeDiredDeleteCommand deleteCommand,
             TreeDiredChmodCommand chmodCommand,
             TreeDiredChownCommand chownCommand,
-            TreeDiredShellCommand shellCommand) {
+            TreeDiredShellCommand shellCommand,
+            TreeDiredMakeDirectoryCommand makeDirectoryCommand) {
         var keymap = new Keymap("tree-dired");
         keymap.setDefaultCommand(new TreeDiredNoOpCommand());
         keymap.bind(KeyStroke.of('\t'), toggleCommand);
@@ -133,6 +137,7 @@ public final class TreeDiredInitializer {
         keymap.bind(KeyStroke.of('M'), chmodCommand);
         keymap.bind(KeyStroke.of('O'), chownCommand);
         keymap.bind(KeyStroke.of('!'), shellCommand);
+        keymap.bind(KeyStroke.of('+'), makeDirectoryCommand);
         return keymap;
     }
 }
