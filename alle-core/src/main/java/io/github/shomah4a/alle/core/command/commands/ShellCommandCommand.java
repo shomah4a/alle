@@ -63,13 +63,16 @@ public class ShellCommandCommand implements Command, Loggable {
             return CompletableFuture.completedFuture(null);
         }
 
+        if (!running.compareAndSet(false, true)) {
+            context.messageBuffer().message("シェルコマンドを実行中です");
+            return CompletableFuture.completedFuture(null);
+        }
+
         var outputBuffer = getOrCreateOutputBuffer(context);
         ShellOutputBufferHelper.clearBuffer(outputBuffer);
         showOutputWindow(context, outputBuffer);
 
         Path workingDirectory = resolveWorkingDirectory(context);
-
-        running.set(true);
         ShellOutputBufferHelper.appendText(outputBuffer, "$ " + command + "\n");
 
         return executor.execute(
