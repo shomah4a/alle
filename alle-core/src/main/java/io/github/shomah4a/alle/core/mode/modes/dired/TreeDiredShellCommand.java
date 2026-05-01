@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.input.ShellCommandExecutor;
+import io.github.shomah4a.alle.core.input.ShellOutputBufferHelper;
 import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.nio.file.Path;
@@ -98,7 +99,7 @@ public class TreeDiredShellCommand implements Command, Loggable {
         TreeDiredBufferUpdater.update(context.activeWindow(), diredMode);
 
         var outputBuffer = getOrCreateOutputBuffer(context);
-        initOutputBuffer(outputBuffer);
+        ShellOutputBufferHelper.clearBuffer(outputBuffer);
         context.frame().getActiveWindow().setBuffer(outputBuffer);
 
         return executeAndStream(commandTemplate, quotedPaths, workingDirectory, hasStar, hasQuestion, outputBuffer)
@@ -131,13 +132,14 @@ public class TreeDiredShellCommand implements Command, Loggable {
 
     private CompletableFuture<Void> executeSingleStreaming(
             String cmd, Path workingDirectory, BufferFacade outputBuffer) {
-        appendText(outputBuffer, "$ " + cmd + "\n");
+        ShellOutputBufferHelper.appendText(outputBuffer, "$ " + cmd + "\n");
         return executor.execute(
                         cmd,
                         workingDirectory,
-                        line -> appendText(outputBuffer, line + "\n"),
-                        line -> appendStyledText(outputBuffer, line + "\n", FaceName.WARNING))
-                .thenAccept(exitCode -> appendText(outputBuffer, "exit code: " + exitCode + "\n"));
+                        line -> ShellOutputBufferHelper.appendText(outputBuffer, line + "\n"),
+                        line -> ShellOutputBufferHelper.appendStyledText(outputBuffer, line + "\n", FaceName.WARNING))
+                .thenAccept(
+                        exitCode -> ShellOutputBufferHelper.appendText(outputBuffer, "exit code: " + exitCode + "\n"));
     }
 
     private CompletableFuture<Void> executePerFileStreaming(
@@ -153,45 +155,12 @@ public class TreeDiredShellCommand implements Command, Loggable {
             boolean needsSeparator = i > 0;
             chain = chain.thenCompose(ignored -> {
                 if (needsSeparator) {
-                    appendText(outputBuffer, "\n");
+                    ShellOutputBufferHelper.appendText(outputBuffer, "\n");
                 }
                 return executeSingleStreaming(cmd, workingDirectory, outputBuffer);
             });
         }
         return chain;
-    }
-
-    private static void appendText(BufferFacade buffer, String text) {
-        buffer.atomicOperation(buf -> {
-            buf.setReadOnly(false);
-            buf.insertText(buf.length(), text);
-            buf.setReadOnly(true);
-            return null;
-        });
-    }
-
-    private static void appendStyledText(BufferFacade buffer, String text, FaceName faceName) {
-        buffer.atomicOperation(buf -> {
-            buf.setReadOnly(false);
-            int start = buf.length();
-            buf.insertText(start, text);
-            buf.putFace(start, start + text.length(), faceName);
-            buf.setReadOnly(true);
-            return null;
-        });
-    }
-
-    private static void initOutputBuffer(BufferFacade buffer) {
-        buffer.atomicOperation(buf -> {
-            buf.setReadOnly(false);
-            int length = buf.length();
-            if (length > 0) {
-                buf.deleteText(0, length);
-            }
-            buf.removeFace(0, length);
-            buf.setReadOnly(true);
-            return null;
-        });
     }
 
     /**
