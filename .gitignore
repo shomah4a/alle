@@ -9,6 +9,8 @@ build/
 .settings/
 .project
 .classpath
+.factorypath
+bin/
 
 # Emacs
 *~
