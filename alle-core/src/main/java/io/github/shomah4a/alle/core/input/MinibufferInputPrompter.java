@@ -14,6 +14,7 @@ import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 import org.eclipse.collections.api.list.ListIterable;
 import org.jspecify.annotations.Nullable;
 
@@ -27,12 +28,22 @@ public class MinibufferInputPrompter implements InputPrompter, Loggable {
     private static final String COMPLETIONS_BUFFER_NAME = "*Completions*";
 
     private final Frame frame;
+    private final BooleanSupplier ignoreCaseSupplier;
     private @Nullable CompletableFuture<PromptResult> activeFuture;
     private @Nullable Window completionsWindow;
     private @Nullable CompletionsModel completionsModel;
 
     public MinibufferInputPrompter(Frame frame) {
+        this(frame, () -> false);
+    }
+
+    /**
+     * @param ignoreCaseSupplier 補完候補をケース無視で扱うかを毎回解決するためのサプライヤ。
+     *                           prompt 開始時点ではなく、補完／確定の都度参照される。
+     */
+    public MinibufferInputPrompter(Frame frame, BooleanSupplier ignoreCaseSupplier) {
         this.frame = frame;
+        this.ignoreCaseSupplier = ignoreCaseSupplier;
     }
 
     @Override
@@ -284,14 +295,26 @@ public class MinibufferInputPrompter implements InputPrompter, Loggable {
                 }
             }
             // Completerが提供されている場合、現在の入力に対する候補を確認
+            boolean ignoreCase = ignoreCaseSupplier.getAsBoolean();
             if (completer != null) {
                 String userInput = getUserInput(promptLength);
                 var candidates = completer.complete(userInput);
-                // 入力が完全一致する候補が1件でpartialなら確定しない
-                if (candidates.size() == 1
-                        && candidates.get(0).value().equals(userInput)
-                        && !candidates.get(0).terminal()) {
-                    return CompletableFuture.completedFuture(null);
+                if (candidates.size() == 1) {
+                    var candidate = candidates.get(0);
+                    boolean matches = ignoreCase
+                            ? candidate.value().equalsIgnoreCase(userInput)
+                            : candidate.value().equals(userInput);
+                    if (matches) {
+                        // ignore-case でケース不一致なら候補側 value で書き換える
+                        // （Linux のケース敏感 FS でパスを正規化してから次の処理に進めるため）
+                        if (ignoreCase && !candidate.value().equals(userInput)) {
+                            replaceUserInput(promptLength, candidate.value());
+                        }
+                        if (!candidate.terminal()) {
+                            // partial 候補は確定保留（ディレクトリ補完用）
+                            return CompletableFuture.completedFuture(null);
+                        }
+                    }
                 }
             }
 
@@ -324,7 +347,8 @@ public class MinibufferInputPrompter implements InputPrompter, Loggable {
         public CompletableFuture<Void> execute(CommandContext context) {
             String userInput = getUserInput(promptLength);
             var candidates = completer.sortedComplete(userInput);
-            var outcome = CompletionResult.resolveDetailed(userInput, candidates);
+            boolean ignoreCase = ignoreCaseSupplier.getAsBoolean();
+            var outcome = CompletionResult.resolveDetailed(userInput, candidates, ignoreCase);
 
             switch (outcome) {
                 case CompletionOutcome.NoMatch ignored -> {

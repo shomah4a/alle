@@ -732,6 +732,91 @@ class MinibufferInputPrompterTest {
         }
     }
 
+    @Nested
+    class ignoreCase対応 {
+
+        @Test
+        void ignoreCaseがtrueでパーシャル候補にケース不一致でマッチした場合候補側に書き換えてから保留する() {
+            Completer dirCompleter = input -> Lists.immutable
+                    .of(CompletionCandidate.partial("/tmp/Source/"))
+                    .select(c -> c.value().regionMatches(true, 0, input, 0, input.length()));
+            var ignoreCasePrompter = new MinibufferInputPrompter(frame, () -> true);
+
+            var future = ignoreCasePrompter.prompt("Input: ", "", new InputHistory(), dirCompleter);
+            // 入力 "/tmp/source/" は候補 "/tmp/Source/" とケース無視で一致する
+            minibufferWindow.getBuffer().insertText(7, "/tmp/source/");
+            minibufferWindow.setPoint(19);
+
+            // RET で確定試行 → ケース不一致のため候補側に書き換えて保留
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            assertEquals("Input: /tmp/Source/", minibufferWindow.getBuffer().getText());
+            assertFalse(future.isDone());
+        }
+
+        @Test
+        void ignoreCaseがtrueでターミナル候補に完全一致のケース違いがある場合候補側で確定する() {
+            Completer completer = input -> Lists.immutable
+                    .of(t("yes"))
+                    .select(c -> c.value().regionMatches(true, 0, input, 0, input.length()));
+            var ignoreCasePrompter = new MinibufferInputPrompter(frame, () -> true);
+
+            var future = ignoreCasePrompter.prompt("Confirm: ", "", new InputHistory(), completer);
+            // 入力 "YES" は候補 "yes" とケース無視で完全一致
+            minibufferWindow.getBuffer().insertText(9, "YES");
+            minibufferWindow.setPoint(12);
+
+            executeMinibufferKey(KeyStroke.of('\n'));
+
+            var result = future.getNow(null);
+            var confirmed = assertInstanceOf(PromptResult.Confirmed.class, result);
+            assertEquals("yes", confirmed.value());
+        }
+
+        @Test
+        void supplierが毎回呼ばれて値の変更が次回prompt確定時に反映される() {
+            var ignoreCaseFlag = new boolean[] {false};
+            Completer completer = input -> Lists.immutable
+                    .of(t("yes"))
+                    .select(c -> c.value().regionMatches(true, 0, input, 0, input.length()));
+            var dynamicPrompter = new MinibufferInputPrompter(frame, () -> ignoreCaseFlag[0]);
+
+            // 1回目: ignoreCase=false → "YES" は "yes" と equals しないので "YES" のまま確定
+            var future1 = dynamicPrompter.prompt("Confirm: ", "", new InputHistory(), completer);
+            minibufferWindow.getBuffer().insertText(9, "YES");
+            minibufferWindow.setPoint(12);
+            executeMinibufferKey(KeyStroke.of('\n'));
+            assertEquals("YES", ((PromptResult.Confirmed) future1.getNow(null)).value());
+
+            // 2回目: ignoreCase=true → "YES" は "yes" にケース無視一致して "yes" として確定
+            ignoreCaseFlag[0] = true;
+            var future2 = dynamicPrompter.prompt("Confirm: ", "", new InputHistory(), completer);
+            minibufferWindow.getBuffer().insertText(9, "YES");
+            minibufferWindow.setPoint(12);
+            executeMinibufferKey(KeyStroke.of('\n'));
+            assertEquals("yes", ((PromptResult.Confirmed) future2.getNow(null)).value());
+        }
+
+        @Test
+        void Tab補完で最長共通プレフィックスがケース無視で算出される() {
+            Completer multi = input -> {
+                var all = Lists.immutable.of(t("Source/foo"), t("source/bar"));
+                return all.select(c -> c.value().regionMatches(true, 0, input, 0, input.length()));
+            };
+            var ignoreCasePrompter = new MinibufferInputPrompter(frame, () -> true);
+
+            var unused = ignoreCasePrompter.prompt("Input: ", "", new InputHistory(), multi);
+            // 入力 "sou" は両候補にケース無視マッチ
+            minibufferWindow.getBuffer().insertText(7, "sou");
+            minibufferWindow.setPoint(10);
+
+            executeMinibufferKey(KeyStroke.of('\t'));
+
+            // 共通プレフィックスは "Source/" （先頭候補のケース）
+            assertEquals("Input: Source/", minibufferWindow.getBuffer().getText());
+        }
+    }
+
     /**
      * ミニバッファのローカルキーマップからコマンドを検索して実行する。
      */
