@@ -68,6 +68,13 @@
 - 現在はバッファに変更がなくてもスナップショットが生成される
 - ダーティフラグやEventNotifier導入で不要な再描画を抑制する最適化が可能
 
+### スクリプトから設定値（SettingsRegistry）を変更する API
+- ADR 0134 で `completion-ignore-case` 設定を導入したが、init.py 等のスクリプトから
+  値を変更する手段が現状ない
+- EditorFacade ないし alle モジュール経由で `settings.set_global("setting-name", value)` 相当の
+  API を整備する
+- 変更時のバリデーション（型チェック・登録済みチェック）が必要
+
 ## 将来課題
 
 ### CommandContext のスナップショット化
