@@ -166,4 +166,70 @@ class SettingsRegistryTest {
             assertEquals(4, registry.getDefault(setting));
         }
     }
+
+    @Nested
+    class 文字列キーアクセス {
+
+        @Test
+        void setGlobalByKeyで値を設定しgetEffectiveByKeyで取得できる() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("completion-ignore-case", Boolean.class, false);
+            registry.register(setting);
+
+            registry.setGlobalByKey("completion-ignore-case", true);
+
+            assertEquals(true, registry.getEffectiveByKey("completion-ignore-case"));
+        }
+
+        @Test
+        void getEffectiveByKeyはグローバル未設定ならデフォルト値を返す() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("completion-ignore-case", Boolean.class, false);
+            registry.register(setting);
+
+            assertEquals(false, registry.getEffectiveByKey("completion-ignore-case"));
+        }
+
+        @Test
+        void setGlobalByKeyは未登録キーで例外を投げる() {
+            var registry = new SettingsRegistry();
+
+            assertThrows(IllegalArgumentException.class, () -> registry.setGlobalByKey("unknown", true));
+        }
+
+        @Test
+        void getEffectiveByKeyは未登録キーで例外を投げる() {
+            var registry = new SettingsRegistry();
+
+            assertThrows(IllegalArgumentException.class, () -> registry.getEffectiveByKey("unknown"));
+        }
+
+        @Test
+        void setGlobalByKeyは型不一致で例外を投げる() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("completion-ignore-case", Boolean.class, false);
+            registry.register(setting);
+
+            assertThrows(ClassCastException.class, () -> registry.setGlobalByKey("completion-ignore-case", "yes"));
+        }
+
+        @Test
+        void removeGlobalByKeyで値を解除できる() {
+            var registry = new SettingsRegistry();
+            var setting = Setting.of("completion-ignore-case", Boolean.class, false);
+            registry.register(setting);
+            registry.setGlobalByKey("completion-ignore-case", true);
+
+            registry.removeGlobalByKey("completion-ignore-case");
+
+            assertEquals(false, registry.getEffectiveByKey("completion-ignore-case"));
+        }
+
+        @Test
+        void removeGlobalByKeyは未登録キーで例外を投げる() {
+            var registry = new SettingsRegistry();
+
+            assertThrows(IllegalArgumentException.class, () -> registry.removeGlobalByKey("unknown"));
+        }
+    }
 }

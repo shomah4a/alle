@@ -113,4 +113,52 @@ public class SettingsRegistry {
     public void removeGlobal(Setting<?> setting) {
         globalValues.remove(setting.key());
     }
+
+    /**
+     * 文字列キーでグローバル値を設定する。スクリプト等から型情報を持たずに設定する用途。
+     *
+     * <p>{@code value} は登録済み {@link Setting#type()} に対して {@link Class#cast} 相当の
+     * 実行時型チェックを通る必要がある。型不一致時は {@link ClassCastException} を投げる。
+     *
+     * @throws IllegalArgumentException キーに対応する設定が未登録の場合
+     * @throws ClassCastException        値の型が設定の型と一致しない場合
+     */
+    public void setGlobalByKey(String key, Object value) {
+        Setting<?> setting = definitions.get(key);
+        if (setting == null) {
+            throw new IllegalArgumentException("設定 '" + key + "' は登録されていません");
+        }
+        // 実行時型チェック。失敗時は ClassCastException
+        setting.cast(value);
+        globalValues.put(key, value);
+    }
+
+    /**
+     * 文字列キーで実効値を返す。
+     *
+     * @throws IllegalArgumentException キーに対応する設定が未登録の場合
+     */
+    public Object getEffectiveByKey(String key) {
+        Setting<?> setting = definitions.get(key);
+        if (setting == null) {
+            throw new IllegalArgumentException("設定 '" + key + "' は登録されていません");
+        }
+        Object value = globalValues.get(key);
+        if (value != null) {
+            return value;
+        }
+        return setting.defaultValue();
+    }
+
+    /**
+     * 文字列キーでグローバル値を解除する。
+     *
+     * @throws IllegalArgumentException キーに対応する設定が未登録の場合
+     */
+    public void removeGlobalByKey(String key) {
+        if (!definitions.containsKey(key)) {
+            throw new IllegalArgumentException("設定 '" + key + "' は登録されていません");
+        }
+        globalValues.remove(key);
+    }
 }
