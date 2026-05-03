@@ -403,6 +403,32 @@ class ISearchSessionTest {
         }
 
         @Test
+        void ケース無視マッチでもハイライト幅がクエリ長と一致する() {
+            replaceBuffer("HELLO world");
+            var session = createForwardSession();
+            session.start();
+
+            session.appendChar('h');
+            session.appendChar('e');
+            session.appendChar('l');
+            session.appendChar('l');
+            session.appendChar('o');
+
+            var match = session.getCurrentMatch();
+            assertNotNull(match);
+            // クエリは小文字 "hello" (5 codepoint)、テキストは大文字 "HELLO"。
+            // ケース無視でマッチし、ハイライト範囲はクエリ長と一致する [0, 5)。
+            assertEquals(0, match.start());
+            assertEquals(5, match.end());
+
+            var spans = window.getBuffer().getFaceSpans(0, 11);
+            var matchSpans = spans.select(s -> s.faceName().equals(FaceName.ISEARCH_MATCH));
+            assertEquals(1, matchSpans.size());
+            assertEquals(0, matchSpans.get(0).start());
+            assertEquals(5, matchSpans.get(0).end());
+        }
+
+        @Test
         void searchPreviousで同位置を返し続けない() {
             replaceBuffer("Hello hello HELLO");
             window.setPoint(17);

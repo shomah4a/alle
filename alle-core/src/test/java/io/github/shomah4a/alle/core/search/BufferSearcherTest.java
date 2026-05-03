@@ -127,6 +127,20 @@ class BufferSearcherTest {
         }
 
         @Test
+        void サロゲートペア直後のfromCodePointOffsetでsearchBackwardが直前のマッチを返す() {
+            // text = "hello🎉hello" (コードポイント単位: h=0..o=4, 🎉=5, h=6..o=10)
+            // fromCodePointOffset=6 (絵文字直後、char では 7) で後方検索すると
+            // 内部で fromCharOffset-1=6 (下位サロゲート位置) になるが、
+            // lastIndexOf 内のサロゲートスキップで先頭の "hello" (char=0, codepoint=0) を返すこと
+            var text = "hello🎉hello";
+            var result = BufferSearcher.searchBackward(text, "hello", 6, true);
+            assertTrue(result.isPresent());
+            assertEquals(0, result.get().start());
+            assertEquals(5, result.get().end());
+            assertFalse(result.get().wrapped());
+        }
+
+        @Test
         void サロゲートペアを含むクエリで検索できる() {
             var text = "hello🎉world";
             var result = BufferSearcher.searchForward(text, "🎉", 0, true);

@@ -130,5 +130,20 @@ class OccurModelTest {
             // 最初の Hello のオフセットを採用
             assertEquals(0, model.getMatches().get(0).matchOffsetInLine());
         }
+
+        @Test
+        void ケース無視時に絵文字と大文字が混在する行でもオフセットが正しい() {
+            // 行頭に絵文字、続いて大文字テキスト。小文字クエリで smart-case ケース無視マッチ
+            var buffer = createBuffer("test.txt", "😀HELLO\nworld\n😀😀hello");
+            var model = OccurModel.search(buffer, "hello");
+
+            assertEquals(2, model.matchCount());
+            // 1行目: 絵文字 1 codepoint 後に HELLO (codepoint=1)
+            assertEquals(0, model.getMatches().get(0).lineIndex());
+            assertEquals(1, model.getMatches().get(0).matchOffsetInLine());
+            // 3行目: 絵文字 2 codepoint 後に hello (codepoint=2)
+            assertEquals(2, model.getMatches().get(1).lineIndex());
+            assertEquals(2, model.getMatches().get(1).matchOffsetInLine());
+        }
     }
 }
