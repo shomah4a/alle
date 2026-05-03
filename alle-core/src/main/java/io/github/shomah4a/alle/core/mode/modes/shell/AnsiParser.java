@@ -15,6 +15,9 @@ import org.jspecify.annotations.Nullable;
  * それ以外のエスケープシーケンスは除去する。
  * 行をまたぐ SGR 状態を保持するため、インスタンスは対話セッション全体で共有する。
  *
+ * <p>入力の末尾に不完全なエスケープシーケンス（ESC で終わる、CSI の途中で終わる等）が
+ * ある場合は内部バッファに保持し、次の {@link #parse(String)} 呼び出し時に結合する。
+ *
  * <p>このクラスはシェルモード内部でのみ使用する。
  */
 final class AnsiParser {
@@ -29,26 +32,48 @@ final class AnsiParser {
     /** ESC で始まるその他のエスケープシーケンス（2文字のもの）にマッチする正規表現 */
     private static final Pattern OTHER_ESC_PATTERN = Pattern.compile("\u001b[^\\[\\]]");
 
+    /** 末尾の不完全なエスケープシーケンスを検出するパターン。
+     * ESC 単独、ESC[ の後にパラメータが続くが終端文字がない、等 */
+    private static final Pattern INCOMPLETE_ESC_PATTERN = Pattern.compile("\u001b(\\[\\??[0-9;]*)?$");
+
     private SgrAttributes currentAttributes;
+    private String pendingInput = "";
 
     AnsiParser() {
         this.currentAttributes = SgrAttributes.reset();
     }
 
     /**
-     * 生の出力行をパースし、スタイル付きセグメントのリストを返す。
+     * 生の出力をパースし、スタイル付きセグメントのリストを返す。
      *
-     * @param rawLine ANSI エスケープシーケンスを含む可能性のある行
+     * <p>入力末尾に不完全なエスケープシーケンスがある場合は内部に保持し、
+     * 次回呼び出し時に結合してパースする。
+     *
+     * @param rawInput ANSI エスケープシーケンスを含む可能性のある出力
      * @return パース結果のセグメントリスト。テキストが空のセグメントは含まない
      */
-    ImmutableList<StyledSegment> parse(String rawLine) {
+    ImmutableList<StyledSegment> parse(String rawInput) {
+        String input = pendingInput + rawInput;
+        pendingInput = "";
+
+        // 末尾に不完全なエスケープシーケンスがあれば保留
+        Matcher incompleteMatcher = INCOMPLETE_ESC_PATTERN.matcher(input);
+        if (incompleteMatcher.find()) {
+            pendingInput = input.substring(incompleteMatcher.start());
+            input = input.substring(0, incompleteMatcher.start());
+        }
+
+        if (input.isEmpty()) {
+            return Lists.immutable.empty();
+        }
+
         MutableList<StyledSegment> segments = Lists.mutable.empty();
-        Matcher matcher = CSI_PATTERN.matcher(rawLine);
+        Matcher matcher = CSI_PATTERN.matcher(input);
         int lastEnd = 0;
 
         while (matcher.find()) {
             if (matcher.start() > lastEnd) {
-                String textBefore = rawLine.substring(lastEnd, matcher.start());
+                String textBefore = input.substring(lastEnd, matcher.start());
                 String cleaned = removeNonCsiEscapes(textBefore);
                 addSegment(segments, cleaned, currentAttributes.toFaceName());
             }
@@ -60,8 +85,8 @@ final class AnsiParser {
             lastEnd = matcher.end();
         }
 
-        if (lastEnd < rawLine.length()) {
-            String remaining = rawLine.substring(lastEnd);
+        if (lastEnd < input.length()) {
+            String remaining = input.substring(lastEnd);
             String cleaned = removeNonCsiEscapes(remaining);
             addSegment(segments, cleaned, currentAttributes.toFaceName());
         }
