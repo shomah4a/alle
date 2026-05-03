@@ -88,4 +88,47 @@ class OccurModelTest {
             assertEquals(1, model.getMatches().get(0).matchOffsetInLine());
         }
     }
+
+    @Nested
+    class smartCase {
+
+        @Test
+        void 小文字クエリは大文字小文字を区別しない() {
+            var buffer = createBuffer("test.txt", "Hello\nworld\nHELLO");
+            var model = OccurModel.search(buffer, "hello");
+
+            assertEquals(2, model.matchCount());
+            assertEquals(0, model.getMatches().get(0).lineIndex());
+            assertEquals(2, model.getMatches().get(1).lineIndex());
+        }
+
+        @Test
+        void 大文字を含むクエリは大文字小文字を区別する() {
+            var buffer = createBuffer("test.txt", "Hello\nworld\nhello");
+            var model = OccurModel.search(buffer, "Hello");
+
+            assertEquals(1, model.matchCount());
+            assertEquals(0, model.getMatches().get(0).lineIndex());
+        }
+
+        @Test
+        void ケース無視時もマッチ開始位置がコードポイント単位で正しい() {
+            var buffer = createBuffer("test.txt", "😀Hello");
+            var model = OccurModel.search(buffer, "hello");
+
+            assertEquals(1, model.matchCount());
+            // 絵文字 1 コードポイント分ぶん右の位置
+            assertEquals(1, model.getMatches().get(0).matchOffsetInLine());
+        }
+
+        @Test
+        void ケース無視時も同一行に複数マッチがあっても行は1回のみ記録される() {
+            var buffer = createBuffer("test.txt", "Hello hello HELLO");
+            var model = OccurModel.search(buffer, "hello");
+
+            assertEquals(1, model.matchCount());
+            // 最初の Hello のオフセットを採用
+            assertEquals(0, model.getMatches().get(0).matchOffsetInLine());
+        }
+    }
 }
