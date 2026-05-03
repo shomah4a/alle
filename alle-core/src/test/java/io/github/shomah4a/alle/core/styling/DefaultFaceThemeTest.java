@@ -83,4 +83,69 @@ class DefaultFaceThemeTest {
             assertEquals(Sets.immutable.empty(), spec.attributes());
         }
     }
+
+    @Nested
+    class AnsiSgrフォールバック {
+
+        @Test
+        void 前景色のみ指定() {
+            var face = new FaceName("ansi-sgr:fg=red", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertEquals("red", spec.foreground());
+            assertNull(spec.background());
+            assertEquals(Sets.immutable.empty(), spec.attributes());
+        }
+
+        @Test
+        void 背景色のみ指定() {
+            var face = new FaceName("ansi-sgr:bg=blue", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertNull(spec.foreground());
+            assertEquals("blue", spec.background());
+            assertEquals(Sets.immutable.empty(), spec.attributes());
+        }
+
+        @Test
+        void bold属性のみ指定() {
+            var face = new FaceName("ansi-sgr:bold", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertNull(spec.foreground());
+            assertNull(spec.background());
+            assertEquals(Sets.immutable.of(FaceAttribute.BOLD), spec.attributes());
+        }
+
+        @Test
+        void underline属性のみ指定() {
+            var face = new FaceName("ansi-sgr:underline", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertNull(spec.foreground());
+            assertNull(spec.background());
+            assertEquals(Sets.immutable.of(FaceAttribute.UNDERLINE), spec.attributes());
+        }
+
+        @Test
+        void 前景色とboldの組み合わせ() {
+            var face = new FaceName("ansi-sgr:fg=green:bold", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertEquals("green", spec.foreground());
+            assertNull(spec.background());
+            assertEquals(Sets.immutable.of(FaceAttribute.BOLD), spec.attributes());
+        }
+
+        @Test
+        void 前景色と背景色とboldとunderlineの組み合わせ() {
+            var face = new FaceName("ansi-sgr:fg=red:bg=black:bold:underline", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertEquals("red", spec.foreground());
+            assertEquals("black", spec.background());
+            assertEquals(Sets.immutable.of(FaceAttribute.BOLD, FaceAttribute.UNDERLINE), spec.attributes());
+        }
+
+        @Test
+        void 明るい色の前景色() {
+            var face = new FaceName("ansi-sgr:fg=red_bright", "ANSI SGR");
+            var spec = theme.resolve(face);
+            assertEquals("red_bright", spec.foreground());
+        }
+    }
 }
