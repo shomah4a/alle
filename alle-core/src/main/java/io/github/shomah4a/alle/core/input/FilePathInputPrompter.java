@@ -4,6 +4,7 @@ import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.styling.FaceName;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -22,11 +23,25 @@ public class FilePathInputPrompter {
     private final InputPrompter inputPrompter;
     private final DirectoryLister directoryLister;
     private final Path homeDirectory;
+    private final BooleanSupplier ignoreCaseSupplier;
 
     public FilePathInputPrompter(InputPrompter inputPrompter, DirectoryLister directoryLister, Path homeDirectory) {
+        this(inputPrompter, directoryLister, homeDirectory, () -> false);
+    }
+
+    /**
+     * @param ignoreCaseSupplier ファイルパス補完をケース無視で行うかを毎回解決するサプライヤ。
+     *                           prompt 開始時点ではなく、prompt 呼び出しのたびに参照される。
+     */
+    public FilePathInputPrompter(
+            InputPrompter inputPrompter,
+            DirectoryLister directoryLister,
+            Path homeDirectory,
+            BooleanSupplier ignoreCaseSupplier) {
         this.inputPrompter = inputPrompter;
         this.directoryLister = directoryLister;
         this.homeDirectory = homeDirectory;
+        this.ignoreCaseSupplier = ignoreCaseSupplier;
     }
 
     /**
@@ -40,7 +55,8 @@ public class FilePathInputPrompter {
      */
     public CompletableFuture<PromptResult> prompt(String message, String initialPath, InputHistory history) {
         String displayInitialValue = PathResolver.collapseTilde(initialPath, homeDirectory) + "/";
-        var filePathCompleter = new FilePathCompleter(directoryLister, homeDirectory);
+        boolean ignoreCase = ignoreCaseSupplier.getAsBoolean();
+        var filePathCompleter = new FilePathCompleter(directoryLister, homeDirectory, ignoreCase);
         var shadowCompleter = new ShadowAwareCompleter(filePathCompleter);
 
         return inputPrompter

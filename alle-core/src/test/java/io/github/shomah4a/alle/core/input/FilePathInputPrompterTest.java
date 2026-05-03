@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.input;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.nio.file.Path;
@@ -111,6 +112,77 @@ class FilePathInputPrompterTest {
             var result = future.join();
             var confirmed = assertInstanceOf(PromptResult.Confirmed.class, result);
             assertEquals("/tmp/test.txt", confirmed.value());
+        }
+    }
+
+    @Nested
+    class ignoreCase対応 {
+
+        @Test
+        void supplierがtrueを返すとShadowAwareCompleter経由でケース無視マッチが効く() {
+            var capturedCompleter = new AtomicReference<Completer>();
+            InputPrompter capturingPrompter = new InputPrompter() {
+                @Override
+                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                    return innerFuture;
+                }
+
+                @Override
+                public CompletableFuture<PromptResult> prompt(
+                        String message,
+                        String initialValue,
+                        InputHistory history,
+                        Completer completer,
+                        InputUpdateListener updateListener) {
+                    capturedCompleter.set(completer);
+                    return innerFuture;
+                }
+            };
+            DirectoryLister lister = directory -> Lists.immutable.of(
+                    new DirectoryEntry.File(Path.of("/tmp/Src.txt"), FileAttributes.EMPTY),
+                    new DirectoryEntry.File(Path.of("/tmp/bar.txt"), FileAttributes.EMPTY));
+            var prompter = new FilePathInputPrompter(capturingPrompter, lister, HOME, () -> true);
+
+            var unused = prompter.prompt("Find file: ", "/home/user", new InputHistory());
+
+            var completer = capturedCompleter.get();
+            assertNotNull(completer);
+            // 入力 "/tmp/src" は "/tmp/Src.txt" にケース無視マッチする
+            var candidates = completer.complete("/tmp/src");
+            assertEquals(1, candidates.size());
+            assertEquals("/tmp/Src.txt", candidates.get(0).value());
+        }
+
+        @Test
+        void supplierがfalseを返すとケース敏感のままになる() {
+            var capturedCompleter = new AtomicReference<Completer>();
+            InputPrompter capturingPrompter = new InputPrompter() {
+                @Override
+                public CompletableFuture<PromptResult> prompt(String message, InputHistory history) {
+                    return innerFuture;
+                }
+
+                @Override
+                public CompletableFuture<PromptResult> prompt(
+                        String message,
+                        String initialValue,
+                        InputHistory history,
+                        Completer completer,
+                        InputUpdateListener updateListener) {
+                    capturedCompleter.set(completer);
+                    return innerFuture;
+                }
+            };
+            DirectoryLister lister = directory -> Lists.immutable.of(
+                    new DirectoryEntry.File(Path.of("/tmp/Src.txt"), FileAttributes.EMPTY));
+            var prompter = new FilePathInputPrompter(capturingPrompter, lister, HOME, () -> false);
+
+            var unused = prompter.prompt("Find file: ", "/home/user", new InputHistory());
+
+            var completer = capturedCompleter.get();
+            assertNotNull(completer);
+            var candidates = completer.complete("/tmp/src");
+            assertEquals(0, candidates.size());
         }
     }
 }
