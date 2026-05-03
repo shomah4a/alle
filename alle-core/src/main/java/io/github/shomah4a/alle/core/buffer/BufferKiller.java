@@ -37,6 +37,8 @@ public final class BufferKiller {
             SettingsRegistry settingsRegistry) {
         var targetIdentifier = BufferIdentifier.of(target);
 
+        target.getMajorMode().onDisable(target);
+
         bufferManager.remove(bufferName);
 
         if (BufferNames.SCRATCH.equals(bufferName)) {
