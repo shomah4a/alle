@@ -25,15 +25,22 @@ OccurMode / TreeDiredMode のパターン（Mode + Model + Initializer + Command
 `InteractiveShellProcess` インターフェースで対話的プロセスのI/Oを抽象化する。
 既存の `ShellCommandExecutor`（一回実行型、exit code を返す）とは本質的に異なるため、別インターフェースとする。
 
-- `start(Path, Consumer<String>)`: プロセス開始、行単位の出力コールバック
 - `sendInput(String)`: stdin への書き込み
 - `sendSignal(int)`: シグナル送信（SIGINT, SIGTSTP等）
 - `destroy()`: プロセス終了
 
-`DefaultInteractiveShellProcess` は `ProcessBuilder("/bin/bash", "--noediting", "-i")` で実装する。
-`redirectErrorStream(true)` で stdout/stderr をマージし、出力順序の複雑さを回避する。
+`DefaultInteractiveShellProcess` はファクトリメソッド `start(Path, Consumer<String>, Runnable)` で
+起動済みインスタンスを返す。コンストラクタ時点でプロセスは起動済みとなり、フィールドは non-null が保証される。
 
-PTY は Java 標準 API の制約により使用しない。`TERM=xterm-256color` を設定し、色情報は受け取れるようにする。
+`SHELL` 環境変数からユーザーのデフォルトシェルを参照する（未設定の場合は `/bin/sh`）。
+`script -q /dev/null -c "stty -echo; <shell> -i"` で��似 PTY ���確保し、
+シェルを対話モードで起動する。`stty -echo` でエコーバックを無効化し、
+エディタ側の self-insert でユーザー入力を表示する。
+`redirectErrorStream(true)` で stdout/stderr をマージし、出力順序の複雑さを回避する。
+`TERM=xterm-256color` を設定し、色情報を受け取れるようにする。
+
+出力の読み取りは `read(char[], ...)` でチャンク単位に行い、`\n` で行を分割する。
+改行で終わらないフラグメント（プロンプト等）もまとまった状態でコールバックに通知する。
 
 ### ANSI SGR の扱い
 
