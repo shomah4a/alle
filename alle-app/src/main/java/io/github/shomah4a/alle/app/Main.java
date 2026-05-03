@@ -106,6 +106,7 @@ public final class Main {
         settingsRegistry.register(EditorSettings.INDENT_WIDTH);
         settingsRegistry.register(EditorSettings.COMMENT_STRING);
         settingsRegistry.register(EditorSettings.TAB_WIDTH);
+        settingsRegistry.register(EditorSettings.COMPLETION_IGNORE_CASE);
         var bufferIO = new BufferIO(
                 source -> new BufferedReader(Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8)),
                 destination ->
