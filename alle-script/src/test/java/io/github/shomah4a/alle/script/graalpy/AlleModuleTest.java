@@ -13,6 +13,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Frame;
@@ -37,9 +38,12 @@ class AlleModuleTest {
     private TextBuffer buffer;
     private BufferManager bufferManager;
     private MessageBuffer messageBuffer;
+    private SettingsRegistry settingsRegistry;
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) {
+        settingsRegistry = new SettingsRegistry();
+        settingsRegistry.register(EditorSettings.COMPLETION_IGNORE_CASE);
         buffer = new TextBuffer("test.py", new GapTextModel(), new SettingsRegistry());
         var bufferFacade = new BufferFacade(buffer);
         var window = new Window(bufferFacade);
@@ -63,7 +67,7 @@ class AlleModuleTest {
                 (message, history) -> {
                     throw new UnsupportedOperationException();
                 },
-                new SettingsRegistry());
+                settingsRegistry);
         var stdoutStream =
                 new MessageBufferOutputStream(bufferManager, "*Python Output*", 1000, new SettingsRegistry());
         var stderrStream = new MessageBufferOutputStream(bufferManager, "*Python Error*", 1000, new SettingsRegistry());
@@ -602,6 +606,32 @@ class AlleModuleTest {
                 """);
         assertInstanceOf(ScriptResult.Success.class, result);
         assertEquals("x = 1  # Note:\n", buffer.getText(), "コメント内のコロンではインデント増加しない");
+    }
+
+    @Test
+    void settingsモジュールでset_globalした値がget_effectiveで取得できる() {
+        engine.eval("from alle import settings");
+        ScriptResult set = engine.eval("settings.set_global('completion-ignore-case', True)");
+        assertInstanceOf(ScriptResult.Success.class, set);
+
+        ScriptResult get = engine.eval("settings.get_effective('completion-ignore-case')");
+        assertInstanceOf(ScriptResult.Success.class, get);
+        assertEquals("True", ((ScriptResult.Success) get).value());
+
+        // 実 SettingsRegistry にも反映されている
+        assertEquals(true, settingsRegistry.getEffective(EditorSettings.COMPLETION_IGNORE_CASE));
+    }
+
+    @Test
+    void settingsモジュールでremove_globalするとデフォルト値に戻る() {
+        engine.eval("from alle import settings");
+        engine.eval("settings.set_global('completion-ignore-case', True)");
+        ScriptResult remove = engine.eval("settings.remove_global('completion-ignore-case')");
+        assertInstanceOf(ScriptResult.Success.class, remove);
+
+        ScriptResult get = engine.eval("settings.get_effective('completion-ignore-case')");
+        assertInstanceOf(ScriptResult.Success.class, get);
+        assertEquals("False", ((ScriptResult.Success) get).value());
     }
 
     @Test
