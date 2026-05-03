@@ -14,8 +14,11 @@ import org.slf4j.Logger;
 /**
  * {@link InteractiveShellProcess} の ProcessBuilder ベースのデフォルト実装。
  *
- * <p>{@code /bin/bash --noediting -i} で対話的シェルを起動する。
- * stdout/stderr は {@code redirectErrorStream(true)} でマージし、
+ * <p>環境変数 {@code SHELL} で指定されたシェル（未設定の場合は {@code /bin/sh}）を
+ * {@code script} コマンド経由で疑似PTY付きで起動する。
+ * これにより {@code -i}（対話モード）を使用でき、ターミナルエミュレータと同様の動作となる。
+ *
+ * <p>stdout/stderr は {@code redirectErrorStream(true)} でマージし、
  * デーモンスレッドで行単位に読み取る。
  *
  * <p>環境変数 {@code TERM=xterm-256color} を設定し、色情報を受け取れるようにする。
@@ -40,6 +43,9 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
     /**
      * 対話的シェルプロセスを起動して返す。
      *
+     * <p>{@code script -q /dev/null -c "<shell> -i"} で疑似PTYを確保し、
+     * シェルを対話モードで起動する。
+     *
      * @param workingDirectory 作業ディレクトリ
      * @param onOutputLine stdout/stderr の各行を受け取るハンドラ（バックグラウンドスレッドから呼ばれる）
      * @param onProcessExit プロセス終了時に呼ばれるコールバック（リーダースレッドから呼ばれる）
@@ -48,7 +54,11 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
     public static DefaultInteractiveShellProcess start(
             Path workingDirectory, Consumer<String> onOutputLine, Runnable onProcessExit) {
         try {
-            var builder = new ProcessBuilder("/bin/bash", "--noediting", "-i");
+            String shell = resolveShell();
+            // stty -echo でPTYのエコーを無効化した上でシェルを対話モードで起動する。
+            // エディタ側の self-insert でユーザー入力はバッファに反映されるため、
+            // PTYのエコーは不要。
+            var builder = new ProcessBuilder("script", "-q", "/dev/null", "-c", "stty -echo; " + shell + " -i");
             builder.directory(workingDirectory.toFile());
             builder.redirectErrorStream(true);
             builder.environment().put("TERM", "xterm-256color");
@@ -63,6 +73,14 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
         } catch (IOException e) {
             throw new IllegalStateException("シェルプロセスの起動に失敗", e);
         }
+    }
+
+    private static String resolveShell() {
+        String shell = System.getenv("SHELL");
+        if (shell != null && !shell.isEmpty()) {
+            return shell;
+        }
+        return "/bin/sh";
     }
 
     private static void readOutput(Process proc, Consumer<String> onOutputLine, Runnable onProcessExit) {

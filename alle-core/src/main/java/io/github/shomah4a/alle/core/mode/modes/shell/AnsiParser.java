@@ -19,8 +19,9 @@ import org.jspecify.annotations.Nullable;
  */
 final class AnsiParser {
 
-    /** ESC[ で始まるすべての CSI シーケンスにマッチする正規表現 */
-    private static final Pattern CSI_PATTERN = Pattern.compile("\u001b\\[([0-9;]*)([A-Za-z])");
+    /** ESC[ で始まるすべての CSI シーケンスにマッチする正規表現。
+     * ?付きプライベートモード（bracket paste mode等）も含む */
+    private static final Pattern CSI_PATTERN = Pattern.compile("\u001b\\[\\??([0-9;]*)([A-Za-z])");
 
     /** OSC シーケンス: ESC ] ... (BEL | ESC \) にマッチする正規表現 */
     private static final Pattern OSC_PATTERN = Pattern.compile("\u001b\\].*?(?:\u0007|\u001b\\\\)");
@@ -102,7 +103,9 @@ final class AnsiParser {
 
     private static String removeNonCsiEscapes(String text) {
         String withoutOsc = OSC_PATTERN.matcher(text).replaceAll("");
-        return OTHER_ESC_PATTERN.matcher(withoutOsc).replaceAll("");
+        String withoutOtherEsc = OTHER_ESC_PATTERN.matcher(withoutOsc).replaceAll("");
+        // PTY経由の出力に含まれる CR を除去
+        return withoutOtherEsc.replace("\r", "");
     }
 
     /**
