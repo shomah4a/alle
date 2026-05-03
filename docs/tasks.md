@@ -90,6 +90,12 @@
 - 意味論的に異なる概念なので現時点では不要
 - 共通化が必要になった時点で検討
 
+### isearch repeat の検索開始位置を Emacs 準拠に揃える
+- `ISearchSession.searchNext` は `currentMatch.start() + 1` から検索しているが、Emacs は match end (`isearch-other-end`) から検索する
+- `"aaa"` を `"aa"` で検索した際、Emacs は `[0,2)` の次は `[2,4)` 以降になるが、現実装は `[1,3)` を返す可能性がある
+- backward 側 (`searchBackward` 内部で `-1` 補正) との責務分担も、forward を end 基準に揃えれば自然に対称になる
+- smart-case とは独立の既存挙動。気になったら直す
+
 ### query-replace の Emacs 互換拡張
 - `^` キーによる直前マッチへの後退（ADR 0125 で未対応）
 - `case-fold-search` / `case-replace` によるケース保持（ADR 0125 で未対応）
