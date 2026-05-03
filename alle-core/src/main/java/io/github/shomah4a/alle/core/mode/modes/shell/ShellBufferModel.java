@@ -16,19 +16,25 @@ import org.jspecify.annotations.Nullable;
 final class ShellBufferModel {
 
     private final BufferFacade buffer;
-    private final InteractiveShellProcess process;
     private final AnsiParser ansiParser;
+    private final Runnable onOutputAppended;
+    private volatile @Nullable InteractiveShellProcess process;
     private int inputStartPosition;
     private volatile boolean processFinished;
 
-    ShellBufferModel(BufferFacade buffer, InteractiveShellProcess process) {
+    ShellBufferModel(BufferFacade buffer, Runnable onOutputAppended) {
         this.buffer = buffer;
-        this.process = process;
         this.ansiParser = new AnsiParser();
+        this.onOutputAppended = onOutputAppended;
         this.inputStartPosition = 0;
         this.processFinished = false;
     }
 
+    void setProcess(InteractiveShellProcess process) {
+        this.process = process;
+    }
+
+    @Nullable
     InteractiveShellProcess getProcess() {
         return process;
     }
@@ -61,6 +67,18 @@ final class ShellBufferModel {
      */
     void appendOutput(String rawLine) {
         buffer.atomicOperation(buf -> {
+            // ANSIパースしてテキストとスタイルを取得
+            ImmutableList<AnsiParser.StyledSegment> segments = ansiParser.parse(rawLine);
+
+            // パース後のテキストが空（CRのみの行等）であればスキップ
+            int totalLength = 0;
+            for (var segment : segments) {
+                totalLength += segment.text().length();
+            }
+            if (totalLength == 0) {
+                return null;
+            }
+
             String userInput = getCurrentInput();
 
             // ユーザー入力を削除
@@ -68,8 +86,7 @@ final class ShellBufferModel {
                 buf.deleteText(inputStartPosition, userInput.length());
             }
 
-            // ANSIパースしてテキスト挿入とFace適用
-            ImmutableList<AnsiParser.StyledSegment> segments = ansiParser.parse(rawLine);
+            // テキスト挿入とFace適用
             int insertPos = inputStartPosition;
             for (var segment : segments) {
                 buf.insertText(insertPos, segment.text());
@@ -100,6 +117,8 @@ final class ShellBufferModel {
 
             return null;
         });
+
+        onOutputAppended.run();
     }
 
     /**
@@ -125,7 +144,10 @@ final class ShellBufferModel {
             return currentInput;
         });
 
-        process.sendInput(input);
+        var proc = this.process;
+        if (proc != null) {
+            proc.sendInput(input);
+        }
     }
 
     /**

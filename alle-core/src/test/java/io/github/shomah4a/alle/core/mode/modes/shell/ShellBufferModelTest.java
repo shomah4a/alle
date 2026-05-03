@@ -19,6 +19,12 @@ class ShellBufferModelTest {
         return new BufferFacade(textBuffer);
     }
 
+    private static ShellBufferModel createModel(BufferFacade buffer, StubInteractiveShellProcess process) {
+        var model = new ShellBufferModel(buffer, () -> {});
+        model.setProcess(process);
+        return model;
+    }
+
     @Nested
     class appendOutput {
 
@@ -26,7 +32,7 @@ class ShellBufferModelTest {
         void 出力がバッファに追記される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("hello");
 
@@ -37,7 +43,7 @@ class ShellBufferModelTest {
         void 出力の後にinputStartPositionが更新される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("hello");
 
@@ -48,7 +54,7 @@ class ShellBufferModelTest {
         void 複数行の出力が順次追記される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("line1");
             model.appendOutput("line2");
@@ -61,7 +67,7 @@ class ShellBufferModelTest {
         void 出力領域がreadOnlyに設定される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("hello");
 
@@ -73,7 +79,7 @@ class ShellBufferModelTest {
         void ユーザー入力がある状態で出力が到着した場合に入力が保持される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             // プロンプトの後にユーザーが入力中
             model.appendOutput("$ ");
@@ -91,7 +97,7 @@ class ShellBufferModelTest {
         void ユーザー入力の前に出力が挿入される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("prompt");
             buffer.insertText(buffer.length(), "user input");
@@ -112,7 +118,7 @@ class ShellBufferModelTest {
         void 入力がない場合は空文字列を返す() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             assertEquals("", model.getCurrentInput());
         }
@@ -121,7 +127,7 @@ class ShellBufferModelTest {
         void ユーザーが入力したテキストを返す() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("$ ");
             buffer.insertText(buffer.length(), "echo hello");
@@ -137,7 +143,7 @@ class ShellBufferModelTest {
         void 入力がプロセスに送信される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("$ ");
             buffer.insertText(buffer.length(), "echo hello");
@@ -152,7 +158,7 @@ class ShellBufferModelTest {
         void 送信後にinputStartPositionがバッファ末尾に更新される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("$ ");
             buffer.insertText(buffer.length(), "echo hello");
@@ -166,7 +172,7 @@ class ShellBufferModelTest {
         void 送信後の入力領域がreadOnlyに設定される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.appendOutput("$ ");
             buffer.insertText(buffer.length(), "echo hello");
@@ -181,7 +187,7 @@ class ShellBufferModelTest {
         void プロセス終了後は送信しない() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.markProcessFinished();
             buffer.insertText(buffer.length(), "should not send");
@@ -199,7 +205,7 @@ class ShellBufferModelTest {
         void プロセス終了後はisProcessFinishedがtrueを返す() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             assertFalse(model.isProcessFinished());
 
@@ -212,7 +218,7 @@ class ShellBufferModelTest {
         void 終了メッセージがバッファに追記される() {
             var buffer = createBuffer();
             var process = new StubInteractiveShellProcess();
-            var model = new ShellBufferModel(buffer, process);
+            var model = createModel(buffer, process);
 
             model.markProcessFinished();
 

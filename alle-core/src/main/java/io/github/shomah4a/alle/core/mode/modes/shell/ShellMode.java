@@ -39,7 +39,10 @@ public class ShellMode implements MajorMode {
 
     @Override
     public void onDisable(BufferFacade buffer) {
-        model.getProcess().destroy();
+        var process = model.getProcess();
+        if (process != null) {
+            process.destroy();
+        }
     }
 
     ShellBufferModel getModel() {

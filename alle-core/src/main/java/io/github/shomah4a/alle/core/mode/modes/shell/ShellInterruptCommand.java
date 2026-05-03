@@ -23,7 +23,10 @@ final class ShellInterruptCommand implements Command {
         if (!(mode instanceof ShellMode shellMode)) {
             return CompletableFuture.completedFuture(null);
         }
-        shellMode.getModel().getProcess().sendSignal(SIGINT);
+        var process = shellMode.getModel().getProcess();
+        if (process != null) {
+            process.sendSignal(SIGINT);
+        }
         return CompletableFuture.completedFuture(null);
     }
 }

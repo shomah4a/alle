@@ -23,7 +23,10 @@ final class ShellSuspendCommand implements Command {
         if (!(mode instanceof ShellMode shellMode)) {
             return CompletableFuture.completedFuture(null);
         }
-        shellMode.getModel().getProcess().sendSignal(SIGTSTP);
+        var process = shellMode.getModel().getProcess();
+        if (process != null) {
+            process.sendSignal(SIGTSTP);
+        }
         return CompletableFuture.completedFuture(null);
     }
 }

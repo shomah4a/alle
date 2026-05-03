@@ -55,26 +55,19 @@ public class ShellCommand implements Command {
                 .getBuffer()
                 .getDefaultDirectory(Path.of("").toAbsolutePath());
 
-        // model はプロセスのコールバックから参照されるため、配列で間接参照する
-        var modelHolder = new ShellBufferModel[1];
+        // model を先に作成し、コールバックから直接参照できるようにする。
+        // プロセスは model 作成後に起動・注入する。
+        var window = context.activeWindow();
+        var model = new ShellBufferModel(buffer, () -> {
+            // 出力追記後にカーソルをバッファ末尾に移動
+            if (window.getBuffer().equals(buffer)) {
+                window.setPoint(buffer.length());
+            }
+        });
 
-        var process = processFactory.create(
-                workingDirectory,
-                line -> {
-                    var model = modelHolder[0];
-                    if (model != null) {
-                        model.appendOutput(line);
-                    }
-                },
-                () -> {
-                    var model = modelHolder[0];
-                    if (model != null) {
-                        model.markProcessFinished();
-                    }
-                });
+        var process = processFactory.create(workingDirectory, model::appendOutput, model::markProcessFinished);
 
-        var model = new ShellBufferModel(buffer, process);
-        modelHolder[0] = model;
+        model.setProcess(process);
 
         var shellMode = new ShellMode(model, shellKeymap, shellCommandRegistry);
         buffer.setMajorMode(shellMode);
