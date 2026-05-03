@@ -22,8 +22,11 @@ final class AnsiParser {
     /** ESC[ で始まるすべての CSI シーケンスにマッチする正規表現 */
     private static final Pattern CSI_PATTERN = Pattern.compile("\u001b\\[([0-9;]*)([A-Za-z])");
 
-    /** ESC で始まる非 CSI エスケープシーケンス（OSC 等）にマッチする正規表現 */
-    private static final Pattern NON_CSI_ESC_PATTERN = Pattern.compile("\u001b[^\\[]");
+    /** OSC シーケンス: ESC ] ... (BEL | ESC \) にマッチする正規表現 */
+    private static final Pattern OSC_PATTERN = Pattern.compile("\u001b\\].*?(?:\u0007|\u001b\\\\)");
+
+    /** ESC で始まるその他のエスケープシーケンス（2文字のもの）にマッチする正規表現 */
+    private static final Pattern OTHER_ESC_PATTERN = Pattern.compile("\u001b[^\\[\\]]");
 
     private SgrAttributes currentAttributes;
 
@@ -98,7 +101,8 @@ final class AnsiParser {
     }
 
     private static String removeNonCsiEscapes(String text) {
-        return NON_CSI_ESC_PATTERN.matcher(text).replaceAll("");
+        String withoutOsc = OSC_PATTERN.matcher(text).replaceAll("");
+        return OTHER_ESC_PATTERN.matcher(withoutOsc).replaceAll("");
     }
 
     /**

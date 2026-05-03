@@ -19,7 +19,7 @@ final class ShellBufferModel {
     private final InteractiveShellProcess process;
     private final AnsiParser ansiParser;
     private int inputStartPosition;
-    private boolean processFinished;
+    private volatile boolean processFinished;
 
     ShellBufferModel(BufferFacade buffer, InteractiveShellProcess process) {
         this.buffer = buffer;
@@ -110,9 +110,9 @@ final class ShellBufferModel {
             return;
         }
 
-        String input = getCurrentInput();
+        String input = buffer.atomicOperation(buf -> {
+            String currentInput = getCurrentInput();
 
-        buffer.atomicOperation(buf -> {
             // 入力の後に改行を追加
             buf.insertText(buf.length(), "\n");
 
@@ -122,7 +122,7 @@ final class ShellBufferModel {
                 buf.putReadOnly(0, inputStartPosition);
             }
 
-            return null;
+            return currentInput;
         });
 
         process.sendInput(input);

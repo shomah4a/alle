@@ -81,6 +81,24 @@ class AnsiParserTest {
         }
 
         @Test
+        void OSCシーケンスをBEL終端で除去する() {
+            var parser = new AnsiParser();
+            // ESC ] 0;title BEL
+            var result = parser.parse("\u001b]0;terminal title\u0007prompt$ ");
+            assertEquals(1, result.size());
+            assertEquals("prompt$ ", result.get(0).text());
+        }
+
+        @Test
+        void OSCシーケンスをESCバックスラッシュ終端で除去する() {
+            var parser = new AnsiParser();
+            // ESC ] 0;title ESC \
+            var result = parser.parse("\u001b]0;terminal title\u001b\\prompt$ ");
+            assertEquals(1, result.size());
+            assertEquals("prompt$ ", result.get(0).text());
+        }
+
+        @Test
         void 行をまたぐSGR状態を保持する() {
             var parser = new AnsiParser();
             parser.parse("\u001b[31m");

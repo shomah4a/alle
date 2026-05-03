@@ -20,7 +20,7 @@ import org.slf4j.Logger;
  *
  * <p>環境変数 {@code TERM=xterm-256color} を設定し、色情報を受け取れるようにする。
  *
- * <p>インスタンス生成にはファクトリメソッド {@link #start(Path, Consumer)} を使用する。
+ * <p>インスタンス生成にはファクトリメソッド {@link #start(Path, Consumer, Runnable)} を使用する。
  * コンストラクタ時点でプロセスは起動済みとなるため、フィールドは non-null が保証される。
  */
 public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
@@ -42,9 +42,11 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
      *
      * @param workingDirectory 作業ディレクトリ
      * @param onOutputLine stdout/stderr の各行を受け取るハンドラ（バックグラウンドスレッドから呼ばれる）
+     * @param onProcessExit プロセス終了時に呼ばれるコールバック（リーダースレッドから呼ばれる）
      * @return 起動済みのプロセスインスタンス
      */
-    public static DefaultInteractiveShellProcess start(Path workingDirectory, Consumer<String> onOutputLine) {
+    public static DefaultInteractiveShellProcess start(
+            Path workingDirectory, Consumer<String> onOutputLine, Runnable onProcessExit) {
         try {
             var builder = new ProcessBuilder("/bin/bash", "--noediting", "-i");
             builder.directory(workingDirectory.toFile());
@@ -53,7 +55,7 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
 
             var proc = builder.start();
             var writer = new OutputStreamWriter(proc.getOutputStream(), StandardCharsets.UTF_8);
-            var reader = new Thread(() -> readOutput(proc, onOutputLine), "shell-reader-" + proc.pid());
+            var reader = new Thread(() -> readOutput(proc, onOutputLine, onProcessExit), "shell-reader-" + proc.pid());
             reader.setDaemon(true);
             reader.start();
 
@@ -63,7 +65,7 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
         }
     }
 
-    private static void readOutput(Process proc, Consumer<String> onOutputLine) {
+    private static void readOutput(Process proc, Consumer<String> onOutputLine, Runnable onProcessExit) {
         try (var reader = new BufferedReader(new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -74,6 +76,7 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
                 logger.warn("シェル出力の読み取り中にエラーが発生", e);
             }
         }
+        onProcessExit.run();
     }
 
     @Override

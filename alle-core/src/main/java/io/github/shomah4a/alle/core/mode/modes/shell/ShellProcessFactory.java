@@ -16,7 +16,8 @@ interface ShellProcessFactory {
      *
      * @param workingDirectory 作業ディレクトリ
      * @param onOutputLine 出力行のコールバック
+     * @param onProcessExit プロセス終了時のコールバック
      * @return 起動済みのプロセスインスタンス
      */
-    InteractiveShellProcess create(Path workingDirectory, Consumer<String> onOutputLine);
+    InteractiveShellProcess create(Path workingDirectory, Consumer<String> onOutputLine, Runnable onProcessExit);
 }

@@ -34,7 +34,8 @@ public final class ShellInitializer {
 
         var shellKeymap = createKeymap(sendInputCmd, interruptCmd, suspendCmd);
 
-        ShellProcessFactory processFactory = DefaultInteractiveShellProcess::start;
+        ShellProcessFactory processFactory = (workingDir, onOutputLine, onProcessExit) ->
+                DefaultInteractiveShellProcess.start(workingDir, onOutputLine, onProcessExit);
 
         return new ShellCommand(processFactory, shellKeymap, shellCommandRegistry, settingsRegistry);
     }
