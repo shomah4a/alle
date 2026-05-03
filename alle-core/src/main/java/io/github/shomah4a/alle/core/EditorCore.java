@@ -97,6 +97,7 @@ import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchHistory;
 import io.github.shomah4a.alle.core.search.QueryReplaceCommand;
 import io.github.shomah4a.alle.core.search.QueryReplaceRegexpCommand;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.statusline.BuiltinStatusLineSlots;
 import io.github.shomah4a.alle.core.statusline.CachingGitBranchProvider;
@@ -113,6 +114,7 @@ import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import io.github.shomah4a.alle.core.window.Window;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 /**
@@ -253,7 +255,10 @@ public final class EditorCore {
 
         // InputPrompter（CommandRegistry構築前に作成。FilePathInputPrompterが必要とするため）
         var inputPrompter = inputPrompterFactory.apply(frame);
-        var filePathInputPrompter = new FilePathInputPrompter(inputPrompter, directoryLister, homeDirectory);
+        BooleanSupplier ignoreCaseSupplier =
+                () -> settingsRegistry.getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
+        var filePathInputPrompter =
+                new FilePathInputPrompter(inputPrompter, directoryLister, homeDirectory, ignoreCaseSupplier);
 
         // フレームレイアウトストア
         var frameLayoutStore = new FrameLayoutStore();

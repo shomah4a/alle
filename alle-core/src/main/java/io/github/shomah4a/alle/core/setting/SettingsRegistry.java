@@ -90,6 +90,24 @@ public class SettingsRegistry {
     }
 
     /**
+     * 設定の実効値を返す。
+     * 設定が未登録、またはグローバル値が未設定の場合は {@link Setting#defaultValue()} を返す。
+     *
+     * <p>{@link #getGlobal(Setting)} は未登録時に例外を投げるが、こちらは投げない。
+     * 設定の存在を前提にできない呼び出し側（コマンド実装等）から利用する。
+     */
+    public <T> T getEffective(Setting<T> setting) {
+        if (!definitions.containsKey(setting.key())) {
+            return setting.defaultValue();
+        }
+        Object value = globalValues.get(setting.key());
+        if (value != null) {
+            return setting.cast(value);
+        }
+        return setting.defaultValue();
+    }
+
+    /**
      * ユーザーグローバル値を解除し、Setting.defaultValueにフォールバックするようにする。
      */
     public void removeGlobal(Setting<?> setting) {

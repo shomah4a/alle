@@ -117,7 +117,8 @@ public final class Main {
         var homeDirectory = Path.of(System.getProperty("user.home"));
         var core = EditorCore.create(
                 inputSource,
-                MinibufferInputPrompter::new,
+                frame -> new MinibufferInputPrompter(
+                        frame, () -> settingsRegistry.getEffective(EditorSettings.COMPLETION_IGNORE_CASE)),
                 bufferIO,
                 directoryLister,
                 inputSource,

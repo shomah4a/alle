@@ -13,6 +13,7 @@ import io.github.shomah4a.alle.core.input.CompletionMatching;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.factory.Lists;
@@ -51,7 +52,8 @@ public class KillBufferCommand implements Command, Loggable {
     public CompletableFuture<Void> execute(CommandContext context) {
         var currentBufferName = context.frame().getActiveWindow().getBuffer().getName();
         var promptMessage = "Kill buffer (default " + currentBufferName + "): ";
-        var completer = new BufferNameCompleter(context.bufferManager());
+        boolean ignoreCase = context.settingsRegistry().getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
+        var completer = new BufferNameCompleter(context.bufferManager(), ignoreCase);
 
         return context.inputPrompter()
                 .prompt(promptMessage, "", bufferHistory, completer)
@@ -59,13 +61,13 @@ public class KillBufferCommand implements Command, Loggable {
                     if (result instanceof PromptResult.Confirmed confirmed) {
                         var input = confirmed.value();
                         var bufferName = input.isEmpty() ? currentBufferName : input;
-                        return killBuffer(context, bufferName);
+                        return killBuffer(context, bufferName, ignoreCase);
                     }
                     return CompletableFuture.completedFuture(null);
                 });
     }
 
-    private CompletableFuture<Void> killBuffer(CommandContext context, String bufferName) {
+    private CompletableFuture<Void> killBuffer(CommandContext context, String bufferName, boolean ignoreCase) {
         var bufferManager = context.bufferManager();
         var targetOpt = bufferManager.findByName(bufferName);
         if (targetOpt.isEmpty()) {
@@ -85,7 +87,7 @@ public class KillBufferCommand implements Command, Loggable {
         if (target.isDirty()) {
             var prompt = "Buffer " + bufferName + " modified; kill anyway? (yes, no, save and kill) ";
             return context.inputPrompter()
-                    .prompt(prompt, "", confirmHistory, createKillConfirmCompleter(false))
+                    .prompt(prompt, "", confirmHistory, createKillConfirmCompleter(ignoreCase))
                     .thenCompose(confirmResult -> {
                         if (confirmResult instanceof PromptResult.Confirmed confirmed) {
                             return switch (confirmed.value()) {
