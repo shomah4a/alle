@@ -99,8 +99,8 @@ class StringMatchingTest {
 
         @Test
         void ギリシャ大文字やキリル大文字もtrue() {
-            assertTrue(StringMatching.containsUpperCase("Α"));   // U+0391 GREEK CAPITAL LETTER ALPHA
-            assertTrue(StringMatching.containsUpperCase("Б"));   // U+0411 CYRILLIC CAPITAL LETTER BE
+            assertTrue(StringMatching.containsUpperCase("Α")); // U+0391 GREEK CAPITAL LETTER ALPHA
+            assertTrue(StringMatching.containsUpperCase("Б")); // U+0411 CYRILLIC CAPITAL LETTER BE
         }
 
         @Test
