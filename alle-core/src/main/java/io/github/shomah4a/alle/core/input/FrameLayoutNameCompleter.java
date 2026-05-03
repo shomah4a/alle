@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.input;
 
+import io.github.shomah4a.alle.core.util.StringMatching;
 import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import org.eclipse.collections.api.list.ListIterable;
 
@@ -25,7 +26,7 @@ public class FrameLayoutNameCompleter implements Completer {
     public ListIterable<CompletionCandidate> complete(String input) {
         return layoutStore
                 .names()
-                .select(name -> CompletionMatching.startsWith(name, input, ignoreCase))
+                .select(name -> StringMatching.startsWith(name, input, ignoreCase))
                 .collect(CompletionCandidate::terminal)
                 .toList();
     }

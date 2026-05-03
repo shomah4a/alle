@@ -9,11 +9,11 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.Completer;
 import io.github.shomah4a.alle.core.input.CompletionCandidate;
-import io.github.shomah4a.alle.core.input.CompletionMatching;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
 import io.github.shomah4a.alle.core.io.BufferIO;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.collections.api.factory.Lists;
@@ -29,7 +29,7 @@ public class KillBufferCommand implements Command, Loggable {
     private static Completer createKillConfirmCompleter(boolean ignoreCase) {
         return input -> Lists.immutable
                 .of("yes", "no", "save and kill")
-                .select(s -> CompletionMatching.startsWith(s, input, ignoreCase))
+                .select(s -> StringMatching.startsWith(s, input, ignoreCase))
                 .collect(CompletionCandidate::terminal);
     }
 

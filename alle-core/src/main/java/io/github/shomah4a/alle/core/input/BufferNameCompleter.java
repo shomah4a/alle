@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -26,7 +27,7 @@ public class BufferNameCompleter implements Completer {
     public ListIterable<CompletionCandidate> complete(String input) {
         return bufferManager
                 .getBuffers()
-                .select(b -> CompletionMatching.startsWith(b.getName(), input, ignoreCase))
+                .select(b -> StringMatching.startsWith(b.getName(), input, ignoreCase))
                 .collect(b -> CompletionCandidate.terminal(b.getName()));
     }
 }

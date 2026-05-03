@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.CommandResolver;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -39,7 +40,7 @@ public class CommandNameCompleter implements Completer {
         // 通常の補完
         return commandResolver
                 .allCommandNames(buffer)
-                .select(name -> CompletionMatching.startsWith(name, input, ignoreCase))
+                .select(name -> StringMatching.startsWith(name, input, ignoreCase))
                 .collect(name ->
                         name.endsWith(".") ? CompletionCandidate.partial(name) : CompletionCandidate.terminal(name))
                 .toList();

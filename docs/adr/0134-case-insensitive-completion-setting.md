@@ -30,7 +30,9 @@ Emacs では `completion-ignore-case` 変数で補完のケース無視を切り
 - ケース比較は `String.regionMatches(true, 0, prefix, 0, prefix.length())` を採用
   - `Character.toLowerCase(char)` ベースとし、Locale 非依存
   - Turkish-I (`İ` ↔ `i`) のような Unicode case folding は対象外
-- 共有ヘルパー `CompletionMatching.startsWithIgnoreCase(str, prefix)` に集約
+- 共有ヘルパー `io.github.shomah4a.alle.core.util.StringMatching.startsWithIgnoreCase(str, prefix)` に集約
+  - 補完専用の名前空間ではなく汎用的な `core.util` パッケージに置くことで、`input` パッケージと
+    `command` パッケージの双方から依存方向を破らずに参照できるようにする
 
 ### 影響範囲
 

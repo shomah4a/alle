@@ -1,16 +1,16 @@
-package io.github.shomah4a.alle.core.input;
+package io.github.shomah4a.alle.core.util;
 
 /**
- * 補完候補のマッチングに用いるユーティリティ。
+ * 文字列マッチングのユーティリティ。
  *
  * <p>ケース無視比較は {@link String#regionMatches(boolean, int, String, int, int)} ベースの
  * ASCII 互換 case folding（{@link Character#toLowerCase(char)} ベース）であり、
  * Locale 非依存である。Turkish-I（{@code İ} ↔ {@code i}）のような Unicode case folding は
  * 対象外である点に注意。
  */
-public final class CompletionMatching {
+public final class StringMatching {
 
-    private CompletionMatching() {}
+    private StringMatching() {}
 
     /**
      * {@code str} が {@code prefix} で始まるかをケース無視で判定する。

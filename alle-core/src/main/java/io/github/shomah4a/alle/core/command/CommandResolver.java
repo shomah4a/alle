@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -164,7 +165,7 @@ public class CommandResolver {
 
         if (GLOBAL_PREFIX.equals(modeName)) {
             for (String cmdName : globalRegistry.registeredNames()) {
-                if (matchesPrefix(cmdName, partialCommand, ignoreCase)) {
+                if (StringMatching.startsWith(cmdName, partialCommand, ignoreCase)) {
                     names.add(modePrefix + cmdName);
                 }
             }
@@ -172,7 +173,7 @@ public class CommandResolver {
             CommandRegistry registry = modeRegistries.get(modeName);
             if (registry != null) {
                 for (String cmdName : registry.registeredNames()) {
-                    if (matchesPrefix(cmdName, partialCommand, ignoreCase)) {
+                    if (StringMatching.startsWith(cmdName, partialCommand, ignoreCase)) {
                         names.add(modePrefix + cmdName);
                     }
                 }
@@ -180,14 +181,6 @@ public class CommandResolver {
         }
 
         return names.toImmutableSet();
-    }
-
-    /**
-     * ケース敏感／無視を切り替えて前方一致を判定する。
-     * input パッケージへの依存を避けるためここに局所的に定義している。
-     */
-    private static boolean matchesPrefix(String str, String prefix, boolean ignoreCase) {
-        return ignoreCase ? str.regionMatches(true, 0, prefix, 0, prefix.length()) : str.startsWith(prefix);
     }
 
     /**

@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.Loggable;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.eclipse.collections.api.factory.Lists;
@@ -65,8 +66,7 @@ public class FilePathCompleter implements Completer, Loggable {
 
         String inputStr = inputPath.toString();
         return toCompletionCandidates(
-                entries.select(
-                        entry -> CompletionMatching.startsWith(entry.path().toString(), inputStr, ignoreCase)),
+                entries.select(entry -> StringMatching.startsWith(entry.path().toString(), inputStr, ignoreCase)),
                 useTilde);
     }
 
