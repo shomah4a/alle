@@ -58,4 +58,20 @@ class BufferNameCompleterTest {
         var result = completer.complete("foo");
         assertTrue(result.allSatisfy(CompletionCandidate::terminal));
     }
+
+    @Test
+    void ignoreCaseがtrueなら大文字小文字を無視してマッチする() {
+        var ignoreCaseCompleter = new BufferNameCompleter(bufferManager, true);
+        var result = ignoreCaseCompleter.complete("FOO");
+        assertEquals(2, result.size());
+        assertTrue(result.anySatisfy(c -> c.value().equals("foo.txt")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("foobar.txt")));
+    }
+
+    @Test
+    void ignoreCaseがfalseなら従来通りケース敏感にマッチする() {
+        var caseSensitiveCompleter = new BufferNameCompleter(bufferManager, false);
+        var result = caseSensitiveCompleter.complete("FOO");
+        assertTrue(result.isEmpty());
+    }
 }

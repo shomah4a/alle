@@ -11,16 +11,22 @@ import org.eclipse.collections.api.list.ListIterable;
 public class BufferNameCompleter implements Completer {
 
     private final BufferManager bufferManager;
+    private final boolean ignoreCase;
 
     public BufferNameCompleter(BufferManager bufferManager) {
+        this(bufferManager, false);
+    }
+
+    public BufferNameCompleter(BufferManager bufferManager, boolean ignoreCase) {
         this.bufferManager = bufferManager;
+        this.ignoreCase = ignoreCase;
     }
 
     @Override
     public ListIterable<CompletionCandidate> complete(String input) {
         return bufferManager
                 .getBuffers()
-                .select(b -> b.getName().startsWith(input))
+                .select(b -> CompletionMatching.startsWith(b.getName(), input, ignoreCase))
                 .collect(b -> CompletionCandidate.terminal(b.getName()));
     }
 }

@@ -16,10 +16,16 @@ public class FilePathCompleter implements Completer, Loggable {
 
     private final DirectoryLister directoryLister;
     private final Path homeDirectory;
+    private final boolean ignoreCase;
 
     public FilePathCompleter(DirectoryLister directoryLister, Path homeDirectory) {
+        this(directoryLister, homeDirectory, false);
+    }
+
+    public FilePathCompleter(DirectoryLister directoryLister, Path homeDirectory, boolean ignoreCase) {
         this.directoryLister = directoryLister;
         this.homeDirectory = homeDirectory;
+        this.ignoreCase = ignoreCase;
     }
 
     @Override
@@ -59,7 +65,8 @@ public class FilePathCompleter implements Completer, Loggable {
 
         String inputStr = inputPath.toString();
         return toCompletionCandidates(
-                entries.select(entry -> entry.path().toString().startsWith(inputStr)), useTilde);
+                entries.select(entry -> CompletionMatching.startsWith(entry.path().toString(), inputStr, ignoreCase)),
+                useTilde);
     }
 
     private ListIterable<CompletionCandidate> toCompletionCandidates(

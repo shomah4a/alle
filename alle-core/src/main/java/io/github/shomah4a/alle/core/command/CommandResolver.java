@@ -138,10 +138,20 @@ public class CommandResolver {
     }
 
     /**
-     * モード名プレフィックス入力後のFQCN補完候補を返す。
-     * 入力が "モード名." で始まる場合、そのモードのコマンドをFQCN形式で返す。
+     * モード名プレフィックス入力後のFQCN補完候補を返す（ケース敏感）。
      */
     public ImmutableSet<String> completeFqcn(String prefix) {
+        return completeFqcn(prefix, false);
+    }
+
+    /**
+     * モード名プレフィックス入力後のFQCN補完候補を返す。
+     * 入力が "モード名." で始まる場合、そのモードのコマンドをFQCN形式で返す。
+     *
+     * @param prefix     "モード名." プレフィックスを含む入力
+     * @param ignoreCase true ならコマンド名部分の比較をケース無視で行う
+     */
+    public ImmutableSet<String> completeFqcn(String prefix, boolean ignoreCase) {
         int dotIndex = prefix.indexOf(SEPARATOR);
         if (dotIndex < 0) {
             return Sets.immutable.empty();
@@ -154,7 +164,7 @@ public class CommandResolver {
 
         if (GLOBAL_PREFIX.equals(modeName)) {
             for (String cmdName : globalRegistry.registeredNames()) {
-                if (cmdName.startsWith(partialCommand)) {
+                if (matchesPrefix(cmdName, partialCommand, ignoreCase)) {
                     names.add(modePrefix + cmdName);
                 }
             }
@@ -162,7 +172,7 @@ public class CommandResolver {
             CommandRegistry registry = modeRegistries.get(modeName);
             if (registry != null) {
                 for (String cmdName : registry.registeredNames()) {
-                    if (cmdName.startsWith(partialCommand)) {
+                    if (matchesPrefix(cmdName, partialCommand, ignoreCase)) {
                         names.add(modePrefix + cmdName);
                     }
                 }
@@ -170,6 +180,16 @@ public class CommandResolver {
         }
 
         return names.toImmutableSet();
+    }
+
+    /**
+     * ケース敏感／無視を切り替えて前方一致を判定する。
+     * input パッケージへの依存を避けるためここに局所的に定義している。
+     */
+    private static boolean matchesPrefix(String str, String prefix, boolean ignoreCase) {
+        return ignoreCase
+                ? str.regionMatches(true, 0, prefix, 0, prefix.length())
+                : str.startsWith(prefix);
     }
 
     /**
