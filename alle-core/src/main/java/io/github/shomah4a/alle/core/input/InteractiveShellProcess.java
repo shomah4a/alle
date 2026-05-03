@@ -1,25 +1,15 @@
 package io.github.shomah4a.alle.core.input;
 
-import java.nio.file.Path;
-import java.util.function.Consumer;
-
 /**
  * 対話的な長期実行シェルプロセスのインターフェース。
  * テスト時にスタブ実装に差し替え可能とするため、プロセス管理を抽象化する。
  *
  * <p>既存の {@link ShellCommandExecutor}（一回実行型）とは異なり、
  * プロセスを起動したまま stdin への書き込みやシグナル送信を繰り返し行う。
+ *
+ * <p>インスタンス生成時にプロセスは起動済みの状態となる。
  */
 public interface InteractiveShellProcess {
-
-    /**
-     * シェルプロセスを起動する。
-     * 出力は行単位で {@code onOutputLine} に通知される（バックグラウンドスレッドから呼ばれる）。
-     *
-     * @param workingDirectory 作業ディレクトリ
-     * @param onOutputLine stdout/stderr の各行を受け取るハンドラ
-     */
-    void start(Path workingDirectory, Consumer<String> onOutputLine);
 
     /**
      * プロセスの stdin にテキストを送信する。末尾に改行が付加される。
