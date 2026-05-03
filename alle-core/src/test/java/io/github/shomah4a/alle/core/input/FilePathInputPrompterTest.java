@@ -173,8 +173,8 @@ class FilePathInputPrompterTest {
                     return innerFuture;
                 }
             };
-            DirectoryLister lister = directory -> Lists.immutable.of(
-                    new DirectoryEntry.File(Path.of("/tmp/Src.txt"), FileAttributes.EMPTY));
+            DirectoryLister lister = directory ->
+                    Lists.immutable.of(new DirectoryEntry.File(Path.of("/tmp/Src.txt"), FileAttributes.EMPTY));
             var prompter = new FilePathInputPrompter(capturingPrompter, lister, HOME, () -> false);
 
             var unused = prompter.prompt("Find file: ", "/home/user", new InputHistory());

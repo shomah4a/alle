@@ -255,8 +255,7 @@ public final class EditorCore {
 
         // InputPrompter（CommandRegistry構築前に作成。FilePathInputPrompterが必要とするため）
         var inputPrompter = inputPrompterFactory.apply(frame);
-        BooleanSupplier ignoreCaseSupplier =
-                () -> settingsRegistry.getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
+        BooleanSupplier ignoreCaseSupplier = () -> settingsRegistry.getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
         var filePathInputPrompter =
                 new FilePathInputPrompter(inputPrompter, directoryLister, homeDirectory, ignoreCaseSupplier);
 

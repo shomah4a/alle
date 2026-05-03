@@ -65,7 +65,8 @@ public class FilePathCompleter implements Completer, Loggable {
 
         String inputStr = inputPath.toString();
         return toCompletionCandidates(
-                entries.select(entry -> CompletionMatching.startsWith(entry.path().toString(), inputStr, ignoreCase)),
+                entries.select(
+                        entry -> CompletionMatching.startsWith(entry.path().toString(), inputStr, ignoreCase)),
                 useTilde);
     }
 

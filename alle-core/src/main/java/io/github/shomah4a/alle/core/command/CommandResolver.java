@@ -187,9 +187,7 @@ public class CommandResolver {
      * input パッケージへの依存を避けるためここに局所的に定義している。
      */
     private static boolean matchesPrefix(String str, String prefix, boolean ignoreCase) {
-        return ignoreCase
-                ? str.regionMatches(true, 0, prefix, 0, prefix.length())
-                : str.startsWith(prefix);
+        return ignoreCase ? str.regionMatches(true, 0, prefix, 0, prefix.length()) : str.startsWith(prefix);
     }
 
     /**

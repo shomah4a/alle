@@ -154,8 +154,7 @@ class FilePathCompleterTest {
 
     @Test
     void ignoreCaseがtrueなら大文字小文字を無視してマッチする() {
-        var completer =
-                new FilePathCompleter(stubLister("/tmp/Src/", "/tmp/SrcCode/", "/tmp/bar.txt"), HOME, true);
+        var completer = new FilePathCompleter(stubLister("/tmp/Src/", "/tmp/SrcCode/", "/tmp/bar.txt"), HOME, true);
         var result = completer.complete("/tmp/src");
 
         assertEquals(2, result.size());
@@ -165,8 +164,7 @@ class FilePathCompleterTest {
 
     @Test
     void ignoreCaseがfalseなら従来通りケース敏感にマッチする() {
-        var completer =
-                new FilePathCompleter(stubLister("/tmp/Src/", "/tmp/SrcCode/", "/tmp/bar.txt"), HOME, false);
+        var completer = new FilePathCompleter(stubLister("/tmp/Src/", "/tmp/SrcCode/", "/tmp/bar.txt"), HOME, false);
         var result = completer.complete("/tmp/src");
 
         assertTrue(result.isEmpty());
