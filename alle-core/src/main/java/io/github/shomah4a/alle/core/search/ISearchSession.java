@@ -6,6 +6,7 @@ import io.github.shomah4a.alle.core.command.OverridingKeymapController;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
 import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.styling.FaceName;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import io.github.shomah4a.alle.core.window.Window;
 import org.jspecify.annotations.Nullable;
 
@@ -163,13 +164,15 @@ public class ISearchSession {
         updateEcho();
     }
 
-    private void searchFrom(int fromOffset) {
+    private void searchFrom(int fromCodePointOffset) {
         String text = buffer.getText();
         String queryStr = query.toString();
+        // smart-case: クエリに大文字を含むときのみ case sensitive。Emacs 風挙動。
+        boolean caseSensitive = StringMatching.containsUpperCase(queryStr);
 
         var result = forward
-                ? BufferSearcher.searchForward(text, queryStr, fromOffset)
-                : BufferSearcher.searchBackward(text, queryStr, fromOffset);
+                ? BufferSearcher.searchForward(text, queryStr, fromCodePointOffset, caseSensitive)
+                : BufferSearcher.searchBackward(text, queryStr, fromCodePointOffset, caseSensitive);
 
         clearHighlight();
 
