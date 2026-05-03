@@ -85,34 +85,23 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
     /**
      * プロセスの出力を読み取り、行単位でコールバックに通知する。
      *
-     * <p>{@code readLine()} ではなく {@code read()} で文字単位に読み取る。
-     * プロンプト行のように改行で終わらない出力も、
-     * {@code available()} が 0 になった時点で部分行としてフラッシュする。
+     * <p>{@code read(char[], ...)} でチャンク単位に読み取り、{@code \n} で行を分割する。
+     * チャンク末尾が改行で終わらない場合（プロンプト行等）は、そのフラグメントも
+     * コールバックに通知する。{@code read()} はブロッキングのため、
+     * データ到着時にはまとまったチャンクとして返される。
      */
     private static void readOutput(Process proc, Consumer<String> onOutputLine, Runnable onProcessExit) {
         try (var isr = new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8)) {
-            var buf = new StringBuilder();
-            var stream = proc.getInputStream();
-            while (true) {
-                int ch = isr.read();
-                if (ch == -1) {
-                    break;
-                }
-                if (ch == '\n') {
-                    onOutputLine.accept(buf.toString());
-                    buf.setLength(0);
-                } else {
-                    buf.append((char) ch);
-                    // 追加データがなければ部分行（プロンプト等）をフラッシュ
-                    if (stream.available() == 0 && buf.length() > 0) {
-                        onOutputLine.accept(buf.toString());
-                        buf.setLength(0);
-                    }
-                }
+            var pending = new StringBuilder();
+            var charBuf = new char[4096];
+            int nRead;
+            while ((nRead = isr.read(charBuf)) != -1) {
+                pending.append(charBuf, 0, nRead);
+                flushLines(pending, onOutputLine);
             }
             // 残りがあればフラッシュ
-            if (buf.length() > 0) {
-                onOutputLine.accept(buf.toString());
+            if (pending.length() > 0) {
+                onOutputLine.accept(pending.toString());
             }
         } catch (IOException e) {
             if (proc.isAlive()) {
@@ -120,6 +109,36 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
             }
         }
         onProcessExit.run();
+    }
+
+    /**
+     * pending バッファ内の完全な行（{@code \n} で終わるもの）をコールバックに通知し、
+     * バッファから除去する。改行で終わらない末尾のフラグメントも通知する。
+     */
+    private static void flushLines(StringBuilder pending, Consumer<String> onOutputLine) {
+        int start = 0;
+        int newlinePos;
+        while ((newlinePos = indexOf(pending, '\n', start)) >= 0) {
+            onOutputLine.accept(pending.substring(start, newlinePos));
+            start = newlinePos + 1;
+        }
+        if (start > 0) {
+            pending.delete(0, start);
+        }
+        // 改行で終わらない残りのフラグメント（プロンプト等）も通知する
+        if (pending.length() > 0) {
+            onOutputLine.accept(pending.toString());
+            pending.setLength(0);
+        }
+    }
+
+    private static int indexOf(StringBuilder sb, char ch, int fromIndex) {
+        for (int i = fromIndex; i < sb.length(); i++) {
+            if (sb.charAt(i) == ch) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Override
