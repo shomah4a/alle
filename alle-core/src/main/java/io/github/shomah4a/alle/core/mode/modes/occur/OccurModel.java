@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.mode.modes.occur;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -25,6 +26,9 @@ public class OccurModel {
      * 指定バッファ内を検索し、OccurModelを生成する。
      * 1行に複数マッチがあっても行は1回のみ記録する（最初のマッチのオフセット）。
      *
+     * <p>smart-case (emacs 風): クエリに大文字を含まない場合は大文字小文字を区別せず、
+     * 含む場合は区別する。判定は {@link StringMatching#containsUpperCase} を用いる。
+     *
      * @param sourceBuffer 検索対象バッファ
      * @param query 検索クエリ
      * @return 検索結果のモデル
@@ -35,10 +39,11 @@ public class OccurModel {
             return new OccurModel(sourceBuffer.getName(), query, matches);
         }
 
+        boolean ignoreCase = !StringMatching.containsUpperCase(query);
         int lineCount = sourceBuffer.lineCount();
         for (int i = 0; i < lineCount; i++) {
             String lineText = sourceBuffer.lineText(i);
-            int charIndex = lineText.indexOf(query);
+            int charIndex = StringMatching.indexOf(lineText, query, 0, ignoreCase);
             if (charIndex >= 0) {
                 int codePointOffset = lineText.codePointCount(0, charIndex);
                 matches.add(new OccurMatch(i, lineText, codePointOffset));
