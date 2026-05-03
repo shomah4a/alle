@@ -36,7 +36,7 @@ class ShellBufferModelTest {
 
             model.appendOutput("hello");
 
-            assertEquals("hello\n", buffer.getText());
+            assertEquals("hello", buffer.getText());
         }
 
         @Test
@@ -47,7 +47,7 @@ class ShellBufferModelTest {
 
             model.appendOutput("hello");
 
-            assertEquals(6, model.getInputStartPosition()); // "hello\n".length()
+            assertEquals(5, model.getInputStartPosition()); // "hello".length()
         }
 
         @Test
@@ -59,8 +59,8 @@ class ShellBufferModelTest {
             model.appendOutput("line1");
             model.appendOutput("line2");
 
-            assertEquals("line1\nline2\n", buffer.getText());
-            assertEquals(12, model.getInputStartPosition());
+            assertEquals("line1\nline2", buffer.getText());
+            assertEquals(11, model.getInputStartPosition());
         }
 
         @Test

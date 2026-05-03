@@ -21,6 +21,7 @@ final class ShellBufferModel {
     private volatile @Nullable InteractiveShellProcess process;
     private int inputStartPosition;
     private volatile boolean processFinished;
+    private boolean pendingNewline;
 
     ShellBufferModel(BufferFacade buffer, Runnable onOutputAppended) {
         this.buffer = buffer;
@@ -28,6 +29,7 @@ final class ShellBufferModel {
         this.onOutputAppended = onOutputAppended;
         this.inputStartPosition = 0;
         this.processFinished = false;
+        this.pendingNewline = false;
     }
 
     void setProcess(InteractiveShellProcess process) {
@@ -86,8 +88,15 @@ final class ShellBufferModel {
                 buf.deleteText(inputStartPosition, userInput.length());
             }
 
-            // テキスト挿入とFace適用
             int insertPos = inputStartPosition;
+
+            // 前回の行の改行を遅延挿入（プロンプト行の後に改行を入れないため）
+            if (pendingNewline) {
+                buf.insertText(insertPos, "\n");
+                insertPos += 1;
+            }
+
+            // テキスト挿入とFace適用
             for (var segment : segments) {
                 buf.insertText(insertPos, segment.text());
                 @Nullable FaceName face = segment.face();
@@ -98,9 +107,8 @@ final class ShellBufferModel {
                 insertPos += segment.text().length();
             }
 
-            // 改行を追加
-            buf.insertText(insertPos, "\n");
-            insertPos += 1;
+            // 次の出力行が来たときに改行を挿入する
+            pendingNewline = true;
 
             // inputStartPositionを更新
             inputStartPosition = insertPos;
@@ -137,6 +145,7 @@ final class ShellBufferModel {
 
             // 入力完了した領域をread-onlyに設定
             inputStartPosition = buf.length();
+            pendingNewline = false;
             if (inputStartPosition > 0) {
                 buf.putReadOnly(0, inputStartPosition);
             }
