@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.script;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
@@ -18,6 +19,7 @@ import io.github.shomah4a.alle.core.keybind.Keymap;
 import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
+import io.github.shomah4a.alle.core.setting.Setting;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
@@ -60,7 +62,8 @@ class EditorFacadeTest {
                 bufferManager,
                 (message, history) -> {
                     throw new UnsupportedOperationException();
-                });
+                },
+                settings);
     }
 
     @Test
@@ -142,7 +145,8 @@ class EditorFacadeTest {
                 new SyntaxAnalyzerRegistry(),
                 new FrameLayoutStore(),
                 new BufferManager(),
-                (message, history) -> CompletableFuture.completedFuture(confirmed));
+                (message, history1) -> CompletableFuture.completedFuture(confirmed),
+                new SettingsRegistry());
         var history = stubFacade.createInputHistory();
         var future = stubFacade.prompt("Enter: ", history);
         assertTrue(future.isDone());
@@ -177,7 +181,8 @@ class EditorFacadeTest {
                 new SyntaxAnalyzerRegistry(),
                 new FrameLayoutStore(),
                 new BufferManager(),
-                stubPrompter);
+                stubPrompter,
+                new SettingsRegistry());
         var history = stubFacade.createInputHistory();
         var future = stubFacade.prompt("Enter: ", "initial", history);
         assertTrue(future.isDone());
@@ -192,5 +197,97 @@ class EditorFacadeTest {
         assertEquals(0, history.size());
         history.add("entry1");
         assertEquals(1, history.size());
+    }
+
+    @Test
+    void setSettingで値を設定しgetSettingで取得できる() {
+        var settings = new SettingsRegistry();
+        settings.register(Setting.of("completion-ignore-case", Boolean.class, false));
+        var stubFacade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new),
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                new BufferManager(),
+                (message, history) -> {
+                    throw new UnsupportedOperationException();
+                },
+                settings);
+
+        stubFacade.setSetting("completion-ignore-case", true);
+
+        assertEquals(true, stubFacade.getSetting("completion-ignore-case"));
+    }
+
+    @Test
+    void getSettingはグローバル未設定ならデフォルト値を返す() {
+        var settings = new SettingsRegistry();
+        settings.register(Setting.of("completion-ignore-case", Boolean.class, false));
+        var stubFacade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new),
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                new BufferManager(),
+                (message, history) -> {
+                    throw new UnsupportedOperationException();
+                },
+                settings);
+
+        assertEquals(false, stubFacade.getSetting("completion-ignore-case"));
+    }
+
+    @Test
+    void removeSettingでグローバル値を解除しデフォルトに戻る() {
+        var settings = new SettingsRegistry();
+        settings.register(Setting.of("completion-ignore-case", Boolean.class, false));
+        var stubFacade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new),
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                new BufferManager(),
+                (message, history) -> {
+                    throw new UnsupportedOperationException();
+                },
+                settings);
+        stubFacade.setSetting("completion-ignore-case", true);
+
+        stubFacade.removeSetting("completion-ignore-case");
+
+        assertEquals(false, stubFacade.getSetting("completion-ignore-case"));
+    }
+
+    @Test
+    void setSettingは未登録キーで例外を投げる() {
+        var settings = new SettingsRegistry();
+        var stubFacade = new EditorFacade(
+                frame,
+                messageBuffer,
+                new CommandRegistry(),
+                new Keymap("global"),
+                new ModeRegistry(),
+                new AutoModeMap(TextMode::new),
+                new SyntaxAnalyzerRegistry(),
+                new FrameLayoutStore(),
+                new BufferManager(),
+                (message, history) -> {
+                    throw new UnsupportedOperationException();
+                },
+                settings);
+
+        assertThrows(IllegalArgumentException.class, () -> stubFacade.setSetting("unknown", true));
     }
 }

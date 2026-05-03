@@ -6,6 +6,7 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.FrameLayoutNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.window.FrameLayoutStore;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -39,7 +40,8 @@ public class RestoreFrameStateCommand implements Command {
 
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
-        var completer = new FrameLayoutNameCompleter(layoutStore);
+        boolean ignoreCase = context.settingsRegistry().getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
+        var completer = new FrameLayoutNameCompleter(layoutStore, ignoreCase);
         return context.inputPrompter()
                 .prompt("Restore frame state: ", "", inputHistory, completer)
                 .thenAccept(result -> {

@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.command;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.mode.MinorMode;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
@@ -138,10 +139,20 @@ public class CommandResolver {
     }
 
     /**
-     * モード名プレフィックス入力後のFQCN補完候補を返す。
-     * 入力が "モード名." で始まる場合、そのモードのコマンドをFQCN形式で返す。
+     * モード名プレフィックス入力後のFQCN補完候補を返す（ケース敏感）。
      */
     public ImmutableSet<String> completeFqcn(String prefix) {
+        return completeFqcn(prefix, false);
+    }
+
+    /**
+     * モード名プレフィックス入力後のFQCN補完候補を返す。
+     * 入力が "モード名." で始まる場合、そのモードのコマンドをFQCN形式で返す。
+     *
+     * @param prefix     "モード名." プレフィックスを含む入力
+     * @param ignoreCase true ならコマンド名部分の比較をケース無視で行う
+     */
+    public ImmutableSet<String> completeFqcn(String prefix, boolean ignoreCase) {
         int dotIndex = prefix.indexOf(SEPARATOR);
         if (dotIndex < 0) {
             return Sets.immutable.empty();
@@ -154,7 +165,7 @@ public class CommandResolver {
 
         if (GLOBAL_PREFIX.equals(modeName)) {
             for (String cmdName : globalRegistry.registeredNames()) {
-                if (cmdName.startsWith(partialCommand)) {
+                if (StringMatching.startsWith(cmdName, partialCommand, ignoreCase)) {
                     names.add(modePrefix + cmdName);
                 }
             }
@@ -162,7 +173,7 @@ public class CommandResolver {
             CommandRegistry registry = modeRegistries.get(modeName);
             if (registry != null) {
                 for (String cmdName : registry.registeredNames()) {
-                    if (cmdName.startsWith(partialCommand)) {
+                    if (StringMatching.startsWith(cmdName, partialCommand, ignoreCase)) {
                         names.add(modePrefix + cmdName);
                     }
                 }

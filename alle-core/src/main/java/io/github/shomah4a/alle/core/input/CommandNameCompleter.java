@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.CommandResolver;
+import io.github.shomah4a.alle.core.util.StringMatching;
 import org.eclipse.collections.api.list.ListIterable;
 
 /**
@@ -14,10 +15,16 @@ public class CommandNameCompleter implements Completer {
 
     private final CommandResolver commandResolver;
     private final BufferFacade buffer;
+    private final boolean ignoreCase;
 
     public CommandNameCompleter(CommandResolver commandResolver, BufferFacade buffer) {
+        this(commandResolver, buffer, false);
+    }
+
+    public CommandNameCompleter(CommandResolver commandResolver, BufferFacade buffer, boolean ignoreCase) {
         this.commandResolver = commandResolver;
         this.buffer = buffer;
+        this.ignoreCase = ignoreCase;
     }
 
     @Override
@@ -25,7 +32,7 @@ public class CommandNameCompleter implements Completer {
         // プレフィックス入力後（ドットを含む入力）はFQCN補完
         if (input.contains(".")) {
             return commandResolver
-                    .completeFqcn(input)
+                    .completeFqcn(input, ignoreCase)
                     .collect(CompletionCandidate::terminal)
                     .toList();
         }
@@ -33,7 +40,7 @@ public class CommandNameCompleter implements Completer {
         // 通常の補完
         return commandResolver
                 .allCommandNames(buffer)
-                .select(name -> name.startsWith(input))
+                .select(name -> StringMatching.startsWith(name, input, ignoreCase))
                 .collect(name ->
                         name.endsWith(".") ? CompletionCandidate.partial(name) : CompletionCandidate.terminal(name))
                 .toList();

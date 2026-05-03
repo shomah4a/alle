@@ -106,6 +106,7 @@ public final class Main {
         settingsRegistry.register(EditorSettings.INDENT_WIDTH);
         settingsRegistry.register(EditorSettings.COMMENT_STRING);
         settingsRegistry.register(EditorSettings.TAB_WIDTH);
+        settingsRegistry.register(EditorSettings.COMPLETION_IGNORE_CASE);
         var bufferIO = new BufferIO(
                 source -> new BufferedReader(Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8)),
                 destination ->
@@ -116,7 +117,8 @@ public final class Main {
         var homeDirectory = Path.of(System.getProperty("user.home"));
         var core = EditorCore.create(
                 inputSource,
-                MinibufferInputPrompter::new,
+                frame -> new MinibufferInputPrompter(
+                        frame, () -> settingsRegistry.getEffective(EditorSettings.COMPLETION_IGNORE_CASE)),
                 bufferIO,
                 directoryLister,
                 inputSource,
@@ -136,7 +138,8 @@ public final class Main {
                 core.syntaxAnalyzerRegistry(),
                 core.frameLayoutStore(),
                 core.bufferManager(),
-                core.inputPrompter());
+                core.inputPrompter(),
+                settingsRegistry);
         var stdoutStream =
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
         var stderrStream =

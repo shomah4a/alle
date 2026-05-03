@@ -66,6 +66,26 @@ class CommandNameCompleterTest {
         assertTrue(result.allSatisfy(CompletionCandidate::terminal));
     }
 
+    @Test
+    void ignoreCaseがtrueなら大文字小文字を無視してマッチする() {
+        var registry = new CommandRegistry();
+        registry.register(stubCommand("forward-char"));
+        registry.register(stubCommand("forward-word"));
+        var resolver = new CommandResolver(registry);
+        var buffer = new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
+        var ignoreCaseCompleter = new CommandNameCompleter(resolver, buffer, true);
+        var result = ignoreCaseCompleter.complete("FORW");
+        assertEquals(2, result.size());
+        assertTrue(result.anySatisfy(c -> c.value().equals("forward-char")));
+        assertTrue(result.anySatisfy(c -> c.value().equals("forward-word")));
+    }
+
+    @Test
+    void ignoreCaseがfalseなら従来通りケース敏感にマッチする() {
+        var result = completer.complete("FORW");
+        assertTrue(result.isEmpty());
+    }
+
     private static Command stubCommand(String name) {
         return new Command() {
             @Override

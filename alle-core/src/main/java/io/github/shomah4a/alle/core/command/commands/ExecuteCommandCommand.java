@@ -6,6 +6,7 @@ import io.github.shomah4a.alle.core.command.CommandResolver;
 import io.github.shomah4a.alle.core.input.CommandNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -49,7 +50,8 @@ public class ExecuteCommandCommand implements Command {
     @Override
     public CompletableFuture<Void> execute(CommandContext context) {
         var buffer = context.activeWindow().getBuffer();
-        var completer = new CommandNameCompleter(commandResolver, buffer);
+        boolean ignoreCase = context.settingsRegistry().getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
+        var completer = new CommandNameCompleter(commandResolver, buffer, ignoreCase);
         return context.inputPrompter()
                 .prompt("M-x ", "", commandHistory, completer)
                 .thenCompose(result -> {

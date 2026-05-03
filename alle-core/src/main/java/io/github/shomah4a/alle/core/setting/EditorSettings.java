@@ -28,4 +28,12 @@ public final class EditorSettings {
      * true の場合、インデント挿入時にスペースの代わりにタブ文字を使用する。
      */
     public static final Setting<Boolean> INDENT_TABS_MODE = Setting.of("indent-tabs-mode", Boolean.class, false);
+
+    /**
+     * ミニバッファ補完で前方一致をケース無視で行うかどうか。デフォルト false（ケース敏感）。
+     * Emacs の {@code completion-ignore-case} 相当。
+     * true の場合、find-file・switch-to-buffer・M-x 等の補完候補が大文字小文字を無視してマッチする。
+     */
+    public static final Setting<Boolean> COMPLETION_IGNORE_CASE =
+            Setting.of("completion-ignore-case", Boolean.class, false);
 }

@@ -70,4 +70,31 @@ class FrameLayoutNameCompleterTest {
         assertEquals(1, candidates.size());
         assertTrue(candidates.get(0).terminal());
     }
+
+    @Test
+    void ignoreCaseがtrueなら大文字小文字を無視してマッチする() {
+        var store = new FrameLayoutStore();
+        store.save("Work", createDummySnapshot());
+        store.save("work-debug", createDummySnapshot());
+        store.save("review", createDummySnapshot());
+
+        var completer = new FrameLayoutNameCompleter(store, true);
+        var candidates = completer.complete("WORK");
+
+        assertEquals(2, candidates.size());
+        assertTrue(candidates.anySatisfy(c -> c.value().equals("Work")));
+        assertTrue(candidates.anySatisfy(c -> c.value().equals("work-debug")));
+    }
+
+    @Test
+    void ignoreCaseがfalseなら従来通りケース敏感にマッチする() {
+        var store = new FrameLayoutStore();
+        store.save("Work", createDummySnapshot());
+        store.save("work-debug", createDummySnapshot());
+
+        var completer = new FrameLayoutNameCompleter(store, false);
+        var candidates = completer.complete("WORK");
+
+        assertTrue(candidates.isEmpty());
+    }
 }

@@ -8,6 +8,7 @@ import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.input.BufferNameCompleter;
 import io.github.shomah4a.alle.core.input.InputHistory;
 import io.github.shomah4a.alle.core.input.PromptResult;
+import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Window;
 import java.util.concurrent.CompletableFuture;
@@ -39,7 +40,8 @@ public class SwitchBufferCommand implements Command {
         var promptMessage =
                 defaultName.isEmpty() ? "Switch to buffer: " : "Switch to buffer (default " + defaultName + "): ";
 
-        var completer = new BufferNameCompleter(context.bufferManager());
+        boolean ignoreCase = context.settingsRegistry().getEffective(EditorSettings.COMPLETION_IGNORE_CASE);
+        var completer = new BufferNameCompleter(context.bufferManager(), ignoreCase);
         return context.inputPrompter()
                 .prompt(promptMessage, "", bufferHistory, completer)
                 .thenAccept(result -> {
