@@ -68,6 +68,14 @@ class ISearchSessionTest {
         return new ISearchSession(window, messageBuffer, controller, history, false);
     }
 
+    private void replaceBuffer(String text) {
+        var model = new GapTextModel();
+        model.insert(0, text);
+        var buffer = new BufferFacade(new TextBuffer("test", model, SETTINGS));
+        window = new Window(buffer);
+        window.setPoint(0);
+    }
+
     @Nested
     class 前方検索の基本 {
 
@@ -308,6 +316,118 @@ class ISearchSessionTest {
             assertEquals("wo", session2.getQuery());
             assertNotNull(session2.getCurrentMatch());
             assertEquals(6, session2.getCurrentMatch().start());
+        }
+    }
+
+    @Nested
+    class smartCase {
+
+        @Test
+        void 全て小文字のクエリは大文字小文字を区別せずマッチする() {
+            replaceBuffer("Hello World HELLO");
+            var session = createForwardSession();
+            session.start();
+
+            session.appendChar('h');
+            session.appendChar('e');
+            session.appendChar('l');
+            session.appendChar('l');
+            session.appendChar('o');
+
+            // 先頭の "Hello" にマッチすること
+            assertNotNull(session.getCurrentMatch());
+            assertEquals(0, session.getCurrentMatch().start());
+            assertEquals(5, session.getCurrentMatch().end());
+        }
+
+        @Test
+        void クエリに大文字が含まれるなら大文字小文字を区別する() {
+            replaceBuffer("Hello World hello");
+            var session = createForwardSession();
+            session.start();
+
+            session.appendChar('H');
+            session.appendChar('e');
+            session.appendChar('l');
+            session.appendChar('l');
+            session.appendChar('o');
+
+            // 先頭の "Hello" にマッチし、末尾の "hello" にはマッチしない範囲
+            assertNotNull(session.getCurrentMatch());
+            assertEquals(0, session.getCurrentMatch().start());
+            assertEquals(5, session.getCurrentMatch().end());
+        }
+
+        @Test
+        void 大文字クエリは小文字テキストにマッチしない() {
+            replaceBuffer("hello world");
+            var session = createForwardSession();
+            session.start();
+
+            session.appendChar('H');
+            session.appendChar('e');
+            session.appendChar('l');
+            session.appendChar('l');
+            session.appendChar('o');
+
+            // case sensitive 扱いになるため "Hello" は見つからない
+            assertNull(session.getCurrentMatch());
+            assertTrue(messageBuffer.getLastMessage().orElse("").startsWith("Failing"));
+        }
+
+        @Test
+        void searchNextで連続したマッチを順に巡回する() {
+            replaceBuffer("Hello hello HELLO");
+            var session = createForwardSession();
+            session.start();
+
+            session.appendChar('h');
+            session.appendChar('e');
+            session.appendChar('l');
+            session.appendChar('l');
+            session.appendChar('o');
+            // 1 つ目の Hello (0-5)
+            var match1 = session.getCurrentMatch();
+            assertNotNull(match1);
+            assertEquals(0, match1.start());
+
+            session.searchNext();
+            var match2 = session.getCurrentMatch();
+            assertNotNull(match2);
+            assertEquals(6, match2.start());
+
+            session.searchNext();
+            var match3 = session.getCurrentMatch();
+            assertNotNull(match3);
+            assertEquals(12, match3.start());
+        }
+
+        @Test
+        void searchPreviousで同位置を返し続けない() {
+            replaceBuffer("Hello hello HELLO");
+            window.setPoint(17);
+            var session = createBackwardSession();
+            session.start();
+
+            session.appendChar('h');
+            session.appendChar('e');
+            session.appendChar('l');
+            session.appendChar('l');
+            session.appendChar('o');
+            // 末尾の HELLO (12-17) にマッチ
+            var match1 = session.getCurrentMatch();
+            assertNotNull(match1);
+            assertEquals(12, match1.start());
+
+            session.searchPrevious();
+            var match2 = session.getCurrentMatch();
+            assertNotNull(match2);
+            assertEquals(6, match2.start());
+
+            session.searchPrevious();
+            var match3 = session.getCurrentMatch();
+            assertNotNull(match3);
+            assertEquals(0, match3.start());
         }
     }
 
