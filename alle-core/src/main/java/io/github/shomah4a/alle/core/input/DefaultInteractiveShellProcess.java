@@ -1,7 +1,6 @@
 package io.github.shomah4a.alle.core.input;
 
 import io.github.shomah4a.alle.core.Loggable;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -83,11 +82,37 @@ public class DefaultInteractiveShellProcess implements InteractiveShellProcess {
         return "/bin/sh";
     }
 
+    /**
+     * プロセスの出力を読み取り、行単位でコールバックに通知する。
+     *
+     * <p>{@code readLine()} ではなく {@code read()} で文字単位に読み取る。
+     * プロンプト行のように改行で終わらない出力も、
+     * {@code available()} が 0 になった時点で部分行としてフラッシュする。
+     */
     private static void readOutput(Process proc, Consumer<String> onOutputLine, Runnable onProcessExit) {
-        try (var reader = new BufferedReader(new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                onOutputLine.accept(line);
+        try (var isr = new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8)) {
+            var buf = new StringBuilder();
+            var stream = proc.getInputStream();
+            while (true) {
+                int ch = isr.read();
+                if (ch == -1) {
+                    break;
+                }
+                if (ch == '\n') {
+                    onOutputLine.accept(buf.toString());
+                    buf.setLength(0);
+                } else {
+                    buf.append((char) ch);
+                    // 追加データがなければ部分行（プロンプト等）をフラッシュ
+                    if (stream.available() == 0 && buf.length() > 0) {
+                        onOutputLine.accept(buf.toString());
+                        buf.setLength(0);
+                    }
+                }
+            }
+            // 残りがあればフラッシュ
+            if (buf.length() > 0) {
+                onOutputLine.accept(buf.toString());
             }
         } catch (IOException e) {
             if (proc.isAlive()) {
