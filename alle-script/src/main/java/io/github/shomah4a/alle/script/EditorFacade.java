@@ -17,6 +17,7 @@ import io.github.shomah4a.alle.core.mode.AutoModeMap;
 import io.github.shomah4a.alle.core.mode.MajorMode;
 import io.github.shomah4a.alle.core.mode.MinorMode;
 import io.github.shomah4a.alle.core.mode.ModeRegistry;
+import io.github.shomah4a.alle.core.setting.SettingsRegistry;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.window.Frame;
 import io.github.shomah4a.alle.core.window.FrameLayoutStore;
@@ -45,6 +46,7 @@ public class EditorFacade implements Loggable {
     private final FrameLayoutStore frameLayoutStore;
     private final BufferManager bufferManager;
     private final InputPrompter inputPrompter;
+    private final SettingsRegistry settingsRegistry;
 
     public EditorFacade(
             Frame frame,
@@ -56,7 +58,8 @@ public class EditorFacade implements Loggable {
             SyntaxAnalyzerRegistry syntaxAnalyzerRegistry,
             FrameLayoutStore frameLayoutStore,
             BufferManager bufferManager,
-            InputPrompter inputPrompter) {
+            InputPrompter inputPrompter,
+            SettingsRegistry settingsRegistry) {
         this.frame = frame;
         this.messageBuffer = messageBuffer;
         this.commandRegistry = commandRegistry;
@@ -67,6 +70,7 @@ public class EditorFacade implements Loggable {
         this.frameLayoutStore = frameLayoutStore;
         this.bufferManager = bufferManager;
         this.inputPrompter = inputPrompter;
+        this.settingsRegistry = settingsRegistry;
     }
 
     /**
@@ -301,5 +305,40 @@ public class EditorFacade implements Loggable {
      */
     public InputHistory createInputHistory() {
         return new InputHistory();
+    }
+
+    /**
+     * 設定値をスクリプトから設定する。
+     * 値の型は登録済み Setting の型と一致する必要がある。
+     *
+     * @param key 設定キー
+     * @param value 設定値（GraalPy が Python の bool/int/str を自動変換する）
+     * @throws IllegalArgumentException キーに対応する設定が未登録の場合
+     * @throws ClassCastException        値の型が設定の型と一致しない場合
+     */
+    public void setSetting(String key, Object value) {
+        settingsRegistry.setGlobalByKey(key, value);
+    }
+
+    /**
+     * 設定値をスクリプトから取得する。
+     * グローバル値が未設定なら設定のデフォルト値を返す。
+     *
+     * @param key 設定キー
+     * @return 実効値
+     * @throws IllegalArgumentException キーに対応する設定が未登録の場合
+     */
+    public Object getSetting(String key) {
+        return settingsRegistry.getEffectiveByKey(key);
+    }
+
+    /**
+     * 設定値のグローバル値を解除し、デフォルト値にフォールバックさせる。
+     *
+     * @param key 設定キー
+     * @throws IllegalArgumentException キーに対応する設定が未登録の場合
+     */
+    public void removeSetting(String key) {
+        settingsRegistry.removeGlobalByKey(key);
     }
 }

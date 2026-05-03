@@ -138,7 +138,8 @@ public final class Main {
                 core.syntaxAnalyzerRegistry(),
                 core.frameLayoutStore(),
                 core.bufferManager(),
-                core.inputPrompter());
+                core.inputPrompter(),
+                settingsRegistry);
         var stdoutStream =
                 new MessageBufferOutputStream(core.bufferManager(), "*Python Output*", 1000, settingsRegistry);
         var stderrStream =
