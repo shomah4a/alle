@@ -52,9 +52,57 @@ public class DefaultFaceTheme implements FaceTheme {
             .withKeyValue(FaceName.DIFF_DELETED, FaceSpec.ofForeground("red"))
             .toImmutable();
 
+    private static final String ANSI_SGR_PREFIX = "ansi-sgr:";
+
     @Override
     public FaceSpec resolve(FaceName name) {
         FaceSpec spec = MAPPING.get(name);
-        return spec != null ? spec : DEFAULT_SPEC;
+        if (spec != null) {
+            return spec;
+        }
+        if (name.name().startsWith(ANSI_SGR_PREFIX)) {
+            return parseSgrFaceSpec(name.name());
+        }
+        return DEFAULT_SPEC;
+    }
+
+    /**
+     * {@code "ansi-sgr:"} プレフィックス付きの FaceName 名からFaceSpecを���築する。
+     *
+     * <p>規約: {@code ansi-sgr:} の後���コロン区切りで以下の属性を連結する。
+     * <ul>
+     *   <li>{@code fg=<色名>} - 前景色</li>
+     *   <li>{@code bg=<色名>} - 背景色</li>
+     *   <li>{@code bold} - 太字</li>
+     *   <li>{@code underline} - 下線</li>
+     * </ul>
+     */
+    private static FaceSpec parseSgrFaceSpec(String faceName) {
+        String body = faceName.substring(ANSI_SGR_PREFIX.length());
+        String fg = null;
+        String bg = null;
+        org.eclipse.collections.api.set.MutableSet<FaceAttribute> attrs = Sets.mutable.empty();
+
+        int start = 0;
+        while (start < body.length()) {
+            int sep = body.indexOf(':', start);
+            if (sep < 0) {
+                sep = body.length();
+            }
+            String part = body.substring(start, sep);
+            start = sep + 1;
+
+            if (part.startsWith("fg=")) {
+                fg = part.substring(3);
+            } else if (part.startsWith("bg=")) {
+                bg = part.substring(3);
+            } else if ("bold".equals(part)) {
+                attrs.add(FaceAttribute.BOLD);
+            } else if ("underline".equals(part)) {
+                attrs.add(FaceAttribute.UNDERLINE);
+            }
+        }
+
+        return new FaceSpec(fg, bg, attrs.toImmutable());
     }
 }

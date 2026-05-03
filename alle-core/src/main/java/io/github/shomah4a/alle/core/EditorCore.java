@@ -89,6 +89,7 @@ import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
 import io.github.shomah4a.alle.core.mode.modes.makefile.MakefileMode;
 import io.github.shomah4a.alle.core.mode.modes.markdown.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.modes.occur.OccurInitializer;
+import io.github.shomah4a.alle.core.mode.modes.shell.ShellInitializer;
 import io.github.shomah4a.alle.core.mode.modes.shellscript.ShellScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.mode.modes.yaml.YamlMode;
@@ -456,9 +457,13 @@ public final class EditorCore {
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
         registry.register(occurCommand);
 
-        // Shell command
+        // Shell command (M-!)
         var shellCommandHistory = new InputHistory();
         registry.register(new ShellCommandCommand(new DefaultShellCommandExecutor(), shellCommandHistory));
+
+        // Interactive shell (M-x shell)
+        var shellCommand = ShellInitializer.initialize(registry, commandResolver, settingsRegistry);
+        registry.register(shellCommand);
 
         // make-directory / mkdir
         var makeDirectoryCommand = new MakeDirectoryCommand(
