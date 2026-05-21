@@ -10,6 +10,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.treesitter.TreeSitterBash;
+import org.treesitter.TreeSitterHcl;
 import org.treesitter.TreeSitterJavascript;
 import org.treesitter.TreeSitterJson;
 import org.treesitter.TreeSitterPython;
@@ -98,6 +99,14 @@ public class SyntaxAnalyzerRegistry {
             Sets.immutable.with("compound_statement", "subshell", "command_substitution");
 
     /**
+     * HCL用の括弧系ノードタイプ名。
+     * HCL AST は {@code block_start}/{@code object_start}/{@code tuple_start} 等のラッパーで {@code {}}/{@code []} を包む構造のため、
+     * {@code CStyleIndentState.findFirstContentChild} の前提と整合しない。
+     * {@code enclosingBracket} 経由のインデント解決は使わず、{@code isOpenBracketBeforeColumn} の文字ベース判定のみに頼る（ADR 0136参照）。
+     */
+    private static final ImmutableSet<String> HCL_BRACKET_TYPES = Sets.immutable.empty();
+
+    /**
      * 組み込み言語を登録済みのレジストリを生成する。
      *
      * @return 組み込み言語が登録されたレジストリ
@@ -132,6 +141,11 @@ public class SyntaxAnalyzerRegistry {
                 "bash",
                 new TreeSitterLanguageConfig(
                         new TreeSitterBash(), bashQuery, DefaultCaptureMapping.INSTANCE, BASH_BRACKET_TYPES));
+        String hclQuery = HighlightQueryLoader.load("hcl");
+        registry.register(
+                "hcl",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterHcl(), hclQuery, DefaultCaptureMapping.INSTANCE, HCL_BRACKET_TYPES));
         return registry;
     }
 }

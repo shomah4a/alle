@@ -25,7 +25,10 @@ public final class DefaultCaptureMapping {
             .withKeyValue("escape", FaceName.STRING)
             // キーワード・演算子
             .withKeyValue("keyword", FaceName.KEYWORD)
+            .withKeyValue("keyword.repeat", FaceName.KEYWORD)
+            .withKeyValue("keyword.conditional", FaceName.KEYWORD)
             .withKeyValue("operator", FaceName.OPERATOR)
+            .withKeyValue("boolean", FaceName.BUILTIN)
             // 関数
             .withKeyValue("function", FaceName.FUNCTION_NAME)
             .withKeyValue("function.method", FaceName.FUNCTION_NAME)
@@ -38,6 +41,7 @@ public final class DefaultCaptureMapping {
             .withKeyValue("property", FaceName.VARIABLE)
             .withKeyValue("variable", FaceName.VARIABLE)
             .withKeyValue("variable.builtin", FaceName.BUILTIN)
+            .withKeyValue("variable.member", FaceName.VARIABLE)
             // 句読点・埋め込み
             .withKeyValue("punctuation.special", FaceName.OPERATOR)
             .withKeyValue("embedded", FaceName.DEFAULT)
