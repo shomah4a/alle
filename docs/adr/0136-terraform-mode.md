@@ -47,7 +47,12 @@ tree-sitter-hcl による構文解析と、`nvim-treesitter` リポジトリの 
 - `@boolean` → `BUILTIN`
 - `@variable.member` → `VARIABLE`
 
-`@punctuation.delimiter` / `@none` / `@spell` 等は対応 FaceName が無いため未マップ（フォールバックで DEFAULT）。
+なお HCL クエリで使われる以下は既に `DefaultCaptureMapping` 側に存在しており、追加不要：
+
+- `@variable.builtin`（`var.foo` の `var` 等） → 既存 `BUILTIN`
+- `@variable`、`@string`、`@number`、`@comment`、`@function`、`@operator`、`@constant`、`@punctuation.special` → 既存マップ
+
+`@punctuation.delimiter` / `@none` / `@spell` / `@punctuation.bracket` 等は対応 FaceName が無いため未マップ（フォールバックで DEFAULT）。
 
 ### オートインデント
 
