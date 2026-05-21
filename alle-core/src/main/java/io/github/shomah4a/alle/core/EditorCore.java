@@ -91,6 +91,7 @@ import io.github.shomah4a.alle.core.mode.modes.markdown.MarkdownMode;
 import io.github.shomah4a.alle.core.mode.modes.occur.OccurInitializer;
 import io.github.shomah4a.alle.core.mode.modes.shell.ShellInitializer;
 import io.github.shomah4a.alle.core.mode.modes.shellscript.ShellScriptMode;
+import io.github.shomah4a.alle.core.mode.modes.terraform.TerraformMode;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
 import io.github.shomah4a.alle.core.mode.modes.yaml.YamlMode;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
@@ -236,6 +237,15 @@ public final class EditorCore {
         autoModeMap.register(
                 "bash",
                 () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
+        autoModeMap.register(
+                "tf",
+                () -> new TerraformMode(syntaxAnalyzerRegistry.create("hcl").orElseThrow()));
+        autoModeMap.register(
+                "tfvars",
+                () -> new TerraformMode(syntaxAnalyzerRegistry.create("hcl").orElseThrow()));
+        autoModeMap.register(
+                "hcl",
+                () -> new TerraformMode(syntaxAnalyzerRegistry.create("hcl").orElseThrow()));
         autoModeMap.registerShebang(
                 "sh",
                 () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
@@ -298,6 +308,9 @@ public final class EditorCore {
         modeRegistry.registerMajorMode(
                 "shell-script",
                 () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
+        modeRegistry.registerMajorMode(
+                "terraform",
+                () -> new TerraformMode(syntaxAnalyzerRegistry.create("hcl").orElseThrow()));
 
         // キーマップ
         var keymap = createKeymap(registry);
