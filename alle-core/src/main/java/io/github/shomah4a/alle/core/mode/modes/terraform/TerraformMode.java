@@ -29,7 +29,7 @@ public class TerraformMode implements MajorMode {
             .set(EditorSettings.COMMENT_STRING, "# ")
             .build();
 
-    private static final CStyleIndentConfig INDENT_CONFIG = new CStyleIndentConfig(
+    static final CStyleIndentConfig INDENT_CONFIG = new CStyleIndentConfig(
             INDENT_WIDTH, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'));
 
     private final LanguageSupport languageSupport;

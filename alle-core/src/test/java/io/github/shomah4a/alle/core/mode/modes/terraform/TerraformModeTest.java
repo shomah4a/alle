@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
-import io.github.shomah4a.alle.core.mode.indent.CStyleIndentConfig;
 import io.github.shomah4a.alle.core.mode.indent.CStyleIndentState;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
@@ -17,16 +16,23 @@ import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.LanguageSuppor
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Window;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class TerraformModeTest {
 
-    private static final LanguageSupport LANG =
-            SyntaxAnalyzerRegistry.createWithBuiltins().create("hcl").orElseThrow();
+    private LanguageSupport lang;
+    private TerraformMode mode;
 
-    private final TerraformMode mode = new TerraformMode(LANG);
+    @BeforeEach
+    void setUp() {
+        // テストごとに独立した LanguageSupport を生成する。
+        // TreeSitterSession/Analyzer/Styler はキャッシュ状態を持つため、
+        // テスト間で共有するとテスト順序に依存したフレーキー挙動になりうる。
+        lang = SyntaxAnalyzerRegistry.createWithBuiltins().create("hcl").orElseThrow();
+        mode = new TerraformMode(lang);
+    }
 
     @Test
     void モード名がterraformである() {
@@ -67,7 +73,12 @@ class TerraformModeTest {
     @Nested
     class シンタックスハイライト {
 
-        private final SyntaxStyler styler = LANG.styler();
+        private SyntaxStyler styler;
+
+        @BeforeEach
+        void setUpStyler() {
+            styler = lang.styler();
+        }
 
         @Test
         void コメントにCOMMENT_Faceが適用される() {
@@ -135,10 +146,7 @@ class TerraformModeTest {
     @Nested
     class オートインデント {
 
-        private static final CStyleIndentConfig HCL_CONFIG =
-                new CStyleIndentConfig(2, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'));
-
-        private static Window createWindow(String text) {
+        private Window createWindow(String text) {
             var buffer = new TextBuffer("test.tf", new GapTextModel(), new SettingsRegistry());
             var facade = new BufferFacade(buffer);
             var window = new Window(facade);
@@ -148,8 +156,9 @@ class TerraformModeTest {
             return window;
         }
 
-        private static CStyleIndentState createState() {
-            return new CStyleIndentState(HCL_CONFIG, LANG.analyzer());
+        private CStyleIndentState createState() {
+            // 本番コードの INDENT_CONFIG を共有してテストで再定義しない
+            return new CStyleIndentState(TerraformMode.INDENT_CONFIG, lang.analyzer());
         }
 
         @Test
@@ -195,8 +204,17 @@ class TerraformModeTest {
         }
 
         @Test
+        void heredoc開始直後の改行ではインデントが増加しない() {
+            // `<<EOF` の直後で Enter を押した場合、行末は `{`/`[`/`(` でないので +indent_width されない
+            var window = createWindow("script = <<EOF");
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("script = <<EOF\n", window.getBuffer().getText());
+        }
+
+        @Test
         void heredoc内の改行で異常な自動インデントが入らない() {
-            // <<EOF の中で改行しても、行末が `{`/`[`/`(` でなければ +indent_width されない
+            // <<EOF の中の本文で改行しても、行末が `{`/`[`/`(` でなければ +indent_width されない
             var window = createWindow("script = <<EOF\nhello");
             var state = createState();
             state.newlineAndIndent(window);
