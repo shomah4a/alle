@@ -65,6 +65,27 @@ class TreeSitterHclSmokeTest {
         assertTrue(nodeTypes.contains("comment"), "commentノードが存在する: types=" + nodeTypes);
     }
 
+    @Test
+    void block_objectのラッパーノード構造が維持されている() {
+        // ADR 0136 の HCL_BRACKET_TYPES=空集合 という判断の前提として、
+        // `{` `[` `(` がラッパーノード経由で表現されていることを固定する。
+        // 将来 grammar が更新されてラッパー構造が変わった場合は本テストが失敗し、
+        // CStyleIndentState のインデント方針を見直すべきシグナルとなる。
+        var session = new TreeSitterSession(new TreeSitterHcl());
+        var tree = session.parse(Lists.immutable.of(SAMPLE_HCL.split("\n", -1)));
+        TSNode root = tree.getRootNode();
+
+        MutableList<String> nodeTypes = Lists.mutable.empty();
+        collectNodeTypes(root, nodeTypes);
+
+        assertTrue(nodeTypes.contains("block_start"), "block_startラッパーが存在する: types=" + nodeTypes);
+        assertTrue(nodeTypes.contains("block_end"), "block_endラッパーが存在する: types=" + nodeTypes);
+        assertTrue(nodeTypes.contains("object_start"), "object_startラッパーが存在する: types=" + nodeTypes);
+        assertTrue(nodeTypes.contains("object_end"), "object_endラッパーが存在する: types=" + nodeTypes);
+        assertTrue(nodeTypes.contains("tuple_start"), "tuple_startラッパーが存在する: types=" + nodeTypes);
+        assertTrue(nodeTypes.contains("tuple_end"), "tuple_endラッパーが存在する: types=" + nodeTypes);
+    }
+
     private static void collectNodeTypes(TSNode node, MutableList<String> result) {
         result.add(node.getType());
         for (int i = 0; i < node.getChildCount(); i++) {
