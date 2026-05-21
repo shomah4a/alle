@@ -56,7 +56,7 @@ tree-sitter-hcl による構文解析と、`nvim-treesitter` リポジトリの 
 #### HCL 固有の制約
 
 - **heredoc 内のインデントは対象外**：`<<EOF ... EOF` 内では C スタイルインデントが意図しない動作をする可能性があるが、本タスクの範囲外とする。実用上は heredoc 内で改行しても致命的な編集体験悪化が起きないことをテストで確認する
-- **`HCL_BRACKET_TYPES` の決定**：tree-sitter-hcl の実 AST に基づき決定する。`body` ノードはファイル全体や block 本体に対応するが、トップレベル `body` には対応する物理的な `{}` が無く、すべての行が +1 インデントされる退行リスクがあるため、含めないか、含めても無害な扱いとなるかを実装時に検証する
+- **`HCL_BRACKET_TYPES` は空集合とする**：tree-sitter-hcl の AST 構造は `{` `}` が `block_start`/`block_end`/`object_start`/`object_end`/`tuple_start`/`tuple_end` というラッパーノード経由で表現されており、`block` の直接の子に `identifier`（"resource"）や `string_lit`（ラベル）も含まれる。これは `CStyleIndentState.findFirstContentChild` の前提（最初の意味ある子＝括弧内の最初の要素）と整合しないため、`enclosingBracket` 経由のインデント解決を断念する。代わりに `CStyleIndentState.isOpenBracketBeforeColumn` による「前行末尾が `{`/`[`/`(` なら +indent_width」という文字ベースのインデント増加で対応する。これは `newlineAndIndent` では十分に動作する（resource ブロック、object、tuple、function_call すべて期待通りインデントされる）。インデントサイクル（Tab）の候補は前行ベースのみとなり、`enclosingBracket` ベースの候補は出ない
 
 ### 設定
 
