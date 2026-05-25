@@ -24,7 +24,13 @@ data class TreeSitterGrammar(
     val language: String,
     val repo: String,
     val tag: String,
-    val queryPath: String = "queries/highlights.scm"
+    val queryPath: String = "queries/highlights.scm",
+    // 別言語の highlights.scm を先頭に連結する。
+    // 例: TypeScript は tree-sitter-typescript の highlights.scm が
+    //     JavaScript の highlights.scm を継承する前提で書かれているため、
+    //     javascript を inheritsFrom に指定する（ADR 0137 参照）。
+    // 指定する言語は同じ grammars リスト内で先に配置すること。
+    val inheritsFrom: String? = null
 )
 
 val grammars = listOf(
@@ -42,8 +48,26 @@ val grammars = listOf(
         "nvim-treesitter/nvim-treesitter",
         "722617e6726c1508adadf83d531f54987c703be0",
         "queries/hcl/highlights.scm"
+    ),
+    // tree-sitter-typescript の highlights.scm は JavaScript を inherit する前提で
+    // TypeScript 固有のキャプチャのみが定義されているため、JavaScript を inheritsFrom に指定する（ADR 0137 参照）。
+    TreeSitterGrammar(
+        "typescript",
+        "tree-sitter/tree-sitter-typescript",
+        "v${libs.versions.tree.sitter.typescript.get()}",
+        inheritsFrom = "javascript"
     )
 )
+
+// grammar 定義 (tag + inheritsFrom の親 tag) からフィンガープリント文字列を生成する。
+// 親言語の tag が変わった場合に派生言語の highlights.scm も再生成されるよう、
+// inheritsFrom の親言語の tag も含める。
+fun fingerprintOf(grammar: TreeSitterGrammar): String {
+    val parentTag = grammar.inheritsFrom
+        ?.let { parent -> grammars.first { it.language == parent }.tag }
+        ?: ""
+    return "tag=${grammar.tag};queryPath=${grammar.queryPath};inheritsFrom=${grammar.inheritsFrom ?: ""};parentTag=$parentTag"
+}
 
 val downloadTreeSitterQueries = tasks.register("downloadTreeSitterQueries") {
     description = "Tree-sitter 公式リポジトリからハイライトクエリをダウンロードする"
@@ -57,12 +81,33 @@ val downloadTreeSitterQueries = tasks.register("downloadTreeSitterQueries") {
             val destDir = outputDir.get().dir("treesitter/${grammar.language}").asFile
             destDir.mkdirs()
             val destFile = File(destDir, "highlights.scm")
-            if (!destFile.exists()) {
-                val url = "https://raw.githubusercontent.com/${grammar.repo}/${grammar.tag}/${grammar.queryPath}"
-                logger.lifecycle("Downloading highlights.scm for ${grammar.language} from $url")
-                val bytes = URI(url).toURL().readBytes()
-                destFile.writeBytes(bytes)
+            val fingerprintFile = File(destDir, "fingerprint")
+            val expectedFingerprint = fingerprintOf(grammar)
+            val actualFingerprint = if (fingerprintFile.exists()) fingerprintFile.readText() else ""
+            val needsDownload = !destFile.exists() || actualFingerprint != expectedFingerprint
+            if (!needsDownload) {
+                continue
             }
+            val url = "https://raw.githubusercontent.com/${grammar.repo}/${grammar.tag}/${grammar.queryPath}"
+            logger.lifecycle("Downloading highlights.scm for ${grammar.language} from $url")
+            val ownBytes = URI(url).toURL().readBytes()
+            val finalBytes = if (grammar.inheritsFrom != null) {
+                val parentFile = File(
+                    outputDir.get().dir("treesitter/${grammar.inheritsFrom}").asFile,
+                    "highlights.scm"
+                )
+                if (!parentFile.exists()) {
+                    throw GradleException(
+                        "Parent grammar '${grammar.inheritsFrom}' has not been downloaded yet for '${grammar.language}'. " +
+                            "Ensure the parent is listed earlier in the grammars list."
+                    )
+                }
+                parentFile.readBytes() + "\n".toByteArray() + ownBytes
+            } else {
+                ownBytes
+            }
+            destFile.writeBytes(finalBytes)
+            fingerprintFile.writeText(expectedFingerprint)
         }
     }
 }
