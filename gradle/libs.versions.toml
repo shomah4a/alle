@@ -1,5 +1,5 @@
 [versions]
-junit = "6.0.3"
+junit = "6.1.0"
 errorprone = "2.49.0"
 nullaway = "0.13.4"
 jspecify = "1.0.0"
