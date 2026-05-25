@@ -14,6 +14,7 @@ import org.treesitter.TreeSitterHcl;
 import org.treesitter.TreeSitterJavascript;
 import org.treesitter.TreeSitterJson;
 import org.treesitter.TreeSitterPython;
+import org.treesitter.TreeSitterTypescript;
 import org.treesitter.TreeSitterYaml;
 
 /**
@@ -88,6 +89,29 @@ public class SyntaxAnalyzerRegistry {
             "class_body",
             "switch_body");
 
+    /**
+     * TypeScript 用の括弧系ノードタイプ名。
+     * JavaScript の括弧タイプに加え、TypeScript 固有のブロック構造 ({@code interface_body} /
+     * {@code enum_body} / {@code object_type} / {@code tuple_type}) を追加する。
+     * {@code type_parameters} / {@code type_arguments} ({@code <>}) は
+     * CStyleIndentConfig が文字ベース ({@code (}, {@code [}, 波括弧) 判定のため対象外（ADR 0137 参照）。
+     */
+    private static final ImmutableSet<String> TYPESCRIPT_BRACKET_TYPES = Sets.immutable.with(
+            "parenthesized_expression",
+            "arguments",
+            "formal_parameters",
+            "array",
+            "object",
+            "template_string",
+            "subscript_expression",
+            "statement_block",
+            "class_body",
+            "switch_body",
+            "interface_body",
+            "enum_body",
+            "object_type",
+            "tuple_type");
+
     /** JSON用の括弧系ノードタイプ名。 */
     private static final ImmutableSet<String> JSON_BRACKET_TYPES = Sets.immutable.with("object", "array");
 
@@ -146,6 +170,14 @@ public class SyntaxAnalyzerRegistry {
                 "hcl",
                 new TreeSitterLanguageConfig(
                         new TreeSitterHcl(), hclQuery, DefaultCaptureMapping.INSTANCE, HCL_BRACKET_TYPES));
+        String typescriptQuery = HighlightQueryLoader.load("typescript");
+        registry.register(
+                "typescript",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterTypescript(),
+                        typescriptQuery,
+                        DefaultCaptureMapping.INSTANCE,
+                        TYPESCRIPT_BRACKET_TYPES));
         return registry;
     }
 }

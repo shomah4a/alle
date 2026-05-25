@@ -35,6 +35,7 @@ public final class DefaultCaptureMapping {
             .withKeyValue("function.builtin", FaceName.BUILTIN)
             // 型・定数・変数
             .withKeyValue("type", FaceName.TYPE)
+            .withKeyValue("type.builtin", FaceName.BUILTIN)
             .withKeyValue("constructor", FaceName.TYPE)
             .withKeyValue("constant", FaceName.VARIABLE)
             .withKeyValue("constant.builtin", FaceName.BUILTIN)
@@ -42,6 +43,7 @@ public final class DefaultCaptureMapping {
             .withKeyValue("variable", FaceName.VARIABLE)
             .withKeyValue("variable.builtin", FaceName.BUILTIN)
             .withKeyValue("variable.member", FaceName.VARIABLE)
+            .withKeyValue("variable.parameter", FaceName.VARIABLE)
             // 句読点・埋め込み
             .withKeyValue("punctuation.special", FaceName.OPERATOR)
             .withKeyValue("embedded", FaceName.DEFAULT)
