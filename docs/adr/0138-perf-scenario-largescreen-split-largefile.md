@@ -140,4 +140,82 @@ bench/results/collapsed-<mode>-YYYYMMDD-HHMMSS.txt
 
 ## 結果
 
-（プロファイリング実施後に追記）
+### イテレーション1: GapTextModel の改行位置キャッシュをコードポイント単位でも保持
+
+#### 計測条件
+
+- 3モード（`default` / `split` / `largefile`）で 500 イテレーション
+- `largefile` のみ `BENCH_INIT_STABLE_SEC=2.0 BENCH_INIT_WAIT=120`
+- async-profiler 4.4、profile_duration=15s
+
+#### Before プロファイル分析
+
+`largefile` モードで以下のメソッドがホットスポットとして浮上した。
+
+- `TextBuffer.lineStartOffset` 経由の `GapTextModel.lineStartOffset` → `charOffsetToCodePointIndex` (= `Character.codePointCount(0, charOffset)`) : 76 サンプル
+- `TextBuffer.lineIndexForOffset` 経由の `GapTextModel.lineIndexForOffset` → `toCharOffset` → `offsetCodePoints` : 104 サンプル
+
+いずれも先頭から線形に走査する O(charOffset) または O(codePointIndex) 処理で、
+100,000 行ファイルの末尾近くでは毎回数百万 char ぶん走査するため支配的になっていた。
+
+呼び出し元の主なパス:
+
+- `BuiltinStatusLineSlots.renderColumnNumber` → `BufferFacade.lineStartOffset`
+- `ScrollUpCommand.execute` → `BufferFacade.lineStartOffset`
+- `RenderSnapshotFactory.computeActiveCursorPosition` → `BufferFacade.lineIndexForOffset`
+
+#### 改善内容
+
+`GapTextModel` の改行位置キャッシュ `lineBreakOffsets`（char オフセット）
+と並行して、`lineBreakCodePointOffsets`（コードポイントオフセット）を
+保持する。両系列は要素数・順序が常に一致し、insert/delete 時に差分更新する。
+
+- `lineStartOffset(lineIndex)`: `lineBreakCodePointOffsets.get(lineIndex - 1) + 1` で O(1)
+- `lineIndexForOffset(offset)`: コードポイント系列に対して直接二分探索で O(log N)
+- 初期化（`buildLineBreakCaches`）: 一度の走査で char/codePoint 両系列とコードポイント長を計算
+- insert/delete のキャッシュ更新は両系列を同期維持
+
+サロゲートペアと改行が混在するケース、コンストラクタ経由初期化のケース、
+削除のケースをカバーする 3 件のテストを追加。
+
+#### After 比較（500 イテレーション）
+
+| モード | Before 全 | After 全 | Before alle | After alle |
+|---|---|---|---|---|
+| default | 354 | 341 | 127 | 119 |
+| split | 527 | 512 | 186 | 181 |
+| largefile | 731 | **250** | 440 | **80** |
+
+対象メソッド（largefile）:
+
+| メソッド | Before | After |
+|---|---|---|
+| `TextBuffer.lineStartOffset` | 76 | 3 |
+| `TextBuffer.lineIndexForOffset` | 104 | 0 |
+| `GapTextModel.lineStartOffset` | 32 | 0 |
+| `GapTextModel.lineIndexForOffset` | 59 | 0 |
+| `GapTextModel.offsetCodePoints` | 59 | 3 |
+| `GapTextModel.charOffsetToCodePointIndex` | 32 | 0 |
+| `GapTextModel.toCharOffset` | 59 | 3 |
+
+#### 受け入れ基準への適合
+
+- 改善対象モード（`largefile`）で対象メソッドのサンプル数が有意に減少:
+  全体 731→250 (-66%)、alle 440→80 (-82%)、`lineStartOffset` 76→3、
+  `lineIndexForOffset` 104→0
+- `default` 全 354→341、alle 127→119 で劣化なし（プロファイル誤差内に
+  収まる微減）
+- `split` 全 527→512、alle 186→181 で劣化なし
+- 既存ユニットテストが全件パスし、サロゲートペアと改行混在ケースの
+  テストを 3 件追加
+
+#### 既知の制約と次の改善候補
+
+- `updateCacheAfterInsert` の既存改行シフトループは `lineBreakOffsets.size()`
+  に対して O(N) のまま。`largefile` で 100k 件あるが、本シナリオは
+  スクロール中心で編集が極めて少ないため顕在化していない。大ファイル編集
+  シナリオを別途設計した場合のみ再評価する。
+- After プロファイルの `largefile` 残存ホットスポットは
+  `ScreenRenderer.renderLineAt` / `ScreenRenderer.fillBlank` / lanterna 側
+  の文字描画系に移っており、これらは ADR 0130 の改善対象方針の境界上
+  （lanterna I/O は対象外、ScreenRenderer は対象内）。
