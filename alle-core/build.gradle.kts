@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.tree.sitter.yaml)
     implementation(libs.tree.sitter.bash)
     implementation(libs.tree.sitter.hcl)
+    implementation(libs.tree.sitter.typescript)
     implementation(libs.caffeine)
     implementation(libs.jackson.databind)
 }
