@@ -17,16 +17,27 @@ async-profiler を用いた E2E パフォーマンスプロファイリングと
 
 ## 引数
 
-| 引数 | 意味 |
-|------|------|
-| なし（デフォルト） | 1イテレーション（プロファイル取得→分析→改善→再プロファイル）。モードは `default` |
-| `profile` | プロファイル取得と分析のみ（改善は行わない） |
-| `N` (数値) | キーストロークのイテレーション数を指定（デフォルト500） |
-| `mode=<name>` | シナリオモードを指定（`default` / `split` / `largefile`） |
+ARGUMENTS は半角空白区切りのトークン列として解釈する。各トークンを以下のルールで
+分類し、シェル変数 `ITERATIONS` / `MODE` / `PROFILE_ONLY` / `MODES` に展開する。
+
+| トークン形式 | 解釈先 | 例 |
+|---|---|---|
+| 整数 | `ITERATIONS`（既定 `500`） | `500` |
+| `profile` | `PROFILE_ONLY=1`（プロファイル取得と分析のみ、改善はスキップ） | `profile` |
+| `mode=<name>` | `MODE`（既定 `default`、`<name>` は `default` / `split` / `largefile`） | `mode=split` |
+| `modes=<n1>,<n2>,...` | `MODES`（複数モードを順次実行。指定時は `MODE` より優先） | `modes=default,split,largefile` |
+| 自然文 | 上記に該当しない指示は文脈として読み取り、必要なら確認に回す | `前回セッションの続き` |
 
 複数引数の組み合わせ例:
+
 - `500 mode=split` — split モード 500 イテレーション
 - `profile mode=largefile` — largefile モードでプロファイル取得のみ
+- `modes=default,split,largefile` — 3モードを順次実行（イテレーション既定）
+
+トークンに該当する値がなければ既定値を使う。`mode` と `modes` が両方指定された場合は
+`modes` を採用し、ユーザーに整合の確認をとる。`ITERATIONS` `MODE` `PROFILE_ONLY` は
+以降の Step 2 / Step 5 のコマンドでそのまま参照する。`MODES` が設定されている場合は
+Step 2 / Step 5 を各モードについて順次実行する。
 
 ## シナリオモード
 
