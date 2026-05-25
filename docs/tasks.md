@@ -21,6 +21,21 @@
 - 現在の JavaFuture.__await__ は完了済み Future のみ対応
 - asyncio イベントループとの統合で未完了 Future を非同期待ちできるようにする
 
+### TSX (`.tsx`) モード
+- TypeScript モード (ADR 0137) は `.tsx` を対象外としているため、`.tsx` ファイルはハイライト・インデント無しになる
+- 別パーサ (`io.github.bonede:tree-sitter-tsx`) を追加し、JSX 構文を扱う tsx-mode を新設する
+- typescript の bracket types に加え、JSX 関連ノード (`jsx_element` / `jsx_fragment` / `jsx_expression` 等) のインデント対応を検討する
+
+### typescript-mode 追加 shebang 対応
+- 現在は `ts-node` のみ登録
+- `tsx`、`bun`、`deno run` (`#!/usr/bin/env -S deno run`) 等のバリエーション対応を検討する
+- 各ランタイムの実利用パターンの調査後に追加判断する
+
+### `@variable.parameter` の粒度向上
+- TypeScript モードでは `@variable.parameter` を `FaceName.VARIABLE` にマップしているため、関数引数が他の変数と同じ表示になる
+- 関数引数を別 FaceName で強調するには `FaceName.PARAMETER` 相当の新設が必要
+- 影響は JavaScript / Python 等他言語の highlights.scm にも波及するため、全体方針として検討する
+
 ### Pythonモード: 自動dedent
 - `return`/`pass`/`break`/`continue`/`raise` の入力完了後に自動でインデントを減らす
 - newline-and-indent では対応済みだが、入力中のリアルタイム dedent は未実装
