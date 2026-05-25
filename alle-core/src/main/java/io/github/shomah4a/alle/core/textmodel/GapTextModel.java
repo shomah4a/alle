@@ -18,6 +18,14 @@ public class GapTextModel implements TextModel {
     private final MutableIntList lineBreakOffsets;
 
     /**
+     * 改行文字('\n')のコードポイントオフセットを昇順で保持するキャッシュ。
+     * lineBreakOffsets と要素数・順序が常に一致し、k番目の要素は k番目の '\n' の
+     * 論理位置をコードポイント単位で表す。
+     * lineStartOffset/lineIndexForOffset をコードポイント→char線形走査なしで実行するための補助。
+     */
+    private final MutableIntList lineBreakCodePointOffsets;
+
+    /**
      * コードポイント数のキャッシュ。
      * insert/delete時に差分更新され、length()をO(1)にする。
      */
@@ -26,31 +34,49 @@ public class GapTextModel implements TextModel {
     public GapTextModel() {
         this.gapModel = new GapModel();
         this.lineBreakOffsets = IntLists.mutable.empty();
+        this.lineBreakCodePointOffsets = IntLists.mutable.empty();
         this.codePointLength = 0;
     }
 
     public GapTextModel(GapModel gapModel) {
         this.gapModel = gapModel;
-        this.lineBreakOffsets = buildLineBreakCache(gapModel);
-        this.codePointLength = Character.codePointCount(new CharSequenceView(), 0, gapModel.length());
+        this.lineBreakOffsets = IntLists.mutable.empty();
+        this.lineBreakCodePointOffsets = IntLists.mutable.empty();
+        this.codePointLength = buildLineBreakCaches();
     }
 
     /**
-     * GapModelの全文を走査して改行位置キャッシュを構築する。
+     * GapModelの全文を走査して改行位置キャッシュ（char/codePoint両系列）を構築し、
+     * 全コードポイント数を返す。
      */
-    private static MutableIntList buildLineBreakCache(GapModel model) {
-        MutableIntList offsets = IntLists.mutable.empty();
-        int len = model.length();
-        int pos = 0;
-        while (pos < len) {
-            int found = model.indexOf('\n', pos, len);
+    private int buildLineBreakCaches() {
+        int len = gapModel.length();
+        int charPos = 0;
+        int cpPos = 0;
+        while (charPos < len) {
+            int found = gapModel.indexOf('\n', charPos, len);
             if (found < 0) {
                 break;
             }
-            offsets.add(found);
-            pos = found + 1;
+            cpPos += codePointCountInRange(charPos, found);
+            lineBreakOffsets.add(found);
+            lineBreakCodePointOffsets.add(cpPos);
+            cpPos++; // '\n' は単一コードポイント
+            charPos = found + 1;
         }
-        return offsets;
+        // 末尾の改行以降のコードポイント数を加算
+        cpPos += codePointCountInRange(charPos, len);
+        return cpPos;
+    }
+
+    /**
+     * gapModel の [charStart, charEnd) のコードポイント数を返す。
+     */
+    private int codePointCountInRange(int charStart, int charEnd) {
+        if (charStart >= charEnd) {
+            return 0;
+        }
+        return Character.codePointCount(new CharSequenceView(), charStart, charEnd);
     }
 
     @Override
@@ -67,9 +93,11 @@ public class GapTextModel implements TextModel {
     @Override
     public void insert(int index, String text) {
         int charOffset = toCharOffsetForInsert(index);
+        int textCharLen = text.length();
+        int textCpLen = Character.codePointCount(text, 0, textCharLen);
         gapModel.insert(charOffset, text);
-        updateCacheAfterInsert(charOffset, text);
-        codePointLength += Character.codePointCount(text, 0, text.length());
+        updateCacheAfterInsert(charOffset, index, text, textCharLen, textCpLen);
+        codePointLength += textCpLen;
     }
 
     @Override
@@ -79,7 +107,7 @@ public class GapTextModel implements TextModel {
         }
         int charStart = toCharOffset(index);
         int charEnd = toCharOffsetForInsert(index + count);
-        updateCacheBeforeDelete(charStart, charEnd - charStart);
+        updateCacheBeforeDelete(charStart, charEnd - charStart, index, count);
         gapModel.delete(charStart, charEnd - charStart);
         codePointLength -= count;
     }
@@ -88,29 +116,37 @@ public class GapTextModel implements TextModel {
      * 挿入後にキャッシュを差分更新する。
      *
      * @param charOffset 挿入された論理charオフセット
+     * @param cpOffset   挿入された論理コードポイントオフセット
      * @param text       挿入されたテキスト
+     * @param textCharLen 挿入テキストの char 長
+     * @param textCpLen   挿入テキストのコードポイント長
      */
-    private void updateCacheAfterInsert(int charOffset, String text) {
-        int textLen = text.length();
-        if (textLen == 0) {
+    private void updateCacheAfterInsert(int charOffset, int cpOffset, String text, int textCharLen, int textCpLen) {
+        if (textCharLen == 0) {
             return;
         }
 
         // 挿入位置以降の既存改行オフセットをシフト
         for (int i = 0; i < lineBreakOffsets.size(); i++) {
             if (lineBreakOffsets.get(i) >= charOffset) {
-                lineBreakOffsets.set(i, lineBreakOffsets.get(i) + textLen);
+                lineBreakOffsets.set(i, lineBreakOffsets.get(i) + textCharLen);
+                lineBreakCodePointOffsets.set(i, lineBreakCodePointOffsets.get(i) + textCpLen);
             }
         }
 
-        // 挿入テキスト内の改行を検索してキャッシュに追加
+        // 挿入テキスト内の改行を検索してキャッシュに追加（char/codePoint両系列）
         int insertIndex = findInsertionPoint(charOffset);
         int added = 0;
-        for (int i = 0; i < textLen; i++) {
-            if (text.charAt(i) == '\n') {
+        int cpInText = 0;
+        for (int i = 0; i < textCharLen; ) {
+            int codePoint = text.codePointAt(i);
+            if (codePoint == '\n') {
                 lineBreakOffsets.addAtIndex(insertIndex + added, charOffset + i);
+                lineBreakCodePointOffsets.addAtIndex(insertIndex + added, cpOffset + cpInText);
                 added++;
             }
+            i += Character.charCount(codePoint);
+            cpInText++;
         }
     }
 
@@ -120,14 +156,17 @@ public class GapTextModel implements TextModel {
      *
      * @param charOffset 削除開始の論理charオフセット
      * @param charCount  削除するchar数
+     * @param cpOffset   削除開始の論理コードポイントオフセット
+     * @param cpCount    削除するコードポイント数
      */
-    private void updateCacheBeforeDelete(int charOffset, int charCount) {
+    private void updateCacheBeforeDelete(int charOffset, int charCount, int cpOffset, int cpCount) {
         if (charCount == 0) {
             return;
         }
         int deleteEnd = charOffset + charCount;
+        int cpDeleteEnd = cpOffset + cpCount;
 
-        // 削除範囲内の改行を除去し、削除範囲後の改行オフセットをシフト
+        // 削除範囲内の改行を除去し、削除範囲後の改行オフセットをシフト（char/codePoint両系列）
         int writeIdx = 0;
         for (int readIdx = 0; readIdx < lineBreakOffsets.size(); readIdx++) {
             int offset = lineBreakOffsets.get(readIdx);
@@ -136,12 +175,16 @@ public class GapTextModel implements TextModel {
                 continue;
             }
             int newOffset = offset >= deleteEnd ? offset - charCount : offset;
+            int cpOff = lineBreakCodePointOffsets.get(readIdx);
+            int newCp = cpOff >= cpDeleteEnd ? cpOff - cpCount : cpOff;
             lineBreakOffsets.set(writeIdx, newOffset);
+            lineBreakCodePointOffsets.set(writeIdx, newCp);
             writeIdx++;
         }
         // 末尾の余分な要素を除去
         while (lineBreakOffsets.size() > writeIdx) {
             lineBreakOffsets.removeAtIndex(lineBreakOffsets.size() - 1);
+            lineBreakCodePointOffsets.removeAtIndex(lineBreakCodePointOffsets.size() - 1);
         }
     }
 
@@ -186,19 +229,18 @@ public class GapTextModel implements TextModel {
         if (offset == cpLen) {
             return lineCount() - 1;
         }
-        int charOffset = toCharOffset(offset);
-        // キャッシュを二分探索してcharOffsetより前にある改行の数を求める
+        // コードポイント単位の改行キャッシュを直接二分探索する（O(log N)）
         int lo = 0;
-        int hi = lineBreakOffsets.size();
+        int hi = lineBreakCodePointOffsets.size();
         while (lo < hi) {
             int mid = (lo + hi) >>> 1;
-            if (lineBreakOffsets.get(mid) < charOffset) {
+            if (lineBreakCodePointOffsets.get(mid) < offset) {
                 lo = mid + 1;
             } else {
                 hi = mid;
             }
         }
-        // lo = charOffset以上の最初の改行インデックス = charOffsetが属する行番号
+        // lo = offset以上の最初の改行インデックス = offsetが属する行番号
         // 改行位置上のオフセットもその行の末尾として扱われる（lo番目の改行 = lo番目の行の終端）
         return lo;
     }
@@ -211,9 +253,8 @@ public class GapTextModel implements TextModel {
         if (lineIndex == 0) {
             return 0;
         }
-        // lineIndex番目の行の先頭 = (lineIndex-1)番目の改行の次の文字
-        int charOffset = lineBreakOffsets.get(lineIndex - 1) + 1;
-        return charOffsetToCodePointIndex(charOffset);
+        // lineIndex番目の行の先頭 = (lineIndex-1)番目の改行の次のコードポイント（O(1)）
+        return lineBreakCodePointOffsets.get(lineIndex - 1) + 1;
     }
 
     @Override
@@ -259,13 +300,6 @@ public class GapTextModel implements TextModel {
             return gapModel.length();
         }
         return offsetCodePoints(0, codePointIndex, gapModel.length());
-    }
-
-    /**
-     * charオフセットからコードポイントインデックスに変換する。
-     */
-    private int charOffsetToCodePointIndex(int charOffset) {
-        return Character.codePointCount(new CharSequenceView(), 0, charOffset);
     }
 
     /**

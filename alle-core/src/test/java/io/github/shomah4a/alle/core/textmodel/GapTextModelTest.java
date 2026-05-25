@@ -527,5 +527,47 @@ class GapTextModelTest {
             assertEquals("B", model.lineText(1));
             assertEquals("C", model.lineText(2));
         }
+
+        @Test
+        void サロゲートペア混在時にlineIndexForOffsetがコードポイント単位で正しい() {
+            var model = create();
+            // 各要素1cp: 😀, \n, A, \n, 😃, B → 全6コードポイント
+            // 改行は cp index 1 と 3
+            model.insert(0, "😀\nA\n😃B");
+
+            assertEquals(0, model.lineIndexForOffset(0)); // 😀
+            assertEquals(0, model.lineIndexForOffset(1)); // \n の位置（行0末尾扱い）
+            assertEquals(1, model.lineIndexForOffset(2)); // A
+            assertEquals(1, model.lineIndexForOffset(3)); // \n の位置
+            assertEquals(2, model.lineIndexForOffset(4)); // 😃
+            assertEquals(2, model.lineIndexForOffset(5)); // B
+            assertEquals(2, model.lineIndexForOffset(6)); // 末尾
+        }
+
+        @Test
+        void GapModelコンストラクタでサロゲートペア混在時もキャッシュが整合する() {
+            var gapModel = new io.github.shomah4a.alle.libs.gapbuffer.GapModel();
+            gapModel.insert(0, "😀\nA\n😃B");
+            var model = new GapTextModel(gapModel);
+
+            assertEquals(6, model.length());
+            assertEquals(3, model.lineCount());
+            assertEquals(0, model.lineStartOffset(0));
+            assertEquals(2, model.lineStartOffset(1));
+            assertEquals(4, model.lineStartOffset(2));
+        }
+
+        @Test
+        void サロゲートペアを含む範囲を削除してもキャッシュが整合する() {
+            var model = create();
+            model.insert(0, "😀\nA\n😃B");
+            // "\nA\n😃" (cp index 1..4) を削除 → 残り "😀B" (2 cp)
+            model.delete(1, 4);
+
+            assertEquals(2, model.length());
+            assertEquals(1, model.lineCount());
+            assertEquals(0, model.lineStartOffset(0));
+            assertEquals("😀B", model.lineText(0));
+        }
     }
 }
