@@ -93,6 +93,7 @@ import io.github.shomah4a.alle.core.mode.modes.shell.ShellInitializer;
 import io.github.shomah4a.alle.core.mode.modes.shellscript.ShellScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.terraform.TerraformMode;
 import io.github.shomah4a.alle.core.mode.modes.text.TextMode;
+import io.github.shomah4a.alle.core.mode.modes.typescript.TypeScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.yaml.YamlMode;
 import io.github.shomah4a.alle.core.search.ISearchBackwardCommand;
 import io.github.shomah4a.alle.core.search.ISearchForwardCommand;
@@ -246,6 +247,18 @@ public final class EditorCore {
         autoModeMap.register(
                 "hcl",
                 () -> new TerraformMode(syntaxAnalyzerRegistry.create("hcl").orElseThrow()));
+        autoModeMap.register(
+                "ts",
+                () -> new TypeScriptMode(
+                        syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
+        autoModeMap.register(
+                "mts",
+                () -> new TypeScriptMode(
+                        syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
+        autoModeMap.register(
+                "cts",
+                () -> new TypeScriptMode(
+                        syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
         autoModeMap.registerShebang(
                 "sh",
                 () -> new ShellScriptMode(syntaxAnalyzerRegistry.create("bash").orElseThrow()));
@@ -260,6 +273,10 @@ public final class EditorCore {
                 "nodejs",
                 () -> new JavaScriptMode(
                         syntaxAnalyzerRegistry.create("javascript").orElseThrow()));
+        autoModeMap.registerShebang(
+                "ts-node",
+                () -> new TypeScriptMode(
+                        syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
 
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
@@ -311,6 +328,10 @@ public final class EditorCore {
         modeRegistry.registerMajorMode(
                 "terraform",
                 () -> new TerraformMode(syntaxAnalyzerRegistry.create("hcl").orElseThrow()));
+        modeRegistry.registerMajorMode(
+                "typescript",
+                () -> new TypeScriptMode(
+                        syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
 
         // キーマップ
         var keymap = createKeymap(registry);
