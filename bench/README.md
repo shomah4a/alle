@@ -11,15 +11,16 @@
 ```
 bench/
 ├── README.md              # この文書
-├── generate-testdata.sh   # テストデータ生成（10,000行、850KB）
-├── generate-keystrokes.py # キーストローク生成（C-p/C-n スクロール重視）
+├── generate-testdata.sh   # テストデータ生成（行数・出力先を引数化）
+├── generate-keystrokes.py # キーストローク生成（--mode default|split|largefile）
 ├── driver.py              # pty経由でエディタを起動しプロファイルを取得するドライバー
-├── run-profile.sh         # 一連の流れを実行するラッパー
-├── testdata.txt           # 生成済みテストデータ（gitignore推奨）
-└── results/               # プロファイル結果（gitignore推奨）
-    ├── profile-YYYYMMDD-HHMMSS.jfr
-    ├── flamegraph-YYYYMMDD-HHMMSS.html
-    └── collapsed-YYYYMMDD-HHMMSS.txt
+├── run-profile.sh         # 一連の流れを実行するラッパー（mode 引数対応）
+├── testdata.txt           # default/split モード用 10,000行（gitignore済）
+├── testdata-100k.txt      # largefile モード用 100,000行（gitignore済、初回run時に自動生成）
+└── results/               # プロファイル結果（gitignore済）
+    ├── profile-<mode>-YYYYMMDD-HHMMSS.jfr
+    ├── flamegraph-<mode>-YYYYMMDD-HHMMSS.html
+    └── collapsed-<mode>-YYYYMMDD-HHMMSS.txt
 ```
 
 ## イテレーション手順
@@ -141,8 +142,8 @@ echo -n "After:  "; grep '対象メソッド' "$AFTER" | awk '{sum+=$NF} END{pri
 
 - lanterna の `UnixTerminal` は `/dev/tty` と stty を必要とする
 - `driver.py` が Python の `pty` モジュールで疑似端末を割り当て、`setsid()` + `TIOCSCTTY` で制御端末を設定する
-- 画面出力が 1000 バイトを超えたら初期化完了とみなし、2秒待ってからプロファイリングを開始する
-- GraalPy の初期化に約25秒かかるため、初期化タイムアウトは60秒に設定
+- 初期化完了判定は「`BENCH_INIT_MIN_BYTES` を超え、かつ最後の出力から `BENCH_INIT_STABLE_SEC` 秒間増分が無い」状態を完了とみなす安定判定方式
+- GraalPy の初期化に約25秒かかるため、初期化タイムアウト (`BENCH_INIT_WAIT`) は 60秒既定
 
 ### キーストロークシナリオ
 
