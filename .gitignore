@@ -27,3 +27,7 @@ bin/
 
 # Local tools
 tmp/
+
+# Bench artifacts
+bench/results/
+bench/testdata*.txt
