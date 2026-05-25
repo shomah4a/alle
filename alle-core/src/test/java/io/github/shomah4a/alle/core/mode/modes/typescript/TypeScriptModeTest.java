@@ -15,6 +15,7 @@ import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry;
 import io.github.shomah4a.alle.core.syntax.SyntaxAnalyzerRegistry.LanguageSupport;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import io.github.shomah4a.alle.core.window.Window;
+import org.eclipse.collections.api.factory.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -138,6 +139,54 @@ class TypeScriptModeTest {
             var funcSpans = spans.select(s -> s.faceName().equals(FaceName.FUNCTION_NAME));
             assertFalse(funcSpans.isEmpty());
         }
+
+        @Test
+        void enumキーワードにKEYWORD_Faceが適用される() {
+            var spans = styler.styleLine("enum Color {}");
+            var keywordSpans = spans.select(s -> s.faceName().equals(FaceName.KEYWORD));
+            assertFalse(keywordSpans.isEmpty());
+        }
+
+        @Test
+        void テンプレートリテラルにSTRING_Faceが適用される() {
+            // template_string ノードは JavaScript の highlights.scm で @string にキャプチャされる
+            var spans = styler.styleLine("const greeting = `hello world`;");
+            var stringSpans = spans.select(s -> s.faceName().equals(FaceName.STRING));
+            assertFalse(stringSpans.isEmpty());
+        }
+
+        @Test
+        void ジェネリクス型パラメータを含む関数の関数名がハイライトされる() {
+            // ジェネリクス <T> がパースされても他箇所のハイライトが壊れないことを確認
+            var spans = styler.styleLine("function identity<T>(x: T): T { return x; }");
+            var funcSpans = spans.select(s -> s.faceName().equals(FaceName.FUNCTION_NAME));
+            assertFalse(funcSpans.isEmpty());
+        }
+
+        @Test
+        void 関数パラメータにVARIABLE_Faceが適用される() {
+            // tree-sitter-typescript は (required_parameter (identifier) @variable.parameter)
+            // を定義しており、DefaultCaptureMapping で VARIABLE にマップされる
+            var spans = styler.styleLine("function greet(name: string) {}");
+            var varSpans = spans.select(s -> s.faceName().equals(FaceName.VARIABLE));
+            assertFalse(varSpans.isEmpty());
+        }
+
+        @Test
+        void 複数行のインターフェース宣言でも各キャプチャが行ごとに適用される() {
+            var lines = Lists.immutable.of("interface User {", "  id: number;", "  name: string;", "}");
+            var result = styler.styleDocument(lines);
+            assertEquals(4, result.size());
+            // 1 行目: interface キーワードが KEYWORD
+            var line0Keywords = result.get(0).select(s -> s.faceName().equals(FaceName.KEYWORD));
+            assertFalse(line0Keywords.isEmpty(), "1 行目に KEYWORD (interface)");
+            // 2 行目: number 組み込み型が BUILTIN
+            var line1Builtin = result.get(1).select(s -> s.faceName().equals(FaceName.BUILTIN));
+            assertFalse(line1Builtin.isEmpty(), "2 行目に BUILTIN (number)");
+            // 3 行目: string 組み込み型が BUILTIN
+            var line2Builtin = result.get(2).select(s -> s.faceName().equals(FaceName.BUILTIN));
+            assertFalse(line2Builtin.isEmpty(), "3 行目に BUILTIN (string)");
+        }
     }
 
     @Nested
@@ -196,6 +245,51 @@ class TypeScriptModeTest {
             var state = createState();
             state.newlineAndIndent(window);
             assertEquals("  const x = 42;\n  ", window.getBuffer().getText());
+        }
+
+        @Test
+        void enum宣言の開き波括弧後にインデントが増加する() {
+            var window = createWindow("enum Color {");
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("enum Color {\n  ", window.getBuffer().getText());
+        }
+
+        @Test
+        void object型エイリアスの開き波括弧後にインデントが増加する() {
+            // type Point = { ... } の `{` (object_type ノード)
+            var window = createWindow("type Point = {");
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("type Point = {\n  ", window.getBuffer().getText());
+        }
+
+        @Test
+        void tuple型の開き角括弧後にインデントが増加する() {
+            // type Pair = [A, B] の `[` (tuple_type ノード)
+            var window = createWindow("type Pair = [");
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("type Pair = [\n  ", window.getBuffer().getText());
+        }
+
+        @Test
+        void インターフェース本体の複数行入力で前行と同じインデントが入る() {
+            // 前行 `  id: number;` は `;` で終わり、文字ベース判定では +indent されない
+            // 文字ベースのフォールバックではインデント継承のみが起きる
+            var window = createWindow("interface User {\n  id: number;");
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals(
+                    "interface User {\n  id: number;\n  ", window.getBuffer().getText());
+        }
+
+        @Test
+        void enum本体の複数行入力で前行と同じインデントが入る() {
+            var window = createWindow("enum Color {\n  RED,");
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("enum Color {\n  RED,\n  ", window.getBuffer().getText());
         }
     }
 }
