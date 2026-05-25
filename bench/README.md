@@ -11,15 +11,16 @@
 ```
 bench/
 ├── README.md              # この文書
-├── generate-testdata.sh   # テストデータ生成（10,000行、850KB）
-├── generate-keystrokes.py # キーストローク生成（C-p/C-n スクロール重視）
+├── generate-testdata.sh   # テストデータ生成（行数・出力先を引数化）
+├── generate-keystrokes.py # キーストローク生成（--mode default|split|largefile）
 ├── driver.py              # pty経由でエディタを起動しプロファイルを取得するドライバー
-├── run-profile.sh         # 一連の流れを実行するラッパー
-├── testdata.txt           # 生成済みテストデータ（gitignore推奨）
-└── results/               # プロファイル結果（gitignore推奨）
-    ├── profile-YYYYMMDD-HHMMSS.jfr
-    ├── flamegraph-YYYYMMDD-HHMMSS.html
-    └── collapsed-YYYYMMDD-HHMMSS.txt
+├── run-profile.sh         # 一連の流れを実行するラッパー（mode 引数対応）
+├── testdata.txt           # default/split モード用 10,000行（gitignore済）
+├── testdata-100k.txt      # largefile モード用 100,000行（gitignore済、初回run時に自動生成）
+└── results/               # プロファイル結果（gitignore済）
+    ├── profile-<mode>-YYYYMMDD-HHMMSS.jfr
+    ├── flamegraph-<mode>-YYYYMMDD-HHMMSS.html
+    └── collapsed-<mode>-YYYYMMDD-HHMMSS.txt
 ```
 
 ## イテレーション手順
@@ -29,16 +30,44 @@ bench/
 ### 1. プロファイル取得
 
 ```bash
-bash bench/run-profile.sh 500
+bash bench/run-profile.sh [iterations] [mode] [testdata]
 ```
 
 - shadow jar をビルド
-- 10,000行のテストファイルを開き、500イテレーション分のキーストローク（主にC-p/C-n スクロール）を送信
+- 指定モードのテストファイルを開き、指定イテレーション分のキーストロークを送信
 - `asprof collect -d <秒数>` で初期化後のCPUプロファイルを JFR 形式で取得
 - `jfrconv` で HTML フレームグラフと collapsed 形式に変換
-- 結果は `bench/results/` に出力される
+- 結果は `bench/results/profile-<mode>-<timestamp>.{jfr,html,txt}` に出力される
 
-引数の数値はキーストロークのイテレーション数。デフォルト500。
+引数:
+
+| 位置 | 既定 | 意味 |
+|---|---|---|
+| iterations | 500 | キーストロークのイテレーション数 |
+| mode | `default` | シナリオ種別（`default` / `split` / `largefile`） |
+| testdata | モード既定 | テストデータパス。未存在なら自動生成 |
+
+モード別の挙動:
+
+| mode | 主目的 | testdata 既定 | 既定画面サイズ |
+|---|---|---|---|
+| `default` | 単一ウィンドウでスクロール・編集（ADR 0130 互換） | `bench/testdata.txt` (10,000行) | 80x24 |
+| `split` | 大画面 + 画面分割（C-x 2 / 3 / o / 1 を含む混合） | `bench/testdata.txt` (10,000行) | 200x60 |
+| `largefile` | 大ファイルでのページスクロール中心 | `bench/testdata-100k.txt` (100,000行) | 200x60 |
+
+環境変数（`driver.py` が解釈する）:
+
+| 環境変数 | 既定 | 用途 |
+|---|---|---|
+| `BENCH_COLS` | 80 | ターミナル列数（split/largefile では runner が 200 に上書き） |
+| `BENCH_ROWS` | 24 | ターミナル行数（split/largefile では runner が 60 に上書き） |
+| `BENCH_INIT_WAIT` | 60 | 初期化待ちの最大秒数 |
+| `BENCH_INIT_MIN_BYTES` | 1000 | 初期化完了とみなす最小出力バイト数 |
+| `BENCH_INIT_STABLE_SEC` | 1.0 | 出力増分が無くなって安定とみなす待機秒数 |
+| `BENCH_SLEEP_PER_CHUNK` | 0.005 | チャンク送信間隔（秒） |
+| `BENCH_DURATION_MARGIN` | 15 | profile_duration に加算するマージン秒 |
+
+詳細仕様は ADR 0138 を参照。
 
 ### 2. プロファイル分析
 
@@ -113,13 +142,14 @@ echo -n "After:  "; grep '対象メソッド' "$AFTER" | awk '{sum+=$NF} END{pri
 
 - lanterna の `UnixTerminal` は `/dev/tty` と stty を必要とする
 - `driver.py` が Python の `pty` モジュールで疑似端末を割り当て、`setsid()` + `TIOCSCTTY` で制御端末を設定する
-- 画面出力が 1000 バイトを超えたら初期化完了とみなし、2秒待ってからプロファイリングを開始する
-- GraalPy の初期化に約25秒かかるため、初期化タイムアウトは60秒に設定
+- 初期化完了判定は「`BENCH_INIT_MIN_BYTES` を超え、かつ最後の出力から `BENCH_INIT_STABLE_SEC` 秒間増分が無い」状態を完了とみなす安定判定方式
+- GraalPy の初期化に約25秒かかるため、初期化タイムアウト (`BENCH_INIT_WAIT`) は 60秒既定
 
 ### キーストロークシナリオ
 
-`generate-keystrokes.py` が生成するシナリオ:
+`generate-keystrokes.py --mode <name> <iterations>` が生成するシナリオ。
 
+#### default
 1. C-n (next-line) × iterations — 下方向スクロール
 2. C-p (previous-line) × iterations — 上方向スクロール
 3. C-v / M-v × iterations/10 — ページスクロール
@@ -130,6 +160,21 @@ echo -n "After:  "; grep '対象メソッド' "$AFTER" | awk '{sum+=$NF} END{pri
 8. C-q で終了
 
 ユーザーの体感（大きめファイルでの C-p/C-n スクロールが遅い）を再現するため、スクロール操作を重点的に含む。
+
+#### split
+- `cycles = max(iterations/50, 3)` 回、以下を繰り返す
+  1. C-x 2（下分割）→ C-x 3（右分割）→ C-x o → C-x 3 で4ペインを構成
+  2. 4ペインを巡回し、各ペインで C-n / C-v / C-p / M-v を実行
+  3. C-x 1 で単一ウィンドウに戻し、軽くスクロール
+- 終了時は単一ウィンドウ状態で C-q
+
+#### largefile
+- ページダウン (C-v) × max(iterations, 100) で末尾近くまで到達
+- 行スクロールで中盤を往復
+- ページアップ (M-v) で先頭近くまで戻す
+- C-a / C-e × iterations/2
+- 再度ページダウンで末尾まで
+- C-q
 
 ## イテレーション1の結果（参考）
 

@@ -55,9 +55,12 @@ def main() -> None:
     # ptyを割り当て
     master_fd, slave_fd = pty.openpty()
 
-    # ターミナルサイズを設定 (80x24)
-    winsize = struct.pack("HHHH", 24, 80, 0, 0)
+    # ターミナルサイズを設定 (BENCH_COLS / BENCH_ROWS, 既定 80x24)
+    cols = int(os.environ.get("BENCH_COLS", "80"))
+    rows = int(os.environ.get("BENCH_ROWS", "24"))
+    winsize = struct.pack("HHHH", rows, cols, 0, 0)
     fcntl.ioctl(master_fd, termios.TIOCSWINSZ, winsize)
+    print(f"Terminal size: {cols}x{rows}", file=sys.stderr)
 
     env = os.environ.copy()
     env["TERM"] = "xterm-256color"
@@ -86,10 +89,15 @@ def main() -> None:
     print(f"Editor PID: {pid}", file=sys.stderr)
 
     # --- 初期化完了を待つ ---
+    # 「最小バイト数を超え、かつ最後の出力から N 秒間増分が無い」状態を完了とみなす。
+    # 大ファイル読み込み中の途中描画を完了と誤検知しないための安定判定。
     print("Waiting for initialization...", file=sys.stderr)
-    init_wait = 60
+    init_wait = float(os.environ.get("BENCH_INIT_WAIT", "60"))
+    init_min_bytes = int(os.environ.get("BENCH_INIT_MIN_BYTES", "1000"))
+    init_stable_sec = float(os.environ.get("BENCH_INIT_STABLE_SEC", "1.0"))
     start_time = time.time()
     output_buf = b""
+    last_growth_time = start_time
     while time.time() - start_time < init_wait:
         ret = proc.poll()
         if ret is not None:
@@ -104,18 +112,25 @@ def main() -> None:
             os.close(master_fd)
             sys.exit(1)
 
-        readable, _, _ = select.select([master_fd], [], [], 0.5)
+        readable, _, _ = select.select([master_fd], [], [], 0.2)
         if readable:
             try:
                 data = os.read(master_fd, 4096)
                 if data:
                     output_buf += data
+                    last_growth_time = time.time()
             except OSError:
                 break
 
-        if len(output_buf) > 1000:
-            print(f"Screen output detected ({len(output_buf)} bytes).", file=sys.stderr)
-            time.sleep(2)
+        if (
+            len(output_buf) >= init_min_bytes
+            and (time.time() - last_growth_time) >= init_stable_sec
+        ):
+            print(
+                f"Screen output stable ({len(output_buf)} bytes, "
+                f"no growth for {init_stable_sec}s).",
+                file=sys.stderr,
+            )
             break
 
     elapsed = time.time() - start_time
@@ -128,11 +143,12 @@ def main() -> None:
 
     # --- キーストローク送信量から必要時間を見積もり ---
     chunk_size = 32
-    sleep_per_chunk = 0.005
+    sleep_per_chunk = float(os.environ.get("BENCH_SLEEP_PER_CHUNK", "0.005"))
+    duration_margin = float(os.environ.get("BENCH_DURATION_MARGIN", "15"))
     num_chunks = (len(keystrokes) + chunk_size - 1) // chunk_size
     estimated_send_sec = num_chunks * sleep_per_chunk
     # 送信時間 + 処理の余裕 + asprof自身のオーバーヘッド
-    profile_duration = int(estimated_send_sec + 15)
+    profile_duration = int(estimated_send_sec + duration_margin)
 
     # --- asprof collect をバックグラウンドで開始 ---
     print(f"Starting asprof collect -d {profile_duration} ...", file=sys.stderr)
