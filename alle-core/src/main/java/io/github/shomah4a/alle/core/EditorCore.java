@@ -88,6 +88,7 @@ import io.github.shomah4a.alle.core.mode.modes.dired.git.TreeDiredGitInitializer
 import io.github.shomah4a.alle.core.mode.modes.git.DefaultGitLogProvider;
 import io.github.shomah4a.alle.core.mode.modes.git.GitModeInitializer;
 import io.github.shomah4a.alle.core.mode.modes.git.GitRepositoryLocator;
+import io.github.shomah4a.alle.core.mode.modes.java.JavaMode;
 import io.github.shomah4a.alle.core.mode.modes.javascript.JavaScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
 import io.github.shomah4a.alle.core.mode.modes.makefile.MakefileMode;
@@ -281,6 +282,8 @@ public final class EditorCore {
                 "ts-node",
                 () -> new TypeScriptMode(
                         syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
+        autoModeMap.register(
+                "java", () -> new JavaMode(syntaxAnalyzerRegistry.create("java").orElseThrow()));
 
         // モードレジストリ
         var modeRegistry = new ModeRegistry();
@@ -341,6 +344,8 @@ public final class EditorCore {
                 "typescript",
                 () -> new TypeScriptMode(
                         syntaxAnalyzerRegistry.create("typescript").orElseThrow()));
+        modeRegistry.registerMajorMode(
+                "java", () -> new JavaMode(syntaxAnalyzerRegistry.create("java").orElseThrow()));
 
         // キーマップ
         var keymap = createKeymap(registry);
