@@ -104,7 +104,8 @@ public class GitLogCommand implements Command {
     }
 
     private String buildBufferName(Path repoRoot, Path targetPath, Kind kind) {
-        String relative = kind == Kind.REPO ? "." : repoRoot.relativize(targetPath).toString();
+        String relative =
+                kind == Kind.REPO ? "." : repoRoot.relativize(targetPath).toString();
         return "*git-log: " + relative + " [" + kind.label + "]*";
     }
 

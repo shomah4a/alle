@@ -27,7 +27,11 @@ public class GitRepositoryLocator {
         this(DEFAULT_TTL, DEFAULT_MAX_SIZE, GitRepositoryLocator::resolveUncached);
     }
 
-    GitRepositoryLocator(Duration ttl, int maxSize, Function<Path, Optional<Path>> resolver) {
+    /**
+     * TTL / キャッシュサイズ / 探索関数を注入するコンストラクタ。
+     * FS アクセス (探索) を外部から差し替えるためのもので、テストからも利用する。
+     */
+    public GitRepositoryLocator(Duration ttl, int maxSize, Function<Path, Optional<Path>> resolver) {
         this.cache =
                 Caffeine.newBuilder().expireAfterWrite(ttl).maximumSize(maxSize).build();
         this.resolver = resolver;

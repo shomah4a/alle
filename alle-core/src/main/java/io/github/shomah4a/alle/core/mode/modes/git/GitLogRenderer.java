@@ -84,9 +84,13 @@ public final class GitLogRenderer {
             var entry = entries.get(i);
             sb.append("commit ").append(entry.shortHash()).append('\n');
             sb.append("Author: ").append(entry.author()).append('\n');
-            sb.append("Date:   ").append(dateFormatter.format(entry.commitTime())).append('\n');
+            sb.append("Date:   ")
+                    .append(dateFormatter.format(entry.commitTime()))
+                    .append('\n');
             sb.append('\n');
-            sb.append(INDENT).append(truncate(entry.subject(), config.subjectMaxWidth())).append('\n');
+            sb.append(INDENT)
+                    .append(truncate(entry.subject(), config.subjectMaxWidth()))
+                    .append('\n');
             appendBody(sb, entry.body(), config);
         }
     }
@@ -99,7 +103,9 @@ public final class GitLogRenderer {
         String[] lines = trimmed.split("\n", -1);
         int limit = Math.min(lines.length, config.bodyMaxLines());
         for (int i = 0; i < limit; i++) {
-            sb.append(INDENT).append(truncate(lines[i], config.subjectMaxWidth())).append('\n');
+            sb.append(INDENT)
+                    .append(truncate(lines[i], config.subjectMaxWidth()))
+                    .append('\n');
         }
         if (lines.length > limit) {
             sb.append(INDENT).append(ELLIPSIS).append('\n');
