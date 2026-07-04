@@ -28,15 +28,13 @@ class GitLogRendererTest {
 
         String text = GitLogRenderer.buildText(entries, config);
 
-        assertEquals(
-                """
+        assertEquals("""
                 commit abc1234
                 Author: shoma
                 Date:   2026-07-04 10:00:00+0000
 
                     fix: bug
-                """,
-                text);
+                """, text);
     }
 
     @Test
@@ -143,7 +141,7 @@ class GitLogRendererTest {
         GitLogRenderer.render(buffer, entries, config);
 
         String expected = GitLogRenderer.buildText(entries, config);
-        assertEquals(expected, buffer.getText(0, buffer.length()));
+        assertEquals(expected, buffer.getText());
     }
 
     @Test
@@ -154,23 +152,21 @@ class GitLogRendererTest {
 
         GitLogRenderer.appendEntries(buffer, entries, config);
 
-        String text = buffer.getText(0, buffer.length());
+        String text = buffer.getText();
         assertTrue(text.startsWith("commit abc"));
     }
 
     @Test
     void appendEntries_で既存バッファに追加すると先頭区切りが入る() {
-        var initialEntries =
-                Lists.immutable.of(entry("aaa", "2026-07-04T10:00:00Z", "shoma", "first", ""));
-        var addedEntries =
-                Lists.immutable.of(entry("bbb", "2026-07-03T10:00:00Z", "shoma", "second", ""));
+        var initialEntries = Lists.immutable.of(entry("aaa", "2026-07-04T10:00:00Z", "shoma", "first", ""));
+        var addedEntries = Lists.immutable.of(entry("bbb", "2026-07-03T10:00:00Z", "shoma", "second", ""));
         var config = new GitLogRenderer.RenderConfig(80, 3, UTC);
         var buffer = newBuffer();
         GitLogRenderer.render(buffer, initialEntries, config);
 
         GitLogRenderer.appendEntries(buffer, addedEntries, config);
 
-        String text = buffer.getText(0, buffer.length());
+        String text = buffer.getText();
         int firstIdx = text.indexOf("commit aaa");
         int sepIdx = text.indexOf("\n----\n");
         int secondIdx = text.indexOf("commit bbb");
@@ -181,8 +177,7 @@ class GitLogRendererTest {
 
     @Test
     void appendEntries_で空リストを渡すとバッファは変わらない() {
-        var initial =
-                Lists.immutable.of(entry("aaa", "2026-07-04T10:00:00Z", "shoma", "first", ""));
+        var initial = Lists.immutable.of(entry("aaa", "2026-07-04T10:00:00Z", "shoma", "first", ""));
         var config = new GitLogRenderer.RenderConfig(80, 3, UTC);
         var buffer = newBuffer();
         GitLogRenderer.render(buffer, initial, config);
@@ -202,7 +197,7 @@ class GitLogRendererTest {
         GitLogRenderer.render(buffer, entries, config);
 
         var spans = buffer.getFaceSpans(0, buffer.length());
-        assertTrue(spans.anySatisfy(s -> s.faceName() == FaceName.HEADING));
+        assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.HEADING)));
     }
 
     @Test
@@ -213,11 +208,12 @@ class GitLogRendererTest {
 
         GitLogRenderer.render(buffer, entries, config);
 
-        String text = buffer.getText(0, buffer.length());
+        String text = buffer.getText();
         int authorLabelStart = text.indexOf("Author:");
         var spans = buffer.getFaceSpans(0, buffer.length());
-        assertTrue(spans.anySatisfy(
-                s -> s.faceName() == FaceName.KEYWORD && s.start() == authorLabelStart && s.end() == authorLabelStart + "Author:".length()));
+        assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.KEYWORD)
+                && s.start() == authorLabelStart
+                && s.end() == authorLabelStart + "Author:".length()));
     }
 
     @Test
@@ -228,11 +224,12 @@ class GitLogRendererTest {
 
         GitLogRenderer.render(buffer, entries, config);
 
-        String text = buffer.getText(0, buffer.length());
+        String text = buffer.getText();
         int dateLabelStart = text.indexOf("Date:");
         var spans = buffer.getFaceSpans(0, buffer.length());
-        assertTrue(spans.anySatisfy(
-                s -> s.faceName() == FaceName.KEYWORD && s.start() == dateLabelStart && s.end() == dateLabelStart + "Date:".length()));
+        assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.KEYWORD)
+                && s.start() == dateLabelStart
+                && s.end() == dateLabelStart + "Date:".length()));
     }
 
     @Test
@@ -246,6 +243,6 @@ class GitLogRendererTest {
         GitLogRenderer.render(buffer, entries, config);
 
         var spans = buffer.getFaceSpans(0, buffer.length());
-        assertTrue(spans.anySatisfy(s -> s.faceName() == FaceName.COMMENT));
+        assertTrue(spans.anySatisfy(s -> s.faceName().equals(FaceName.COMMENT)));
     }
 }
