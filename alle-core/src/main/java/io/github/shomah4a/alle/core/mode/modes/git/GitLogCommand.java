@@ -131,6 +131,9 @@ public class GitLogCommand implements Command {
         // 前回のページネーション状態をリセットする。loadedCount は非同期で render 後に加算する。
         var model = new GitLogModel(repoRoot, logTarget, pageSize);
         var mode = new GitLogMode(model, gitLogKeymap, gitLogCommandRegistry);
+        // git-log バッファ自身は git リポジトリ配下判定の対象にしないため、
+        // runMajorModeHooks は意図的にスキップする。切替側から hook を呼ぶ既存パターンは
+        // docs/tasks.md「モード切替時の hook 呼び出しを内部化する」で別タスク化した。
         logBuffer.setMajorMode(mode);
 
         // 前回内容が残っている場合は空にする。
