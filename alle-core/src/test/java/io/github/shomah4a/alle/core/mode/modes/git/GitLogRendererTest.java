@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.TextBuffer;
 import io.github.shomah4a.alle.core.setting.SettingsRegistry;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import io.github.shomah4a.alle.core.textmodel.GapTextModel;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -190,5 +191,61 @@ class GitLogRendererTest {
         GitLogRenderer.appendEntries(buffer, Lists.immutable.empty(), config);
 
         assertEquals(before, buffer.length());
+    }
+
+    @Test
+    void render_後commit行にHEADING_faceが適用される() {
+        var entries = Lists.immutable.of(entry("abc", "2026-07-04T10:00:00Z", "shoma", "subj", ""));
+        var config = new GitLogRenderer.RenderConfig(80, 3, UTC);
+        var buffer = newBuffer();
+
+        GitLogRenderer.render(buffer, entries, config);
+
+        var spans = buffer.getFaceSpans(0, buffer.length());
+        assertTrue(spans.anySatisfy(s -> s.faceName() == FaceName.HEADING));
+    }
+
+    @Test
+    void render_後Author行のラベル部にKEYWORD_faceが適用される() {
+        var entries = Lists.immutable.of(entry("abc", "2026-07-04T10:00:00Z", "shoma", "subj", ""));
+        var config = new GitLogRenderer.RenderConfig(80, 3, UTC);
+        var buffer = newBuffer();
+
+        GitLogRenderer.render(buffer, entries, config);
+
+        String text = buffer.getText(0, buffer.length());
+        int authorLabelStart = text.indexOf("Author:");
+        var spans = buffer.getFaceSpans(0, buffer.length());
+        assertTrue(spans.anySatisfy(
+                s -> s.faceName() == FaceName.KEYWORD && s.start() == authorLabelStart && s.end() == authorLabelStart + "Author:".length()));
+    }
+
+    @Test
+    void render_後Date行のラベル部にKEYWORD_faceが適用される() {
+        var entries = Lists.immutable.of(entry("abc", "2026-07-04T10:00:00Z", "shoma", "subj", ""));
+        var config = new GitLogRenderer.RenderConfig(80, 3, UTC);
+        var buffer = newBuffer();
+
+        GitLogRenderer.render(buffer, entries, config);
+
+        String text = buffer.getText(0, buffer.length());
+        int dateLabelStart = text.indexOf("Date:");
+        var spans = buffer.getFaceSpans(0, buffer.length());
+        assertTrue(spans.anySatisfy(
+                s -> s.faceName() == FaceName.KEYWORD && s.start() == dateLabelStart && s.end() == dateLabelStart + "Date:".length()));
+    }
+
+    @Test
+    void render_後区切り線にCOMMENT_faceが適用される() {
+        var entries = Lists.immutable.of(
+                entry("aaa", "2026-07-04T10:00:00Z", "a", "subj-a", ""),
+                entry("bbb", "2026-07-03T10:00:00Z", "b", "subj-b", ""));
+        var config = new GitLogRenderer.RenderConfig(80, 3, UTC);
+        var buffer = newBuffer();
+
+        GitLogRenderer.render(buffer, entries, config);
+
+        var spans = buffer.getFaceSpans(0, buffer.length());
+        assertTrue(spans.anySatisfy(s -> s.faceName() == FaceName.COMMENT));
     }
 }

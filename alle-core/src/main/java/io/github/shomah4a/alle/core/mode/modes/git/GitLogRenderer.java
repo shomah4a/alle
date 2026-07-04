@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.mode.modes.git;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
+import io.github.shomah4a.alle.core.styling.FaceName;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.eclipse.collections.api.list.ListIterable;
@@ -39,10 +40,12 @@ public final class GitLogRenderer {
         String text = buildText(entries, config);
         int currentLength = buffer.length();
         if (currentLength > 0) {
+            buffer.removeFace(0, currentLength);
             buffer.deleteText(0, currentLength);
         }
         if (!text.isEmpty()) {
             buffer.insertText(0, text);
+            applyFacesFromOffset(buffer, 0, text);
         }
     }
 
@@ -60,7 +63,10 @@ public final class GitLogRenderer {
             sb.append('\n').append(SEPARATOR).append('\n');
         }
         appendEntriesTo(sb, entries, config);
-        buffer.insertText(buffer.length(), sb.toString());
+        int appendStart = buffer.length();
+        String appended = sb.toString();
+        buffer.insertText(appendStart, appended);
+        applyFacesFromOffset(buffer, appendStart, appended);
     }
 
     static String buildText(ListIterable<GitLogEntry> entries, RenderConfig config) {
@@ -106,6 +112,30 @@ public final class GitLogRenderer {
         }
         int cut = Math.max(0, maxWidth - ELLIPSIS.length());
         return source.substring(0, cut) + ELLIPSIS;
+    }
+
+    /**
+     * 挿入したテキストの各行のラベル部分に face を適用する。
+     * オフセットは codepoint 単位 (buffer.length と揃える)。
+     * ラベル / 区切り線は ASCII のみで構成されるため char 数 = codepoint 数で問題ない。
+     * 行末までの codepoint 数のみ全体 (subject / body) 側で計算する。
+     */
+    private static void applyFacesFromOffset(BufferFacade buffer, int startOffset, String text) {
+        int offset = startOffset;
+        for (var line : text.split("\n", -1)) {
+            int lineLength = line.codePointCount(0, line.length());
+            int lineEnd = offset + lineLength;
+            if (line.startsWith("commit ")) {
+                buffer.putFace(offset, lineEnd, FaceName.HEADING);
+            } else if (line.startsWith("Author:")) {
+                buffer.putFace(offset, offset + "Author:".length(), FaceName.KEYWORD);
+            } else if (line.startsWith("Date:")) {
+                buffer.putFace(offset, offset + "Date:".length(), FaceName.KEYWORD);
+            } else if (line.equals(SEPARATOR)) {
+                buffer.putFace(offset, lineEnd, FaceName.COMMENT);
+            }
+            offset = lineEnd + 1;
+        }
     }
 
     private static String trimSurroundingBlankLines(String value) {
