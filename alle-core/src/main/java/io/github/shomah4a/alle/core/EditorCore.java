@@ -31,6 +31,7 @@ import io.github.shomah4a.alle.core.command.commands.FindFileCommand;
 import io.github.shomah4a.alle.core.command.commands.ForwardCharCommand;
 import io.github.shomah4a.alle.core.command.commands.IndentDedentBackspaceCommand;
 import io.github.shomah4a.alle.core.command.commands.IndentRegionCommand;
+import io.github.shomah4a.alle.core.command.commands.JsonPrettyPrintCommand;
 import io.github.shomah4a.alle.core.command.commands.KeyboardQuitCommand;
 import io.github.shomah4a.alle.core.command.commands.KillBufferCommand;
 import io.github.shomah4a.alle.core.command.commands.KillLineCommand;
@@ -411,6 +412,7 @@ public final class EditorCore {
         registry.register(new CommentRegionCommand());
         registry.register(new UncommentRegionCommand());
         registry.register(new CommentOrUncommentRegionCommand());
+        registry.register(new JsonPrettyPrintCommand());
         var filePathHistory = new InputHistory();
         registry.register(new SaveBufferCommand(bufferIO, filePathInputPrompter, filePathHistory));
         registry.register(new RevertBufferCommand(bufferIO));

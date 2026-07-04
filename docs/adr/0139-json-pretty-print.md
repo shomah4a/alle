@@ -17,8 +17,11 @@ JSON バッファを開いた際、リージョンを整形したい／バッフ
 
 - コマンド名: `json-pretty-print`
 - キーバインド: なし（M-x 経由で呼び出す）
-- 配置: `JsonMode` の `CommandRegistry`（FQCN: `json.json-pretty-print`）
+- 配置: グローバル `CommandRegistry`（`EditorCore` で登録）
+- 実装クラス: `io.github.shomah4a.alle.core.command.commands.JsonPrettyPrintCommand`
 - 実装: `TransactionalCommand`（Undo 1 単位）
+
+JSON モードに限定せずグローバル登録とする。JSON 整形は他モードのバッファ（スクラッチ、ログ等に貼り付けた JSON など）でも頻繁に必要になるため。
 
 ### 対象範囲
 
