@@ -11,7 +11,7 @@ Jackson 2 系は 2.22 以降メジャー開発が 3 系へ移行しており、3
 
 利用箇所は `alle-core` の 2 ファイルのみ:
 
-- `ServerProtocol` (ADR 0134): JSON Lines プロトコルの encode/parse。Tree Model のみ
+- `ServerProtocol` (ADR 0129): JSON Lines プロトコルの encode/parse。Tree Model のみ
 - `JsonPrettyPrintCommand` (ADR 0139): カスタム PrettyPrinter による整形。Tree Model + streaming parser
 
 Jackson アノテーションおよび POJO データバインディングは使用していない。
