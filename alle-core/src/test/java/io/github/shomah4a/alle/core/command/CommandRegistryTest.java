@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -95,7 +96,7 @@ class CommandRegistryTest {
             var result = registry.lookup("test-command");
 
             assertTrue(result.isPresent());
-            assertTrue(command == result.get(), "レジストリから取得したインスタンスは登録時と同一であるべき");
+            assertSame(command, result.get(), "レジストリから取得したインスタンスは登録時と同一であるべき");
         }
     }
 }

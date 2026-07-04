@@ -2,6 +2,7 @@ package io.github.shomah4a.alle.core.window;
 
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.buffer.BufferManager;
+import java.util.Objects;
 import java.util.Optional;
 import org.eclipse.collections.api.list.ImmutableList;
 
@@ -52,7 +53,7 @@ public class Frame {
      * @throws IllegalArgumentException ウィンドウが設定可能な対象でない場合
      */
     public void setActiveWindow(Window window) {
-        if (window == minibufferWindow && minibufferActive) {
+        if (Objects.equals(window, minibufferWindow) && minibufferActive) {
             this.activeWindow = window;
             return;
         }
@@ -138,7 +139,7 @@ public class Frame {
             return false;
         }
         windowTree = result.get();
-        if (activeWindow == target) {
+        if (Objects.equals(activeWindow, target)) {
             activeWindow = findFirstWindow(windowTree);
         }
         return true;

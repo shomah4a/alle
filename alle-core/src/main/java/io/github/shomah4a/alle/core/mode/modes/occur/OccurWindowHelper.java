@@ -3,6 +3,7 @@ package io.github.shomah4a.alle.core.mode.modes.occur;
 import io.github.shomah4a.alle.core.buffer.BufferFacade;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.window.Window;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -26,7 +27,7 @@ final class OccurWindowHelper {
         var windows = context.frame().getWindowTree().windows();
         Window activeWindow = context.activeWindow();
         for (Window window : windows) {
-            if (window != activeWindow && window.getBuffer().equals(sourceBuffer.get())) {
+            if (!Objects.equals(window, activeWindow) && window.getBuffer().equals(sourceBuffer.get())) {
                 return Optional.of(window);
             }
         }
