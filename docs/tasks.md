@@ -2,6 +2,12 @@
 
 ## 未着手タスク
 
+### モード切替時の hook 呼び出しを内部化する
+- 現状 `PathOpenService` / `DiredOpenService` / `ModeCommand.SetMajorMode` / `TreeDiredGitInitializer` の hook 内など、モード切替を行う呼び出し側が明示的に `ModeRegistry.runMajorModeHooks` / `runMinorModeHooks` を呼ぶ設計になっている
+- `setMajorMode` / `enableMinorMode` の内部で自動的に hook を実行する形にリファクタしたい
+- 呼び出し側で hook を忘れると挙動が非対称になり (例: 現状の `GitLogCommand` は結果バッファ生成時に hook を呼ばない)、設計方針の一貫性が損なわれる
+- 影響範囲: `Buffer` / `BufferFacade` / `TextBuffer` に `ModeRegistry` を持たせるか、リスナー機構で hook 呼び出しを分離するかの設計判断が必要
+
 ### Dependabot の導入
 - CI（ADR 0110）のマージ後に着手する
 - minor/patch更新は全依存を1つのPRにまとめる

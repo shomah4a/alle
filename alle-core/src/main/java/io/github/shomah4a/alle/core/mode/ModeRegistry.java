@@ -31,6 +31,7 @@ public class ModeRegistry implements Loggable {
             Maps.mutable.empty();
     private final MutableMap<String, MutableList<BiConsumer<BufferFacade, String>>> minorModeDisableHooks =
             Maps.mutable.empty();
+    private final MutableList<BiConsumer<BufferFacade, String>> allMajorModeHooks = Lists.mutable.empty();
     private @Nullable CommandRegistry commandRegistry;
 
     /**
@@ -139,8 +140,20 @@ public class ModeRegistry implements Loggable {
     }
 
     /**
+     * 全メジャーモードに共通して実行される有効化フックを追加する。
+     * 特定モード名に紐付かず、任意のメジャーモード有効化時に走る。
+     * 実行順序は name-scoped フックの後、登録順。
+     *
+     * @param hook 有効化時に実行される関数
+     */
+    public void addAllMajorModeHook(BiConsumer<BufferFacade, String> hook) {
+        allMajorModeHooks.add(hook);
+    }
+
+    /**
      * メジャーモード有効化時のフックを実行する。
      * 各フックは try-catch で保護され、例外が発生しても残りのフックは継続実行される。
+     * name-scoped フック → 共通フック (addAllMajorModeHook) の順に実行される。
      *
      * @param modeName 有効化されたモードの名前
      * @param buffer 対象バッファ
@@ -150,6 +163,7 @@ public class ModeRegistry implements Loggable {
         if (hooks != null) {
             runHooks(modeName, buffer, hooks);
         }
+        runHooks(modeName, buffer, allMajorModeHooks);
     }
 
     /**

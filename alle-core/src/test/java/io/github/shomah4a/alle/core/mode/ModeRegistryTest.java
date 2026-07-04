@@ -272,6 +272,80 @@ class ModeRegistryTest {
     }
 
     @Nested
+    class 共通メジャーモードフック {
+
+        private BufferFacade dummyBuffer() {
+            return new BufferFacade(new TextBuffer("test", new GapTextModel(), new SettingsRegistry()));
+        }
+
+        @Test
+        void 共通フックが実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addAllMajorModeHook((buf, mode) -> executed.add(buf.getName() + ":" + mode));
+
+            registry.runMajorModeHooks("SomeMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("test:SomeMode"), executed);
+        }
+
+        @Test
+        void 複数の共通フックが登録順に実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addAllMajorModeHook((buf, mode) -> executed.add("common1"));
+            registry.addAllMajorModeHook((buf, mode) -> executed.add("common2"));
+
+            registry.runMajorModeHooks("SomeMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("common1", "common2"), executed);
+        }
+
+        @Test
+        void name_scopedフックの後に共通フックが実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addMajorModeHook("TargetMode", (buf, mode) -> executed.add("scoped"));
+            registry.addAllMajorModeHook((buf, mode) -> executed.add("common"));
+
+            registry.runMajorModeHooks("TargetMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("scoped", "common"), executed);
+        }
+
+        @Test
+        void 共通フックはどのモード名に対しても実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addAllMajorModeHook((buf, mode) -> executed.add(mode));
+
+            registry.runMajorModeHooks("ModeA", dummyBuffer());
+            registry.runMajorModeHooks("ModeB", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("ModeA", "ModeB"), executed);
+        }
+
+        @Test
+        void name_scopedフックが未登録でも共通フックは実行される() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addAllMajorModeHook((buf, mode) -> executed.add("common"));
+
+            registry.runMajorModeHooks("UnregisteredMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("common"), executed);
+        }
+
+        @Test
+        void 共通フック内の例外が他のフックの実行を妨げない() {
+            var executed = Lists.mutable.<String>empty();
+            registry.addAllMajorModeHook((buf, mode) -> {
+                throw new RuntimeException("intentional error");
+            });
+            registry.addAllMajorModeHook((buf, mode) -> executed.add("after-error"));
+
+            registry.runMajorModeHooks("SomeMode", dummyBuffer());
+
+            assertEquals(Lists.mutable.of("after-error"), executed);
+        }
+    }
+
+    @Nested
     class モード無効化フック {
 
         private BufferFacade dummyBuffer() {

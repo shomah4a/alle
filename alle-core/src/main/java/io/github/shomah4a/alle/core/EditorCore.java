@@ -85,6 +85,9 @@ import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredInitializer;
 import io.github.shomah4a.alle.core.mode.modes.dired.git.DefaultGitStatusProvider;
 import io.github.shomah4a.alle.core.mode.modes.dired.git.TreeDiredGitInitializer;
+import io.github.shomah4a.alle.core.mode.modes.git.DefaultGitLogProvider;
+import io.github.shomah4a.alle.core.mode.modes.git.GitModeInitializer;
+import io.github.shomah4a.alle.core.mode.modes.git.GitRepositoryLocator;
 import io.github.shomah4a.alle.core.mode.modes.javascript.JavaScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
 import io.github.shomah4a.alle.core.mode.modes.makefile.MakefileMode;
@@ -294,6 +297,9 @@ public final class EditorCore {
         // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
         var commandResolver = new CommandResolver();
+        // statusline の git branch キャッシュと git-mode 自動有効化 hook で
+        // リポジトリルート探索を共有する。
+        var gitRepositoryLocator = new GitRepositoryLocator();
         var createResult = createCommandRegistry(
                 bufferIO,
                 directoryLister,
@@ -305,7 +311,9 @@ public final class EditorCore {
                 settingsRegistry,
                 filePathInputPrompter,
                 frameLayoutStore,
-                scratchFacade);
+                scratchFacade,
+                gitRepositoryLocator,
+                warningBuffer);
         var registry = createResult.registry();
         var pathOpenService = createResult.pathOpenService();
         commandResolver.setGlobalRegistry(registry);
@@ -355,7 +363,8 @@ public final class EditorCore {
         // ステータスライン
         var statusLineRegistry = new StatusLineRegistry();
         BuiltinStatusLineSlots.registerAll(statusLineRegistry);
-        var gitBranchProvider = new CachingGitBranchProvider(new DefaultGitBranchProvider());
+        var gitBranchProvider =
+                new CachingGitBranchProvider(new DefaultGitBranchProvider(), gitRepositoryLocator);
         var gitStatusSlot = new GitStatusSlot(gitBranchProvider);
         var miscInfo = (StatusLineGroup) statusLineRegistry.lookup("misc-info").orElseThrow();
         miscInfo.addChild(gitStatusSlot);
@@ -392,7 +401,9 @@ public final class EditorCore {
             SettingsRegistry settingsRegistry,
             FilePathInputPrompter filePathInputPrompter,
             FrameLayoutStore frameLayoutStore,
-            BufferFacade scratchBuffer) {
+            BufferFacade scratchBuffer,
+            GitRepositoryLocator gitRepositoryLocator,
+            MessageBuffer warningBuffer) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -492,6 +503,11 @@ public final class EditorCore {
         // Tree Dired Git
         TreeDiredGitInitializer.initialize(
                 modeRegistry, commandResolver, new DefaultGitStatusProvider(), new DefaultFileOperations());
+
+        // git-mode / git-log
+        var gitLogProvider = new DefaultGitLogProvider(line -> warningBuffer.message("git-log: " + line));
+        GitModeInitializer.initialize(
+                modeRegistry, commandResolver, registry, gitLogProvider, gitRepositoryLocator, settingsRegistry);
 
         // Occur
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
