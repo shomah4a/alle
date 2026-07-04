@@ -188,6 +188,33 @@ class JsonPrettyPrintCommandTest {
 
             assertEquals("head{\n    \"a\" : 1\n}\n{\n    \"b\" : 2\n}tail", buffer.getText());
         }
+
+        @Test
+        void 既に整形済みのリージョンではmarkとpointが保持される() {
+            String pretty = "{\n    \"a\" : 1\n}";
+            buffer.insertText(0, "head" + pretty + "tail");
+            int markPos = 4;
+            int pointPos = markPos + pretty.length();
+            activeWindow().setMark(markPos);
+            activeWindow().setPoint(pointPos);
+
+            new JsonPrettyPrintCommand().execute(createContext()).join();
+
+            assertEquals("head" + pretty + "tail", buffer.getText());
+            assertEquals(markPos, activeWindow().getMark().orElseThrow());
+            assertEquals(pointPos, activeWindow().getPoint());
+        }
+
+        @Test
+        void リージョン整形時は前後の空白と改行が吸収される() {
+            buffer.insertText(0, "head\n  {\"a\":1}  \ntail");
+            activeWindow().setMark(4);
+            activeWindow().setPoint(17);
+
+            new JsonPrettyPrintCommand().execute(createContext()).join();
+
+            assertEquals("head{\n    \"a\" : 1\n}tail", buffer.getText());
+        }
     }
 
     @Nested

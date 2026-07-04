@@ -48,8 +48,9 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
 
         var regionStart = window.getRegionStart();
         var regionEnd = window.getRegionEnd();
-        boolean useRegion = regionStart.isPresent() && !regionStart.get().equals(regionEnd.orElseThrow());
-        int start = useRegion ? regionStart.get() : 0;
+        boolean useRegion =
+                regionStart.isPresent() && !regionStart.orElseThrow().equals(regionEnd.orElseThrow());
+        int start = useRegion ? regionStart.orElseThrow() : 0;
         int end = useRegion ? regionEnd.orElseThrow() : buffer.length();
 
         if (start == end) {
