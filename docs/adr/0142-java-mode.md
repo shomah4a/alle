@@ -78,7 +78,15 @@ highlights.scm には `#match?` 付きパターンが 5 つあり、未評価に
 characterization テストで固定して受容する。プレディケート評価の実装は本 ADR のスコープ外
 （対応する場合は全言語に影響する `TreeSitterStyler` の改修となる）。
 
-実装時に確認した実挙動: （実装完了時に記載）
+実装時に確認した実挙動:
+
+- メソッド呼び出しのレシーバ識別子は大文字・小文字によらず VARIABLE face になる
+  （`foo.bar()` の `foo` も `Foo.bar()` の `Foo` も VARIABLE。メソッド名は FUNCTION_NAME）
+- 懸念していた「小文字レシーバの TYPE への誤昇格」は発生しない。`TreeSitterStyler` の
+  重複解決が同一範囲では先に返されたマッチを採用する仕組みであり、highlights.scm 先頭の
+  汎用パターン `(identifier) @variable` が `#match?` 付きの `@type` パターンより優先されるため
+- 副作用として、大文字始まりレシーバも TYPE にならず VARIABLE に倒れる
+- 以上を JavaModeTest の characterization テスト 2 件で固定済み
 
 ### bracket types
 
