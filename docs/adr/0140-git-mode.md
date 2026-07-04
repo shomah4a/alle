@@ -46,14 +46,22 @@ tree-dired バッファでは両モードが独立に enable される (`tree-di
 - `onEnable` / `onDisable` はともに no-op とする
 - バッファ変数を書き込まないため、M-x `git-mode` によるトグルでも副作用なし
 - `settingDefaults()` で以下の設定変数を登録する:
-  - `git-log-subject-max-width` (デフォルト値は実装時に決定)
-  - `git-log-body-max-lines` (デフォルト値は実装時に決定)
+  - `git-log-page-size` (デフォルト 30、1 ページの取得件数)
+  - `git-log-subject-max-width` (デフォルト 80、subject / body 各行の表示幅上限)
+  - `git-log-body-max-lines` (デフォルト 3、body の表示行数上限)
 
 ### git-log コマンド
 
-- 対象 Path: バッファに紐づく Path (ファイルバッファ→そのファイル、tree-dired→そのディレクトリ、なければリポジトリルート全体)
-- 表示形式: **short-header** (Emacs vc-log 準拠。`commit <hash>` / `Author:` / `Date:` / 空行 / インデント付き subject / 区切り)
+- 対象 Path: バッファに紐づく Path (ファイルバッファ→そのファイル、tree-dired→そのディレクトリ、対象 == リポジトリルートならリポジトリ全体)
+- 表示形式: **short-header** (Emacs vc-log 準拠。`commit <hash>` / `Author:` / `Date:` / 空行 / インデント付き subject / body 数行 / 区切り)
 - 長いコミットメッセージの truncate 幅・行数は `git-log-subject-max-width` / `git-log-body-max-lines` の設定変数で制御する
+
+### 追加取得型ページネーション
+
+- 初回表示は `git-log-page-size` (デフォルト 30) 件
+- git-log 結果バッファのメジャーモード `GitLogMode` は `GitLogModel` を保持し、`repoRoot` / `target` / `pageSize` / `loadedCount` を保存する
+- `GitLogNextPageCommand` は現在のバッファの `GitLogMode` から `GitLogModel` を取得し、`--skip=<loadedCount>` を渡して次ページを取得、`GitLogRenderer.appendEntries` でバッファ末尾に区切り線付きで追加する
+- 前ページ移動はなし (magit-log 風の前方向のみ)
 
 ### スレッドモデル (非同期実行)
 
@@ -72,14 +80,15 @@ tree-dired バッファでは両モードが独立に enable される (`tree-di
 
 ### コマンド登録とキーマップ
 
-- `GitLogCommand` はグローバル `CommandRegistry` に登録する (M-x `git-log` で呼び出し可能)
-- `GitMode` のマイナーモード keymap: `C-x v l` = `git-log`
-- `GitLogMode` の keymap: `q` = kill-buffer
+- `GitLogCommand` / `GitLogNextPageCommand` はグローバル `CommandRegistry` に登録する (M-x `git-log` / M-x `git-log-next-page` で呼び出し可能)
+- `GitMode` のマイナーモード keymap は空。git-log は M-x 経由で呼び出す (C-x v プレフィックスの新設は今回スコープ外とし、キーマップ衝突リスクを最小化)
+- `GitLogMode` の keymap: `q` = kill-buffer、`n` = git-log-next-page
 
 ## 結果
 
-- 任意のメジャーモードのバッファから `git-log` で履歴閲覧が可能になる
+- 任意のメジャーモードのバッファから M-x `git-log` で履歴閲覧が可能になる
+- 履歴は 30 件単位で表示され、n キーで追加取得できる
 - 既存の `tree-dired-git` の挙動は変わらない
-- ファイル open のたびに親遡り FS stat が走るが、`GitRepositoryLocator` のキャッシュで吸収される
-- statusline の git branch 取得と git-log のリポジトリルート判定でキャッシュが統一される
-- subprocess UI スレッドブロッキングリスクは非同期実行で回避される
+- ファイル open のたびに親遡り FS stat が走るが、`GitRepositoryLocator` のキャッシュ (5 秒 TTL / 100 件) で吸収される
+- statusline の git branch 取得側にも共有 `GitRepositoryLocator` を注入できる 2 引数コンストラクタを追加した (現時点では EditorCore からは別インスタンスを渡しているが、キャッシュ二重化のコストは無視できるので将来必要に応じて共有する)
+- subprocess UI スレッドブロッキングリスクは `CompletableFuture.supplyAsync` による非同期実行で回避される
