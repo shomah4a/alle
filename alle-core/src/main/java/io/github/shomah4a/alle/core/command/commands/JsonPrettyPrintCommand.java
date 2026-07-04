@@ -1,22 +1,22 @@
 package io.github.shomah4a.alle.core.command.commands;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.core.util.Separators;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.cfg.JsonNodeFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.github.shomah4a.alle.core.command.CommandContext;
 import io.github.shomah4a.alle.core.command.TransactionalCommand;
 import io.github.shomah4a.alle.core.setting.BufferLocalSettings;
 import io.github.shomah4a.alle.core.setting.EditorSettings;
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.util.DefaultIndenter;
+import tools.jackson.core.util.DefaultPrettyPrinter;
+import tools.jackson.core.util.Separators;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.JsonNodeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * バッファまたは選択リージョンを JSON として整形するグローバルコマンド。
@@ -28,6 +28,9 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
     private static final ObjectMapper MAPPER = JsonMapper.builder()
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS)
+            // Jackson 3 デフォルトの FAIL_ON_TRAILING_TOKENS は複数 JSON 値の
+            // readTree ループ (ADR 0139) と干渉するため、このコマンド専用 mapper でのみ無効化する
+            .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
             .configure(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES, false)
             .build();
@@ -63,7 +66,7 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
         String formatted;
         try {
             formatted = formatJson(source, buffer.getSettings());
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             context.messageBuffer().message("JSON parse error: " + firstLine(e.getMessage()));
             return CompletableFuture.completedFuture(null);
         }
@@ -96,17 +99,17 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
         return CompletableFuture.completedFuture(null);
     }
 
-    private static String formatJson(String source, BufferLocalSettings settings) throws IOException {
+    private static String formatJson(String source, BufferLocalSettings settings) {
         String indent = computeIndent(settings);
         var indenter = new DefaultIndenter(indent, "\n");
-        var separators = Separators.createDefaultInstance().withObjectFieldValueSpacing(Separators.Spacing.AFTER);
+        var separators = Separators.createDefaultInstance().withObjectNameValueSpacing(Separators.Spacing.AFTER);
         var printer = new DefaultPrettyPrinter().withSeparators(separators);
         printer.indentObjectsWith(indenter);
         printer.indentArraysWith(indenter);
-        var writer = MAPPER.writer(printer);
+        var writer = MAPPER.writer().with(printer);
 
         var sb = new StringBuilder();
-        try (JsonParser parser = MAPPER.getFactory().createParser(source)) {
+        try (JsonParser parser = MAPPER.createParser(source)) {
             boolean first = true;
             while (true) {
                 JsonNode node = MAPPER.readTree(parser);

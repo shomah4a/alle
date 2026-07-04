@@ -1,11 +1,12 @@
 package io.github.shomah4a.alle.core.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.shomah4a.alle.core.Loggable;
 import java.util.Optional;
 import org.slf4j.Logger;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * サーバー/クライアント間の JSON Lines プロトコル。
@@ -21,7 +22,7 @@ import org.slf4j.Logger;
 public final class ServerProtocol {
 
     private static final Logger logger = Loggable.createLogger(ServerProtocol.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
     private ServerProtocol() {}
 
@@ -116,7 +117,7 @@ public final class ServerProtocol {
     private static Optional<JsonNode> parseJson(String line) {
         try {
             return Optional.of(MAPPER.readTree(line));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.debug("JSON パースに失敗: {}", line, e);
             return Optional.empty();
         }
@@ -124,9 +125,9 @@ public final class ServerProtocol {
 
     private static Optional<String> textField(JsonNode node, String fieldName) {
         var field = node.get(fieldName);
-        if (field == null || !field.isTextual()) {
+        if (field == null || !field.isString()) {
             return Optional.empty();
         }
-        return Optional.of(field.asText());
+        return Optional.of(field.asString());
     }
 }
