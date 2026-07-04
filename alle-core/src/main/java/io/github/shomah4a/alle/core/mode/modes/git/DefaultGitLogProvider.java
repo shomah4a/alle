@@ -96,20 +96,39 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
     }
 
     private static Optional<String> runProcess(Path workingDir, String... command) {
+        Process process = null;
+        java.util.concurrent.CompletableFuture<String> reader = null;
         try {
             var pb = new ProcessBuilder(command);
             pb.directory(workingDir.toFile());
             pb.redirectErrorStream(true);
-            var process = pb.start();
-            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            process = pb.start();
+
+            // 出力読み取りを別スレッドで走らせる。readAllBytes を先に呼ぶと
+            // プロセスが stdout を閉じるまでこのスレッドが無条件ブロックし、
+            // 後段の waitFor(timeout) が実効を失うため。
+            final var inputStream = process.getInputStream();
+            reader = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    return "";
+                }
+            });
+
             boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
+                reader.cancel(true);
                 return Optional.empty();
             }
             if (process.exitValue() != 0) {
+                reader.cancel(true);
                 return Optional.empty();
             }
+            // プロセスは終了したので stdout も EOF に達しているはず。
+            // 予期せぬハングに備えて短い timeout を設ける。
+            String output = reader.get(1, TimeUnit.SECONDS);
             return Optional.of(output);
         } catch (IOException e) {
             Loggable.createLogger(DefaultGitLogProvider.class).debug("git コマンドの実行に失敗: {}", e.getMessage());
@@ -117,6 +136,22 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             Loggable.createLogger(DefaultGitLogProvider.class).debug("git コマンドの実行が割り込まれました: {}", e.getMessage());
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            if (reader != null) {
+                reader.cancel(true);
+            }
+            return Optional.empty();
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            Loggable.createLogger(DefaultGitLogProvider.class)
+                    .debug("git コマンドの出力読み取りに失敗: {}", e.getMessage());
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            if (reader != null) {
+                reader.cancel(true);
+            }
             return Optional.empty();
         }
     }
