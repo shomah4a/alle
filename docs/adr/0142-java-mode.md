@@ -121,8 +121,10 @@ characterization テストで固定して受容する。プレディケート評
 明示的に注入する方式を採用する（ユーザー決定）。
 
 - 括弧文字（openBrackets / closeBrackets）と同じ「言語固有値は config が持つ」方針に揃える
-- 既存言語（JavaScript / TypeScript / Terraform）は `comment` を、Java は
-  `line_comment` / `block_comment` を注入する
+- 既存言語（JavaScript / TypeScript / Terraform / JSON / ShellScript）は `comment` を、
+  Java は `line_comment` / `block_comment` を注入する
+  （実装時の構築箇所 grep で JsonMode / ShellScriptMode も CStyleIndentConfig を
+  構築していることを確認したため、注入対象に含めた）
 - ハードコード定数 `COMMENT_NODE_TYPE` は廃止する
 
 ### bracket types の追加（実装安全性評価 LOW-1 対応）
