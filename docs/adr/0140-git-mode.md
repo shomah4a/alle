@@ -90,5 +90,5 @@ tree-dired バッファでは両モードが独立に enable される (`tree-di
 - 履歴は 30 件単位で表示され、n キーで追加取得できる
 - 既存の `tree-dired-git` の挙動は変わらない
 - ファイル open のたびに親遡り FS stat が走るが、`GitRepositoryLocator` のキャッシュ (5 秒 TTL / 100 件) で吸収される
-- statusline の git branch 取得側にも共有 `GitRepositoryLocator` を注入できる 2 引数コンストラクタを追加した (現時点では EditorCore からは別インスタンスを渡しているが、キャッシュ二重化のコストは無視できるので将来必要に応じて共有する)
+- statusline の git branch 取得と git-mode 自動有効化 hook は EditorCore で 1 個の `GitRepositoryLocator` を生成して共有する。`CachingGitBranchProvider` に 2 引数 public コンストラクタを追加してこの共有を実現している
 - subprocess UI スレッドブロッキングリスクは `CompletableFuture.supplyAsync` による非同期実行で回避される

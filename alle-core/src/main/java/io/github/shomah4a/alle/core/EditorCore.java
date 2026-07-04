@@ -297,6 +297,9 @@ public final class EditorCore {
         // コマンドレジストリ・コマンドリゾルバ
         var shutdownHandler = new ShutdownHandler();
         var commandResolver = new CommandResolver();
+        // statusline の git branch キャッシュと git-mode 自動有効化 hook で
+        // リポジトリルート探索を共有する。
+        var gitRepositoryLocator = new GitRepositoryLocator();
         var createResult = createCommandRegistry(
                 bufferIO,
                 directoryLister,
@@ -308,7 +311,8 @@ public final class EditorCore {
                 settingsRegistry,
                 filePathInputPrompter,
                 frameLayoutStore,
-                scratchFacade);
+                scratchFacade,
+                gitRepositoryLocator);
         var registry = createResult.registry();
         var pathOpenService = createResult.pathOpenService();
         commandResolver.setGlobalRegistry(registry);
@@ -358,7 +362,8 @@ public final class EditorCore {
         // ステータスライン
         var statusLineRegistry = new StatusLineRegistry();
         BuiltinStatusLineSlots.registerAll(statusLineRegistry);
-        var gitBranchProvider = new CachingGitBranchProvider(new DefaultGitBranchProvider());
+        var gitBranchProvider =
+                new CachingGitBranchProvider(new DefaultGitBranchProvider(), gitRepositoryLocator);
         var gitStatusSlot = new GitStatusSlot(gitBranchProvider);
         var miscInfo = (StatusLineGroup) statusLineRegistry.lookup("misc-info").orElseThrow();
         miscInfo.addChild(gitStatusSlot);
@@ -395,7 +400,8 @@ public final class EditorCore {
             SettingsRegistry settingsRegistry,
             FilePathInputPrompter filePathInputPrompter,
             FrameLayoutStore frameLayoutStore,
-            BufferFacade scratchBuffer) {
+            BufferFacade scratchBuffer,
+            GitRepositoryLocator gitRepositoryLocator) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -502,7 +508,7 @@ public final class EditorCore {
                 commandResolver,
                 registry,
                 new DefaultGitLogProvider(),
-                new GitRepositoryLocator(),
+                gitRepositoryLocator,
                 settingsRegistry);
 
         // Occur
