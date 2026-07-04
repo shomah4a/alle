@@ -76,7 +76,7 @@ public final class GitLogRenderer {
     }
 
     private static void appendEntriesTo(StringBuilder sb, ListIterable<GitLogEntry> entries, RenderConfig config) {
-        var dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE.withZone(config.zoneId());
+        var dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssZ").withZone(config.zoneId());
         for (int i = 0; i < entries.size(); i++) {
             if (i > 0) {
                 sb.append('\n').append(SEPARATOR).append('\n');

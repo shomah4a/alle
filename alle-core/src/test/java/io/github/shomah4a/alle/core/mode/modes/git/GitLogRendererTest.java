@@ -32,7 +32,7 @@ class GitLogRendererTest {
                 """
                 commit abc1234
                 Author: shoma
-                Date:   2026-07-04
+                Date:   2026-07-04 10:00:00+0000
 
                     fix: bug
                 """,
@@ -121,13 +121,13 @@ class GitLogRendererTest {
     }
 
     @Test
-    void Dateは指定タイムゾーンで表示される() {
+    void Dateは指定タイムゾーンで時刻とオフセット付きで表示される() {
         var entries = Lists.immutable.of(entry("abc", "2026-07-03T23:00:00Z", "shoma", "subj", ""));
         var config = new GitLogRenderer.RenderConfig(80, 3, ZoneId.of("Asia/Tokyo"));
 
         String text = GitLogRenderer.buildText(entries, config);
 
-        assertTrue(text.contains("Date:   2026-07-04"));
+        assertTrue(text.contains("Date:   2026-07-04 08:00:00+0900"));
     }
 
     private static BufferFacade newBuffer() {
