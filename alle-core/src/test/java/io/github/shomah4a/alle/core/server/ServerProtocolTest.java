@@ -37,6 +37,14 @@ class ServerProtocolTest {
         assertTrue(ServerProtocol.parseRequest("").isEmpty());
     }
 
+    @Test
+    void 後続トークン付きリクエスト行は先頭のJSON値をパースして受理する() {
+        var result = ServerProtocol.parseRequest("{\"type\":\"open\",\"path\":\"/tmp/test\"} garbage");
+        assertTrue(result.isPresent());
+        var open = assertInstanceOf(ServerProtocol.Request.Open.class, result.get());
+        assertEquals("/tmp/test", open.absolutePath());
+    }
+
     // ── Response パース ──
 
     @Test
@@ -66,6 +74,13 @@ class ServerProtocolTest {
     void 不正なレスポンス行はemptyを返す() {
         assertTrue(ServerProtocol.parseResponse("not json").isEmpty());
         assertTrue(ServerProtocol.parseResponse("").isEmpty());
+    }
+
+    @Test
+    void 後続トークン付きレスポンス行は先頭のJSON値をパースして受理する() {
+        var result = ServerProtocol.parseResponse("{\"type\":\"finished\"} garbage");
+        assertTrue(result.isPresent());
+        assertInstanceOf(ServerProtocol.Response.Finished.class, result.get());
     }
 
     // ── エンコード ──
