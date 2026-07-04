@@ -153,7 +153,7 @@ class JsonPrettyPrintCommandTest {
         }
 
         @Test
-        void 逆順のリージョンでも整形される() {
+        void 逆順のリージョンでも整形されmarkとpointが正順化される() {
             buffer.insertText(0, "prefix{\"a\":1}suffix");
             activeWindow().setMark(13);
             activeWindow().setPoint(6);
@@ -161,6 +161,10 @@ class JsonPrettyPrintCommandTest {
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
             assertEquals("prefix{\n    \"a\" : 1\n}suffix", buffer.getText());
+            int expectedStart = 6;
+            int expectedEnd = expectedStart + "{\n    \"a\" : 1\n}".length();
+            assertEquals(expectedStart, activeWindow().getMark().orElseThrow());
+            assertEquals(expectedEnd, activeWindow().getPoint());
         }
 
         @Test
@@ -172,6 +176,17 @@ class JsonPrettyPrintCommandTest {
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
             assertEquals("{\n    \"a\" : 1\n}", buffer.getText());
+        }
+
+        @Test
+        void リージョン内の複数のJSON値が改行で連結される() {
+            buffer.insertText(0, "head{\"a\":1}{\"b\":2}tail");
+            activeWindow().setMark(4);
+            activeWindow().setPoint(18);
+
+            new JsonPrettyPrintCommand().execute(createContext()).join();
+
+            assertEquals("head{\n    \"a\" : 1\n}\n{\n    \"b\" : 2\n}tail", buffer.getText());
         }
     }
 
@@ -218,7 +233,7 @@ class JsonPrettyPrintCommandTest {
         }
 
         @Test
-        void ReadOnlyバッファでは変更されずメッセージが表示される() {
+        void ReadOnlyバッファでは変更されずメッセージにバッファ名が含まれる() {
             buffer.insertText(0, "{\"a\":1}");
             buffer.setReadOnly(true);
             activeWindow().setPoint(0);
@@ -227,9 +242,36 @@ class JsonPrettyPrintCommandTest {
             new JsonPrettyPrintCommand().execute(context).join();
 
             assertEquals("{\"a\":1}", buffer.getText());
+            String message = context.messageBuffer().getLastMessage().orElseThrow();
+            assertTrue(message.startsWith("Buffer is read-only:"));
+            assertTrue(message.contains("test"));
+        }
+
+        @Test
+        void 空白のみの入力は変更されずメッセージが表示される() {
+            buffer.insertText(0, "   \n  \n");
+            activeWindow().setPoint(0);
+            var context = createContext();
+
+            new JsonPrettyPrintCommand().execute(context).join();
+
+            assertEquals("   \n  \n", buffer.getText());
             assertEquals(
-                    "Buffer is read-only",
+                    "No JSON value found",
                     context.messageBuffer().getLastMessage().orElseThrow());
+        }
+
+        @Test
+        void 重複キーはパースエラーになりバッファは変更されない() {
+            String original = "{\"a\":1,\"a\":2}";
+            buffer.insertText(0, original);
+            activeWindow().setPoint(0);
+            var context = createContext();
+
+            new JsonPrettyPrintCommand().execute(context).join();
+
+            assertEquals(original, buffer.getText());
+            assertTrue(context.messageBuffer().getLastMessage().orElse("").startsWith("JSON parse error:"));
         }
     }
 

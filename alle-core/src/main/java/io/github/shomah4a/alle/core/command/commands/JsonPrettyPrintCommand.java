@@ -1,6 +1,7 @@
 package io.github.shomah4a.alle.core.command.commands;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -26,6 +27,7 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
     private static final ObjectMapper MAPPER = JsonMapper.builder()
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS)
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
             .configure(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES, false)
             .build();
 
@@ -40,17 +42,15 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
         var buffer = window.getBuffer();
 
         if (buffer.isReadOnly()) {
-            context.messageBuffer().message("Buffer is read-only");
+            context.messageBuffer().message("Buffer is read-only: " + buffer.getName());
             return CompletableFuture.completedFuture(null);
         }
 
         var regionStart = window.getRegionStart();
         var regionEnd = window.getRegionEnd();
-        boolean useRegion = regionStart.isPresent()
-                && regionEnd.isPresent()
-                && !regionStart.get().equals(regionEnd.get());
+        boolean useRegion = regionStart.isPresent() && !regionStart.get().equals(regionEnd.orElseThrow());
         int start = useRegion ? regionStart.get() : 0;
-        int end = useRegion ? regionEnd.get() : buffer.length();
+        int end = useRegion ? regionEnd.orElseThrow() : buffer.length();
 
         if (start == end) {
             return CompletableFuture.completedFuture(null);
@@ -63,6 +63,11 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
             formatted = formatJson(source, buffer.getSettings());
         } catch (IOException e) {
             context.messageBuffer().message("JSON parse error: " + firstLine(e.getMessage()));
+            return CompletableFuture.completedFuture(null);
+        }
+
+        if (formatted.isEmpty()) {
+            context.messageBuffer().message("No JSON value found");
             return CompletableFuture.completedFuture(null);
         }
 

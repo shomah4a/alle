@@ -54,14 +54,17 @@ Jackson `ObjectReader.readValues(text)` で **JSON 値のシーケンス**とし
 - `DefaultPrettyPrinter` は呼び出し毎に新規生成（内部状態共有を回避）
 - `DefaultIndenter` の line separator は `\n` 固定
 - `ObjectMapper` に `DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS = true`, `USE_BIG_INTEGER_FOR_INTS = true` を有効化して数値精度の暗黙損失を回避
+- `JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES = false` を設定し、`1.10` のような末尾ゼロを保持
+- `StreamReadFeature.STRICT_DUPLICATE_DETECTION = true` を有効化し、重複キー入力（`{"a":1,"a":2}`）をパースエラーとして扱う。整形操作でデータが黙って減ることを防ぐため
 - 非 ASCII 文字は Jackson デフォルトで生の Unicode 出力（`ESCAPE_NON_ASCII` は既定 false）
 
 ### エラー処理
 
-- ReadOnly バッファ: 事前チェックし `"Buffer is read-only"` を messageBuffer に表示して終了
+- ReadOnly バッファ: 事前チェックし `"Buffer is read-only: <buffer name>"` を messageBuffer に表示して終了
 - パース失敗 (`JsonProcessingException`): `try-catch` で捕捉し、
   `"JSON parse error: <message>"` を messageBuffer に表示、future は正常完了（バッファ未変更）
 - 空バッファ / 空リージョン（実質バッファ全体が空）: 整形せず終了
+- 空白のみ入力（JSON 値が 1 個も見つからない）: `"No JSON value found"` を messageBuffer に表示、バッファ未変更で終了
 
 ### 整形後の状態
 
