@@ -1,13 +1,16 @@
 package io.github.shomah4a.alle.core.mode.modes.git;
 
 import io.github.shomah4a.alle.core.Loggable;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 
@@ -25,11 +28,27 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
     private final ProcessRunner processRunner;
 
     public DefaultGitLogProvider() {
-        this(DefaultGitLogProvider::runProcess);
+        this(defaultProcessRunner(DefaultGitLogProvider::logStderrLine));
+    }
+
+    /**
+     * stderr の 1 行ごとに指定コンシューマを呼ぶよう構築する。
+     * 通常は EditorCore から *Warnings* バッファへ流す用途で使う。
+     */
+    public DefaultGitLogProvider(Consumer<String> stderrLineConsumer) {
+        this(defaultProcessRunner(stderrLineConsumer));
     }
 
     DefaultGitLogProvider(ProcessRunner processRunner) {
         this.processRunner = processRunner;
+    }
+
+    private static ProcessRunner defaultProcessRunner(Consumer<String> stderrLineConsumer) {
+        return (dir, cmd) -> runProcess(dir, stderrLineConsumer, cmd);
+    }
+
+    private static void logStderrLine(String line) {
+        Loggable.createLogger(DefaultGitLogProvider.class).warn("git stderr: {}", line);
     }
 
     @Override
@@ -95,40 +114,63 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
         return c == ' ' || c == '\t' || c == '\n' || c == '\r';
     }
 
-    private static Optional<String> runProcess(Path workingDir, String... command) {
+    private static Optional<String> runProcess(
+            Path workingDir, Consumer<String> stderrLineConsumer, String... command) {
         Process process = null;
-        java.util.concurrent.CompletableFuture<String> reader = null;
+        java.util.concurrent.CompletableFuture<String> stdoutReader = null;
+        java.util.concurrent.CompletableFuture<Void> stderrReader = null;
         try {
             var pb = new ProcessBuilder(command);
             pb.directory(workingDir.toFile());
-            pb.redirectErrorStream(true);
+            // stderr は merge せず、専用スレッドで drain して stderrLineConsumer に流す。
             process = pb.start();
 
             // 出力読み取りを別スレッドで走らせる。readAllBytes を先に呼ぶと
             // プロセスが stdout を閉じるまでこのスレッドが無条件ブロックし、
             // 後段の waitFor(timeout) が実効を失うため。
-            final var inputStream = process.getInputStream();
-            reader = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+            final var stdoutStream = process.getInputStream();
+            stdoutReader = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
-                    return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                    return new String(stdoutStream.readAllBytes(), StandardCharsets.UTF_8);
                 } catch (IOException e) {
                     return "";
+                }
+            });
+
+            // stderr も並行して drain しないと OS パイプのバッファ満杯で
+            // プロセスが書き込みブロックしうる。
+            final var stderrStream = process.getErrorStream();
+            stderrReader = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try (var reader = new BufferedReader(new InputStreamReader(stderrStream, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        stderrLineConsumer.accept(line);
+                    }
+                } catch (IOException e) {
+                    // stderr 読み取り中断は握りつぶす (プロセスが destroyForcibly される経路)
                 }
             });
 
             boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                reader.cancel(true);
+                stdoutReader.cancel(true);
+                stderrReader.cancel(true);
                 return Optional.empty();
             }
             if (process.exitValue() != 0) {
-                reader.cancel(true);
+                stdoutReader.cancel(true);
+                stderrReader.cancel(true);
                 return Optional.empty();
             }
-            // プロセスは終了したので stdout も EOF に達しているはず。
+            // プロセスは終了したので両ストリームも EOF に達しているはず。
             // 予期せぬハングに備えて短い timeout を設ける。
-            String output = reader.get(1, TimeUnit.SECONDS);
+            String output = stdoutReader.get(1, TimeUnit.SECONDS);
+            try {
+                stderrReader.get(1, TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException ignored) {
+                stderrReader.cancel(true);
+            }
             return Optional.of(output);
         } catch (IOException e) {
             Loggable.createLogger(DefaultGitLogProvider.class).debug("git コマンドの実行に失敗: {}", e.getMessage());
@@ -139,8 +181,11 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
             if (process != null) {
                 process.destroyForcibly();
             }
-            if (reader != null) {
-                reader.cancel(true);
+            if (stdoutReader != null) {
+                stdoutReader.cancel(true);
+            }
+            if (stderrReader != null) {
+                stderrReader.cancel(true);
             }
             return Optional.empty();
         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
@@ -149,8 +194,11 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
             if (process != null) {
                 process.destroyForcibly();
             }
-            if (reader != null) {
-                reader.cancel(true);
+            if (stdoutReader != null) {
+                stdoutReader.cancel(true);
+            }
+            if (stderrReader != null) {
+                stderrReader.cancel(true);
             }
             return Optional.empty();
         }

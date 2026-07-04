@@ -312,7 +312,8 @@ public final class EditorCore {
                 filePathInputPrompter,
                 frameLayoutStore,
                 scratchFacade,
-                gitRepositoryLocator);
+                gitRepositoryLocator,
+                warningBuffer);
         var registry = createResult.registry();
         var pathOpenService = createResult.pathOpenService();
         commandResolver.setGlobalRegistry(registry);
@@ -401,7 +402,8 @@ public final class EditorCore {
             FilePathInputPrompter filePathInputPrompter,
             FrameLayoutStore frameLayoutStore,
             BufferFacade scratchBuffer,
-            GitRepositoryLocator gitRepositoryLocator) {
+            GitRepositoryLocator gitRepositoryLocator,
+            MessageBuffer warningBuffer) {
         var registry = new CommandRegistry();
         registry.register(new SelfInsertCommand());
         registry.register(new ForwardCharCommand());
@@ -503,13 +505,9 @@ public final class EditorCore {
                 modeRegistry, commandResolver, new DefaultGitStatusProvider(), new DefaultFileOperations());
 
         // git-mode / git-log
+        var gitLogProvider = new DefaultGitLogProvider(line -> warningBuffer.message("git-log: " + line));
         GitModeInitializer.initialize(
-                modeRegistry,
-                commandResolver,
-                registry,
-                new DefaultGitLogProvider(),
-                gitRepositoryLocator,
-                settingsRegistry);
+                modeRegistry, commandResolver, registry, gitLogProvider, gitRepositoryLocator, settingsRegistry);
 
         // Occur
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
