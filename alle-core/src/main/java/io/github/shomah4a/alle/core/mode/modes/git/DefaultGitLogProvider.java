@@ -89,8 +89,8 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
                 continue;
             }
             try {
-                entries.add(new GitLogEntry(
-                        shortHash, OffsetDateTime.parse(isoTime).toInstant(), author, subject, body));
+                entries.add(
+                        new GitLogEntry(shortHash, OffsetDateTime.parse(isoTime).toInstant(), author, subject, body));
             } catch (DateTimeParseException e) {
                 logger().warn("git log 出力の commit time パースに失敗: {}", isoTime, e);
             }
@@ -189,8 +189,7 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
             }
             return Optional.empty();
         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-            Loggable.createLogger(DefaultGitLogProvider.class)
-                    .debug("git コマンドの出力読み取りに失敗: {}", e.getMessage());
+            Loggable.createLogger(DefaultGitLogProvider.class).debug("git コマンドの出力読み取りに失敗: {}", e.getMessage());
             if (process != null) {
                 process.destroyForcibly();
             }

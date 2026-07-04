@@ -40,8 +40,8 @@ class CachingGitBranchProviderTest {
             callCount.incrementAndGet();
             return Optional.of(new GitBranchInfo("main", false));
         };
-        var locator = new GitRepositoryLocator(
-                Duration.ofSeconds(60), 100, path -> Optional.ofNullable(path.getParent()));
+        var locator =
+                new GitRepositoryLocator(Duration.ofSeconds(60), 100, path -> Optional.ofNullable(path.getParent()));
         var caching = new CachingGitBranchProvider(delegate, Duration.ofSeconds(60), 100, locator);
 
         caching.getBranch(Path.of("/repo1/test.txt"));

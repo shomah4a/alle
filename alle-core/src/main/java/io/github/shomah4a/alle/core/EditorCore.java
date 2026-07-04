@@ -363,8 +363,7 @@ public final class EditorCore {
         // ステータスライン
         var statusLineRegistry = new StatusLineRegistry();
         BuiltinStatusLineSlots.registerAll(statusLineRegistry);
-        var gitBranchProvider =
-                new CachingGitBranchProvider(new DefaultGitBranchProvider(), gitRepositoryLocator);
+        var gitBranchProvider = new CachingGitBranchProvider(new DefaultGitBranchProvider(), gitRepositoryLocator);
         var gitStatusSlot = new GitStatusSlot(gitBranchProvider);
         var miscInfo = (StatusLineGroup) statusLineRegistry.lookup("misc-info").orElseThrow();
         miscInfo.addChild(gitStatusSlot);

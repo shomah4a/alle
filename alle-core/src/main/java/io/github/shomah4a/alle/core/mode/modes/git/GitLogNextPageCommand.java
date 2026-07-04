@@ -39,8 +39,7 @@ public class GitLogNextPageCommand implements Command {
         int bodyMaxLines = settings.get(GitSettings.LOG_BODY_MAX_LINES);
         var config = new GitLogRenderer.RenderConfig(subjectMaxWidth, bodyMaxLines, ZoneId.systemDefault());
 
-        return CompletableFuture.supplyAsync(
-                        () -> provider.getLog(model.repoRoot(), model.target(), skip, pageSize))
+        return CompletableFuture.supplyAsync(() -> provider.getLog(model.repoRoot(), model.target(), skip, pageSize))
                 .thenAccept(entries -> appendToBuffer(buffer, model, entries, config));
     }
 

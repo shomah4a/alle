@@ -69,8 +69,7 @@ class DefaultGitLogProviderTest {
 
     @Test
     void フィールド数不足の破損レコードはスキップされる() {
-        String out = "onlyhash" + RS
-                + entry("bbb", "2026-07-03T00:00:00Z", "b", "subj-b", "body-b");
+        String out = "onlyhash" + RS + entry("bbb", "2026-07-03T00:00:00Z", "b", "subj-b", "body-b");
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.of(out));
 
         var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);

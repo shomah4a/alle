@@ -40,8 +40,7 @@ public final class GitModeInitializer {
         gitLogKeymap.bind(KeyStroke.of('n'), nextPageCmd);
 
         // git-log コマンド本体 (M-x git-log)
-        var gitLogCmd =
-                new GitLogCommand(gitLogProvider, locator, gitLogKeymap, gitLogModeRegistry, settingsRegistry);
+        var gitLogCmd = new GitLogCommand(gitLogProvider, locator, gitLogKeymap, gitLogModeRegistry, settingsRegistry);
 
         // git-mode マイナーモード用コマンドとキーマップ
         var gitCommandRegistry = new CommandRegistry();
