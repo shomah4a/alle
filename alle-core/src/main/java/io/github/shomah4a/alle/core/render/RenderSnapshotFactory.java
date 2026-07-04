@@ -16,6 +16,7 @@ import io.github.shomah4a.alle.core.window.Rect;
 import io.github.shomah4a.alle.core.window.ViewportSize;
 import io.github.shomah4a.alle.core.window.Window;
 import io.github.shomah4a.alle.core.window.WindowLayout;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.eclipse.collections.api.factory.Lists;
@@ -173,7 +174,7 @@ public final class RenderSnapshotFactory {
     static CursorPosition computeActiveCursorPosition(
             Frame frame, LayoutResult layoutResult, int minibufferRow, int cols) {
         var activeWindow = frame.getActiveWindow();
-        if (activeWindow == frame.getMinibufferWindow()) {
+        if (Objects.equals(activeWindow, frame.getMinibufferWindow())) {
             int tabWidth = activeWindow.getBuffer().getSettings().get(EditorSettings.TAB_WIDTH);
             return computeMinibufferCursorPosition(activeWindow, minibufferRow, cols, tabWidth);
         }

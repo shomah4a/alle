@@ -3,6 +3,8 @@ package io.github.shomah4a.alle.core.syntax;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
@@ -105,14 +107,14 @@ class TreeSitterAnalyzerTest {
         SyntaxTree tree1 = analyzer.analyze(lines);
         SyntaxTree tree2 = analyzer.analyze(lines);
         // 同一インスタンスが返ることを確認
-        assertTrue(tree1 == tree2);
+        assertSame(tree1, tree2);
     }
 
     @Test
     void テキスト変更時はキャッシュが無効になる() {
         SyntaxTree tree1 = analyzer.analyze(Lists.immutable.of("x = 1"));
         SyntaxTree tree2 = analyzer.analyze(Lists.immutable.of("x = 2"));
-        assertFalse(tree1 == tree2);
+        assertNotSame(tree1, tree2);
     }
 
     @Test

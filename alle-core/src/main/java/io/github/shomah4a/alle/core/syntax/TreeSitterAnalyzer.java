@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.syntax;
 
+import java.util.Objects;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.jspecify.annotations.Nullable;
@@ -35,7 +36,8 @@ public class TreeSitterAnalyzer implements SyntaxAnalyzer {
         // session.parse()が返したTSTreeインスタンスが前回と同一ならキャッシュを再利用する。
         // テキスト比較ではなくインスタンス比較にすることで、Styler側のパースにより
         // 旧TSTreeがcloseされた後にcachedResultを誤って返す問題を防ぐ。
-        if (tree == cachedTree && cachedResult != null) {
+        // TSTreeはequalsをオーバーライドしていないため、Objects.equalsも参照比較と同義。
+        if (Objects.equals(tree, cachedTree) && cachedResult != null) {
             return cachedResult;
         }
 

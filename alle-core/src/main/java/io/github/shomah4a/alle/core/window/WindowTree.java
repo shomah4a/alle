@@ -1,5 +1,6 @@
 package io.github.shomah4a.alle.core.window;
 
+import java.util.Objects;
 import java.util.Optional;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
@@ -36,7 +37,7 @@ public sealed interface WindowTree {
     default Optional<WindowTree> split(Window target, Direction direction, Window newWindow) {
         return switch (this) {
             case Leaf leaf -> {
-                if (leaf.window() == target) {
+                if (Objects.equals(leaf.window(), target)) {
                     yield Optional.of(new Split(direction, 0.5, new Leaf(target), new Leaf(newWindow)));
                 }
                 yield Optional.empty();
@@ -67,11 +68,11 @@ public sealed interface WindowTree {
             case Leaf leaf -> Optional.empty();
             case Split split -> {
                 // firstが対象のLeafなら、secondを返す（縮退）
-                if (split.first() instanceof Leaf firstLeaf && firstLeaf.window() == target) {
+                if (split.first() instanceof Leaf firstLeaf && Objects.equals(firstLeaf.window(), target)) {
                     yield Optional.of(split.second());
                 }
                 // secondが対象のLeafなら、firstを返す（縮退）
-                if (split.second() instanceof Leaf secondLeaf && secondLeaf.window() == target) {
+                if (split.second() instanceof Leaf secondLeaf && Objects.equals(secondLeaf.window(), target)) {
                     yield Optional.of(split.first());
                 }
                 // first側の子ツリーから再帰的に削除を試みる
@@ -113,7 +114,7 @@ public sealed interface WindowTree {
      */
     default boolean contains(Window target) {
         return switch (this) {
-            case Leaf leaf -> leaf.window() == target;
+            case Leaf leaf -> Objects.equals(leaf.window(), target);
             case Split split -> split.first().contains(target) || split.second().contains(target);
         };
     }
