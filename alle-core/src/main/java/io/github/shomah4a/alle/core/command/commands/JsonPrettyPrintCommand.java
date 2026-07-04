@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.Separators;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -98,7 +99,8 @@ public class JsonPrettyPrintCommand implements TransactionalCommand {
     private static String formatJson(String source, BufferLocalSettings settings) throws IOException {
         String indent = computeIndent(settings);
         var indenter = new DefaultIndenter(indent, "\n");
-        var printer = new DefaultPrettyPrinter();
+        var separators = Separators.createDefaultInstance().withObjectFieldValueSpacing(Separators.Spacing.AFTER);
+        var printer = new DefaultPrettyPrinter().withSeparators(separators);
         printer.indentObjectsWith(indenter);
         printer.indentArraysWith(indenter);
         var writer = MAPPER.writer(printer);

@@ -61,7 +61,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("{\n    \"a\" : 1,\n    \"b\" : 2\n}", buffer.getText());
+            assertEquals("{\n    \"a\": 1,\n    \"b\": 2\n}", buffer.getText());
         }
 
         @Test
@@ -104,7 +104,7 @@ class JsonPrettyPrintCommandTest {
 
         @Test
         void 既に整形済みなら変更されない() {
-            String pretty = "{\n    \"a\" : 1\n}";
+            String pretty = "{\n    \"a\": 1\n}";
             buffer.insertText(0, pretty);
             activeWindow().setPoint(0);
 
@@ -120,7 +120,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("{\n    \"a\" : 1\n}\n{\n    \"b\" : 2\n}", buffer.getText());
+            assertEquals("{\n    \"a\": 1\n}\n{\n    \"b\": 2\n}", buffer.getText());
         }
     }
 
@@ -135,7 +135,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("prefix{\n    \"a\" : 1\n}suffix", buffer.getText());
+            assertEquals("prefix{\n    \"a\": 1\n}suffix", buffer.getText());
         }
 
         @Test
@@ -147,7 +147,7 @@ class JsonPrettyPrintCommandTest {
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
             int expectedStart = 6;
-            int expectedEnd = expectedStart + "{\n    \"a\" : 1\n}".length();
+            int expectedEnd = expectedStart + "{\n    \"a\": 1\n}".length();
             assertEquals(expectedStart, activeWindow().getMark().orElseThrow());
             assertEquals(expectedEnd, activeWindow().getPoint());
         }
@@ -160,9 +160,9 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("prefix{\n    \"a\" : 1\n}suffix", buffer.getText());
+            assertEquals("prefix{\n    \"a\": 1\n}suffix", buffer.getText());
             int expectedStart = 6;
-            int expectedEnd = expectedStart + "{\n    \"a\" : 1\n}".length();
+            int expectedEnd = expectedStart + "{\n    \"a\": 1\n}".length();
             assertEquals(expectedStart, activeWindow().getMark().orElseThrow());
             assertEquals(expectedEnd, activeWindow().getPoint());
         }
@@ -175,7 +175,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("{\n    \"a\" : 1\n}", buffer.getText());
+            assertEquals("{\n    \"a\": 1\n}", buffer.getText());
         }
 
         @Test
@@ -186,12 +186,12 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("head{\n    \"a\" : 1\n}\n{\n    \"b\" : 2\n}tail", buffer.getText());
+            assertEquals("head{\n    \"a\": 1\n}\n{\n    \"b\": 2\n}tail", buffer.getText());
         }
 
         @Test
         void 既に整形済みのリージョンではmarkとpointが保持される() {
-            String pretty = "{\n    \"a\" : 1\n}";
+            String pretty = "{\n    \"a\": 1\n}";
             buffer.insertText(0, "head" + pretty + "tail");
             int markPos = 4;
             int pointPos = markPos + pretty.length();
@@ -213,7 +213,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("head{\n    \"a\" : 1\n}tail", buffer.getText());
+            assertEquals("head{\n    \"a\": 1\n}tail", buffer.getText());
         }
     }
 
@@ -228,7 +228,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("{\n  \"a\" : 1\n}", buffer.getText());
+            assertEquals("{\n  \"a\": 1\n}", buffer.getText());
         }
 
         @Test
@@ -239,7 +239,7 @@ class JsonPrettyPrintCommandTest {
 
             new JsonPrettyPrintCommand().execute(createContext()).join();
 
-            assertEquals("{\n\t\"a\" : 1\n}", buffer.getText());
+            assertEquals("{\n\t\"a\": 1\n}", buffer.getText());
         }
     }
 
@@ -390,7 +390,7 @@ class JsonPrettyPrintCommandTest {
 
         @Test
         void 既に整形済みならダーティにならない() {
-            buffer.insertText(0, "{\n    \"a\" : 1\n}");
+            buffer.insertText(0, "{\n    \"a\": 1\n}");
             buffer.markClean();
             activeWindow().setPoint(0);
 

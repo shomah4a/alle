@@ -55,6 +55,7 @@ Jackson の `JsonParser` を対象文字列で生成し、`ObjectMapper.readTree
 
 - `DefaultPrettyPrinter` は呼び出し毎に新規生成（内部状態共有を回避）
 - `DefaultIndenter` の line separator は `\n` 固定
+- オブジェクトフィールドのキーと値の区切りは `: `（コロン前スペースなし、コロン後スペース 1 個）とする。`Separators.createDefaultInstance().withObjectFieldValueSpacing(Separators.Spacing.AFTER)` により設定
 - `ObjectMapper` に `DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS = true`, `USE_BIG_INTEGER_FOR_INTS = true` を有効化して数値精度の暗黙損失を回避
 - `JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES = false` を設定し、`1.10` のような末尾ゼロを保持
 - `StreamReadFeature.STRICT_DUPLICATE_DETECTION = true` を有効化し、重複キー入力（`{"a":1,"a":2}`）をパースエラーとして扱う。整形操作でデータが黙って減ることを防ぐため
