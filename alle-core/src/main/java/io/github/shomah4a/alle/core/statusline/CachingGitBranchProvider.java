@@ -25,6 +25,14 @@ public class CachingGitBranchProvider implements GitBranchProvider {
         this(delegate, Duration.ofSeconds(5), 100, new GitRepositoryLocator());
     }
 
+    /**
+     * 外部から共有 Locator を注入して構築する。git-mode の自動有効化 hook と
+     * リポジトリルート探索キャッシュを一本化する用途で使う。
+     */
+    public CachingGitBranchProvider(GitBranchProvider delegate, GitRepositoryLocator locator) {
+        this(delegate, Duration.ofSeconds(5), 100, locator);
+    }
+
     CachingGitBranchProvider(GitBranchProvider delegate, Duration ttl, int maxSize, GitRepositoryLocator locator) {
         this.delegate = delegate;
         this.cache =

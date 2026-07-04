@@ -85,6 +85,9 @@ import io.github.shomah4a.alle.core.mode.ModeRegistry;
 import io.github.shomah4a.alle.core.mode.modes.dired.TreeDiredInitializer;
 import io.github.shomah4a.alle.core.mode.modes.dired.git.DefaultGitStatusProvider;
 import io.github.shomah4a.alle.core.mode.modes.dired.git.TreeDiredGitInitializer;
+import io.github.shomah4a.alle.core.mode.modes.git.DefaultGitLogProvider;
+import io.github.shomah4a.alle.core.mode.modes.git.GitModeInitializer;
+import io.github.shomah4a.alle.core.mode.modes.git.GitRepositoryLocator;
 import io.github.shomah4a.alle.core.mode.modes.javascript.JavaScriptMode;
 import io.github.shomah4a.alle.core.mode.modes.json.JsonMode;
 import io.github.shomah4a.alle.core.mode.modes.makefile.MakefileMode;
@@ -492,6 +495,15 @@ public final class EditorCore {
         // Tree Dired Git
         TreeDiredGitInitializer.initialize(
                 modeRegistry, commandResolver, new DefaultGitStatusProvider(), new DefaultFileOperations());
+
+        // git-mode / git-log
+        GitModeInitializer.initialize(
+                modeRegistry,
+                commandResolver,
+                registry,
+                new DefaultGitLogProvider(),
+                new GitRepositoryLocator(),
+                settingsRegistry);
 
         // Occur
         var occurCommand = OccurInitializer.initialize(registry, commandResolver, settingsRegistry);
