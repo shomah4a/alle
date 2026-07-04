@@ -128,13 +128,15 @@ public class SyntaxAnalyzerRegistry {
             "resource_specification",
             "array_initializer",
             "array_access",
+            "element_value_array_initializer",
             "block",
             "constructor_body",
             "class_body",
             "interface_body",
             "enum_body",
             "annotation_type_body",
-            "switch_block");
+            "switch_block",
+            "module_body");
 
     /** JSON用の括弧系ノードタイプ名。 */
     private static final ImmutableSet<String> JSON_BRACKET_TYPES = Sets.immutable.with("object", "array");
