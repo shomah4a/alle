@@ -11,6 +11,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.treesitter.TreeSitterBash;
 import org.treesitter.TreeSitterHcl;
+import org.treesitter.TreeSitterJava;
 import org.treesitter.TreeSitterJavascript;
 import org.treesitter.TreeSitterJson;
 import org.treesitter.TreeSitterPython;
@@ -112,6 +113,31 @@ public class SyntaxAnalyzerRegistry {
             "object_type",
             "tuple_type");
 
+    /**
+     * Java 用の括弧系ノードタイプ名。
+     * {@code type_parameters} / {@code type_arguments}（{@code <T, U>}）は
+     * CStyleIndentConfig が文字ベース（{@code (}, {@code [}, 波括弧）判定のため対象外（ADR 0142 参照）。
+     * ここに列挙する全ノード型は tree-sitter-java v0.23.4 の node-types.json に存在することを確認済み。
+     */
+    private static final ImmutableSet<String> JAVA_BRACKET_TYPES = Sets.immutable.with(
+            "parenthesized_expression",
+            "argument_list",
+            "formal_parameters",
+            "inferred_parameters",
+            "annotation_argument_list",
+            "resource_specification",
+            "array_initializer",
+            "array_access",
+            "element_value_array_initializer",
+            "block",
+            "constructor_body",
+            "class_body",
+            "interface_body",
+            "enum_body",
+            "annotation_type_body",
+            "switch_block",
+            "module_body");
+
     /** JSON用の括弧系ノードタイプ名。 */
     private static final ImmutableSet<String> JSON_BRACKET_TYPES = Sets.immutable.with("object", "array");
 
@@ -178,6 +204,11 @@ public class SyntaxAnalyzerRegistry {
                         typescriptQuery,
                         DefaultCaptureMapping.INSTANCE,
                         TYPESCRIPT_BRACKET_TYPES));
+        String javaQuery = HighlightQueryLoader.load("java");
+        registry.register(
+                "java",
+                new TreeSitterLanguageConfig(
+                        new TreeSitterJava(), javaQuery, DefaultCaptureMapping.INSTANCE, JAVA_BRACKET_TYPES));
         return registry;
     }
 }

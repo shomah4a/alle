@@ -23,6 +23,7 @@ public final class DefaultCaptureMapping {
             .withKeyValue("string", FaceName.STRING)
             .withKeyValue("number", FaceName.NUMBER)
             .withKeyValue("escape", FaceName.STRING)
+            .withKeyValue("string.escape", FaceName.STRING)
             // キーワード・演算子
             .withKeyValue("keyword", FaceName.KEYWORD)
             .withKeyValue("keyword.repeat", FaceName.KEYWORD)
@@ -47,5 +48,7 @@ public final class DefaultCaptureMapping {
             // 句読点・埋め込み
             .withKeyValue("punctuation.special", FaceName.OPERATOR)
             .withKeyValue("embedded", FaceName.DEFAULT)
+            // アノテーション（Java の @Override 等。YAML のディレクティブにも出現する。ADR 0142参照）
+            .withKeyValue("attribute", FaceName.ANNOTATION)
             .toImmutable());
 }

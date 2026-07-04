@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 
 class CStyleIndentStateTest {
 
-    private static final CStyleIndentConfig JS_CONFIG =
-            new CStyleIndentConfig(2, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'));
+    private static final CStyleIndentConfig JS_CONFIG = new CStyleIndentConfig(
+            2, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'), Sets.immutable.with("comment"));
 
     private static Window createWindow(String text) {
         var buffer = new TextBuffer("test.js", new GapTextModel(), new SettingsRegistry());

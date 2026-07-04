@@ -1,4 +1,4 @@
-package io.github.shomah4a.alle.core.mode.modes.typescript;
+package io.github.shomah4a.alle.core.mode.modes.java;
 
 import io.github.shomah4a.alle.core.command.CommandRegistry;
 import io.github.shomah4a.alle.core.keybind.KeyStroke;
@@ -16,15 +16,13 @@ import java.util.Optional;
 import org.eclipse.collections.api.factory.Sets;
 
 /**
- * TypeScript モード。{@code .ts} / {@code .mts} / {@code .cts} ファイルに適用される。
- * tree-sitter-typescript によるシンタックスハイライト、構文解析、
- * C スタイルオートインデントを提供する（ADR 0137 参照）。
- *
- * <p>{@code .tsx} (TypeScript + JSX) は別パーサ (tree-sitter-tsx) が必要なため本モードの対象外。
+ * Java モード。{@code .java} ファイルに適用される。
+ * tree-sitter-java によるシンタックスハイライト、構文解析、
+ * C スタイルオートインデントを提供する（ADR 0142 参照）。
  */
-public class TypeScriptMode implements MajorMode {
+public class JavaMode implements MajorMode {
 
-    private static final int INDENT_WIDTH = 2;
+    private static final int INDENT_WIDTH = 4;
 
     private static final ModeSettings DEFAULTS = ModeSettings.builder()
             .set(EditorSettings.INDENT_WIDTH, INDENT_WIDTH)
@@ -35,22 +33,22 @@ public class TypeScriptMode implements MajorMode {
             INDENT_WIDTH,
             Sets.immutable.with('(', '[', '{'),
             Sets.immutable.with(')', ']', '}'),
-            Sets.immutable.with("comment"));
+            Sets.immutable.with("line_comment", "block_comment"));
 
     private final LanguageSupport languageSupport;
     private final Keymap keymap;
     private final CommandRegistry commandRegistry;
 
-    public TypeScriptMode(LanguageSupport languageSupport) {
+    public JavaMode(LanguageSupport languageSupport) {
         this.languageSupport = languageSupport;
         var indentState = new CStyleIndentState(INDENT_CONFIG, languageSupport.analyzer());
-        var commands = CStyleIndentCommands.create("typescript", indentState);
+        var commands = CStyleIndentCommands.create("java", indentState);
         this.keymap = createKeymap(commands);
         this.commandRegistry = createCommandRegistry(commands);
     }
 
     private static Keymap createKeymap(CStyleIndentCommands.Commands commands) {
-        var km = new Keymap("typescript-mode");
+        var km = new Keymap("java-mode");
         km.bind(KeyStroke.of('\n'), commands.newlineAndIndent());
         km.bind(KeyStroke.of('\t'), commands.indentLine());
         km.bind(KeyStroke.shift('\t'), commands.dedentLine());
@@ -67,7 +65,7 @@ public class TypeScriptMode implements MajorMode {
 
     @Override
     public String name() {
-        return "typescript";
+        return "java";
     }
 
     @Override

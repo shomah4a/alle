@@ -13,6 +13,7 @@ dependencies {
     implementation(libs.tree.sitter.bash)
     implementation(libs.tree.sitter.hcl)
     implementation(libs.tree.sitter.typescript)
+    implementation(libs.tree.sitter.java)
     implementation(libs.caffeine)
     implementation(libs.jackson.databind)
 }
@@ -56,7 +57,9 @@ val grammars = listOf(
         "tree-sitter/tree-sitter-typescript",
         "v${libs.versions.tree.sitter.typescript.get()}",
         inheritsFrom = "javascript"
-    )
+    ),
+    // tree-sitter-java の highlights.scm は単独で完結しており、継承は不要（ADR 0142参照）。
+    TreeSitterGrammar("java", "tree-sitter/tree-sitter-java", "v${libs.versions.tree.sitter.java.get()}")
 )
 
 // grammar 定義 (tag + inheritsFrom の親 tag) からフィンガープリント文字列を生成する。
