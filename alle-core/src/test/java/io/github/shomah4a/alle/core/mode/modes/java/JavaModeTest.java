@@ -368,5 +368,41 @@ class JavaModeTest {
             state.cycleIndent(window, 1);
             assertEquals("void f() { // comment\n    int x;", window.getBuffer().getText());
         }
+
+        @Test
+        void アノテーション引数配列の開き波括弧の次行が最初の要素のカラムに整列する() {
+            // element_value_array_initializer が JAVA_BRACKET_TYPES に登録されていることの機能検証。
+            // enclosingBracket が element_value_array_initializer ({8,9}-{1,1}) を返すことで
+            // findFirstContentChild が同一行内の最初の要素 (ElementType.METHOD, カラム9) を見つけ、
+            // そのカラムに継続行が整列する。登録がないと enclosingBracket は
+            // 親の annotation_argument_list まで遡り、その最初の子である
+            // element_value_array_initializer 自体の開始カラム (8) に整列してしまい、値がずれる。
+            var window = createWindow("@Target({ElementType.METHOD,\n})");
+            window.setPoint("@Target({ElementType.METHOD,".length());
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals(
+                    "@Target({ElementType.METHOD,\n         \n})",
+                    window.getBuffer().getText());
+        }
+
+        @Test
+        void module本体の開き波括弧の次行が同一行内の最初の要素のカラムに整列する() {
+            // module_body が JAVA_BRACKET_TYPES に登録されていることの機能検証。
+            // requires 宣言が module_body の開き波括弧と同一行にあるため、
+            // findFirstContentChild 経由でその開始カラム (17) に継続行が整列する。
+            // 登録がないと enclosingBracket は module_body の祖先を辿っても括弧系ノードに
+            // 到達できず（module_declaration や program は括弧系ノードではない）、
+            // 文字ベースのフォールバック (isOpenBracketBeforeColumn) に落ちる。
+            // 行末の直前トークンは ";" であり開き括弧ではないため、
+            // フォールバックではインデントが増加せず0カラムになり、値がずれる。
+            var window = createWindow("module foo.bar { requires baz.qux;\n}");
+            window.setPoint("module foo.bar { requires baz.qux;".length());
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals(
+                    "module foo.bar { requires baz.qux;\n                 \n}",
+                    window.getBuffer().getText());
+        }
     }
 }
