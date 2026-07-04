@@ -27,7 +27,7 @@ public final class GitLogRenderer {
 
     private static final String SEPARATOR = "----";
     private static final String INDENT = "    ";
-    private static final String ELLIPSIS = "";
+    private static final String ELLIPSIS = "…";
 
     private GitLogRenderer() {}
 

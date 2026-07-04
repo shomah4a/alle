@@ -59,7 +59,7 @@ class GitLogRendererTest {
 
         String text = GitLogRenderer.buildText(entries, config);
 
-        assertTrue(text.contains("    " + "a".repeat(9) + "\n"));
+        assertTrue(text.contains("    " + "a".repeat(9) + "…\n"));
     }
 
     @Test
@@ -93,7 +93,7 @@ class GitLogRendererTest {
 
         assertTrue(text.contains("    line1\n"));
         assertTrue(text.contains("    line2\n"));
-        assertTrue(text.contains("    \n"));
+        assertTrue(text.contains("    …\n"));
         assertTrue(!text.contains("    line3\n"));
     }
 
@@ -107,7 +107,7 @@ class GitLogRendererTest {
 
         assertTrue(text.contains("    line1\n"));
         assertTrue(text.contains("    line2\n"));
-        assertTrue(!text.contains(""));
+        assertTrue(!text.contains("…"));
     }
 
     @Test
