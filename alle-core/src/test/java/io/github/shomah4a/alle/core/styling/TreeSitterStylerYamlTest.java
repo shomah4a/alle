@@ -89,6 +89,23 @@ class TreeSitterStylerYamlTest {
     }
 
     @Nested
+    class ディレクティブのハイライト {
+
+        @Test
+        void YAMLディレクティブがANNOTATIONとしてハイライトされる() {
+            // %YAML 1.2 等のディレクティブは yaml_directive ノードとして @attribute にキャプチャされる。
+            // DefaultCaptureMapping に attribute -> ANNOTATION を追加したことによる意図的な挙動変化
+            // （Java モードの @Override 用マッピングを共有するため。ADR 0142参照）。
+            var result = styler.styleDocument(Lists.immutable.of("%YAML 1.2", "---", "key: value"));
+            var directiveSpans = result.get(0);
+
+            assertTrue(
+                    directiveSpans.anySatisfy(s -> s.faceName().equals(FaceName.ANNOTATION)),
+                    "YAML ディレクティブが ANNOTATION としてハイライトされる");
+        }
+    }
+
+    @Nested
     class キャプチャ優先度 {
 
         @Test
