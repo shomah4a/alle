@@ -30,7 +30,10 @@ public class JavaMode implements MajorMode {
             .build();
 
     static final CStyleIndentConfig INDENT_CONFIG = new CStyleIndentConfig(
-            INDENT_WIDTH, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'));
+            INDENT_WIDTH,
+            Sets.immutable.with('(', '[', '{'),
+            Sets.immutable.with(')', ']', '}'),
+            Sets.immutable.with("line_comment", "block_comment"));
 
     private final LanguageSupport languageSupport;
     private final Keymap keymap;

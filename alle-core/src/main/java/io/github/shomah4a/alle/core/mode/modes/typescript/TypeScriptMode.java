@@ -32,7 +32,10 @@ public class TypeScriptMode implements MajorMode {
             .build();
 
     static final CStyleIndentConfig INDENT_CONFIG = new CStyleIndentConfig(
-            INDENT_WIDTH, Sets.immutable.with('(', '[', '{'), Sets.immutable.with(')', ']', '}'));
+            INDENT_WIDTH,
+            Sets.immutable.with('(', '[', '{'),
+            Sets.immutable.with(')', ']', '}'),
+            Sets.immutable.with("comment"));
 
     private final LanguageSupport languageSupport;
     private final Keymap keymap;

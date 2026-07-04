@@ -337,5 +337,36 @@ class JavaModeTest {
             state.newlineAndIndent(window);
             assertEquals("class User {\n    int age;\n    ", window.getBuffer().getText());
         }
+
+        @Test
+        void 行末に行コメントがある開き波括弧の後でも改行時にコメント開始カラムへ整列せずインデント幅で整列する() {
+            // 修正前は line_comment ノードがコメントとして認識されず、新行がコメント開始カラム
+            // (12) に整列してしまっていた（実装安全性評価 MEDIUM 指摘）。修正後は他の言語と同様に
+            // インデント幅 (4) で整列する。
+            var window = createWindow("class Foo { // comment\n}");
+            window.setPoint("class Foo { // comment".length());
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("class Foo { // comment\n    \n}", window.getBuffer().getText());
+        }
+
+        @Test
+        void 行コメントを含まない開き波括弧の後の改行時のインデント幅整列は行コメントがある場合と変わらない() {
+            var window = createWindow("class Foo {\n}");
+            window.setPoint("class Foo {".length());
+            var state = createState();
+            state.newlineAndIndent(window);
+            assertEquals("class Foo {\n    \n}", window.getBuffer().getText());
+        }
+
+        @Test
+        void 行末に行コメントがある開き波括弧の次行でTabを押すとコメント開始カラムではなくインデント幅に整列する() {
+            // 修正前はサイクル候補にコメント開始カラム (11) が混入し、その値に整列していた。
+            var window = createWindow("void f() { // comment\nint x;");
+            window.setPoint("void f() { // comment\n".length());
+            var state = createState();
+            state.cycleIndent(window, 1);
+            assertEquals("void f() { // comment\n    int x;", window.getBuffer().getText());
+        }
     }
 }

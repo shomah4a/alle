@@ -24,7 +24,6 @@ import org.jspecify.annotations.Nullable;
 public class CStyleIndentState {
 
     private static final Pattern LEADING_WHITESPACE = Pattern.compile("^(\\s*)");
-    private static final String COMMENT_NODE_TYPE = "comment";
     private static final String[] BRACKET_TOKENS = {"(", ")", "[", "]", "{", "}", ","};
 
     private final CStyleIndentConfig config;
@@ -132,7 +131,7 @@ public class CStyleIndentState {
                 continue;
             }
             SyntaxNode node = nodeOpt.get();
-            if (COMMENT_NODE_TYPE.equals(node.type())) {
+            if (config.commentNodeTypes().contains(node.type())) {
                 // コメントノードの開始位置より前にジャンプする
                 searchCol = node.startColumn();
                 continue;
@@ -210,7 +209,7 @@ public class CStyleIndentState {
         return bracketLineIndent + config.indentWidth();
     }
 
-    private static @Nullable SyntaxNode findFirstContentChild(SyntaxNode node) {
+    private @Nullable SyntaxNode findFirstContentChild(SyntaxNode node) {
         for (int i = 0; i < node.children().size(); i++) {
             SyntaxNode child = node.children().get(i);
             if (isSkippableToken(child.type())) {
@@ -225,8 +224,8 @@ public class CStyleIndentState {
      * 括弧内の最初の意味のある子を探索する際にスキップすべきトークンかを判定する。
      * 括弧トークンとコメントをスキップする。
      */
-    private static boolean isSkippableToken(String type) {
-        if (COMMENT_NODE_TYPE.equals(type)) {
+    private boolean isSkippableToken(String type) {
+        if (config.commentNodeTypes().contains(type)) {
             return true;
         }
         for (String token : BRACKET_TOKENS) {

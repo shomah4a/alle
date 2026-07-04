@@ -29,8 +29,8 @@ public class ShellScriptMode implements MajorMode {
             .set(EditorSettings.COMMENT_STRING, "# ")
             .build();
 
-    private static final CStyleIndentConfig INDENT_CONFIG =
-            new CStyleIndentConfig(INDENT_WIDTH, Sets.immutable.with('(', '{'), Sets.immutable.with(')', '}'));
+    private static final CStyleIndentConfig INDENT_CONFIG = new CStyleIndentConfig(
+            INDENT_WIDTH, Sets.immutable.with('(', '{'), Sets.immutable.with(')', '}'), Sets.immutable.with("comment"));
 
     private final LanguageSupport languageSupport;
     private final Keymap keymap;
