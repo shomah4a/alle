@@ -33,8 +33,12 @@ public class DefaultGitLogProvider implements GitLogProvider, Loggable {
     }
 
     @Override
-    public ImmutableList<GitLogEntry> getLog(Path repoRoot, Optional<Path> target, int maxCount) {
-        var command = Lists.mutable.of("git", "log", "--max-count=" + maxCount, PRETTY_FORMAT);
+    public ImmutableList<GitLogEntry> getLog(Path repoRoot, Optional<Path> target, int skip, int maxCount) {
+        var command = Lists.mutable.of("git", "log", "--max-count=" + maxCount);
+        if (skip > 0) {
+            command.add("--skip=" + skip);
+        }
+        command.add(PRETTY_FORMAT);
         if (target.isPresent()) {
             command.add("--");
             command.add(target.get().toString());

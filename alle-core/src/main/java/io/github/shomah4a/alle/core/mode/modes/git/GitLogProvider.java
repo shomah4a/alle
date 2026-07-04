@@ -15,8 +15,9 @@ public interface GitLogProvider {
      *
      * @param repoRoot git コマンドの実行対象ディレクトリ (リポジトリルート)
      * @param target 履歴対象のファイルまたはディレクトリ。empty ならリポジトリ全体
+     * @param skip 先頭からスキップする件数 (追加取得型ページネーションで次ページを取るとき用)
      * @param maxCount 取得件数上限
      * @return コミットの新しい順 (git log のデフォルト順)。取得失敗時は空
      */
-    ImmutableList<GitLogEntry> getLog(Path repoRoot, Optional<Path> target, int maxCount);
+    ImmutableList<GitLogEntry> getLog(Path repoRoot, Optional<Path> target, int skip, int maxCount);
 }

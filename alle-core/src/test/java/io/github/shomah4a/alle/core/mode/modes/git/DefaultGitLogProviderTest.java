@@ -23,7 +23,7 @@ class DefaultGitLogProviderTest {
         String out = entry("abc1234", "2026-07-04T12:34:56+09:00", "shoma", "fix: bug", "詳細ボディ");
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.of(out));
 
-        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 10);
+        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);
 
         assertEquals(1, entries.size());
         var e = entries.get(0);
@@ -41,7 +41,7 @@ class DefaultGitLogProviderTest {
                 + entry("ccc", "2026-07-02T00:00:00Z", "c", "subj-c", "");
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.of(out));
 
-        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 10);
+        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);
 
         assertEquals(3, entries.size());
         assertEquals("aaa", entries.get(0).shortHash());
@@ -53,7 +53,7 @@ class DefaultGitLogProviderTest {
     void 空出力の場合は空リストが返る() {
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.of(""));
 
-        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 10);
+        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);
 
         assertTrue(entries.isEmpty());
     }
@@ -62,7 +62,7 @@ class DefaultGitLogProviderTest {
     void processRunnerがemptyを返した場合は空リストが返る() {
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.empty());
 
-        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 10);
+        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);
 
         assertTrue(entries.isEmpty());
     }
@@ -73,7 +73,7 @@ class DefaultGitLogProviderTest {
                 + entry("bbb", "2026-07-03T00:00:00Z", "b", "subj-b", "body-b");
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.of(out));
 
-        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 10);
+        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);
 
         assertEquals(1, entries.size());
         assertEquals("bbb", entries.get(0).shortHash());
@@ -85,7 +85,7 @@ class DefaultGitLogProviderTest {
                 + entry("bbb", "2026-07-03T00:00:00Z", "b", "subj-b", "body-b");
         var provider = new DefaultGitLogProvider((dir, cmd) -> Optional.of(out));
 
-        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 10);
+        var entries = provider.getLog(Path.of("/repo"), Optional.empty(), 0, 10);
 
         assertEquals(1, entries.size());
         assertEquals("bbb", entries.get(0).shortHash());
@@ -99,7 +99,7 @@ class DefaultGitLogProviderTest {
             return Optional.of("");
         });
 
-        provider.getLog(Path.of("/repo"), Optional.empty(), 50);
+        provider.getLog(Path.of("/repo"), Optional.empty(), 0, 50);
 
         var cmd = java.util.Objects.requireNonNull(captured.get());
         assertEquals("git", cmd[0]);
@@ -117,7 +117,7 @@ class DefaultGitLogProviderTest {
             return Optional.of("");
         });
 
-        provider.getLog(Path.of("/repo"), Optional.of(Path.of("/repo/src/A.java")), 20);
+        provider.getLog(Path.of("/repo"), Optional.of(Path.of("/repo/src/A.java")), 0, 20);
 
         var cmd = java.util.Objects.requireNonNull(captured.get());
         assertEquals(6, cmd.length);
@@ -134,8 +134,23 @@ class DefaultGitLogProviderTest {
             return Optional.of("");
         });
 
-        provider.getLog(Path.of("/some/repo"), Optional.empty(), 10);
+        provider.getLog(Path.of("/some/repo"), Optional.empty(), 0, 10);
 
         assertEquals(Path.of("/some/repo"), captured.get());
+    }
+
+    @Test
+    void skipが正のときはコマンドラインにskipオプションが付く() {
+        var captured = new AtomicReference<String[]>();
+        var provider = new DefaultGitLogProvider((dir, cmd) -> {
+            captured.set(cmd);
+            return Optional.of("");
+        });
+
+        provider.getLog(Path.of("/repo"), Optional.empty(), 30, 10);
+
+        var cmd = java.util.Objects.requireNonNull(captured.get());
+        assertEquals("--skip=30", cmd[3]);
+        assertTrue(cmd[4].startsWith("--pretty=format:"));
     }
 }
