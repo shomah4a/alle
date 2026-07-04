@@ -6,6 +6,9 @@
 
 ## コンテキスト
 
+（追記: コメントノード型を `comment` 固定とした判断は ADR 0142 で部分変更され、
+`CStyleIndentConfig` 経由の言語別注入となった）
+
 CStyleIndentState には2種類のインデント判定が混在している。
 
 1. AST ベース: `getBracketIndent` で `SyntaxTree.enclosingBracket` を使い、

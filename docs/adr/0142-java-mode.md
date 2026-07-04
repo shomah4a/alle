@@ -95,14 +95,42 @@ characterization テストで固定して受容する。プレディケート評
 
 - `parenthesized_expression`, `argument_list`, `formal_parameters`, `inferred_parameters`,
   `annotation_argument_list`, `resource_specification`
-- `array_initializer`, `array_access`
+- `array_initializer`, `array_access`, `element_value_array_initializer`
 - `block`, `constructor_body`, `class_body`, `interface_body`, `enum_body`,
-  `annotation_type_body`, `switch_block`
+  `annotation_type_body`, `switch_block`, `module_body`
 
 #### 非対応の判断
 
 - `type_parameters` / `type_arguments`（`<T, U>`）は `CStyleIndentConfig` が文字ベース判定
   （`(`, `[`, `{`）であるため対象外（ADR 0137 と同じ判断）
+
+### コメントノード型の言語別注入（ADR 0115 の部分変更）
+
+実装安全性評価で、`CStyleIndentState` のコメントスキップ判定がノード型名 `comment` を
+ハードコードしており（ADR 0115 の設計）、tree-sitter-java のコメントノード型
+`line_comment` / `block_comment` に一致しない欠陥が指摘された。再現テストで以下を確認した：
+
+- `class Foo { // comment` 行末での newline-and-indent が、新行をインデント幅 4 ではなく
+  コメント開始カラム（12）に整列させる
+- `void f() { // comment` の次行での indent サイクルも同様にコメント開始カラムに整列する
+- 原因は `findFirstContentChild` / `isOpenBracketBeforeColumn` が `line_comment` を
+  スキップせず「意味のあるトークン」と誤認するため。既存 7 言語はすべて `comment` 型のため
+  影響は Java のみ
+
+対応として、コメントとみなすノード型集合を `CStyleIndentConfig` に追加し、言語ごとに
+明示的に注入する方式を採用する（ユーザー決定）。
+
+- 括弧文字（openBrackets / closeBrackets）と同じ「言語固有値は config が持つ」方針に揃える
+- 既存言語（JavaScript / TypeScript / Terraform）は `comment` を、Java は
+  `line_comment` / `block_comment` を注入する
+- ハードコード定数 `COMMENT_NODE_TYPE` は廃止する
+
+### bracket types の追加（実装安全性評価 LOW-1 対応）
+
+node-types.json で実在を確認したうえで、以下 2 ノード型を JAVA_BRACKET_TYPES に追加する：
+
+- `element_value_array_initializer`（`@Target({ElementType.METHOD, ...})` のアノテーション引数配列の `{}`）
+- `module_body`（module-info.java の `module ... {}`）
 
 ### 設定
 
