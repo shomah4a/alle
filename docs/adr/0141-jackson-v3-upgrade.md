@@ -48,7 +48,26 @@ ADR 0139 の「JSON 値のシーケンスとして解析する」仕様は維持
 `FAIL_ON_TRAILING_TOKENS` のデフォルト有効化がこのループと干渉する場合、`JsonPrettyPrintCommand` 専用 mapper でのみ明示 disable する。
 `ServerProtocol` の厳格化とは mapper が別インスタンスであるため矛盾しない。
 
-実装時の検証結果: (実装時に追記)
+実装時の検証結果: `FAIL_ON_TRAILING_TOKENS` は readTree ループと**干渉した**。
+`mapper.createParser(source)` で生成した parser に対する `mapper.readTree(parser)` ループでも、
+1 値目の読み取り完了時点で後続の `START_OBJECT` トークンを検出して
+`MismatchedInputException` (Trailing token found after value) を送出する。
+このため `JsonPrettyPrintCommand` 専用 mapper で `FAIL_ON_TRAILING_TOKENS` を明示 disable した。
+
+その他の実装時検証結果:
+
+- EOF・空入力時の `mapper.readTree(parser)` は null を返す (missing node ではない)。
+  ループの `node == null || node.isMissingNode()` 判定により「No JSON value found」経路は維持される
+- parser 生成は `ObjectMapper.createParser(String)` を使用。
+  `StreamReadFeature.STRICT_DUPLICATE_DETECTION` が parser に伝播し、
+  重複キーで `StreamReadException` (Duplicate Object property) が送出されることを確認した
+- 例外 catch は両ファイルとも `tools.jackson.core.JacksonException` とした。
+  パース失敗は `StreamReadException` (不正 JSON・重複キー) と `MismatchedInputException` (後続トークン)
+  の 2 系統に分かれ、さらに `StreamConstraintsException` 等の直接サブタイプも存在するため、
+  これらを過不足なく覆う最小の共通型は基底の `JacksonException` (v2 の `JsonProcessingException` に相当) となる
+- `ObjectMapper.writer(PrettyPrinter)` は v3 で削除されたため `writer().with(printer)` に変更
+- `Separators.withObjectFieldValueSpacing` は v3 で `withObjectNameValueSpacing` にリネーム
+- `JsonNode.isTextual()` / `asText()` は v3 で deprecated となったため `isString()` / `asString()` に変更
 
 ### parser 生成
 

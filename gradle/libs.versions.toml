@@ -21,7 +21,7 @@ tree-sitter-bash = "0.25.1"
 tree-sitter-hcl = "1.1.0a"
 tree-sitter-typescript = "0.23.2"
 caffeine = "3.2.4"
-jackson = "2.22.0"
+jackson = "3.1.4"
 commons-cli = "1.11.0"
 
 [libraries]
@@ -46,7 +46,7 @@ tree-sitter-bash = { module = "io.github.bonede:tree-sitter-bash", version.ref =
 tree-sitter-hcl = { module = "io.github.bonede:tree-sitter-hcl", version.ref = "tree-sitter-hcl" }
 tree-sitter-typescript = { module = "io.github.bonede:tree-sitter-typescript", version.ref = "tree-sitter-typescript" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
 commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" }
 
 [plugins]

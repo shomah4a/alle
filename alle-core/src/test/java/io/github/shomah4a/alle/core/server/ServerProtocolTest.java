@@ -38,11 +38,9 @@ class ServerProtocolTest {
     }
 
     @Test
-    void 後続トークン付きリクエスト行は先頭のJSON値をパースして受理する() {
+    void 後続トークン付きリクエスト行は不正行としてemptyを返す() {
         var result = ServerProtocol.parseRequest("{\"type\":\"open\",\"path\":\"/tmp/test\"} garbage");
-        assertTrue(result.isPresent());
-        var open = assertInstanceOf(ServerProtocol.Request.Open.class, result.get());
-        assertEquals("/tmp/test", open.absolutePath());
+        assertTrue(result.isEmpty());
     }
 
     // ── Response パース ──
@@ -77,10 +75,9 @@ class ServerProtocolTest {
     }
 
     @Test
-    void 後続トークン付きレスポンス行は先頭のJSON値をパースして受理する() {
+    void 後続トークン付きレスポンス行は不正行としてemptyを返す() {
         var result = ServerProtocol.parseResponse("{\"type\":\"finished\"} garbage");
-        assertTrue(result.isPresent());
-        assertInstanceOf(ServerProtocol.Response.Finished.class, result.get());
+        assertTrue(result.isEmpty());
     }
 
     // ── エンコード ──
