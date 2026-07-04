@@ -76,8 +76,13 @@ public class GitLogCommand implements Command {
         String bufferName = buildBufferName(repoRoot, targetPath, kind);
         var config = new GitLogRenderer.RenderConfig(subjectMaxWidth, bodyMaxLines, ZoneId.systemDefault());
 
+        // 同期パート: Frame / BufferManager の変更はコマンドループスレッドで完結させる。
+        // 非同期化してよいのは subprocess 呼び出しとバッファテキストへの書き込みのみ。
+        var prepared = prepareLogBuffer(context, bufferName, repoRoot, logTarget, pageSize);
+
+        // 非同期パート: subprocess でログを取得し、バッファへ書き込む。
         return CompletableFuture.supplyAsync(() -> provider.getLog(repoRoot, logTarget, 0, pageSize))
-                .thenAccept(entries -> displayInitial(context, bufferName, repoRoot, logTarget, pageSize, entries, config));
+                .thenAccept(entries -> renderEntries(prepared, entries, config));
     }
 
     private Optional<Path> resolveTargetPath(BufferFacade buffer) {
@@ -103,14 +108,12 @@ public class GitLogCommand implements Command {
         return "*git-log: " + relative + " [" + kind.label + "]*";
     }
 
-    private void displayInitial(
-            CommandContext context,
-            String bufferName,
-            Path repoRoot,
-            Optional<Path> logTarget,
-            int pageSize,
-            ImmutableList<GitLogEntry> entries,
-            GitLogRenderer.RenderConfig config) {
+    /**
+     * 結果バッファ (新規 or 既存) を用意し、GitLogMode を紐付け、split 表示までを同期で完了する。
+     * Frame / BufferManager への書き込みは全てここで済ませ、非同期パートには渡さない。
+     */
+    private PreparedBuffer prepareLogBuffer(
+            CommandContext context, String bufferName, Path repoRoot, Optional<Path> logTarget, int pageSize) {
 
         var existingOpt = context.bufferManager().findByName(bufferName);
         BufferFacade logBuffer;
@@ -124,14 +127,19 @@ public class GitLogCommand implements Command {
             isNew = true;
         }
 
+        // 新しい GitLogModel と GitLogMode を割り当てる。既存バッファでもモード付け替えで
+        // 前回のページネーション状態をリセットする。loadedCount は非同期で render 後に加算する。
         var model = new GitLogModel(repoRoot, logTarget, pageSize);
-        model.addLoaded(entries.size());
         var mode = new GitLogMode(model, gitLogKeymap, gitLogCommandRegistry);
         logBuffer.setMajorMode(mode);
 
+        // 前回内容が残っている場合は空にする。
         logBuffer.atomicOperation(buf -> {
             buf.setReadOnly(false);
-            GitLogRenderer.render(buf, entries, config);
+            int len = buf.length();
+            if (len > 0) {
+                buf.deleteText(0, len);
+            }
             buf.markClean();
             buf.setReadOnly(true);
             return null;
@@ -155,7 +163,23 @@ public class GitLogCommand implements Command {
                 context.frame().splitActiveWindow(Direction.HORIZONTAL, logBuffer);
             }
         }
+
+        return new PreparedBuffer(logBuffer, model);
     }
+
+    private void renderEntries(
+            PreparedBuffer prepared, ImmutableList<GitLogEntry> entries, GitLogRenderer.RenderConfig config) {
+        prepared.model.addLoaded(entries.size());
+        prepared.buffer.atomicOperation(buf -> {
+            buf.setReadOnly(false);
+            GitLogRenderer.render(buf, entries, config);
+            buf.markClean();
+            buf.setReadOnly(true);
+            return null;
+        });
+    }
+
+    private record PreparedBuffer(BufferFacade buffer, GitLogModel model) {}
 
     private enum Kind {
         REPO("repo"),
