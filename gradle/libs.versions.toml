@@ -21,7 +21,7 @@ tree-sitter-bash = "0.25.1"
 tree-sitter-hcl = "1.1.0a"
 tree-sitter-typescript = "0.23.2"
 tree-sitter-java = "0.23.5"
-caffeine = "3.3.0"
+caffeine = "3.3.1"
 jackson = "3.2.3"
 commons-cli = "1.11.0"
 
